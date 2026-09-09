@@ -1,0 +1,27 @@
+# Single-crystal Ni -- Rezwan (2026 predicting) Fig. 4(b): experiment vs simulation failure strain.
+# Failure strain definition (paper): macroscopic axial engineering strain at which a through-thickness
+#   crack forms, identified by damage variable c > 0.85 across the cross-section, with rapid load drop.
+# Source: embedded figure bitmap at native 300 DPI. Colour -> orientation group (blue 9, green 10,
+#   purple H, red L, black P); marker shape -> thickness variant (filled circle x.1, cross x.3, star x.4),
+#   read from the figure's own legend. Shapes located by occlusion-aware template matching on the
+#   colour mask (highest-scoring shape fitted and removed first, then the next).
+# Axis calibration: 9 ticks per axis (0.1..0.9), max|residual| 6.7e-4 (x) and 4.3e-4 (y) strain.
+# VALIDATION: RMSE(sim-exp) over these 15 digitized points = 0.0619; the paper states 0.064 (3%% apart).
+# 'low_marker_occluded' rows (L.4, 10.4) sit almost entirely behind the same group's circle marker;
+#   treat those two coordinates as +-0.02 strain rather than the +-0.003 that applies elsewhere.
+specimen,orientation_group,variant,shape,exp_failure_strain,sim_failure_strain,score,confidence
+9.1,9,x.1,circle,0.5465,0.4663,0.978,normal
+9.4,9,x.4,star,0.626,0.5488,0.809,normal
+9.3,9,x.3,cross,0.6163,0.5172,0.748,normal
+10.1,10,x.1,circle,0.5404,0.5136,0.822,normal
+10.3,10,x.3,cross,0.5284,0.5172,0.477,normal
+10.4,10,x.4,star,0.5296,0.4372,0.267,low_marker_occluded
+H.1,H,x.1,circle,0.5489,0.6349,0.833,normal
+H.4,H,x.4,star,0.5681,0.6058,0.73,normal
+H.3,H,x.3,cross,0.5657,0.6361,0.594,normal
+L.1,L,x.1,circle,0.4633,0.413,0.922,normal
+L.3,L,x.3,cross,0.4814,0.4651,0.735,normal
+L.4,L,x.4,star,0.4609,0.4093,0.199,low_marker_occluded
+P.1,P,x.1,circle,0.4657,0.4906,0.815,normal
+P.4,P,x.4,star,0.4055,0.3863,0.597,normal
+P.3,P,x.3,cross,0.3778,0.3026,0.527,normal

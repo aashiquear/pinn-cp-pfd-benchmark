@@ -1,0 +1,264 @@
+# PINNACLE capability audit for the CP–PFD benchmark study
+
+Phase 0, Framework track. Audited revision: `feat/pinn_benchmark` branched from
+`master` at `16ff0e6`. Component inventory captured at
+`env/pinnacle_syntax_dump.json` (249 registered components).
+
+Method: `pinnacle syntax dump --format json`; `docs/user_guide.md` §1.1 (physics ×
+solver matrix), §1.2 (capability index), §1.3 (coupled hybrid decks); the ADR
+series (0006, 0015, 0016, 0017, 0018, 0019); and direct reading of
+`materials/crystal_plasticity.py`, `materials/hardening.py`,
+`materials/dislocation_density.py`, `physics/slip_kinetics.py`,
+`system/damage_kernels.py`, `mesh/generators.py`, and `postprocess/`.
+
+---
+
+## 1. Solver routes actually available for coupled CP–PFD
+
+| Route | Selection | Status | Use in this study |
+|---|---|---|---|
+| **R1 — all-FEM** | `[Executioner] type = staggered` with `[./mechanics] cp_quasi_static` + `[./damage] pfd_steady` | Available; bundled decks under `examples/fem/phase_field_damage/ductile_anisotropic_cp/` and `examples/applications/rezwan2025_void_cp_pfd/` | Converged reference. Every comparison is measured against this. |
+| **R2 — hybrid, damage as a PINN field** | `pinn_fem_hybrid_coupled_physics`, `mode = cp_pfd`; `u` family `fem`, `d` family `pinn` | Available; 1-D/2-D/3-D decks under `examples/pinn_fem/phase_field_damage/ductile_anisotropic_cp/`. The 1-D deck reproduces the all-FEM staggered reference to ~1e-11 | Primary neural route. |
+| **R3 — hybrid, PINN predictor → FEM corrector** | `pinn_fem_hybrid`, `mode = warm_start \| predictor_corrector \| preconditioner` | Available; `void_field_hybrid_3d.i` | Same accuracy as R1 by construction (corrector drives to solver tolerance); the measurable quantity is cost, not error. |
+| **R4 — neural constitutive surrogate (0-D)** | `[Executioner] type = cp_constitutive` with a `pinn`-family variable; `void_pinn_constitutive_3d.i` | Available | Constitutive-level neural route. |
+| **R5 — history-aware CP state surrogate** | not present | **To be developed** (Phase 3, Neural CP track) | Supplies the genuinely neural CP column. |
+| **Pure-PINN coupled CP–PFD field solve** | `pinn_two_field` | **Structurally unavailable**, 1-D elasticity only, raises on non-1-D input | Not a study column. Cited as ADR 0017, not reported as a failure. |
+
+ADR 0017 settles the pure-PINN cell: a coordinates-in network has no memory, and
+the CP state at a material point is a functional of the entire load path, so two
+points at the same `(x, t)` can be in different states. The ADR lists three
+prerequisites for a future neural CP route; requirement 2 — a mesh-based state
+update exposing `(F, state, Δt) → state_after_increment` — is exactly what the
+R5 track builds. Supporting evidence that the slot is anticipated: the
+`classical_fallback_threshold` parameter on
+`pinn_fem_hybrid_coupled_physics` is documented as *"Until the integrated
+surrogate ships, this value is always 1.0 and the warning is suppressed"*
+(ADR 0016).
+
+---
+
+## 2. Gap register
+
+Severity: **B** blocks a study deliverable · **R** required for fidelity to the
+source papers · **D** desirable.
+
+### G1 — B — The fracture driving force carries no plastic-work contribution
+
+`system/damage_kernels.py` implements the history field as `H ← max(H, ψ⁺)`,
+where `ψ⁺` is the positive part of the **elastic** strain energy from the
+mechanics kernel (lines 267, 369–373, 682–704). A tree-wide search for
+`plastic_work` returns no hits anywhere in `src/pinnacle/`.
+
+Both source papers drive damage with elastic *and* stored plastic energy,
+`H = ψ⁺_el + β W_p` with `β = 1.0`. Without the `W_p` term the coupled model
+cannot reproduce ductile CP–PFD behavior: damage is driven only by recoverable
+energy, so slip-induced localization does not feed fracture.
+
+This is the most consequential gap in the audit. It is also a designated
+sensitivity variable — the mesh-sensitivity plan sweeps `β` over
+`0, 0.25, 0.5, 0.75, 1.0` and hypothesizes that `β` controls ductile versus
+brittle-like response — so the parameter must exist before Phase 5 can run.
+
+**Action.** Accumulate plastic work in the CP material state; expose a
+`plastic_work_prefactor` (`β`) on `pfd_driving_force`; route `W_p` through both
+the `staggered` coupler and the `cp_pfd` hybrid strategy. Register, document,
+test, and record an ADR.
+
+### G2 — B — The Taylor hardening prefactor α₀ is not implemented
+
+`materials/hardening.py:60-65`:
+
+```
+def critical_stress(self, rho):
+    """Return τ_c^alpha = τ_c0 + μ b sqrt(Σ_beta a^{αβ} ρ^β)."""
+    sum_a = ops.einsum(self.backend, "ab,b->a", self.a, rho)
+    return self.tau_c0 + self.mu * self.b * ops.sqrt(..., sum_a, 0.0)
+```
+
+`crystal_plasticity.py:404` inlines the same expression on the batch path. There
+is no `α₀` factor, and no such parameter is declared in the registry — the
+implementation is fixed at `α₀ ≡ 1`. Both papers use `α₀ = 0.4`.
+
+Consequence for Al2219 at the published parameter set
+(`μ = 25.7 GPa`, `b = 0.000286 µm`, `ρ₀_SSD = 220 µm⁻²`): the initial Taylor
+term is `1.0 × 25700 × 0.000286 × √220 = 109.0 MPa` instead of
+`0.4 × ... = 43.6 MPa` — an initial slip resistance 2.50× too high, before any
+calibration. The companion data sheet's warning about `τ_c` is therefore only
+half the hazard: the additive decomposition *is* implemented correctly
+(`τ_c0` is a separate lattice-friction term, not the total), but the Taylor
+term itself is mis-scaled.
+
+**Action.** Add an `alpha0` parameter defaulting to `1.0` so committed goldens
+and parity tests are unaffected; apply it in `critical_stress` **and** in
+`hardening_matrix` (`h^{αβ} = ∂τ_c^α/∂ρ^β`) so the consistent tangent stays
+consistent; set `alpha0 = 0.4` in every study deck.
+
+### G3 — B — Declared units of `k1`/`k2` contradict the implementation
+
+`materials/dislocation_density.py:59-69` implements
+
+```
+dρ^α/dt = (1/b) (k1 √ρ^α − k2 ρ^α) |γ̇^α|
+```
+
+For `ρ̇` to have units `L⁻² T⁻¹` with `|γ̇|` in `T⁻¹` and `b` a length, the
+bracket must carry `L⁻¹`. Since `√ρ ~ L⁻¹` and `ρ ~ L⁻²`, this requires **`k1`
+dimensionless** and **`k2` with units of length**. The registry declares the
+opposite: `k1` in `1/m`, `k2` dimensionless.
+
+This matters because the papers report a dimensionless storage coefficient `k₀`
+and an annihilation diameter `y_c` in length units — which map onto `k1` and
+`k2` respectively under the implementation, and onto nothing coherent under the
+declared units. The bundled deck's `k1 = 1.0e8`, `k2 = 10.0` are placeholders
+that are non-physical under either reading.
+
+The mapping itself (including whether the paper's law carries a factor 2 on the
+annihilation term, i.e. `k2 = 2 y_c`) is derived and verified in Phase 1 against
+the equation extracted from the papers; the saturation density is
+`ρ* = (k1/k2)²`.
+
+**Action.** Correct the units metadata; add a parameterization option accepting
+`(k0, y_c)` directly with documented conversion; document `ρ*`.
+
+### G4 — B — No isochoric (constant-volume) loading driver
+
+Registered BCs: `convective`, `dirichlet`, `fcci_reactive_sink`,
+`gaussian_flux`, `grain_boundary`, `hard_constraint`, `interface_flux`,
+`marshak`, `neumann`, `periodic`, `pf_contact_angle`, `radiative`,
+`surface_radiation`, `thermal_resistance`. None imposes a volume constraint,
+and no load-ratio controller exists.
+
+The Al2219 paper's loading case (a) applies tension along the crystallographic
+direction and compression on the two reciprocal directions, with the ratios
+**adjusted dynamically during the run** so total volume is conserved. Case (b),
+uniaxial with traction-free lateral faces, is expressible today.
+
+**Action.** New driver component implementing the volume constraint with
+in-run ratio adjustment. Its mathematical definition must be verified against
+the source publication before use, per the study plan.
+
+### G5 — B — No conforming spherical-void mesh, and no local grading
+
+`mesh/generators.box_with_void` documents: *"Elements whose centroid falls inside
+the void are dropped and the exposed surface becomes the `void_boundary` side
+set"*, with `divisions` a uniform `(nx, ny, nz)`. The void surface is therefore
+**staircased**, and there is no local refinement control.
+
+Damage nucleates at the void equator, so a staircased equator perturbs precisely
+the quantity the study measures, and a uniform mesh cannot deliver the
+`h_min ≤ 0.2–0.5 µm` near the void that the convergence plan calls for without
+an unaffordable global element count (0.25 µm uniform in a 50 µm cube is 200³).
+
+**Route.** `hexaform` builds conforming all-hex cubed-sphere O-grid meshes with
+nodes placed on the analytic sphere surface and documented second-order volume
+convergence (`examples/02_single_sphere_convergence.py`), and writes Exodus
+(`src/hexaform/io/exodus.py`). PINNACLE imports it via `[Mesh] type = file`,
+`format = exodus`, `verify = true`, which checks Jacobian positivity and
+watertightness and derives boundary sets topologically — so the void surface is
+included in `all_boundary` (worked reference:
+`examples/applications/cppfd_external_mesh/void_block_cppfd_3d.i`).
+
+**Verification items for Phase 1.** (i) hexaform treats the sphere as an
+*inclusion*; confirm it can emit the sphere region as a removed void with a free
+surface. (ii) Confirm the refinement radius around the void is independently
+controllable so the refined zone can span `r_void + 3l₀` to `r_void + 5l₀`.
+(iii) Confirm element quality and orientation conventions after import.
+
+### G6 — B — No dog-bone mesh generator
+
+The 15 Ni specimens are dog-bone tensile bars whose thickness follows a spline
+through five measured stations. No registered generator produces this; the
+closest, `notched_plate_mesh` and `plate_with_hole_mesh`, are 2-D planform
+generators with constant thickness.
+
+**Action.** New registered HEX8 generator, spline type and end conditions
+documented, geometric uncertainty between stations quantified, unit tests and
+quality checks included. Also resolve whether the paper's 9,880 HEX8 elements
+refer to the gauge region or the whole specimen.
+
+### G7 — R — No Miller-direction → Bunge-Euler utility
+
+`[Crystal] euler_angles` takes three Bunge angles. The four extreme cases are
+specified as loading-axis **directions** — `[001]`, `[101]`, `[111]`, and
+`[-1 4 9]` — which fix only two rotational degrees of freedom. The rotation
+about the loading axis is unspecified in the source and is *not* immaterial
+under the isochoric condition, which constrains all three axes.
+
+**Action.** Utility converting `[hkl]` to Euler angles under an explicit,
+documented convention for the free rotation, plus a sensitivity sweep across the
+admissible range. This is gap C.6 of the companion sheet.
+
+### G8 — R — Missing study metrics
+
+Present and usable: `curve_rmse`, `curve_nrmse`, `field_l2_error`,
+`damage_field_error`, `extract_crack_path`, `crack_path_overlap`,
+`crack_band_width`, `dissipated_energy`, `refinement_guidance`,
+`extract_damage_outputs`, `element_volumes`, `side_set_area`, `macro_stress`,
+`stress_triaxiality`, `elastic_energy`, `nodal_slip_activity`, `nodal_rho`,
+`nodal_gnd_density`, `nodal_nye_tensor`, plus 47 postprocessors and 11
+reductions.
+
+Missing, and required by the predefined metric list: void volume and
+void-growth ratio (needed for the 12 %-strain definition); fracture-plane fit
+and fracture angle under a stated convention; Hausdorff distance between damage
+isosurfaces; damage-centroid displacement; a threshold-independent field error
+together with a threshold sweep (the `d = 0.65` initiation criterion must be
+reported alongside its sensitivity); a fracture-initiation-strain extractor; and
+a mathematical definition of propagation rate.
+
+**Action.** Implement as PINNACLE postprocessors where they are general
+(void volume, fracture-plane fit, Hausdorff, centroid) and as study-side
+scripts where they encode this study's conventions.
+
+### G9 — D — Parameter-mapping notes, no code change
+
+`physics/slip_kinetics.py:15-26` implements
+`γ̇^α = γ̇₀ |τ^α/τ_c^α|^n sign(τ^α)`, while the papers write the exponent as
+`1/m_s`. Therefore `rate_exponent_n = 1/m_s = 1/0.12 = 8.333…`, not `0.12` and
+not the deck default `20`. Likewise `gamma0` defaults to `1.0e-3` against the
+papers' `1.0e-5 s⁻¹`. Both must be set explicitly in every study deck and
+recorded in the frozen configuration.
+
+### G11 — B — `backend` and `device` are global, so a hybrid run cannot give each half its preferred hardware
+
+`backend` and `device` are declared only under `[Global]`
+(`schemas/pinnacle_input.schema.json`, `/properties/global/properties/backend`;
+`docs/user_guide.md` §6). Measured on `ssh:rocm-server` at `float64`, the CP
+constitutive update runs at 10.7 µs per quadrature point on NumPy against
+106.0 µs on the GPU, while a PINN training step runs 2.9× faster on the GPU —
+so the two halves of the coupled problem want opposite hardware, and a hybrid
+run must pick one. NumPy has no autodiff, so hybrids are forced onto Torch and
+the CP half pays a 60.7 µs per quadrature point penalty over Torch CPU.
+
+Full derivation, break-even, and policy in `docs/02_backend_envelope.md` §3.
+
+**Decision (user, Phase 0).** Add per-sub-executioner `backend`/`device`
+overrides, so the CP half runs on NumPy and the damage half on the Torch GPU and
+the hybrid is measured at its method cost rather than its backend cost. This is
+a Phase 1 development item on `feat/pinn_benchmark`, registered, documented,
+tested, with an ADR. Note the hazard `backend/base.py` documents explicitly: a
+tensor created before a later `set_device` stays on the old device, producing a
+mismatch deep inside an operator, so device-cache decorators and any
+pre-construction tensor need auditing as part of this change.
+
+### G10 — Noted — Duplicate degradation specification
+
+`pinn_fem_hybrid_coupled_physics` takes `damage_gd_func` while the `[Materials]`
+block carries `pfd_degradation`. Two places specify `g(d)`. Confirm they agree
+in every hybrid deck, or the hybrid and all-FEM routes are not comparing the
+same model.
+
+---
+
+## 3. Consequence for the study
+
+Six blocking gaps (G1–G6) stand between the current framework and a faithful
+reproduction of either source paper. G1 and G2 are physics defects that would
+silently produce wrong answers rather than errors: without G1 the model is not
+the papers' model, and without G2 the initial slip resistance is 2.5× too high.
+Both must be closed and verified at the material-point level before any
+convergence or calibration run, which is why Phase 1 places constitutive
+verification ahead of every mesh study.
+
+None of the six is research-grade difficulty. The one genuinely open item is R5,
+the history-aware state surrogate, which is scoped as its own track.

@@ -1,0 +1,15 @@
+# Al2219 -- Rezwan (2025 intragranular) Fig. 3: centres of the 9 experimental data markers (red x).
+# These are the actual measured data points of the Vaughan (2024 mechanistic) experiment as plotted.
+# Method: red-channel mask -> 13x13 local density filter (marker strokes are denser than the dashed
+#   connecting line) -> centroid of the full marker footprint in a 21x21 window. Raster 300 DPI.
+# Extraction uncertainty: +-0.03 %% strain, +-1.5 MPa (marker half-stroke ~1.5 px; 1 px = 0.019 %% / 0.95 MPa).
+marker_id,strain_pct,stress_MPa,detection
+1,0.0026,1.79,origin_marker_centroid_axis_clipped_uncert_0.025pct_1.9MPa
+2,0.1395,137.7,density_peak
+3,0.5657,344.86,density_peak
+4,2.0168,411.85,density_peak
+5,7.0056,502.46,density_peak
+6,11.0193,552.52,density_peak
+7,13.0494,573.56,density_peak
+8,15.0563,588.34,density_peak
+9,16.9825,592.61,density_peak
