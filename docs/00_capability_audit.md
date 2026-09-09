@@ -246,12 +246,26 @@ a formulation difference rather than accumulated round-off. After the fix they
 agree to machine precision (3 × 10⁻¹⁶ in `F^p`, 2 × 10⁻¹⁴ in `ρ`) over 200
 steps.
 
-This matters directly for the study. `CPFieldCallback.update_state_batch` uses
-the batched path, so any run taking that route carried a wrong elastic strain
-and a non-symmetric stress wherever lattice rotation was present — which for
-orientation-dependent slip around a void is everywhere. Two committed parity
-goldens (`rezwan_field_fem_3d`, `rezwan_field_hybrid_3d`) encoded the defect and
-were regenerated.
+**Which runs were affected, and it is not a narrow set.** The batched path is
+not opt-in. `CPFieldCallback.update_state` selects it whenever
+
+```python
+use_batch = self._qp_directions is None and hasattr(self.material, "compute_batch")
+```
+
+that is, for **every CP deck with a material-global orientation** — precisely
+the single-crystal configuration this study benchmarks. Only decks carrying a
+per-quadrature-point orientation *field* (polycrystals, EBSD-driven cases) fell
+through to the scalar path and were unaffected. So any single-crystal CP or
+CP–PFD result previously produced with PINNACLE carried a wrong elastic strain
+and a non-symmetric stress wherever lattice rotation was present, which for
+orientation-dependent slip around a void is everywhere. Consistently with this,
+the two committed parity goldens that changed when the fix landed
+(`rezwan_field_fem_3d`, `rezwan_field_hybrid_3d`) are exactly the two
+single-orientation field decks; they encoded the defect and were regenerated.
+
+This concerns PINNACLE results only. Both source papers were produced with
+MOOSE, so their published results are outside the reach of this defect.
 
 Fixed on `feat/pinn_benchmark` at `b49fa70`, with
 `tests/unit/materials/test_cp_batch_parity.py`. The tests deliberately drive a
