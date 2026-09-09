@@ -250,8 +250,21 @@ added. `CPFieldCallback` already exposes `load_state_dict`, so the mechanism
 exists; making it generic across the CP and J2 routes is the work.
 
 **One parity golden is deliberately left failing.**
-`j2/j2_pfd_void_in_cube` moved under G15's fix, because its mechanics sub-solve
-is `fem_quasi_static`, which already honored the load window. It was **not**
+`j2/j2_pfd_void_in_cube` moved under G15's fix. **Why that case moved and the
+neighboring `j2_pfd_function_hardening` did not is not established.** The
+obvious candidates were checked and ruled out: both decks drive mechanics with
+`fem_quasi_static` (so both already honored the load window), both set
+`ramp_dirichlet = true` (so in both the load factor does scale the prescribed
+displacement), both run `staggered` with `n_steps = 3`, and both have their
+mechanics `n_steps` overridden to 2 by the parity harness. The remaining
+differences — 3-D `box_with_void` against a 2-D mesh, `j2_isotropic_hardening`
+against function hardening, and a looser `abs_tol` of 1e-4 against 1e-6 — do not
+explain it either, and the tolerance difference argues the wrong way, since the
+case that did *not* move is compared more tightly. This is left as an open
+question rather than a guess; it should be settled when the golden is
+regenerated under G16, because a case that moves for an unexplained reason is
+exactly the kind of thing a benchmark reference must not inherit silently. It
+was **not**
 regenerated: with G16 open that deck now runs three load steps with one
 alternation each, and regenerating would encode a lagged coupling as the
 reference, inviting exactly the wrong comparison. It is left failing and
