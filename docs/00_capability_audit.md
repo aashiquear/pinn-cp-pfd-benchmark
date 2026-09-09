@@ -273,7 +273,7 @@ Fixed on `feat/pinn_benchmark` at `b49fa70`, with
 state has no power against either error, which is the lesson worth carrying
 into any future parity test for this material.
 
-### G1 — A — split into two defects, both blocking
+### G1 — FIXED — split into two defects, both now closed (`aac832b`)
 
 The audit originally recorded G1 as "no plastic-work term in the fracture
 driving force". Tracing the coupling channel shows the situation is worse, and
@@ -292,11 +292,52 @@ has no thermodynamic basis. **Fix:** export the elastic Green–Lagrange strain
 `E^e` per quadrature point and split that instead.
 
 **G1b — no stored plastic work.** The papers drive damage with `a⁺ + ζ W_p` at
-`ζ = 1`. `W_p` now exists as CP state (`b49fa70`); what remains is to expose it
-per quadrature point, add a `plastic_work_prefactor` to `pfd_driving_force`, and
-carry it through both coupling bridges. Until then the ductile part of ductile
-phase-field damage is absent, and `ζ` is one of the Group-C parameters the
-sensitivity study sweeps.
+`ζ = 1`. Without it the ductile part of ductile phase-field damage is absent,
+and `ζ` is one of the Group-C parameters the sensitivity study sweeps.
+
+**Both are now closed** (`aac832b`). `W_p` is CP state (`b49fa70`);
+`CPFieldCallback` exposes `elastic_strain()` — read from the last constitutive
+evaluation, so it is exactly the measure the stress was built from — and
+`plastic_work()`; `pfd_driving_force` gains `plastic_work_prefactor` defaulting
+to 0.0, so the brittle limit and every existing deck are unchanged; and both
+couplers read them.
+
+Two design points are worth recording because each is a trap:
+
+- The quantities travel under a dedicated `result["coupling"]` key rather than
+  at the top level. Top-level keys of a mechanics result are treated as
+  **exportable output fields**, so promoting them would have grown the
+  documented `[Output] fields` catalogue for every CP deck — a user-visible
+  change the coupling does not need. Putting them at the top level first was
+  what broke four unrelated output-catalogue parity cases.
+- The plastic work is projected onto nodes through the **same** recovery as the
+  elastic energy. Since the two are summed, projecting them differently would
+  give the ratio that `ζ` exists to control a mesh-dependent component that no
+  parameter study could separate out.
+
+The wiring was caught mid-error by its own guard: the first attempt set `ζ = 1`
+and the run logged *"plastic_work_prefactor = 1 but the coupler supplied no
+plastic work"*, because the coupled executioner whitelists which sub-solve
+fields pass through and the new ones were not on the list. A silent version of
+that path would have reported a ductile result computed from an elastic
+driving force.
+
+**Measured effect** on `cp_pfd_staggered_plate_2d`, peak damage:
+
+| Configuration | peak damage | change |
+|---|---|---|
+| total strain, no plastic work (previous behavior) | 0.262186 | — |
+| elastic strain, `ζ = 0` | 0.254915 | −2.77 % |
+| elastic strain, `ζ = 1` | 0.256737 | +0.71 % |
+
+On the Rezwan void deck the golden's `damage_max` moved from 0.675277 to
+0.678039 (+0.41 %). Both are small **because these are coarse demonstration
+decks at ~0.1 % strain**, where the plastic fraction of the total strain is
+still small and `W_p` is correspondingly minor. At the source papers' 12 %
+strain the plastic fraction dominates, so neither correction can be assumed
+small there — quantifying that at the study's own load levels is part of the
+convergence and sensitivity work, not something to extrapolate from these
+numbers.
 
 ### G11 — B — `backend` and `device` are global, so a hybrid run cannot give each half its preferred hardware
 
