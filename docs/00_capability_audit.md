@@ -35,10 +35,12 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Six of thirteen closed. The four remaining **B** items are all development
-work with no unknowns in them; none is research-grade difficulty. The one
-genuinely open research item is R5, the history-aware CP state surrogate, which
-is scoped as its own track rather than as a gap.
+Six of thirteen closed. **Five remain open**: four **B** items (G4, G5, G6, G11)
+and one **R** item (G8, the missing study metrics). G9 and G10 are documentation
+notes requiring no code. All five open items are development work with no
+unknowns in them; none is research-grade difficulty. The one genuinely open
+research item is R5, the history-aware CP state surrogate, which is scoped as
+its own track rather than as a gap.
 
 Each claimed status is checkable against the branch, e.g.
 `grep -c "def direction_to_bunge" src/pinnacle/materials/orientations.py` for
