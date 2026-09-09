@@ -25,7 +25,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G1b | A | **fixed** | `aac832b`, `1f00312` | No stored plastic work in the driving force; hybrid route needed a second fix |
 | G2 | B | **fixed** | `1c85ab2` | Taylor prefactor α₀ absent, fixed at 1.0 against the papers' 0.4 |
 | G3 | B | **fixed** | `1c85ab2` | Declared units of `k1`/`k2` contradicted the implemented law |
-| G4 | B | open | — | No isochoric (constant-volume) loading driver |
+| G4 | B | **fixed** | `84bebc7` | Isochoric loading: needed no new component, but exposed G13 |
+| G13 | A | **fixed** | `84bebc7` | Per-BC time functions were silently ignored by `cp_quasi_static` |
 | G5 | B | open | — | No conforming spherical-void mesh, no local grading |
 | G6 | B | open | — | No dog-bone mesh generator |
 | G7 | R | **fixed** | `1f00312` | No Miller-direction → Bunge-Euler utility; closes C.6 |
@@ -35,12 +36,19 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Six of thirteen closed. **Five remain open**: four **B** items (G4, G5, G6, G11)
+Eight of fourteen closed. **Four remain open**: three **B** items (G5, G6, G11)
 and one **R** item (G8, the missing study metrics). G9 and G10 are documentation
-notes requiring no code. All five open items are development work with no
+notes requiring no code. All four open items are development work with no
 unknowns in them; none is research-grade difficulty. The one genuinely open
 research item is R5, the history-aware CP state surrogate, which is scoped as
 its own track rather than as a gap.
+
+Note that the register has **grown** as work proceeded, from eleven entries to
+fourteen: G12 and G13 were both found by verifying something else and neither
+was visible from reading the documentation or the component index. That is worth
+stating plainly, because it bears on how much of the framework should be trusted
+without a check — every defect found so far was silent, and two of them (G12,
+G13) were in code paths the docs describe as working.
 
 Each claimed status is checkable against the branch, e.g.
 `grep -c "def direction_to_bunge" src/pinnacle/materials/orientations.py` for
@@ -184,7 +192,88 @@ annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
 
-### G4 — B — No isochoric (constant-volume) loading driver
+### G4 — FIXED — No isochoric (constant-volume) loading driver (`84bebc7`)
+
+**No new component was needed, and that is the result.** The study plan requires
+composition from registered components to be attempted before any framework
+work, and here it succeeds: the paper's constant-volume loading is a `parsed`
+function on an ordinary `dirichlet` BC.
+
+The paper specifies (Sec. 2.4 / 3.1.1, independently extracted): *"tension
+applied along the crystallographic direction on one face; compression on the two
+reciprocal directions; three faces loaded; load ratios adjusted dynamically so
+that det(F) = 1 globally; remaining faces fixed."*
+
+With three faces held on their own normals — a roller, removing rigid-body
+motion — and the other three given prescribed normal displacements, the
+macroscopic deformation is a uniform stretch and the constraint is
+
+    det(F) = λ_x λ_y λ_z = 1,   λ_y = λ_z = λ_x^(−1/2).
+
+That is exact at every load level. And because
+`u_lat/u_ax = (λ_x^(−1/2) − 1)/(λ_x − 1)` is **not** constant — it drifts from
+−0.500 at small strain to −0.459 at 12 % — the displacement ratio must be
+recomputed each increment. So the paper's *"adjusted dynamically"* describes a
+nonlinear closed-form relation, **not** a solve-time equilibrium iteration. That
+reading is what makes the composition sufficient; had it meant an iterated
+constraint, a new executioner would have been required.
+
+The general split `λ_y = λ_x^(−p)`, `λ_z = λ_x^(−(1−p))` is exactly isochoric
+for **any** `p`, since the exponents sum to 1. `p = 1/2` is the equal-compression
+reading of "the two reciprocal directions"; unequal `p` is a sensitivity, not a
+different model.
+
+**Verified in a solve, not just in algebra**
+(`decks/al2219/iso_bc_verification_cube.i`, `scripts/check_isochoric.py`):
+macroscopic `det(F) = 1.000000000000`, deviation `0.0e0`, with lateral stretch
+`0.94491118` against the closed-form `1.12^(−1/2)`. The volume is measured from
+the **deformed node positions**, not from the prescribed values, so a BC that
+failed to apply would show up rather than be assumed away — which is exactly
+what happened on the first run, and is how G13 was found. Note that only the
+*macroscopic* volume is constrained; the element-level Jacobian is not 1
+pointwise, and the checker reports its spread rather than implying otherwise.
+
+Two deck-level points recorded for the production decks: the roller faces must
+constrain **one** component each (fully fixing them over-constrains the
+transverse contraction the constraint is derived for), and `finite_strain = true`
+is required — `det(F) = 1` is a finite-strain statement and 12 % axial strain is
+well outside where `1 + tr(ε)` would substitute.
+
+### G13 — FIXED — Per-BC time functions were silently ignored by `cp_quasi_static` (`84bebc7`)
+
+Found by the G4 verification failing: the first run returned lateral stretches of
+**+1.02 (expansion)** where the constraint demands 0.945 — the BC's `values` had
+been applied with its `function` ignored.
+
+`BoundaryCondition.dirichlet_spec` has always carried a `function` key, the
+`dirichlet` BC documents it (*"Optional Function name whose scalar value at the
+current time scales the BC value"*), and four executioners honour it —
+`pf_fem_transient`, `scalar_steady`, `vpinn_steady`, `pf_pinn`. But
+`cp_quasi_static` scaled every Dirichlet value by a single deck-wide factor (the
+`load_function` if declared, else the load factor) and never consulted
+`spec["function"]`. A deck could name a function, pass `pinnacle validate`, and
+have the raw amplitude applied at every step.
+
+**No bundled deck puts `function =` on a BC on any executioner**, which is both
+why this went unnoticed and why fixing it cannot regress one.
+
+Severity **A**: the declared capability is the only way to give two prescribed
+components different time dependence, and the study needs exactly that. The
+`load_function` key is not a substitute — it scales every BC alike, so it can
+express the axial ramp or the lateral relation but never both at once.
+
+A second, smaller trap was found alongside it. The `.i` grammar **tokenizes a
+quoted value**, so `expression = '50.0 * t'` reached `Function` as
+`[50.0, '*', 't']` and was compiled as a *list literal*, failing with
+`float() argument must be a string or a real number, not 'list'` from inside
+`eval` — a message naming neither the key nor the quotes. An **unquoted**
+expression passes through verbatim *even when it contains spaces*, so quoting is
+the one spelling that breaks, which is the opposite of the intuition the grammar
+creates elsewhere. `_expression()` now raises a diagnostic naming the cause and
+printing the unquoted form to use. **Study decks must never quote a `parsed`
+expression.**
+
+### G4 — original finding — No isochoric (constant-volume) loading driver
 
 Registered BCs: `convective`, `dirichlet`, `fcci_reactive_sink`,
 `gaussian_flux`, `grain_boundary`, `hard_constraint`, `interface_flux`,

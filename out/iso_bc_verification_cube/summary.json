@@ -1,0 +1,183 @@
+{
+  "config": {
+    "global": {
+      "backend": "numpy",
+      "use_gpu": false,
+      "precision": "float64",
+      "seed": 0,
+      "output_dir": "./out/iso_bc_verification_cube"
+    },
+    "problem": {
+      "type": "composed",
+      "dimension": 3,
+      "finite_strain": true
+    },
+    "mesh": {
+      "type": "box_mesh",
+      "domain": [
+        0.0,
+        0.0,
+        0.0,
+        50.0,
+        50.0,
+        50.0
+      ],
+      "divisions": [
+        6,
+        6,
+        6
+      ]
+    },
+    "variables": {
+      "u": {
+        "family": "fem",
+        "components": 3
+      }
+    },
+    "functions": {
+      "axial": {
+        "kind": "parsed",
+        "expression": "6.0*t/10.0"
+      },
+      "lateral_isochoric": {
+        "kind": "parsed",
+        "expression": "50.0*((1.0+0.12*t/10.0)**(-0.5)-1.0)"
+      }
+    },
+    "materials": {
+      "cp": {
+        "kind": "dislocation_density_cp",
+        "C11": 108000.0,
+        "C12": 61300.0,
+        "C44": 28500.0,
+        "mu": 25700.0,
+        "gamma0": 1e-05,
+        "rate_exponent_n": 8.333333333333334,
+        "tau_c0": 0.112,
+        "q_lat": 1.4,
+        "alpha0": 0.4,
+        "burgers": 0.000286,
+        "rho0": 220.0,
+        "k1": 0.3432,
+        "annihilation_diameter": 0.00268,
+        "crystal": {
+          "structure": "fcc",
+          "loading_direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "free_rotation_deg": 0.0
+        }
+      }
+    },
+    "kernels": {
+      "sd_cp": {
+        "type": "stress_divergence_cp",
+        "variable": "u",
+        "material": "cp",
+        "dim": 3
+      }
+    },
+    "bcs": {
+      "xmin_roller": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "xmin",
+        "components": [
+          0
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "ymin_roller": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "ymin",
+        "components": [
+          1
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "zmin_roller": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "zmin",
+        "components": [
+          2
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "zmax_tension": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "zmax",
+        "components": [
+          2
+        ],
+        "values": [
+          1.0
+        ],
+        "function": "axial"
+      },
+      "xmax_lateral": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "xmax",
+        "components": [
+          0
+        ],
+        "values": [
+          1.0
+        ],
+        "function": "lateral_isochoric"
+      },
+      "ymax_lateral": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "ymax",
+        "components": [
+          1
+        ],
+        "values": [
+          1.0
+        ],
+        "function": "lateral_isochoric"
+      }
+    },
+    "executioner": {
+      "type": "cp_quasi_static",
+      "variable": "u",
+      "n_steps": 10,
+      "newton_tol": 1e-06,
+      "max_iter": 50,
+      "linear_method": "direct",
+      "t_end": 10.0
+    },
+    "output": {
+      "formats": [
+        "json"
+      ],
+      "fields": [
+        "displacement",
+        "stress",
+        "strain"
+      ]
+    }
+  },
+  "residuals": {
+    "fem_iterations": 10.0
+  },
+  "stress_strain": {
+    "strain_min": -0.05508881747693199,
+    "strain_max": 0.12000000000000009,
+    "stress_min": -294.0534514334366,
+    "stress_max": 743.2295338975644,
+    "final_stress": 743.2295338975644
+  }
+}
