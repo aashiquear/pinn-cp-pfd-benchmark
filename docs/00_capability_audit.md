@@ -322,6 +322,76 @@ fields pass through and the new ones were not on the list. A silent version of
 that path would have reported a ductile result computed from an elastic
 driving force.
 
+**The same defect occurred a second time, on the hybrid route, and was silent**
+(`1f00312`). `cp_pfd_strategy.fem_solver_fn` builds its state dictionary as
+another hand-written whitelist, and it did not name `coupling`, so the
+corrected driving force was **inert on the hybrid route**: the hybrid kept
+using the elastic energy of the total strain while the all-FEM route used the
+corrected form, meaning the two routes were no longer solving the same model.
+Nothing failed — the affected parity case was already failing on stale-hash
+drift, so its result carried no information either way, and the guard could not
+fire because `pfd_material.update` was still receiving a plastic-work argument
+from a bridge that was itself never reached with a populated channel.
+
+It was found by comparing the two routes directly on `cp_pfd_hybrid_2d`, which
+runs at `classical_fallback_fraction = 1` and therefore **must** reproduce the
+all-FEM answer exactly:
+
+| Route | peak damage |
+|---|---|
+| hybrid, before the fix | 0.26218608 |
+| hybrid, after the fix | 0.25491497 |
+| all-FEM staggered, same physics | 0.254914971 |
+
+Eight-significant-figure agreement after, against a 2.8 % disagreement before.
+Left unfixed, that 2.8 % would have entered this study as *hybrid method
+error* — a number attributed to the neural route that was really a missing
+dictionary key. **This is the lesson to carry into Phase 2:** before any
+hybrid-versus-FEM accuracy claim, the hybrid must first be shown to reproduce
+the all-FEM answer on a configuration where the two are mathematically
+identical. A route-to-route comparison that is not anchored that way cannot
+distinguish method error from wiring error.
+
+### G7 — FIXED — Miller-direction to Euler-angle utility (`1f00312`)
+
+`orientations.direction_to_bunge(direction, loading_axis, free_rotation_deg)`
+maps a crystallographic direction onto a sample axis, and decks may now write
+`loading_direction` in the crystal block instead of `euler_angles` (supplying
+both is refused). The alignment is the minimal rotation; `free_rotation_deg`
+makes the third, undetermined degree of freedom an explicit argument.
+
+Verified by symmetry rather than by stored numbers: a 120° free rotation about
+⟨111⟩ is a cubic symmetry operation, and it reproduces the identical stress
+state to 1 × 10⁻⁹. That single invariant exercises the new utility, the
+framework's Euler-to-matrix convention, and the slip-system rotation together —
+if any of the three disagreed, it would break.
+
+**This closes gap C.6 quantitatively, and the answer is that the missing angle
+matters.** Sweeping `free_rotation_deg` over 0–60° for `[1 1 1]` under an
+asymmetric prescribed deformation:
+
+- axial stress `σ₁₁` moves **0.06 %** (597.29 → 597.65 MPa);
+- shear `σ₁₂` moves **56 %** (78.9 → 123.0 MPa);
+- transverse `σ₂₂` moves 3.2 %.
+
+For `[-1 4 9]`, which has no symmetry axis along the loading direction, `σ₁₁`
+itself moves 1.8 %. So a source reporting only a loading direction leaves the
+**axial stress–strain response essentially determined** but the **transverse
+and shear state undetermined at the tens-of-percent level** — and it is the
+transverse state that sets where damage localizes around a void. C.6 is
+therefore a real uncertainty for every damage-location and fracture-angle
+result, and a negligible one for stress–strain curves. Both halves of that
+have to be stated wherever the four extreme orientations are reported.
+
+One methodological note worth keeping: an early version of this check used a
+transversely isotropic drive, `diag(λ, λ^(-1/2), λ^(-1/2))`, and measured
+exactly zero sensitivity. That was correct — equal lateral stretches give the
+loading a continuous rotational symmetry about the loading axis, so the
+response *cannot* depend on rotation about it. A sensitivity study of this
+degree of freedom run under symmetric loading will report that it does not
+matter, which is true of that load case and false of the papers' void and
+isochoric problems.
+
 **Measured effect** on `cp_pfd_staggered_plate_2d`, peak damage:
 
 | Configuration | peak damage | change |
