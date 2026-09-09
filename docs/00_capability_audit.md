@@ -29,7 +29,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G13 | A | **fixed** | `84bebc7` | Per-BC time functions were silently ignored by `cp_quasi_static` |
 | G5 | B | **fixed** | study `scripts/make_void_meshes.py` | No conforming spherical-void mesh, no local grading — met from hexaform, no framework change |
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
-| G15 | A | open | — | `staggered` never increments the load and resets CP state each sub-solve — blocks Phase 2 |
+| G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
+| G16 | A | open | — | `staggered` has no alternation loop: `max_iterations`/`tolerance` are dead, so coupling is lagged |
 | G6 | B | open | — | No dog-bone mesh generator |
 | G7 | R | **fixed** | `1f00312` | No Miller-direction → Bunge-Euler utility; closes C.6 |
 | G8 | R | open | — | Missing study metrics (void volume, fracture plane, Hausdorff, …) |
@@ -38,30 +39,43 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Ten of sixteen closed. **Four remain open**: one **A** item (G15), two **B**
+Eleven of seventeen closed. **Four remain open**: one **A** item (G16), two **B**
 items (G6, G11), and one **R** item (G8, the missing study metrics). G9 and G10
 are documentation notes requiring no code.
 
-**G15 gates Phase 2 and is the one open item that is not routine.** The other
-three are development work with no unknowns in them. G15 needs load continuation
-into the coupled sub-solve *and* quadrature-point state that survives across
-sub-solve calls — the second is architectural and warrants an ADR. Until it
-closes, no coupled result is a path-correct solution, so no solver-route
-accuracy or cost comparison should be reported. The separate genuinely open
-research item is R5, the history-aware CP state surrogate, scoped as its own
-track rather than as a gap.
+**G16 gates Phase 2 and is the one open item that is not routine.** The other
+three are development work with no unknowns in them. G16 needs the alternation
+loop that `max_iterations` and `tolerance` were meant to drive, plus
+constitutive-state snapshot and restore at load-step boundaries so plasticity is
+not counted several times per step. It also has to settle a semantic conflict
+already present in the tree over what `staggered`'s `n_steps` means. Until it
+closes, the coupled solution at each load level is lagged rather than converged,
+so no solver-route accuracy or cost comparison should be reported. The separate
+genuinely open research item is R5, the history-aware CP state surrogate, scoped
+as its own track rather than as a gap.
 
 Note that the register has **grown** as work proceeded, from eleven entries to
-sixteen: G12, G13, G14, and G15 were each found by verifying something else, and
-none was visible from reading the documentation or the component index. That is
-worth stating plainly, because it bears on how much of the framework should be
-trusted without a check. Every defect found so far was **silent** — none raised
-an error — and four of them were in code paths the documentation describes as
-working. Three (G13, G14, G15) were found only because a verification was
-written to measure the physical quantity rather than to confirm that a run
-completed: the isochoric checker measures volume from deformed node positions,
-and the staggered probe compares displacement fields across step counts. A check
-that merely asserted "the run converged" would have passed in all three cases.
+seventeen: G12, G13, G14, G15, and G16 were each found by verifying something
+else, and none was visible from reading the documentation or the component
+index. That is worth stating plainly, because it bears on how much of the
+framework should be trusted without a check. Every defect found so far was
+**silent** — none raised an error — and five were in code paths the
+documentation describes as working. Four of them (G13, G14, G15, G16) surfaced
+only because a verification was written to measure the physical quantity rather
+than to confirm that a run completed: the isochoric checker measures volume from
+deformed node positions, and the staggered probe compares displacement fields
+across step counts. A check that merely asserted "the run converged" would have
+passed in every one of those cases.
+
+Three of the defects share one signature, and it is worth naming as a review
+heuristic for the rest of the framework: **a capability declared in a schema,
+implemented in a sibling component, and unwired in the one under test.**
+Per-BC time functions (G13) were honored by four executioners and dropped by
+`cp_quasi_static`; file-provided node sets (G14) were preserved by the
+derivation step but never read by the reader; and the load-factor window (G15)
+was honored by `fem_quasi_static` and ignored by `cp_quasi_static`, which
+declared it in its own parameter list. In each case the deck validated, the run
+completed, and the declared parameter did nothing.
 
 Each claimed status is checkable against the branch, e.g.
 `grep -c "def direction_to_bunge" src/pinnacle/materials/orientations.py` for
@@ -205,13 +219,60 @@ annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
 
-### G15 — OPEN, severity A — `staggered` never increments the load, and resets the CP state every sub-solve
+### G16 — OPEN, severity A — `staggered` has no alternation loop, so the coupling is lagged
 
-**This is the gating blocker for Phase 2 and the most consequential finding so
-far.** As it stands, the coupled executioner cannot produce a load-stepped
-coupled fracture solution, so the study's primary metric — fracture-initiation
-strain, reported as 7.0 % for isochoric [001] in (Rezwan 2025 intragranular) —
-is not measurable, and neither is a load–displacement curve.
+Exposed by fixing G15, and it is the remaining blocker on a *converged* coupled
+reference. The executioner carries `max_iterations` (default 50) and
+`tolerance`, and drives neither: the outer loop runs mechanics once and damage
+once per load step, and `"iterations": 1` is **hardcoded** into the history it
+reports. So at each load level the mechanics is solved against the *previous*
+level's damage field — an explicit, lagged coupling — rather than alternated to
+convergence.
+
+**There is a semantic conflict underneath it, and it changes the meaning of
+existing decks.** `staggered`'s `n_steps` has been doing double duty. The
+`step_factor = (step + 1) / n_steps` expression has always implied load steps,
+which is how G15's fix now uses it. But the bundled decks were written to the
+de-facto behavior, and say so — `void_in_cube_j2_pfd.i` comments that
+"n_steps = 1 would leave the mechanics undegraded and the coupling one-way",
+which only makes sense if `n_steps` is an alternation count at fixed full load.
+Both readings are in the tree, and the parameters that would separate them
+(`max_iterations` for alternations, `n_steps` for load steps) exist with only
+one of them wired.
+
+**A further requirement, which is why this was not folded into G15.** Alternating
+at a *fixed* load level requires the constitutive state to be restored to the
+state converged at the end of the previous load level before each alternation —
+otherwise every alternation re-integrates plasticity on top of the last one and
+the plastic strain is counted several times per load step. So G16 needs state
+*snapshot and restore* at load-step boundaries, not merely the continuation G15
+added. `CPFieldCallback` already exposes `load_state_dict`, so the mechanism
+exists; making it generic across the CP and J2 routes is the work.
+
+**One parity golden is deliberately left failing.**
+`j2/j2_pfd_void_in_cube` moved under G15's fix, because its mechanics sub-solve
+is `fem_quasi_static`, which already honored the load window. It was **not**
+regenerated: with G16 open that deck now runs three load steps with one
+alternation each, and regenerating would encode a lagged coupling as the
+reference, inviting exactly the wrong comparison. It is left failing and
+documented, to be regenerated once the alternation loop lands. The failure set
+is therefore 12: the 10 pre-existing parity failures, `test_verify_install_passes`
+(which also fails on the unmodified tree here), and this one.
+
+**Consequence for the study.** No solver-route accuracy comparison should be
+reported until G16 closes. G15's fix makes the solution path-correct in load and
+in constitutive state, which is what made the metrics *defined*; G16 is what
+makes the coupled solution at each load level *converged*. A benchmark reference
+needs both.
+
+### G15 — FIXED — `staggered` never incremented the load, and reset the CP state every sub-solve (`43dd6fd`, ADR 0023)
+
+**This was the gating blocker for Phase 2 and the most consequential finding of
+the audit.** Before the fix the coupled executioner could not produce a
+load-stepped solution at all, so the study's primary metric —
+fracture-initiation strain, reported as 7.0 % for isochoric [001] in
+(Rezwan 2025 intragranular) — was not measurable, and neither was a
+load–displacement curve.
 
 Two defects compound:
 
@@ -252,24 +313,66 @@ load–displacement response, and — because of (b) — a plastic-work driving-
 contribution (G1a) computed from a single virgin full-load solve rather than
 accumulated along the path, which is not the quantity Eq. (31) defines.
 
-**What closing it requires.** Not a small patch:
+**How it was closed.** Three changes in dependency order, with ADR 0023 recording
+the ownership decision and the alternative rejected:
+1. **`cp_quasi_static` honors its own declared load window.** It declared
+   `initial_load_factor` and `target_load_factor` and wired *neither* into its
+   `LoadProgram`, though `fem_quasi_static` honors both — so the continuation
+   the fix needed did not exist yet. This is the same failure mode as G13 and
+   G14: a capability declared in the schema, implemented in a sibling, and
+   unwired here. The initial factor now reaches `LoadProgram`; the target
+   rescales the span, applied as a wrapper rather than by mutating the program,
+   since `AdaptiveLoadStepper` holds a reference and its cutback logic depends
+   on the object it was handed.
+2. **The CP callback is cached on the kernel.** Keyed on the backend object
+   (held by reference, so the `id()` cannot alias a later object that reused the
+   address), its `device` and `precision`, `dim`, `n_qp`, and the config flags —
+   everything that would invalidate the stored tensors. The device and precision
+   keys are load-bearing: `backend/base.py` documents that a tensor built before
+   a later `set_device` stays on the old device, so a stale hit would surface as
+   a device mismatch deep inside an operator.
+3. **The staggered loop sets the window** `[step/n_steps, (step+1)/n_steps]` on
+   the mechanics sub-solve, with continuation enabled after the first step.
+   `continue_state` **defaults to false**, so every single-solve deck behaves
+   exactly as before, and the failure mode of forgetting the flag is a
+   *restarted* path — visibly wrong — rather than a *contaminated* one.
 
-1. Load continuation into the sub-solve. The machinery exists —
-   `cp_quasi_static` already accepts `initial_load_factor` / `target_load_factor`,
-   and `LoadProgram.load_factor_at_step` blends from `initial_load_factor`
-   explicitly "so continuation runs start at non-zero" — so the outer loop
-   passing `(prev_step_factor, step_factor)` is the intended composition. This
-   also composes correctly with the per-BC functions closed in G13, since
-   `t_phys = λ·t_end` then advances along the path.
-2. QP state persistence across sub-solve calls. This is architectural: the CP
-   state must be owned somewhere that outlives a single `run`, rather than being
-   rebuilt by `make_material`. A cached callback per kernel is the obvious
-   route, but it interacts with the device-cache hazard noted under G11 and with
-   the assembler's ownership of the material, so it needs an ADR rather than an
-   in-place edit.
+**Verification.** With `Gc` raised so damage does not saturate immediately,
+per-step damage increment over four steps at load 0.25 → 1.00:
 
-Until it closes, no accuracy or cost comparison between solver routes should be
-reported, because the reference itself would not be a path-correct solution.
+| | per-step damage increment |
+|---|---|
+| before | `0.1506, 0.0, 0.0, 0.0` |
+| continuation on (shipped) | `0.00993, 0.01361, 0.01401, 0.01402` |
+| continuation off | `0.00993, 0.02863, 0.04705, 0.06503` |
+
+Before, damage appeared entirely at the first step and never changed as the load
+rose — the signature of one full-load solve repeated. With the fix the increments
+**converge**, as a path-correct solution should: each increment adds
+progressively less new damage as the field equilibrates. With continuation
+deliberately disabled they **grow**, because each step re-plasticizes virgin
+material at a higher load. The two sequences differ qualitatively, not just
+numerically, which is what makes this a correctness fix rather than a refinement.
+
+At the paper's own `Gc` = 22.75 MPa·µm damage still saturates to 1.0 at the first
+load step on a homogeneous cube at 3 % strain. That is not a plumbing problem but
+direct evidence for gap **C.16**: the reported value cannot be used as a
+transferable material property and must be treated as an effective regularized
+quantity, to be settled in calibration.
+
+`tests/unit/coupling/test_staggered_load_path.py` (8 tests) covers the window
+parameters, the default-off continuation flag, `LoadProgram`'s blend, callback
+reuse, state survival across calls, reset-to-virgin, and `n_qp` invalidating the
+cache rather than returning a wrong-shaped state.
+
+**What remains: G16.** This fix makes the solution path-correct in load and in
+constitutive state, which is what made the study's metrics *defined*. It does
+not make the coupled solution at each load level *converged* — that is G16, the
+missing alternation loop, recorded above.
+
+No accuracy or cost comparison between solver routes should be reported until
+**G16** also closes: a benchmark reference needs both a correct path and a
+converged solution at each point on it.
 
 ### G14 — FIXED — The Exodus reader silently discarded every file-provided node set (`4e48301`)
 
