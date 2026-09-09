@@ -27,7 +27,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G3 | B | **fixed** | `1c85ab2` | Declared units of `k1`/`k2` contradicted the implemented law |
 | G4 | B | **fixed** | `84bebc7` | Isochoric loading: needed no new component, but exposed G13 |
 | G13 | A | **fixed** | `84bebc7` | Per-BC time functions were silently ignored by `cp_quasi_static` |
-| G5 | B | open | — | No conforming spherical-void mesh, no local grading |
+| G5 | B | **fixed** | study `scripts/make_void_meshes.py` | No conforming spherical-void mesh, no local grading — met from hexaform, no framework change |
 | G6 | B | open | — | No dog-bone mesh generator |
 | G7 | R | **fixed** | `1f00312` | No Miller-direction → Bunge-Euler utility; closes C.6 |
 | G8 | R | open | — | Missing study metrics (void volume, fracture plane, Hausdorff, …) |
@@ -36,9 +36,9 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Eight of fourteen closed. **Four remain open**: three **B** items (G5, G6, G11)
-and one **R** item (G8, the missing study metrics). G9 and G10 are documentation
-notes requiring no code. All four open items are development work with no
+Nine of fourteen closed. **Three remain open**: two **B** items (G6, G11) and
+one **R** item (G8, the missing study metrics). G9 and G10 are documentation
+notes requiring no code. All three open items are development work with no
 unknowns in them; none is research-grade difficulty. The one genuinely open
 research item is R5, the history-aware CP state surrogate, which is scoped as
 its own track rather than as a gap.
@@ -191,6 +191,81 @@ The mapping was derived from the Al2219 form of the evolution law, which gives
 annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
+
+### G5 — FIXED — No conforming spherical-void mesh with local grading
+
+Met entirely from hexaform plus PINNACLE's existing `[Mesh] type = file` import;
+**no framework change was needed**. Generator:
+`scripts/make_void_meshes.py` in the study repository; family and per-level
+verification record in `meshes/al2219/mesh_family.json`.
+
+**Route.** Hexaform meshes the sphere as an *inclusion* on a cubed-sphere O-grid
+that places nodes on the analytic surface; dropping that block leaves a cavity
+whose boundary is the conforming O-grid surface. The void is the absence of the
+inclusion, so it inherits the inclusion mesh's geometric convergence. This is
+why the study does not use the bundled `box_with_void`, which deletes background
+elements by centroid test and therefore staircases the surface — precisely where
+damage nucleates.
+
+**The family** (50 µm cube, 5 µm centered void, `l0` = 1 µm, refined radius
+8 µm = r + 3·l0):
+
+| d | elements | background h (µm) | first layer at void (µm) | l0 / dr₁ | min scaled J | inclusion vol. error |
+|---|---|---|---|---|---|---|
+| 16 | 5,176 | 3.125 | 0.3797 | 2.63 | 0.5774 | 3.01e−2 |
+| 24 | 16,768 | 2.083 | 0.2167 | 4.61 | 0.5774 | 1.71e−2 |
+| 32 | 43,136 | 1.562 | 0.1805 | 5.54 | 0.5774 | 7.64e−3 |
+| 48 | 137,216 | 1.042 | 0.0993 | 10.07 | 0.5774 | 4.31e−3 |
+| 64 | 338,616 | 0.781 | 0.0718 | 13.92 | 0.5774 | 2.28e−3 |
+
+Zero inverted or negative-Jacobian elements at every level; minimum scaled
+Jacobian is 0.5774 = 1/√3 throughout, the cubed-sphere corner value, so it is
+constant by construction rather than by luck. Exodus round-trip is exact
+(maximum coordinate error 0.0) and surface nodes sit on the analytic sphere to
+2.7e−15 µm. Inclusion-volume error converges at mean observed order **1.95**
+across the family, consistent with second order; the pair-to-pair oscillation
+(1.40, 2.80, 1.41, 2.21) is because the O-grid block size advances in even
+integers so it does not scale exactly with density.
+
+Verified through the solver, not only in the mesher: PINNACLE imports each level
+and **derives** the boundary sets, giving all six bounding-box node sets plus a
+*topological* `all_boundary`. At d = 16 that resolves 218 void-surface nodes, all
+at radius exactly 5.000000 µm — the surface is conforming, not staircased — which
+is what makes the void a free surface the isochoric BC set can be applied around.
+
+**A measurement changed the design, and this is the substantive point.** A first
+version set only the refined radius and left `MacroBlockOptions.n_outer` at its
+default of 2. Two radial layers then spanned r = 5 → 8 µm *regardless of
+density*, so refinement went into the background and not into the region that
+matters: across the family the background element size fell 3.125 → 0.781 µm
+while the first layer at the void surface moved only 3.15 → 1.93 µm, leaving
+**0.3–0.5 elements across l0 at every level**. A convergence study on that family
+would have converged the background and reported the result as mesh convergence,
+with the damage band unresolved throughout. The controls existed — `n_outer` and
+`outer_grading`, whose own docstring names this use case ("clusters at the
+interface (where plastic strain and phase-field gradients concentrate)") — and
+the generator simply had not used them. The generator now sets both, measures
+the achieved first-layer thickness per level rather than assuming it, and
+refuses a family whose **finest** level fails the resolution target.
+
+Two design points that follow, and both are deliberate:
+
+- `n_outer` **scales with the level** (6, 9, 14, 20, 30). Holding it fixed makes
+  dr₁ nearly constant (measured 0.164–0.210 µm at `n_outer` = 12), so the local
+  fields would be computed on the same radial discretization at every level. A
+  refinement family has to refine everywhere; the script warns when dr₁ is not
+  strictly decreasing.
+- The resolution gate applies to the **finest** level only. The coarsest level
+  (d = 16, 2.63 elements across l0) is deliberately under-resolved — a
+  convergence study needs levels that are demonstrably too coarse, or
+  convergence is not observable — and is flagged `under_resolved_at_l0` in the
+  record so its local fields are never quoted without that qualification.
+
+**Deferred audit questions, now answered.** The sphere can be emitted as a
+removed void (by dropping the inclusion block, above), and the refined zone *is*
+independently controllable: the macroblock extent sets the refined radius and
+`n_outer`/`outer_grading` set the radial resolution within it. Neither was a
+hexaform gap.
 
 ### G4 — FIXED — No isochoric (constant-volume) loading driver (`84bebc7`)
 
