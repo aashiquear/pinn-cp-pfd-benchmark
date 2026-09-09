@@ -13,6 +13,37 @@ series (0006, 0015, 0016, 0017, 0018, 0019); and direct reading of
 
 ---
 
+## 0. Gap status at a glance
+
+The authoritative status of every gap, with the commit that closed it. Severity
+codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
+**R** required for a reported quantity, **D** documentation only.
+
+| Gap | Sev | Status | Commit | Subject |
+|---|---|---|---|---|
+| G1a | A | **fixed** | `aac832b` | Driving force was evaluated on the *total* strain, not the elastic strain |
+| G1b | A | **fixed** | `aac832b`, `1f00312` | No stored plastic work in the driving force; hybrid route needed a second fix |
+| G2 | B | **fixed** | `1c85ab2` | Taylor prefactor α₀ absent, fixed at 1.0 against the papers' 0.4 |
+| G3 | B | **fixed** | `1c85ab2` | Declared units of `k1`/`k2` contradicted the implemented law |
+| G4 | B | open | — | No isochoric (constant-volume) loading driver |
+| G5 | B | open | — | No conforming spherical-void mesh, no local grading |
+| G6 | B | open | — | No dog-bone mesh generator |
+| G7 | R | **fixed** | `1f00312` | No Miller-direction → Bunge-Euler utility; closes C.6 |
+| G8 | R | open | — | Missing study metrics (void volume, fracture plane, Hausdorff, …) |
+| G9 | D | noted | — | Exponent and reference-slip-rate mapping, no code change |
+| G10 | D | noted | — | Degradation specified in two places; confirm they agree |
+| G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
+| G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
+
+Six of thirteen closed. The four remaining **B** items are all development
+work with no unknowns in them; none is research-grade difficulty. The one
+genuinely open research item is R5, the history-aware CP state surrogate, which
+is scoped as its own track rather than as a gap.
+
+Each claimed status is checkable against the branch, e.g.
+`grep -c "def direction_to_bunge" src/pinnacle/materials/orientations.py` for
+G7. The entries below carry the evidence.
+
 ## 1. Solver routes actually available for coupled CP–PFD
 
 | Route | Selection | Status | Use in this study |
@@ -42,7 +73,12 @@ surrogate ships, this value is always 1.0 and the warning is suppressed"*
 Severity: **B** blocks a study deliverable · **R** required for fidelity to the
 source papers · **D** desirable.
 
-### G1 — B — The fracture driving force carries no plastic-work contribution
+### G1 — FIXED — The fracture driving force carries no plastic-work contribution
+
+*Original finding below; on tracing the coupling channel this turned out to be
+two separable defects, and both are now closed. See **G1a / G1b** later in this
+section for the split, the resolution (`aac832b`, `1f00312`), and the measured
+effect.*
 
 `system/damage_kernels.py` implements the history field as `H ← max(H, ψ⁺)`,
 where `ψ⁺` is the positive part of the **elastic** strain energy from the
@@ -64,7 +100,7 @@ brittle-like response — so the parameter must exist before Phase 5 can run.
 the `staggered` coupler and the `cp_pfd` hybrid strategy. Register, document,
 test, and record an ADR.
 
-### G2 — B — The Taylor hardening prefactor α₀ is not implemented
+### G2 — FIXED — The Taylor hardening prefactor α₀ is not implemented (`1c85ab2`)
 
 `materials/hardening.py:60-65`:
 
@@ -88,12 +124,25 @@ half the hazard: the additive decomposition *is* implemented correctly
 (`τ_c0` is a separate lattice-friction term, not the total), but the Taylor
 term itself is mis-scaled.
 
-**Action.** Add an `alpha0` parameter defaulting to `1.0` so committed goldens
-and parity tests are unaffected; apply it in `critical_stress` **and** in
-`hardening_matrix` (`h^{αβ} = ∂τ_c^α/∂ρ^β`) so the consistent tangent stays
-consistent; set `alpha0 = 0.4` in every study deck.
+**Resolved** (`1c85ab2`). An `alpha0` parameter was added, defaulting to `1.0` —
+the value the law was implicitly fixed at before the parameter existed — so
+committed goldens and parity tests are unaffected. It is applied in
+`critical_stress` **and** in `hardening_matrix` (`h^{αβ} = ∂τ_c^α/∂ρ^β`),
+because a prefactor in the stress but not the tangent leaves the consistent
+tangent inconsistent with what it differentiates. Study decks set
+`alpha0 = 0.4`.
 
-### G3 — B — Declared units of `k1`/`k2` contradict the implementation
+Verified against the hand derivation: `τ_c(0) = 176.7127 MPa` at the Al2219
+set under the interaction-weighted reading settled in G13/C.15. Nine unit tests
+in `tests/unit/materials/test_cp_taylor_hardening.py`; the decision and its
+evidence are recorded in PINNACLE ADR 0022.
+
+Fixing this also exposed a scalar-versus-batch parity defect en route:
+`compute_batch` applied the interaction matrix to the SSD alone and added the
+GND densities *outside* the contraction, while `compute` added them inside, so
+the two paths disagreed whenever GNDs were present. Now identical.
+
+### G3 — FIXED — Declared units of `k1`/`k2` contradict the implementation (`1c85ab2`)
 
 `materials/dislocation_density.py:59-69` implements
 
@@ -117,8 +166,21 @@ annihilation term, i.e. `k2 = 2 y_c`) is derived and verified in Phase 1 against
 the equation extracted from the papers; the saturation density is
 `ρ* = (k1/k2)²`.
 
-**Action.** Correct the units metadata; add a parameterization option accepting
-`(k0, y_c)` directly with documented conversion; document `ρ*`.
+**Resolved** (`1c85ab2`). The units metadata now matches the implemented law —
+`k1` dimensionless, `k2` a length — with the dimensional argument written into
+the docstrings rather than only the conclusion, so a future reader can check it
+instead of trusting it. An `annihilation_diameter` key accepts the papers'
+parameterization directly (`k2 = 2 y_c`), and supplying both it and a
+non-default `k2` is **refused** rather than resolved by precedence: a deck
+setting both is asserting two different recovery rates, and silently choosing
+one is how a parameter set gets misreported. `ρ* = (k1/k2)²` is documented.
+
+The mapping was derived from the Al2219 form of the evolution law, which gives
+`k1 = k_m` and `k2 = 2 y_c` — so `k1 = 0.3432`, `k2 = 0.00536 µm` for Al2219 and
+`k1 = 0.0295`, `k2 = 1.58 × 10⁻⁶ mm` for Ni. Note the Ni paper prints the
+annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
+form is correct and was adopted for both materials. Full derivation in
+`docs/03_material_point_verification.md`.
 
 ### G4 — B — No isochoric (constant-volume) loading driver
 
@@ -176,7 +238,11 @@ documented, geometric uncertainty between stations quantified, unit tests and
 quality checks included. Also resolve whether the paper's 9,880 HEX8 elements
 refer to the gauge region or the whole specimen.
 
-### G7 — R — No Miller-direction → Bunge-Euler utility
+### G7 — FIXED — No Miller-direction → Bunge-Euler utility
+
+*Original finding below; resolved in `1f00312`. The resolution, the symmetry
+verification, and the quantitative closure of gap C.6 are in the **G7 — FIXED**
+entry later in this section.*
 
 `[Crystal] euler_angles` takes three Bunge angles. The four extreme cases are
 specified as loading-axis **directions** — `[001]`, `[101]`, `[111]`, and
