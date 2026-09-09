@@ -242,9 +242,13 @@ while the first layer at the void surface moved only 3.15 → 1.93 µm, leaving
 **0.3–0.5 elements across l0 at every level**. A convergence study on that family
 would have converged the background and reported the result as mesh convergence,
 with the damage band unresolved throughout. The controls existed — `n_outer` and
-`outer_grading`, whose own docstring names this use case ("clusters at the
-interface (where plastic strain and phase-field gradients concentrate)") — and
-the generator simply had not used them. The generator now sets both, measures
+`outer_grading` — and the generator simply had not used them. (Hexaform
+documents the grading ratio on the companion key `inner_grading`, ">1 clusters
+at the interface (where plastic strain and phase-field gradients concentrate)";
+`outer_grading` is documented only as "Same for the matrix-side shell", which is
+the side the material surrounding the void lies on. The achieved first-layer
+thickness is therefore measured here rather than inferred from that
+documentation.) The generator now sets both, measures
 the achieved first-layer thickness per level rather than assuming it, and
 refuses a family whose **finest** level fails the resolution target.
 

@@ -38,10 +38,13 @@ band -- reporting mesh convergence for the one region where it had not been
 achieved.
 
 So the radial resolution is set explicitly here: ``n_outer`` layers graded by
-``outer_grading`` toward the interface (its own docstring notes that >1
-"clusters at the interface (where plastic strain and phase-field gradients
-concentrate)"). The achieved first-layer thickness is measured and reported per
-level rather than assumed, and the script refuses a family that fails the
+``outer_grading`` toward the interface. Hexaform documents that grading ratio on
+the companion key ``inner_grading`` -- ">1 clusters at the interface (where
+plastic strain and phase-field gradients concentrate)" -- and ``outer_grading``
+is documented only as "Same for the matrix-side shell", which is the side the
+void's surrounding material lies on. The achieved first-layer thickness is
+therefore measured and reported per level rather than inferred from the
+documentation, and the script refuses a family whose finest level fails the
 requested points-per-l0 target.
 
 ``n_inner`` is left at its default: those layers are inside the sphere and are
