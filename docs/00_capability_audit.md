@@ -28,6 +28,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G4 | B | **fixed** | `84bebc7` | Isochoric loading: needed no new component, but exposed G13 |
 | G13 | A | **fixed** | `84bebc7` | Per-BC time functions were silently ignored by `cp_quasi_static` |
 | G5 | B | **fixed** | study `scripts/make_void_meshes.py` | No conforming spherical-void mesh, no local grading — met from hexaform, no framework change |
+| G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
+| G15 | A | open | — | `staggered` never increments the load and resets CP state each sub-solve — blocks Phase 2 |
 | G6 | B | open | — | No dog-bone mesh generator |
 | G7 | R | **fixed** | `1f00312` | No Miller-direction → Bunge-Euler utility; closes C.6 |
 | G8 | R | open | — | Missing study metrics (void volume, fracture plane, Hausdorff, …) |
@@ -36,19 +38,30 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Nine of fourteen closed. **Three remain open**: two **B** items (G6, G11) and
-one **R** item (G8, the missing study metrics). G9 and G10 are documentation
-notes requiring no code. All three open items are development work with no
-unknowns in them; none is research-grade difficulty. The one genuinely open
-research item is R5, the history-aware CP state surrogate, which is scoped as
-its own track rather than as a gap.
+Ten of sixteen closed. **Four remain open**: one **A** item (G15), two **B**
+items (G6, G11), and one **R** item (G8, the missing study metrics). G9 and G10
+are documentation notes requiring no code.
+
+**G15 gates Phase 2 and is the one open item that is not routine.** The other
+three are development work with no unknowns in them. G15 needs load continuation
+into the coupled sub-solve *and* quadrature-point state that survives across
+sub-solve calls — the second is architectural and warrants an ADR. Until it
+closes, no coupled result is a path-correct solution, so no solver-route
+accuracy or cost comparison should be reported. The separate genuinely open
+research item is R5, the history-aware CP state surrogate, scoped as its own
+track rather than as a gap.
 
 Note that the register has **grown** as work proceeded, from eleven entries to
-fourteen: G12 and G13 were both found by verifying something else and neither
-was visible from reading the documentation or the component index. That is worth
-stating plainly, because it bears on how much of the framework should be trusted
-without a check — every defect found so far was silent, and two of them (G12,
-G13) were in code paths the docs describe as working.
+sixteen: G12, G13, G14, and G15 were each found by verifying something else, and
+none was visible from reading the documentation or the component index. That is
+worth stating plainly, because it bears on how much of the framework should be
+trusted without a check. Every defect found so far was **silent** — none raised
+an error — and four of them were in code paths the documentation describes as
+working. Three (G13, G14, G15) were found only because a verification was
+written to measure the physical quantity rather than to confirm that a run
+completed: the isochoric checker measures volume from deformed node positions,
+and the staggered probe compares displacement fields across step counts. A check
+that merely asserted "the run converged" would have passed in all three cases.
 
 Each claimed status is checkable against the branch, e.g.
 `grep -c "def direction_to_bunge" src/pinnacle/materials/orientations.py` for
@@ -191,6 +204,103 @@ The mapping was derived from the Al2219 form of the evolution law, which gives
 annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
+
+### G15 — OPEN, severity A — `staggered` never increments the load, and resets the CP state every sub-solve
+
+**This is the gating blocker for Phase 2 and the most consequential finding so
+far.** As it stands, the coupled executioner cannot produce a load-stepped
+coupled fracture solution, so the study's primary metric — fracture-initiation
+strain, reported as 7.0 % for isochoric [001] in (Rezwan 2025 intragranular) —
+is not measurable, and neither is a load–displacement curve.
+
+Two defects compound:
+
+**(a) The load is never incremented across outer steps.** The outer loop
+computes `step_factor = (step + 1) / n_steps`, but `_run_mechanics` is called
+*without it*, and `_compute_psi_plus`'s own docstring says `step_factor` is
+"unused here and kept for subclasses that ramp a prescribed field instead". So
+the value is computed and used nowhere. Every outer step re-runs the mechanics
+sub-solve over its **full** load program.
+
+**(b) The CP state is reset to virgin on every sub-solve.**
+`cp_quasi_static.run` calls `kernel.make_material(backend, dim)` each time, and
+`StressDivergenceCPKernel.make_material` returns a **fresh** `CPFieldCallback`
+whose constructor does `self.state = self._initial_state()`. So the plastic
+deformation gradient, the dislocation densities, and the accumulated plastic
+work are all discarded between outer steps.
+
+Together these make each outer step an independent, full-load, virgin-material
+solve, with only the damage history field carrying over.
+
+**Measured, not only read.** Running the production physics on a 2×2×2 box at
+outer `n_steps` = 1 and 3:
+
+| outer `n_steps` | axial stretch | peak damage |
+|---|---|---|
+| 1 | 1.12000000 | 1.0 |
+| 3 | 1.12000000 | 1.0 |
+
+`max|u(n=1) − u(n=3)| = 0.000000e+00` — the displacement field is
+**bit-identical**. The first outer step is already at the full 12 % strain, and
+the additional outer steps change the mechanics not at all. Damage saturates at
+1.0 in both, which is what a single full-load application to virgin material
+produces.
+
+**Consequences to carry forward.** Any coupled result from this executioner is
+a *fully-loaded end state*, not a path. That means: no initiation strain, no
+load–displacement response, and — because of (b) — a plastic-work driving-force
+contribution (G1a) computed from a single virgin full-load solve rather than
+accumulated along the path, which is not the quantity Eq. (31) defines.
+
+**What closing it requires.** Not a small patch:
+
+1. Load continuation into the sub-solve. The machinery exists —
+   `cp_quasi_static` already accepts `initial_load_factor` / `target_load_factor`,
+   and `LoadProgram.load_factor_at_step` blends from `initial_load_factor`
+   explicitly "so continuation runs start at non-zero" — so the outer loop
+   passing `(prev_step_factor, step_factor)` is the intended composition. This
+   also composes correctly with the per-BC functions closed in G13, since
+   `t_phys = λ·t_end` then advances along the path.
+2. QP state persistence across sub-solve calls. This is architectural: the CP
+   state must be owned somewhere that outlives a single `run`, rather than being
+   rebuilt by `make_material`. A cached callback per kernel is the obvious
+   route, but it interacts with the device-cache hazard noted under G11 and with
+   the assembler's ownership of the material, so it needs an ADR rather than an
+   in-place edit.
+
+Until it closes, no accuracy or cost comparison between solver routes should be
+reported, because the reference itself would not be a path-correct solution.
+
+### G14 — FIXED — The Exodus reader silently discarded every file-provided node set (`4e48301`)
+
+Found while giving the void meshes explicit named sets to avoid the hazard in
+G15's neighborhood. The reader looked for node sets on `mio_mesh.nodedata`; a
+meshio `Mesh` has no such attribute (it exposes `point_data`, `cell_data`,
+`point_sets`, `cell_sets`), so the `hasattr` guard never fired and every
+file-provided node set was dropped. Only the sets `_derive_boundary_sets` infers
+survived — which is why its documented promise that "sets that the file *did*
+provide are never overwritten" had never taken effect: none ever arrived for it
+to preserve. It uses `setdefault` and was keeping its side of the contract.
+
+**Why it matters physically, and it is the same trap as G15.** The derived
+`all_boundary` is *topological*, so on a mesh with an internal void it includes
+the void surface, and `pfd_steady` defaults `boundary_node_set` to it. A deck on
+the default therefore pins `d = 0` on the void surface — the one place damage
+must nucleate — and the run completes and looks converged. A mesher that names
+its own outer-boundary set precisely to avoid this had the set silently
+discarded.
+
+**Verification carries its own cross-check.** With the fix, the study meshes'
+`void_surface` and `outer_boundary` sets import, and at every level their sizes
+sum **exactly** to the independently derived topological `all_boundary` —
+218 + 1538 = 1756 at d = 16, and 2906 + 24578 = 27484 at d = 64 — with zero
+overlap, and every `void_surface` node sits at radius 5.000000 µm. Two
+independent constructions agreeing exactly is stronger evidence than either
+alone, and it also confirms the indices are zero-based as assumed.
+
+`tests/unit/mesh/test_exodus_node_sets.py` (5 tests) covers import, coexistence
+with the derived sets, a file set overriding a colliding derived name,
+`name_mapping` applied to file sets, and zero-based indexing.
 
 ### G5 — FIXED — No conforming spherical-void mesh with local grading
 

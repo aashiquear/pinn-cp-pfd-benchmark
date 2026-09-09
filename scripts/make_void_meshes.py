@@ -96,6 +96,50 @@ def carve_void(mesh: HexMesh, inclusion_block_min: int = 100) -> tuple[HexMesh, 
     return carved, dropped
 
 
+def add_named_node_sets(mesh: HexMesh, centre: np.ndarray, radius: float) -> dict[str, int]:
+    """Write ``outer_boundary`` and ``void_surface`` node sets onto the mesh.
+
+    THIS IS A CORRECTNESS REQUIREMENT, not a convenience. PINNACLE derives an
+    ``all_boundary`` node set on import and that set is *topological*, so on a
+    carved mesh it includes the void surface. ``pfd_steady`` defaults its
+    homogeneous damage Dirichlet condition to ``all_boundary``, which would pin
+    d = 0 on the void surface -- the one place the physics requires damage to
+    nucleate. Running the study on the default would suppress the answer and
+    look like a converged result.
+
+    Sets the FILE provides are never overwritten by PINNACLE's derivation, so
+    naming them here is what makes the correct boundary addressable from the
+    deck: ``outer_boundary`` for the damage condition, ``void_surface`` for
+    post-processing (damage at the surface, void-volume growth).
+    """
+    used = np.unique(mesh.cells)
+    pts = mesh.points
+    lo, hi = pts[used].min(axis=0), pts[used].max(axis=0)
+    tol = 1.0e-9 * max(1.0, float(np.max(hi - lo)))
+
+    on_box = np.zeros(pts.shape[0], dtype=bool)
+    for axis in range(3):
+        on_box |= np.abs(pts[:, axis] - lo[axis]) < tol
+        on_box |= np.abs(pts[:, axis] - hi[axis]) < tol
+    outer = np.intersect1d(np.flatnonzero(on_box), used)
+
+    r = np.linalg.norm(pts - centre, axis=1)
+    void = np.intersect1d(np.flatnonzero(np.abs(r - radius) < 1.0e-6), used)
+
+    mesh.add_node_set("outer_boundary", outer)
+    mesh.add_node_set("void_surface", void)
+    # The two must be disjoint, or the damage condition would still reach the
+    # void surface through the set it is applied on.
+    overlap = int(np.intersect1d(outer, void).size)
+    if overlap:
+        raise SystemExit(
+            f"outer_boundary and void_surface share {overlap} nodes; the void "
+            "is touching the domain boundary and the damage condition would "
+            "still pin the void surface."
+        )
+    return {"outer_boundary": int(outer.size), "void_surface": int(void.size)}
+
+
 def first_layer_thickness(mesh: HexMesh, centre: np.ndarray, radius: float) -> float:
     """Radial thickness of the element layer touching the void surface.
 
@@ -146,6 +190,7 @@ def build_level(
     )
 
     carved, dropped = carve_void(full)
+    set_sizes = add_named_node_sets(carved, centre, VOID_RADIUS_UM)
     q = assess(carved)
     vols = signed_volumes(carved.points, carved.cells)
 
@@ -176,6 +221,7 @@ def build_level(
         "n_outer_layers": int(n_outer),
         "outer_grading": float(outer_grading),
         "first_layer_um": first_layer_thickness(carved, centre, VOID_RADIUS_UM),
+        "node_sets": set_sizes,
         "_mesh": carved,
     }
 
