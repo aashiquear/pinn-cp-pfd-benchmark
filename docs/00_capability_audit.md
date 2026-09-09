@@ -219,6 +219,71 @@ not the deck default `20`. Likewise `gamma0` defaults to `1.0e-3` against the
 papers' `1.0e-5 s⁻¹`. Both must be set explicitly in every study deck and
 recorded in the frozen configuration.
 
+### G12 — FIXED — Two contraction errors in the batched CP constitutive path
+
+Found while verifying that the scalar and batched paths agree, which they must,
+being two implementations of one law. Both errors are two-character `einsum`
+index mistakes, and both vanish identically when the elastic deformation
+gradient `F^e` is symmetric — which is why every committed test missed them.
+
+1. **Elastic strain.** `Ee` was formed as `einsum("bji,bjk->bik", Fe_T, Fe)`.
+   Since `Fe_T` is *already* the transpose, that index pattern transposes a
+   second time and computes `F^e F^e`, not `(F^e)^T F^e`. The two differ by
+   twice the skew part of `F^e`, so the elastic strain was contaminated by the
+   elastic rotation. Measured at a state with plastic spin: **8.7 % relative
+   error in `E^e`**, propagating to 3.6 × 10⁻⁴ in `S`, 6.2 × 10⁻⁴ in `τ`,
+   2.3 × 10⁻³ in `γ̇`, and 6.7 × 10⁻⁴ in the Cauchy stress.
+2. **Cauchy push-forward.** `einsum("bij,bjk,blk->bil", Fe, S, Fe_T)` computes
+   `F^e S F^e` rather than `F^e S (F^e)^T`. With `S` symmetric the correct
+   result is symmetric; the computed one was not, so **the batched "Cauchy
+   stress" was not a stress**. Measured asymmetry 5.3 × 10⁻² on a stress of
+   order 10² MPa.
+
+Consequence before the fix: the scalar and batched paths drifted apart over a
+load history to a relative 2 × 10⁻⁵ in `F^p` and 1 × 10⁻³ in `ρ`, and the
+difference was *independent of step size* across a 16× range — the signature of
+a formulation difference rather than accumulated round-off. After the fix they
+agree to machine precision (3 × 10⁻¹⁶ in `F^p`, 2 × 10⁻¹⁴ in `ρ`) over 200
+steps.
+
+This matters directly for the study. `CPFieldCallback.update_state_batch` uses
+the batched path, so any run taking that route carried a wrong elastic strain
+and a non-symmetric stress wherever lattice rotation was present — which for
+orientation-dependent slip around a void is everywhere. Two committed parity
+goldens (`rezwan_field_fem_3d`, `rezwan_field_hybrid_3d`) encoded the defect and
+were regenerated.
+
+Fixed on `feat/pinn_benchmark` at `b49fa70`, with
+`tests/unit/materials/test_cp_batch_parity.py`. The tests deliberately drive a
+**non-symmetric** plastic deformation gradient; a parity test on a symmetric
+state has no power against either error, which is the lesson worth carrying
+into any future parity test for this material.
+
+### G1 — A — split into two defects, both blocking
+
+The audit originally recorded G1 as "no plastic-work term in the fracture
+driving force". Tracing the coupling channel shows the situation is worse, and
+is two separable defects.
+
+**G1a — the driving force is evaluated on the total strain.** The channel is
+`state["strain"] → MieheSpectralSplit → PFDDrivingForceMaterial.update`, in
+`cp_pfd_strategy.history_bridge_fn` for the hybrid route and the equivalent path
+in `coupled_executioner` for all-FEM. What `cp_quasi_static` puts in
+`state["strain"]` is `assembler._compute_strain(u_nodes)` — the **total**
+kinematic strain from the displacement field. So the driving force is an
+isotropic elastic energy evaluated on a strain that is largely plastic. It is
+neither `ψ⁺_el` nor `W_p`: it grows with plastic deformation, which is why the
+bundled decks produce plausible-looking damage localization, but its magnitude
+has no thermodynamic basis. **Fix:** export the elastic Green–Lagrange strain
+`E^e` per quadrature point and split that instead.
+
+**G1b — no stored plastic work.** The papers drive damage with `a⁺ + ζ W_p` at
+`ζ = 1`. `W_p` now exists as CP state (`b49fa70`); what remains is to expose it
+per quadrature point, add a `plastic_work_prefactor` to `pfd_driving_force`, and
+carry it through both coupling bridges. Until then the ductile part of ductile
+phase-field damage is absent, and `ζ` is one of the Group-C parameters the
+sensitivity study sweeps.
+
 ### G11 — B — `backend` and `device` are global, so a hybrid run cannot give each half its preferred hardware
 
 `backend` and `device` are declared only under `[Global]`
