@@ -219,6 +219,30 @@ def main() -> int:
             "backend": "numpy",
         },
     }
+    # Damage evidence is mandatory for every phase-field run in this study
+    # (docs/PROJECT_GUIDELINES.md): an end-state scalar cannot show when damage
+    # initiated, nor separate a localized band from diffuse damage. A failure
+    # to produce it is recorded rather than swallowed, so a run without
+    # evidence is visible as such in its own record.
+    snapshots = _find(result, "snapshots") or []
+    if snapshots:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from damage_evidence import write_evidence
+
+        try:
+            record["evidence"] = write_evidence(
+                snapshots, nodes, out_dir / f"evidence_d{d}",
+                label=f"Al2219 d={d}",
+                void_centre=VOID_CENTRE, void_radius=VOID_RADIUS_UM,
+            )
+        except Exception as exc:
+            record["evidence"] = {"error": f"{type(exc).__name__}: {exc}"}
+    else:
+        record["evidence"] = {
+            "error": "no snapshots recorded; set snapshots_every in the deck's "
+                     "[Executioner] block"
+        }
+
     dest = out_dir / f"level_d{d}.json"
     dest.write_text(json.dumps(record, indent=1))
     print(f"d={d} wall {wall/3600:.2f} h -> {dest}")

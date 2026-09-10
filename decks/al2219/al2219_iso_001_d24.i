@@ -219,6 +219,10 @@
   n_steps        = 20
   max_iterations = 10
   tolerance      = 1.0e-4
+  # Record the damage field at EVERY load step. Mandatory for this study: an
+  # end-state scalar cannot show when damage initiated or whether the band is
+  # localized at the void, and both are reported results.
+  snapshots_every = 1
   [./mechanics]
     variable      = u
     type          = cp_quasi_static
