@@ -224,8 +224,23 @@ def main() -> int:
             sig = np.asarray(sig, dtype=float)
             # Volume-averaged axial Cauchy stress. Equal element volumes on a
             # structured mesh, so a plain mean is the volume average.
-            row["sigma_zz_MPa"] = float(sig.reshape(-1, 3, 3)[:, 2, 2].mean()) \
-                if sig.size % 9 == 0 else float(np.mean(sig))
+            if sig.size % 9 == 0:
+                t = sig.reshape(-1, 3, 3)
+                row["sigma_zz_MPa"] = float(t[:, 2, 2].mean())
+                # The transverse averages are the check that this is a
+                # uniaxial-STRESS test. The lateral faces are free, so both
+                # should be small against sigma_zz; if they are not, the
+                # roller faces are constraining lateral contraction and the
+                # run is closer to uniaxial strain, which would over-predict
+                # the axial stress for reasons that have nothing to do with
+                # the material.
+                row["sigma_xx_MPa"] = float(t[:, 0, 0].mean())
+                row["sigma_yy_MPa"] = float(t[:, 1, 1].mean())
+                row["transverse_over_axial"] = float(
+                    max(abs(t[:, 0, 0].mean()), abs(t[:, 1, 1].mean()))
+                    / max(1.0e-30, abs(t[:, 2, 2].mean())))
+            else:
+                row["sigma_zz_MPa"] = float(np.mean(sig))
         d = snap.get("damage")
         if d is not None:
             d = np.asarray(d, dtype=float).ravel()

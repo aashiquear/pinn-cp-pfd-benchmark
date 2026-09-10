@@ -30,6 +30,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G5 | B | **fixed** | study `scripts/make_void_meshes.py` | No conforming spherical-void mesh, no local grading — met from hexaform, no framework change |
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
+| G19 | A | open | — | `cp_quasi_static`'s reported stress/strain are NOT the equilibrium fields once plasticity is active |
 | G17 | A | **fixed** | `7156159` | Newton hardcoded a DENSE tangent; 3 of 5 mesh levels could not allocate |
 | G18 | A | **fixed** | `7156159` | CP tangent finite-differenced one quadrature point at a time |
 | G16 | A | **fixed** | `4340932`, ADR 0024 | `staggered` had no alternation loop: `max_iterations`/`tolerance` were dead, so coupling was lagged |
@@ -41,8 +42,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Fourteen of nineteen closed. **Three remain open**, and none of them blocks
-Phase 2: two **B** items (G6, G11) and one **R** item (G8, the missing study
+Fourteen of twenty closed. **Four remain open**, and one of them, G19, blocks
+any stress-based result: two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
 The separate genuinely open research item is R5, the history-aware CP state
@@ -225,6 +226,63 @@ The mapping was derived from the Al2219 form of the evolution law, which gives
 annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
+
+### G19 — OPEN, severity A — the reported stress field is not the equilibrium stress once plasticity is active
+
+**Found while calibrating Gc, and it would have corrupted that calibration
+silently.** `cp_quasi_static` builds its reported fields AFTER the load step
+completes:
+
+```
+u_nodes   = u.reshape(mesh.n_nodes, dim)
+strain_qp = assembler._compute_strain(u_nodes)
+stress_qp = material.stress(strain_qp)      # <- after update_state
+```
+
+`material.stress` is a TRIAL stress: read-only with respect to the stored
+constitutive state, which is exactly right inside a Newton iteration. But by
+this point the state has already been advanced by `update_state`, so applying
+the same TOTAL strain again charges the step's plastic increment a second time
+and returns a stress that is not in equilibrium with the displacement field
+beside it.
+
+**Evidence, three independent checks.**
+
+1. *Elastic regime — exact.* A homogeneous [001] single crystal at 0.02% strain
+   gives sigma_zz = 12.73 MPa against the analytic E_001 * eps = 12.72 MPa
+   (E_001 = (C11-C12)(C11+2C12)/(C11+C12) = 63,609 MPa), and sigma_xx = 0.000.
+   At 0.1% strain: 63.75 against 63.61, sigma_xx = 0.001. With no plastic
+   increment there is nothing to double-count, and the field is right.
+
+2. *Plastic regime — a transverse stress that cannot exist.* The same
+   homogeneous single crystal with free lateral faces must have sigma_xx = 0
+   identically. It reports sigma_xx = 148-217 MPa against sigma_zz = 319-447
+   MPa, a ratio of 0.5-0.8. For the polycrystal the volume average is 207 MPa
+   against 695 MPa. The average-stress theorem makes the volume average of
+   sigma_xx zero for a traction-free lateral surface, so this is not a
+   heterogeneity effect.
+
+3. *Non-monotonic axial stress.* Under monotonic loading with monotonic
+   hardening, the single crystal reports 319 -> 330 -> 447 -> 418 MPa. A real
+   equilibrium path cannot unload here.
+
+**The kinematics are NOT affected**, which is what localises the defect to the
+post-processing rather than the solve: the lateral faces contract by 4.40 um
+mean against the incompressible expectation of 4.356 um at 20% axial strain, so
+the Newton solve is finding the right displacement field. Only the stress
+REPORTED beside it is wrong.
+
+**Consequences.** Every stress-strain and load-displacement curve read from
+this executioner in the plastic regime is wrong, which is most of what this
+study reports. It would have entered the Gc calibration directly: Gc is fitted
+so fracture initiates at the experimental strain, and the driving force is
+built from the stress. Any parity golden carrying a plastic-regime stress field
+encodes it too.
+
+**Fix direction.** Capture the equilibrium stress DURING the solve -- the trial
+stress at the converged displacement against the state as it stood at the START
+of the step -- rather than re-evaluating after `update_state`. The same applies
+to the per-step snapshot stress added for the damage-evidence work.
 
 ### G17 / G18 — FIXED — The coupled solve was unaffordable for reasons unrelated to the physics (`7156159`)
 

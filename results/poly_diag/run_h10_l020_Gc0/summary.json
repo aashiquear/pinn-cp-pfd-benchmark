@@ -1,0 +1,208 @@
+{
+  "config": {
+    "global": {
+      "backend": "numpy",
+      "use_gpu": false,
+      "precision": "float64",
+      "seed": 0,
+      "output_dir": "results/poly_diag/run_h10_l020_Gc0"
+    },
+    "problem": {
+      "type": "composed",
+      "dimension": 3,
+      "finite_strain": true
+    },
+    "mesh": {
+      "type": "box_mesh",
+      "domain": [
+        0.0,
+        0.0,
+        0.0,
+        50.0,
+        50.0,
+        100.0
+      ],
+      "divisions": [
+        5,
+        5,
+        10
+      ]
+    },
+    "variables": {
+      "u": {
+        "family": "fem",
+        "components": 3
+      },
+      "d": {
+        "family": "fem",
+        "components": 1
+      }
+    },
+    "functions": {
+      "axial": {
+        "kind": "parsed",
+        "expression": "0.1*t/10.0"
+      }
+    },
+    "materials": {
+      "cp": {
+        "type": "dislocation_density_cp",
+        "C11": 108000.0,
+        "C12": 61300.0,
+        "C44": 28500.0,
+        "mu": 25700.0,
+        "gamma0": 1e-05,
+        "rate_exponent_n": 8.333333333333334,
+        "q_lat": 1.4,
+        "alpha0": 0.4,
+        "burgers": 0.000286,
+        "tau_c0": 60.317714,
+        "rho0": 2.393387,
+        "k1": 0.081145,
+        "annihilation_diameter": 0.002058,
+        "crystal": {
+          "structure": "fcc"
+        }
+      },
+      "frac": {
+        "kind": "pfd_fracture",
+        "Gc": 1000000000.0,
+        "length_scale": 20,
+        "damage_model": "at2",
+        "anisotropy": "isotropic"
+      },
+      "drive": {
+        "kind": "pfd_driving_force",
+        "plastic_work_prefactor": 1.0
+      },
+      "deg": {
+        "kind": "pfd_degradation",
+        "k": 0.001
+      }
+    },
+    "kernels": {
+      "sd_cp": {
+        "type": "stress_divergence_cp",
+        "variable": "u",
+        "material": "cp",
+        "dim": 3,
+        "finite_strain": true,
+        "gnd": false,
+        "degradation": "deg"
+      },
+      "pfd": {
+        "type": "pfd_evolution",
+        "variable": "d",
+        "dim": 3,
+        "fracture": "frac",
+        "driving_force": "drive",
+        "degradation": "deg"
+      }
+    },
+    "bcs": {
+      "xmin_roller": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "xmin",
+        "components": [
+          0
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "ymin_roller": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "ymin",
+        "components": [
+          1
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "zmin_roller": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "zmin",
+        "components": [
+          2
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "zmax_tension": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "zmax",
+        "components": [
+          2
+        ],
+        "values": [
+          1.0
+        ],
+        "function": "axial"
+      }
+    },
+    "executioner": {
+      "type": "staggered",
+      "n_steps": 2,
+      "max_iterations": 1,
+      "tolerance": 0.0001,
+      "snapshots_every": 1,
+      "mechanics": {
+        "variable": "u",
+        "type": "cp_quasi_static",
+        "n_steps": 1,
+        "newton_tol": 1e-06,
+        "max_iter": 50,
+        "linear_method": "direct",
+        "t_end": 10.0
+      },
+      "damage": {
+        "variable": "d",
+        "type": "pfd_steady",
+        "n_load_steps": 1,
+        "boundary_node_set": "zmax",
+        "boundary_damage": 0.0
+      }
+    },
+    "output": {
+      "formats": [
+        "json"
+      ],
+      "save_checkpoint": false,
+      "fields": [
+        "displacement",
+        "stress",
+        "strain",
+        "damage"
+      ]
+    },
+    "orientation_field": {
+      "euler_angles": {
+        "__array__": true,
+        "shape": [
+          2000,
+          3
+        ],
+        "dtype": "float64",
+        "min": 0.0,
+        "max": 0.0,
+        "mean": 0.0
+      }
+    }
+  },
+  "residuals": {
+    "fem_iterations": 2.0
+  },
+  "stress_strain": {
+    "strain_min": -0.0003623258424012203,
+    "strain_max": 0.001000000000000115,
+    "stress_min": 0.0007341013081280136,
+    "stress_max": 0.0007341013405034933,
+    "final_stress": 0.0007341013281169085
+  }
+}
