@@ -364,11 +364,16 @@ threshold and that point it returns a plausible number that is simply wrong.
    fires on 14 bundled decks, which is the point -- they are under-resolved
    today and nothing said so.
 
-**Cost.** Enforcing the threshold costs 13 mechanics sub-steps per 1% load
-step, about 15x. Measured wall time per coupled run to 20% strain in 20 load
-steps with 2 alternations: 0.4 h at 250 elements, 3.5 h at 2,000, 27.7 h at
-16,000. This dominates the campaign budget and is why the Gc calibration runs
-on the h = 5 um polycrystal rather than the h = 2.5 um one.
+**Cost — measured, and lower than the naive estimate.** Subdividing 8x costs
+**4.7x**, not 8x: 188.3 s at one mechanics sub-step against 888.9 s at eight
+(void d=16). A profile explains why. The constitutive state update is 60% of
+the runtime and its own adaptive loop already takes the sub-steps the strain
+demands -- 342 `compute_batch` calls for a single load step -- so that 60% is
+set by the total strain and the shear cap, not by how the load step is
+subdivided. Only the Newton work (tangent, residual, linear solve) multiplies.
+
+An earlier revision of this entry quoted ~15x by assuming the whole run scaled
+with the sub-step count. It does not, and the measurement above supersedes it.
 
 **Still to establish.** Whether the threshold tightens under damage coupling,
 where the degraded stiffness changes the local strain rate. The Gc sweep
