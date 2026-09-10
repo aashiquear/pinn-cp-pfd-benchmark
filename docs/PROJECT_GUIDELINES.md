@@ -80,9 +80,18 @@ indicates shared model-form or parameter error.
 
 ## 6. Compute
 
-Use the **connected SSH compute target** (`ssh:rocm-server`). Do **not** use
-cloud compute. Prefer PyTorch on the GPU at `float64`, falling back to CPU only
-when the GPU is unavailable — with one measured exception recorded below.
+Use the **connected SSH compute target** (`ssh:rocm-server`) **and Modal cloud
+compute** (`byoc:modal`), the latter up to the account balance. *Amended
+2026-09-10: cloud compute was originally excluded; the user lifted that
+restriction, so both targets are now in scope.* Prefer PyTorch on the GPU at
+`float64`, falling back to CPU only when the GPU is unavailable — with one
+measured exception recorded below.
+
+Independent runs (mesh refinement levels, orientations, parameter samples)
+should be dispatched as **separate concurrent containers**, one per case, so
+the wall time of a family is the cost of its largest member rather than the
+sum. A Modal container is capped at 24 h, so any single case projected past
+that must checkpoint or be split before it is dispatched.
 
 **Measured exception.** The crystal-plasticity field solve is hundreds of
 thousands of small 3×3 einsums where per-op dispatch dominates; PINNACLE's own
@@ -165,7 +174,10 @@ as such.
 > - **State the accuracy tier** of every claimed agreement: golden-reference,
 >   independently verified numerical, previously published simulation, or
 >   experiment. Agreement with FEM alone never validates a neural route.
-> - **Compute on the connected SSH target, not cloud compute.** Prefer Torch on
+> - **Compute on the connected SSH target or on Modal** (cloud compute was
+>   originally excluded; that restriction was lifted 2026-09-10, up to the
+>   account balance). Dispatch independent cases as concurrent containers.
+>   Prefer Torch on
 >   GPU at `float64`; fall back to CPU when unavailable. Backend choice for the
 >   CP field solve is decided by measurement, because that workload is
 >   dispatch-bound (ADR 0015). Export `TORCH_BLAS_PREFER_HIPBLASLT=0` and
