@@ -30,6 +30,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G5 | B | **fixed** | study `scripts/make_void_meshes.py` | No conforming spherical-void mesh, no local grading — met from hexaform, no framework change |
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
+| G17 | A | **fixed** | `7156159` | Newton hardcoded a DENSE tangent; 3 of 5 mesh levels could not allocate |
+| G18 | A | **fixed** | `7156159` | CP tangent finite-differenced one quadrature point at a time |
 | G16 | A | **fixed** | `4340932`, ADR 0024 | `staggered` had no alternation loop: `max_iterations`/`tolerance` were dead, so coupling was lagged |
 | G6 | B | open | — | No dog-bone mesh generator |
 | G7 | R | **fixed** | `1f00312` | No Miller-direction → Bunge-Euler utility; closes C.6 |
@@ -39,7 +41,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Twelve of seventeen closed. **Three remain open**, and none of them blocks
+Fourteen of nineteen closed. **Three remain open**, and none of them blocks
 Phase 2: two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
@@ -60,9 +62,9 @@ under-damages and over-predicts load capacity. Any coupled number produced
 before commit `4340932` is an upper bound on stress.
 
 Note that the register has **grown** as work proceeded, from eleven entries to
-seventeen: G12, G13, G14, G15, and G16 were each found by verifying something
-else, and none was visible from reading the documentation or the component
-index. That is worth stating plainly, because it bears on how much of the
+nineteen: G12 through G18 were each found by verifying something else or by
+profiling a real run, and none was visible from reading the documentation or
+the component index. That is worth stating plainly, because it bears on how much of the
 framework should be trusted without a check. Every defect found so far was
 **silent** — none raised an error — and five were in code paths the
 documentation describes as working. Four of them (G13, G14, G15, G16) surfaced
@@ -223,6 +225,74 @@ The mapping was derived from the Al2219 form of the evolution law, which gives
 annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
+
+### G17 / G18 — FIXED — The coupled solve was unaffordable for reasons unrelated to the physics (`7156159`)
+
+Found by profiling the first production run, after the coarsest level alone ran
+41 minutes and a two-load-step probe exceeded 900 s. Both defects are cost, not
+correctness — and both were invisible until a real mesh was put through.
+
+**G17 — the Newton solver hardcoded a dense tangent.** `nonlinear.py` asked for
+`format="dense"`, and the assembler's COO path, whose own module docstring says
+it is "for larger field solves", was reachable from no solver at all
+(`hybrid.py` hardcoded dense too). A dense tangent costs `n_dofs² × 8` bytes:
+
+| level | elements | nodes | DOF | dense tangent | allocatable in 60 GB |
+|---|---|---|---|---|---|
+| d = 16 | 5,176 | 6,096 | 18,288 | 2.7 GB | yes |
+| d = 24 | 16,768 | 18,756 | 56,268 | 25.3 GB | yes |
+| d = 32 | 43,136 | 46,730 | 140,190 | 157 GB | **no** |
+| d = 48 | 137,216 | 145,034 | 435,102 | 1,515 GB | **no** |
+| d = 64 | 338,616 | 352,544 | 1,057,632 | 8,949 GB | **no** |
+
+Three of the five refinement levels could not allocate the matrix at all, so the
+mesh-convergence study was impossible before it began.
+`BoundaryConditions.apply_system_sparse` mirrors the dense elimination exactly,
+including the prescribed-increment right-hand-side correction — which is what
+makes the two agree rather than merely both converge. Measured on an identical
+coupled problem: `max|u_dense − u_sparse| = 1.8e-9` (3.1e-10 relative) and
+`max|d_dense − d_sparse| = 1.1e-12`.
+
+The switch-over threshold was **measured, not guessed**: on a banded stand-in the
+dense solve wins at 5,000 DOF (0.37 s against 2.28) and at 10,000 (2.46 against
+4.91), and loses by 3.8× at 18,288 (35.6 against 9.3). The factorization cost
+overtakes long before memory does, so the crossover sits near 12,000 DOF — far
+below where the memory argument alone would have put it, which is why the first
+threshold I set from memory reasoning (20,000) was wrong and left the coarsest
+level on the slow path.
+
+**G18 — the CP tangent finite-differenced one quadrature point at a time.** The
+`tangent_method = analytic` parameter is a misnomer: the tangent is a
+finite-difference stencil, and it was evaluated in a triple Python loop over
+quadrature points × 3 × 3 perturbation components. Profiling one load step at
+the coarsest mesh:
+
+- **716.7 s** total for a single load step with a single alternation;
+- **449.5 s** in six tangent assemblies, 74.9 s each, 63 % of the run;
+- **2,484,480** calls to `_stress_numpy` for 41,408 quadrature points — exactly
+  ten per point per tangent (one base plus nine perturbations).
+
+The stencil is unchanged; the points are now evaluated together through
+`compute_batch(..., dt=None)`, which returns the response without advancing the
+state and whose returned state is discarded, since a tangent must leave the
+material as it found it. The batched route declines and falls back to the
+per-QP loop under the same conditions `update_state` does — no `compute_batch`,
+a per-QP orientation field, or an active grain-boundary multiplier — so the two
+cannot diverge in which path they take.
+
+Measured: the tangent alone is **12.3× faster** at 512 quadrature points and
+agrees with the loop it replaces to 1.1e-9 relative; the full profiled case goes
+**716.7 s → 185.2 s, 3.9×**.
+
+**No parity golden moved for either change**, which is the point: both are
+numerically equivalent to what they replace, unlike G15 and G16 which changed
+the answer because the answer had been wrong.
+
+**Cost is still the open constraint.** At 185 s for one load step at the
+*coarsest* level, a 20-step run is about an hour at d = 16, and d = 64 carries
+65× the elements. Sizing the production campaign against measured cost — rather
+than assuming the planned matrix is affordable — is the next step, and it is now
+a scheduling question rather than a feasibility one.
 
 ### G16 — FIXED — `staggered` had no alternation loop, so the coupling was lagged (`4340932`, ADR 0024)
 

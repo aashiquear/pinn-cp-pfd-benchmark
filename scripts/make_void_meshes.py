@@ -96,6 +96,53 @@ def carve_void(mesh: HexMesh, inclusion_block_min: int = 100) -> tuple[HexMesh, 
     return carved, dropped
 
 
+def compact_nodes(mesh: HexMesh) -> tuple[HexMesh, int]:
+    """Drop nodes no surviving element references, and remap the connectivity.
+
+    Carving the void deletes the inclusion's ELEMENTS but leaves its interior
+    nodes in the point array, referenced by nothing. Those orphans are not
+    cosmetic:
+
+    * they put identically-zero rows in the damage stiffness matrix, so the
+      phase-field solve fails outright with a singular matrix -- which is how
+      this was found, on the first production run;
+    * they inflate ``n_nodes``, so any nodal-field statistic (mean damage,
+      norms, per-node error measures) would be diluted by nodes that carry no
+      solution. At d = 16 that is 561 of 6,657 nodes, 8.4 %, and it does not
+      shrink usefully with refinement (4.1 % at d = 64), so a convergence study
+      run on the uncompacted family would compare statistics whose denominators
+      were wrong by a mesh-dependent amount.
+
+    The earlier decision NOT to renumber was made to keep node ids comparable
+    across a carve, which is worth nothing once the meshes cannot be solved.
+    Node ordering is otherwise preserved: the surviving nodes keep their
+    relative order, so a compacted mesh differs from the original only by the
+    removal of unreferenced entries.
+    """
+    used = np.unique(mesh.cells)
+    n_orphans = int(mesh.points.shape[0] - used.size)
+    if n_orphans == 0:
+        return mesh, 0
+    remap = np.full(mesh.points.shape[0], -1, dtype=np.int64)
+    remap[used] = np.arange(used.size, dtype=np.int64)
+    compacted = HexMesh(
+        points=mesh.points[used],
+        cells=remap[mesh.cells],
+        block_id=mesh.block_id,
+        block_names=dict(mesh.block_names or {}),
+    )
+    for name, nodes in (mesh.node_sets or {}).items():
+        mapped = remap[np.asarray(nodes, dtype=np.int64)]
+        if np.any(mapped < 0):
+            raise SystemExit(
+                f"node set {name!r} references nodes no element uses; the set "
+                "was built before compaction or from the uncarved mesh."
+            )
+        compacted.add_node_set(name, mapped)
+    assert int(np.unique(compacted.cells).size) == compacted.points.shape[0]
+    return compacted, n_orphans
+
+
 def add_named_node_sets(mesh: HexMesh, centre: np.ndarray, radius: float) -> dict[str, int]:
     """Write ``outer_boundary`` and ``void_surface`` node sets onto the mesh.
 
@@ -190,6 +237,9 @@ def build_level(
     )
 
     carved, dropped = carve_void(full)
+    # Compact BEFORE building the node sets, so the sets are expressed in the
+    # final numbering and never need remapping.
+    carved, n_orphans = compact_nodes(carved)
     set_sizes = add_named_node_sets(carved, centre, VOID_RADIUS_UM)
     q = assess(carved)
     vols = signed_volumes(carved.points, carved.cells)
@@ -222,6 +272,7 @@ def build_level(
         "outer_grading": float(outer_grading),
         "first_layer_um": first_layer_thickness(carved, centre, VOID_RADIUS_UM),
         "node_sets": set_sizes,
+        "orphan_nodes_removed": n_orphans,
         "_mesh": carved,
     }
 

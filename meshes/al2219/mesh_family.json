@@ -11,7 +11,7 @@
    25.0
   ],
   "centre_offset_um": 0.0,
-  "n_nodes": 6657,
+  "n_nodes": 6096,
   "n_elements_total_before_carve": 5824,
   "n_elements": 5176,
   "n_elements_carved": 648,
@@ -34,6 +34,7 @@
    "outer_boundary": 1538,
    "void_surface": 218
   },
+  "orphan_nodes_removed": 561,
   "points_across_l0": 2.6339758200721026,
   "path": "meshes/al2219/void_r5_L50_d16.e",
   "round_trip": {
@@ -63,7 +64,7 @@
    25.0
   ],
   "centre_offset_um": 0.0,
-  "n_nodes": 19871,
+  "n_nodes": 18756,
   "n_elements_total_before_carve": 18048,
   "n_elements": 16768,
   "n_elements_carved": 1280,
@@ -86,6 +87,7 @@
    "outer_boundary": 3458,
    "void_surface": 386
   },
+  "orphan_nodes_removed": 1115,
   "points_across_l0": 4.614824353901712,
   "path": "meshes/al2219/void_r5_L50_d24.e",
   "round_trip": {
@@ -114,7 +116,7 @@
    25.0
   ],
   "centre_offset_um": 0.0,
-  "n_nodes": 49793,
+  "n_nodes": 46730,
   "n_elements_total_before_carve": 46592,
   "n_elements": 43136,
   "n_elements_carved": 3456,
@@ -137,6 +139,7 @@
    "outer_boundary": 6146,
    "void_surface": 866
   },
+  "orphan_nodes_removed": 3063,
   "points_across_l0": 5.539103203862257,
   "path": "meshes/al2219/void_r5_L50_d32.e",
   "round_trip": {
@@ -165,7 +168,7 @@
    25.0
   ],
   "centre_offset_um": 0.0,
-  "n_nodes": 151485,
+  "n_nodes": 145034,
   "n_elements_total_before_carve": 144384,
   "n_elements": 137216,
   "n_elements_carved": 7168,
@@ -188,6 +191,7 @@
    "outer_boundary": 13826,
    "void_surface": 1538
   },
+  "orphan_nodes_removed": 6451,
   "points_across_l0": 10.071423013340796,
   "path": "meshes/al2219/void_r5_L50_d48.e",
   "round_trip": {
@@ -216,7 +220,7 @@
    25.0
   ],
   "centre_offset_um": 0.0,
-  "n_nodes": 367617,
+  "n_nodes": 352544,
   "n_elements_total_before_carve": 355072,
   "n_elements": 338616,
   "n_elements_carved": 16456,
@@ -239,6 +243,7 @@
    "outer_boundary": 24578,
    "void_surface": 2906
   },
+  "orphan_nodes_removed": 15073,
   "points_across_l0": 13.920341150682413,
   "path": "meshes/al2219/void_r5_L50_d64.e",
   "round_trip": {
