@@ -28,7 +28,12 @@ import sys
 import time
 from pathlib import Path
 
+import re
+
 import numpy as np
+
+MAX_STRAIN_INCREMENT = 8.0e-4   # per constitutive update; see study gap G20
+TARGET_STRAIN = 0.12            # Al2219 void study loading target
 
 STUDY = Path(__file__).resolve().parent.parent
 PINNACLE = Path("/mnt/extended/projects/pinnacle")
@@ -101,6 +106,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("density", type=int)
     ap.add_argument("--load-steps", type=int, default=20)
+    ap.add_argument("--gc", type=float, default=None,
+                    help="Fracture energy (MPa.um). Defaults to the deck value; "
+                         "set from the polycrystal calibration for production runs.")
     # Alternations per load step. Exposed mainly so the whole harness path can
     # be exercised cheaply before a long dispatch; production runs leave it at
     # the deck value, since a low cap reports the coupling as unconverged
@@ -137,6 +145,32 @@ def main() -> int:
     deck_src = (STUDY / "decks" / "al2219" / f"al2219_iso_001_d{d}.i").read_text()
     if args.load_steps != 20:
         deck_src = deck_src.replace("  n_steps        = 20", f"  n_steps        = {args.load_steps}")
+
+    # Constitutive time resolution (G20). The CP integrator needs a strain
+    # increment at or below 8e-4 per constitutive update; at one sub-step per
+    # load increment the reported stress was 180% high, and above ~2.4e-3 the
+    # integration diverges outright. Subdividing the MECHANICS sub-solve keeps
+    # the damage solve at one per load step.
+    d_eps_staggered = TARGET_STRAIN / max(1, args.load_steps)
+    mech_substeps = max(1, int(np.ceil(d_eps_staggered / MAX_STRAIN_INCREMENT)))
+    deck_src = re.sub(
+        r"(\[\./mechanics\][\s\S]*?n_steps       = )\d+",
+        rf"\g<1>{mech_substeps}",
+        deck_src,
+    )
+    if f"n_steps       = {mech_substeps}" not in deck_src:
+        raise SystemExit("failed to set the mechanics sub-step count")
+
+    # Jacobi-preconditioned CG, not the direct solve: the sparse direct solve
+    # scales as n^2.91 here (81% of an 837 s run at d=24 against 14% at d=16),
+    # which is what puts the fine levels out of reach. CG returns the same
+    # answer to 3e-14 in displacement.
+    deck_src = deck_src.replace("linear_method = direct", "linear_method = cg")
+
+    if args.gc is not None:
+        deck_src = re.sub(r"(Gc           = )[0-9.eE+-]+", rf"\g<1>{args.gc:.9g}", deck_src)
+        if f"{args.gc:.9g}" not in deck_src:
+            raise SystemExit("failed to set Gc in the deck")
     if args.max_alternations is not None:
         deck_src = deck_src.replace(
             "  max_iterations = 10", f"  max_iterations = {args.max_alternations}"
