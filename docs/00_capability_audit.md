@@ -31,7 +31,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
 | G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
-| G20 | A | open | — | Load-path resolution is first-order: 1 sub-step per load increment gives a 180% stress error |
+| G20 | A | **fixed** | `1f0834d` | Load-path resolution: threshold measured, enforced in the harness, guarded in the framework |
 | G17 | A | **fixed** | `7156159` | Newton hardcoded a DENSE tangent; 3 of 5 mesh levels could not allocate |
 | G18 | A | **fixed** | `7156159` | CP tangent finite-differenced one quadrature point at a time |
 | G16 | A | **fixed** | `4340932`, ADR 0024 | `staggered` had no alternation loop: `max_iterations`/`tolerance` were dead, so coupling was lagged |
@@ -43,8 +43,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Fifteen of twenty-one closed. **Four remain open**, and one of them, G20,
-blocks any quantitative result: two **B** items (G6, G11) and one **R** item (G8, the missing study
+Sixteen of twenty-one closed. **Three remain open**, and none is severity A:
+G6 and G11 are development items, G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
 The separate genuinely open research item is R5, the history-aware CP state
@@ -289,7 +289,7 @@ stress at the converged displacement against the state as it stood at the START
 of the step -- rather than re-evaluating after `update_state`. The same applies
 to the per-step snapshot stress added for the damage-evidence work.
 
-### G20 — OPEN, severity A — load-path resolution is a first-order discretization axis, and the default is far too coarse
+### G20 — FIXED — load-path resolution is a first-order discretization axis, and the default was far too coarse
 
 **Found by validating the G19 fix, and it is larger than any mesh effect
 measured so far.** With the corrected stress in place, a homogeneous [001]
@@ -329,10 +329,51 @@ only the subdivision of the load path differs. The rate-sensitive flow rule
   alongside element size and l0, and must be converged BEFORE any mesh
   conclusion is drawn.
 
-**Not yet established.** Whether 25 sub-steps suffices at larger strain, under
-coupling with damage, or for a polycrystal; the number above is for a
-homogeneous single crystal at 2%. The convergence study must measure it rather
-than adopt 25 as a constant.
+**Mechanism, established rather than inferred.** `update_state` sub-steps
+adaptively (shear-increment cap 1e-3, budget 1e5), so the internal STATE
+integrates accurately however coarse the load step. `stress()` does not: it
+calls `material._evaluate(F, state)` at the FROZEN state with no `dt` and no
+sub-stepping, and that trial stress is what drives the Newton equilibrium and
+what is reported. Over a large increment the frozen state is stale, so
+equilibrium is solved against a stress that is too stiff. This is why
+sub-stepping the STATE does not rescue the answer and only a smaller LOAD
+increment does.
+
+**Threshold, measured against a 2000-increment reference.**
+
+| target strain | d_eps = 8e-4 | d_eps = 2.4e-3 | d_eps >= 4.8e-3 |
+|---|---|---|---|
+| 2% | 0.04% | — | — |
+| 12% | 0.05% | 11.1% | 3.3e10 % (diverged) |
+| 20% | 0.06% | 1.7% (at 2.0e-3) | 7.1e7 % (diverged) |
+
+The requirement is **d_eps <= 8e-4 per constitutive update**, independent of
+target strain. The failure is two-sided: above ~2.4e-3 the integration
+diverges visibly (1e11 to 1e14 MPa, or a negative stress), but between the
+threshold and that point it returns a plausible number that is simply wrong.
+
+**Resolution.** Three parts, because no single one is sufficient:
+
+1. *Requirement.* d_eps <= 8e-4, recorded here with the measurement behind it.
+2. *Enforcement.* `run_polycrystal.py` computes the mechanics sub-step count
+   from the target strain and load-step count, and records the achieved
+   increment in every result record. Subdividing the MECHANICS sub-solve
+   rather than the staggered loop keeps the damage solve at one per load step.
+3. *Guard.* `CPFieldCallback._check_strain_increment` warns once when the
+   increment exceeds the threshold, on both the scalar and batched paths. It
+   fires on 14 bundled decks, which is the point -- they are under-resolved
+   today and nothing said so.
+
+**Cost.** Enforcing the threshold costs 13 mechanics sub-steps per 1% load
+step, about 15x. Measured wall time per coupled run to 20% strain in 20 load
+steps with 2 alternations: 0.4 h at 250 elements, 3.5 h at 2,000, 27.7 h at
+16,000. This dominates the campaign budget and is why the Gc calibration runs
+on the h = 5 um polycrystal rather than the h = 2.5 um one.
+
+**Still to establish.** Whether the threshold tightens under damage coupling,
+where the degraded stiffness changes the local strain rate. The Gc sweep
+records the achieved increment per run so this can be checked against its
+results rather than assumed.
 
 ### G17 / G18 — FIXED — The coupled solve was unaffordable for reasons unrelated to the physics (`7156159`)
 

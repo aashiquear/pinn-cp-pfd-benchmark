@@ -164,7 +164,10 @@
   [./mechanics]
     variable      = u
     type          = cp_quasi_static
-    n_steps       = 1
+    # Subdivides each staggered load increment so the constitutive strain
+    # increment stays at or below 8e-4 (study gap G20). At one sub-step the
+    # reported stress was 180% high; above ~2.4e-3 the integrator diverges.
+    n_steps       = @MECH_STEPS@
     newton_tol    = 1.0e-6
     max_iter      = 50
     linear_method = direct

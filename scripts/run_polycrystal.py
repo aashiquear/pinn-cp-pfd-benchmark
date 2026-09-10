@@ -68,6 +68,7 @@ FIXED_CP = {
     "q_lat": 1.4, "alpha0": 0.4, "burgers": 0.000286,
 }
 EXPERIMENTAL_FRACTURE_STRAIN = 0.17    # test stopped here by catastrophic fracture
+MAX_STRAIN_INCREMENT = 8.0e-4          # per constitutive update; see G20
 
 
 def random_orientations(n: int, seed: int) -> np.ndarray:
@@ -127,6 +128,19 @@ def main() -> int:
     discover_components(force=True)
 
     l0 = args.l0 if args.l0 is not None else 2.0 * args.h
+
+    # Constitutive time resolution (study gap G20). The CP integrator needs a
+    # strain increment at or below 8e-4 per constitutive update: measured
+    # against a 2000-increment reference at 2%, 12% and 20% target strain, the
+    # error is 0.04-0.06% at 8e-4 and 1.7-11% at 2.4e-3, and above roughly
+    # 2.4e-3 the integration DIVERGES rather than degrading -- returning
+    # 1e11 to 1e14 MPa, or a negative stress. A run at one sub-step per load
+    # increment read 866.8 MPa where the converged answer is 309.9.
+    #
+    # The mechanics sub-solve is subdivided rather than the staggered loop,
+    # because the damage solve then still runs once per staggered step.
+    d_eps_staggered = args.strain / max(1, args.load_steps)
+    mech_substeps = max(1, int(np.ceil(d_eps_staggered / MAX_STRAIN_INCREMENT)))
     damage_on = args.gc > 0.0
     div = [max(1, int(round(L / args.h))) for L in DOMAIN]
     # NOTE the two spellings: the DECK key is ``domain`` (flat min/max corner
@@ -166,6 +180,7 @@ def main() -> int:
         "@GC@": f"{(1.0e9 if not damage_on else args.gc):.9g}",
         "@L0@": f"{l0:.9g}",
         "@LOAD_STEPS@": str(args.load_steps),
+        "@MECH_STEPS@": str(mech_substeps),
         "@MAX_ALT@": str(args.max_alternations if damage_on else 1),
     }
     for key, val in subs.items():
@@ -176,6 +191,9 @@ def main() -> int:
     deck.write_text(deck_src)
 
     record = {
+        "strain_increment_per_constitutive_update": d_eps_staggered / mech_substeps,
+        "mechanics_substeps": mech_substeps,
+        "max_strain_increment_allowed": MAX_STRAIN_INCREMENT,
         "h_um": args.h, "l0_um": l0, "h_over_l0": args.h / l0,
         "Gc_MPa_um": args.gc, "damage": damage_on,
         "divisions": div, "n_elements": int(conn.shape[0]),
