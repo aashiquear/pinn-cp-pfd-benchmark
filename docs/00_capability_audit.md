@@ -30,7 +30,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G5 | B | **fixed** | study `scripts/make_void_meshes.py` | No conforming spherical-void mesh, no local grading — met from hexaform, no framework change |
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
-| G19 | A | open | — | `cp_quasi_static`'s reported stress/strain are NOT the equilibrium fields once plasticity is active |
+| G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
+| G20 | A | open | — | Load-path resolution is first-order: 1 sub-step per load increment gives a 180% stress error |
 | G17 | A | **fixed** | `7156159` | Newton hardcoded a DENSE tangent; 3 of 5 mesh levels could not allocate |
 | G18 | A | **fixed** | `7156159` | CP tangent finite-differenced one quadrature point at a time |
 | G16 | A | **fixed** | `4340932`, ADR 0024 | `staggered` had no alternation loop: `max_iterations`/`tolerance` were dead, so coupling was lagged |
@@ -42,8 +43,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Fourteen of twenty closed. **Four remain open**, and one of them, G19, blocks
-any stress-based result: two **B** items (G6, G11) and one **R** item (G8, the missing study
+Fifteen of twenty-one closed. **Four remain open**, and one of them, G20,
+blocks any quantitative result: two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
 The separate genuinely open research item is R5, the history-aware CP state
@@ -227,7 +228,7 @@ annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
 
-### G19 — OPEN, severity A — the reported stress field is not the equilibrium stress once plasticity is active
+### G19 — FIXED — the reported stress field was not the equilibrium stress once plasticity was active
 
 **Found while calibrating Gc, and it would have corrupted that calibration
 silently.** `cp_quasi_static` builds its reported fields AFTER the load step
@@ -287,6 +288,51 @@ encodes it too.
 stress at the converged displacement against the state as it stood at the START
 of the step -- rather than re-evaluating after `update_state`. The same applies
 to the per-step snapshot stress added for the damage-evidence work.
+
+### G20 — OPEN, severity A — load-path resolution is a first-order discretization axis, and the default is far too coarse
+
+**Found by validating the G19 fix, and it is larger than any mesh effect
+measured so far.** With the corrected stress in place, a homogeneous [001]
+single crystal was compared against a material-point integration of the same
+constitutive law — an independent reference that shares no code with the field
+solve. They must agree, and whether they do is controlled by how finely the
+load path is subdivided:
+
+| mechanics sub-solve `n_steps` | wall (s) | sigma_zz at 2% strain |
+|---|---|---|
+| 1 | 23.4 | 866.8 |
+| 5 | 92.5 | 269.6 |
+| 25 | 355.2 | **309.9** |
+
+The material-point reference is **309.9 MPa**. At 25 sub-steps the field solve
+reproduces it exactly; at 1 sub-step — the setting every deck in this study
+currently uses — it reads 866.8 MPa, a **180% error**. The material point tells
+the same story on its own: integrating to 2% strain in 2 increments returns
+-39,879 MPa (a negative stress), in 4 increments 475.9, and converges to 309.9
+only by about 25 increments, i.e. a strain increment near 8e-4.
+
+**This is not the mesh.** Both the 1-sub-step and 25-sub-step runs use the same
+mesh, the same material, and the same total time, so the same mean strain rate;
+only the subdivision of the load path differs. The rate-sensitive flow rule
+(m = 0.12) makes the constitutive integration error large and one-sided.
+
+**Consequences for the study.**
+
+* Every coupled result produced so far is time-under-resolved, and the error is
+  larger than the mesh effects the convergence study was designed to measure. A
+  mesh-convergence study run at 1 sub-step would have converged the wrong
+  answer.
+* The cost model changes: 25 sub-steps cost 15x one sub-step on this case.
+  Subdividing the MECHANICS sub-solve rather than the staggered loop is the
+  cheaper lever, since the damage solve still runs once per staggered step.
+* Load-path resolution must be a declared axis of the convergence study
+  alongside element size and l0, and must be converged BEFORE any mesh
+  conclusion is drawn.
+
+**Not yet established.** Whether 25 sub-steps suffices at larger strain, under
+coupling with damage, or for a polycrystal; the number above is for a
+homogeneous single crystal at 2%. The convergence study must measure it rather
+than adopt 25 as a constant.
 
 ### G17 / G18 — FIXED — The coupled solve was unaffordable for reasons unrelated to the physics (`7156159`)
 
