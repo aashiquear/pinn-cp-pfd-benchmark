@@ -1,0 +1,116 @@
+{
+ "h_um": 10.0,
+ "l0_um": 20.0,
+ "h_over_l0": 0.5,
+ "Gc_MPa_um": 0.0,
+ "damage": false,
+ "divisions": [
+  5,
+  5,
+  10
+ ],
+ "n_elements": 250,
+ "n_nodes": 396,
+ "n_grains": 30,
+ "grain_seed": 20260911,
+ "orientation_seed": 20260910,
+ "grain_sizes": [
+  4,
+  14,
+  10,
+  9,
+  6,
+  5,
+  18,
+  16,
+  4,
+  2,
+  12,
+  12,
+  4,
+  11,
+  10,
+  4,
+  4,
+  8,
+  7,
+  12,
+  7,
+  7,
+  6,
+  3,
+  3,
+  13,
+  12,
+  19,
+  4,
+  4
+ ],
+ "cp_parameters": {
+  "C11": 108000.0,
+  "C12": 61300.0,
+  "C44": 28500.0,
+  "mu": 25700.0,
+  "gamma0": 1e-05,
+  "rate_exponent_n": 8.333333333333334,
+  "q_lat": 1.4,
+  "alpha0": 0.4,
+  "burgers": 0.000286,
+  "tau_c0": 60.317714,
+  "rho0": 2.393387,
+  "k1": 0.081145,
+  "annihilation_diameter": 0.002058
+ },
+ "experimental_fracture_strain": 0.17,
+ "applied_strain": 0.1,
+ "load_steps": 4,
+ "grain_boundaries": "stepped (Voronoi over a structured hex mesh), not conforming",
+ "wall_seconds": 75.30292224884033,
+ "damage_suppressed_by_large_Gc": true,
+ "curve": [
+  {
+   "step": 0,
+   "strain": 0.025,
+   "sigma_zz_MPa": 717.3568742753572,
+   "peak_damage_nodal": 9.510000403023438e-07,
+   "peak_damage_element_avg": 9.469072091935892e-07
+  },
+  {
+   "step": 1,
+   "strain": 0.05,
+   "sigma_zz_MPa": 843.885831121848,
+   "peak_damage_nodal": 2.247172232379368e-06,
+   "peak_damage_element_avg": 2.2331100661208053e-06
+  },
+  {
+   "step": 2,
+   "strain": 0.07500000000000001,
+   "sigma_zz_MPa": 880.533543703489,
+   "peak_damage_nodal": 3.5465501915348885e-06,
+   "peak_damage_element_avg": 3.519978168478089e-06
+  },
+  {
+   "step": 3,
+   "strain": 0.1,
+   "sigma_zz_MPa": 906.8729159223726,
+   "peak_damage_nodal": 4.837413872223981e-06,
+   "peak_damage_element_avg": 4.7975767286865175e-06
+  }
+ ],
+ "initiation_strain_element_avg_0p85": null,
+ "initiation_strain_nodal_0p65": null,
+ "initiation_resolution": 0.025,
+ "all_steps_converged": true,
+ "alternations_per_step": [
+  1,
+  1,
+  1,
+  1
+ ],
+ "provenance": {
+  "pinnacle_rev": "0b663ab",
+  "deck": "polycrystal_h10_l020_Gc0.i",
+  "backend": "numpy",
+  "precision": "float64"
+ }
+}
