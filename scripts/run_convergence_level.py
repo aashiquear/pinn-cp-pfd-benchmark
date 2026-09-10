@@ -90,9 +90,22 @@ def local_metrics(nodes: np.ndarray, damage: np.ndarray) -> dict:
 
 
 def main() -> int:
+    # Declared before any use: `global` must precede the first reference to the
+    # name in the function, and the argparse defaults below read STUDY. This is
+    # a compile-time (symtable) error, not a parse error, so `ast.parse` accepts
+    # the bad form and only `compile()` rejects it -- which is why the check
+    # before dispatch is now compile(), and why three containers failed in one
+    # second each on the first attempt.
+    global STUDY, PINNACLE
+
     ap = argparse.ArgumentParser()
     ap.add_argument("density", type=int)
     ap.add_argument("--load-steps", type=int, default=20)
+    # Alternations per load step. Exposed mainly so the whole harness path can
+    # be exercised cheaply before a long dispatch; production runs leave it at
+    # the deck value, since a low cap reports the coupling as unconverged
+    # rather than silently lagging it (ADR 0024).
+    ap.add_argument("--max-alternations", type=int, default=None)
     ap.add_argument("--out", default=str(STUDY / "results" / "convergence"))
     # Roots are arguments rather than constants so the same harness runs
     # unchanged locally and inside a remote container, where the study tree and
@@ -105,7 +118,6 @@ def main() -> int:
     ap.add_argument("--pinnacle-rev", default=None)
     args = ap.parse_args()
 
-    global STUDY, PINNACLE
     if args.study_root:
         STUDY = Path(args.study_root).resolve()
     if args.pinnacle_root:
@@ -125,10 +137,24 @@ def main() -> int:
     deck_src = (STUDY / "decks" / "al2219" / f"al2219_iso_001_d{d}.i").read_text()
     if args.load_steps != 20:
         deck_src = deck_src.replace("  n_steps        = 20", f"  n_steps        = {args.load_steps}")
+    if args.max_alternations is not None:
+        deck_src = deck_src.replace(
+            "  max_iterations = 10", f"  max_iterations = {args.max_alternations}"
+        )
     run_dir = out_dir / f"d{d}"
     deck_src = deck_src.replace(f"./runs/al2219_iso_001_d{d}", str(run_dir))
     deck = out_dir / f"al2219_iso_001_d{d}_run.i"
     deck.write_text(deck_src)
+
+    mesh_path = (STUDY / "meshes" / "al2219" / f"void_r5_L50_d{d}.e").resolve()
+    if not mesh_path.is_file():
+        raise SystemExit(f"mesh not found: {mesh_path}")
+    # The deck names the mesh by a path relative to the process cwd, so pin it
+    # to the resolved absolute path: the harness must give the same answer
+    # whatever directory it is launched from, locally or in a container.
+    deck_src = deck_src.replace(
+        f"path   = meshes/al2219/void_r5_L50_d{d}.e", f"path   = {mesh_path}"
+    )
 
     mesh_rec = next(
         r for r in json.loads((STUDY / "meshes" / "al2219" / "mesh_family.json").read_text())
@@ -140,9 +166,27 @@ def main() -> int:
     wall = time.time() - t0
 
     fields = result["fields"]
-    nodes = np.asarray(fields["coordinates"], dtype=float).reshape(-1, 3)
+    # Nodes come from the MESH, not from ``fields["coordinates"]``. That field
+    # carries a different grid on the composed path -- 216 points against the
+    # mesh's 6,096 at d=16 -- so using it would have placed every local metric
+    # at the wrong coordinates. It happened to raise on the reshape here; had
+    # the two counts been compatible it would have silently reported the damage
+    # maximum at a fictitious location. The assertion below keeps that failure
+    # loud if either shape ever changes again.
+    from pinnacle import registry
+
+    mesh_obj = registry.create(
+        "mesh", "file", path=str(mesh_path), format="exodus",
+        scale=1.0, name_mapping={}, verify=False,
+    )
+    nodes = np.asarray(mesh_obj.nodes, dtype=float).reshape(-1, 3)
     damage = np.asarray(fields.get("damage", []), dtype=float).ravel()
-    disp = np.asarray(fields["displacement"], dtype=float).reshape(nodes.shape)
+    disp_raw = np.asarray(fields["displacement"], dtype=float).ravel()
+    assert disp_raw.size == nodes.size, (
+        f"displacement has {disp_raw.size} entries but the mesh has {nodes.size} "
+        "coordinates; the field-to-mesh correspondence is not what this harness assumes"
+    )
+    disp = disp_raw.reshape(nodes.shape)
     stress = np.asarray(fields.get("stress", []), dtype=float)
     history = _find(result, "staggered") or []
 
@@ -155,6 +199,7 @@ def main() -> int:
         "n_nodes": int(nodes.shape[0]),
         "n_dofs": int(3 * nodes.shape[0]),
         "load_steps": args.load_steps,
+        "max_alternations": args.max_alternations,
         "wall_seconds": wall,
         "history": history,
         "all_steps_converged": bool(history) and all(h["converged"] for h in history),
