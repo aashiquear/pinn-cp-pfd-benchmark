@@ -4,3 +4,5 @@ __pycache__/
 .venv/
 meshes/*.e
 out/
+pinnacle_complete.tar.gz
+results/smoke/
