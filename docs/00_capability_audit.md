@@ -30,7 +30,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G5 | B | **fixed** | study `scripts/make_void_meshes.py` | No conforming spherical-void mesh, no local grading — met from hexaform, no framework change |
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
-| G16 | A | open | — | `staggered` has no alternation loop: `max_iterations`/`tolerance` are dead, so coupling is lagged |
+| G16 | A | **fixed** | `4340932`, ADR 0024 | `staggered` had no alternation loop: `max_iterations`/`tolerance` were dead, so coupling was lagged |
 | G6 | B | open | — | No dog-bone mesh generator |
 | G7 | R | **fixed** | `1f00312` | No Miller-direction → Bunge-Euler utility; closes C.6 |
 | G8 | R | open | — | Missing study metrics (void volume, fracture plane, Hausdorff, …) |
@@ -39,20 +39,25 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Eleven of seventeen closed. **Four remain open**: one **A** item (G16), two **B**
-items (G6, G11), and one **R** item (G8, the missing study metrics). G9 and G10
-are documentation notes requiring no code.
+Twelve of seventeen closed. **Three remain open**, and none of them blocks
+Phase 2: two **B** items (G6, G11) and one **R** item (G8, the missing study
+metrics). G9 and G10 are documentation notes requiring no code. All three are
+development work with no unknowns in them; none is research-grade difficulty.
+The separate genuinely open research item is R5, the history-aware CP state
+surrogate, scoped as its own track rather than as a gap.
 
-**G16 gates Phase 2 and is the one open item that is not routine.** The other
-three are development work with no unknowns in them. G16 needs the alternation
-loop that `max_iterations` and `tolerance` were meant to drive, plus
-constitutive-state snapshot and restore at load-step boundaries so plasticity is
-not counted several times per step. It also has to settle a semantic conflict
-already present in the tree over what `staggered`'s `n_steps` means. Until it
-closes, the coupled solution at each load level is lagged rather than converged,
-so no solver-route accuracy or cost comparison should be reported. The separate
-genuinely open research item is R5, the history-aware CP state surrogate, scoped
-as its own track rather than as a gap.
+**Both severity-A blockers are now closed.** G15 made the coupled solution
+path-correct in load and in constitutive state, which is what made the study's
+primary metrics *defined* rather than merely imprecise; G16 makes the solution at
+each load level *converged* rather than lagged. A benchmark reference needs
+both, and the discretization and solver-convergence step is unblocked.
+
+One consequence to carry into every later comparison: the converged scheme
+predicts **lower** stress than the lagged one — `j2_pfd_void_in_cube` fell from
+80.90 to 74.80 MPa, about 7.5 % — because a lagged coupling solves mechanics
+against a damage field that has not yet responded to the current load, so it
+under-damages and over-predicts load capacity. Any coupled number produced
+before commit `4340932` is an upper bound on stress.
 
 Note that the register has **grown** as work proceeded, from eleven entries to
 seventeen: G12, G13, G14, G15, and G16 were each found by verifying something
@@ -219,10 +224,10 @@ annihilation term as `2/y_c`, which is dimensionally inconsistent; the Al2219
 form is correct and was adopted for both materials. Full derivation in
 `docs/03_material_point_verification.md`.
 
-### G16 — OPEN, severity A — `staggered` has no alternation loop, so the coupling is lagged
+### G16 — FIXED — `staggered` had no alternation loop, so the coupling was lagged (`4340932`, ADR 0024)
 
-Exposed by fixing G15, and it is the remaining blocker on a *converged* coupled
-reference. The executioner carries `max_iterations` (default 50) and
+Exposed by fixing G15: it was the remaining blocker on a *converged* coupled
+reference. The executioner carried `max_iterations` (default 50) and
 `tolerance`, and drives neither: the outer loop runs mechanics once and damage
 once per load step, and `"iterations": 1` is **hardcoded** into the history it
 reports. So at each load level the mechanics is solved against the *previous*
@@ -240,6 +245,18 @@ Both readings are in the tree, and the parameters that would separate them
 (`max_iterations` for alternations, `n_steps` for load steps) exist with only
 one of them wired.
 
+**The semantics decision this forced, recorded as ADR 0024.** `n_steps` is now a
+load loop, and `max_iterations`/`tolerance` drive the alternation. That reading
+wins because it can express the other — a single load step with several
+alternations is `n_steps = 1, max_iterations = k` — while the alternation
+reading cannot express a load path at all, and under it the study's primary
+metrics do not exist in the output. Introducing a new parameter to preserve the
+bundled decks' reading was considered and rejected: G15 had already moved their
+answers, so the protection would have been illusory while leaving `n_steps`
+permanently ambiguous. The declared default of 50 alternations is kept, because
+the cost is bounded by `tolerance` — convergence took 2 — and lowering it to 1
+would ship the lagged coupling as the default and make correctness opt-in.
+
 **A further requirement, which is why this was not folded into G15.** Alternating
 at a *fixed* load level requires the constitutive state to be restored to the
 state converged at the end of the previous load level before each alternation —
@@ -247,36 +264,56 @@ otherwise every alternation re-integrates plasticity on top of the last one and
 the plastic strain is counted several times per load step. So G16 needs state
 *snapshot and restore* at load-step boundaries, not merely the continuation G15
 added. `CPFieldCallback` already exposes `load_state_dict`, so the mechanism
-exists; making it generic across the CP and J2 routes is the work.
+exists, and `stress_divergence_j2` already cached its callback so that "the
+plastic state survives across load steps and coupling iterations" — the CP cache
+added under G15 brought that route into line with a convention already in the
+tree. Snapshot and restore duck-type on those two methods and are inert when the
+mechanics kernel has neither, since an elastic problem has no path-dependent
+state. Note the error this prevents grows *with* `max_iterations`, so without it
+a tighter convergence setting would have produced a worse answer.
 
-**One parity golden is deliberately left failing.**
-`j2/j2_pfd_void_in_cube` moved under G15's fix. **Why that case moved and the
-neighboring `j2_pfd_function_hardening` did not is not established.** The
-obvious candidates were checked and ruled out: both decks drive mechanics with
-`fem_quasi_static` (so both already honored the load window), both set
-`ramp_dirichlet = true` (so in both the load factor does scale the prescribed
-displacement), both run `staggered` with `n_steps = 3`, and both have their
-mechanics `n_steps` overridden to 2 by the parity harness. The remaining
-differences — 3-D `box_with_void` against a 2-D mesh, `j2_isotropic_hardening`
-against function hardening, and a looser `abs_tol` of 1e-4 against 1e-6 — do not
-explain it either, and the tolerance difference argues the wrong way, since the
-case that did *not* move is compared more tightly. This is left as an open
-question rather than a guess; it should be settled when the golden is
-regenerated under G16, because a case that moves for an unexplained reason is
-exactly the kind of thing a benchmark reference must not inherit silently. It
-was **not**
-regenerated: with G16 open that deck now runs three load steps with one
-alternation each, and regenerating would encode a lagged coupling as the
-reference, inviting exactly the wrong comparison. It is left failing and
-documented, to be regenerated once the alternation loop lands. The failure set
-is therefore 12: the 10 pre-existing parity failures, `test_verify_install_passes`
-(which also fails on the unmodified tree here), and this one.
+**Seven parity goldens were regenerated, and they are the coherent blast
+radius.** `elastic_pfd_fem_bar_1d`, `elastic_pfd_hybrid_bar_1d`,
+`j2_pfd_function_hardening`, `j2_pfd_function_hardening_finite_strain`,
+`j2_pfd_void_in_cube`, `rezwan_field_fem_3d`, and `rezwan_field_hybrid_3d` — every
+one a coupled `staggered` or hybrid case, i.e. exactly the set that alternates.
+The `rezwan_field_*` diffs show the mechanism directly, moving on
+`solver_history` columns `iterations` 1 → 2 and `converged` 0 → 1.
 
-**Consequence for the study.** No solver-route accuracy comparison should be
-reported until G16 closes. G15's fix makes the solution path-correct in load and
-in constitutive state, which is what made the metrics *defined*; G16 is what
-makes the coupled solution at each load level *converged*. A benchmark reference
-needs both.
+**The converged solutions carry lower stress, and that direction is the
+physically expected one.** `j2_pfd_void_in_cube` final stress fell from a golden
+80.90 MPa to 74.80 MPa, about 7.5 %. A lagged coupling solves the mechanics
+against a damage field that has not yet responded to the current load, so it
+under-damages and over-predicts load capacity. Any coupled result produced
+before this change should be read as an upper bound on stress.
+
+**On the golden that was left failing under G15.** `j2_pfd_void_in_cube` was
+deliberately not regenerated then, so a lagged coupling would not be frozen as
+the reference; that objection is resolved here and it is regenerated with the
+rest. The open question recorded at the time — why that case moved under G15
+while the neighboring `j2_pfd_function_hardening` did not, when both drive
+mechanics with `fem_quasi_static`, both set `ramp_dirichlet = true`, both run
+`staggered` with `n_steps = 3`, and both have their mechanics `n_steps`
+overridden to 2 by the harness — is now partly answered: `j2_pfd_function_hardening`
+*did* move once the alternation loop landed. So the two cases differ in
+sensitivity to load windowing specifically, not in whether they respond to the
+coupled-solver changes at all. The root cause of that differing sensitivity is
+still not established, and is not pursued further because both goldens now
+encode the converged scheme.
+
+**Runtime rises** by roughly the mean alternation count per load step — about 2×
+on the cases measured. Convergence took 2 alternations, not the declared cap of
+50, so the cost is bounded by `tolerance` rather than by `max_iterations`.
+
+The failure set is back to the 11 pre-existing: 10 parity failures plus
+`test_verify_install_passes`, which also fails on the unmodified tree here.
+3491 pass.
+
+**Consequence for the study.** G15 made the solution path-correct in load and in
+constitutive state, which is what made the metrics *defined*; G16 makes the
+coupled solution at each load level *converged*. With both closed, the coupled
+reference is fit to benchmark against — which unblocks the discretization and
+solver-convergence step, and Phase 2 behind it.
 
 ### G15 — FIXED — `staggered` never incremented the load, and reset the CP state every sub-solve (`43dd6fd`, ADR 0023)
 
