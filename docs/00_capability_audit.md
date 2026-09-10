@@ -31,6 +31,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
 | G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
+| G21 | R | **fixed** | (this session) | Sparse DIRECT solve scales n^2.91 and made fine meshes unreachable; CG is exact and ~linear |
 | G20 | A | **fixed** | `1f0834d` | Load-path resolution: threshold measured, enforced in the harness, guarded in the framework |
 | G17 | A | **fixed** | `7156159` | Newton hardcoded a DENSE tangent; 3 of 5 mesh levels could not allocate |
 | G18 | A | **fixed** | `7156159` | CP tangent finite-differenced one quadrature point at a time |
@@ -43,7 +44,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Sixteen of twenty-one closed. **Three remain open**, and none is severity A:
+Seventeen of twenty-two closed. **Three remain open**, and none is severity A:
 G6 and G11 are development items, G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
@@ -288,6 +289,52 @@ encodes it too.
 stress at the converged displacement against the state as it stood at the START
 of the step -- rather than re-evaluating after `update_state`. The same applies
 to the per-step snapshot stress added for the damage-evidence work.
+
+### G21 — FIXED — the direct linear solve, not the constitutive integration, is what made the fine meshes unreachable
+
+**Found by testing an assumption in my own cost model.** I had extrapolated
+campaign cost linearly in element count. A sparse direct solve does not scale
+linearly, so I measured it on two levels of the void family, one load step
+each:
+
+| level | elements | total | linear solve | tangent |
+|---|---|---|---|---|
+| d=16 | 5,176 | 156.9 s | 22.2 s (14%) | 44.6 s |
+| d=24 | 16,768 | 836.7 s | **677.4 s (81%)** | 324.5 s |
+
+Against a 3.24x increase in elements, the direct solve grew **30.6x** — a
+scaling exponent of **2.91**, near-cubic — while the run total grew 5.33x
+(exponent 1.42). Extrapolated, the direct solve alone reaches roughly 10,000 s
+per Newton iteration at d=32 and is hopeless beyond it. The near-cubic term is
+what makes the fine meshes unreachable; the constitutive integration, which I
+had assumed was the constraint, is not.
+
+**A Jacobi-preconditioned CG path already existed and no deck used it.**
+`linear.py` has offered `method="cg"` alongside `"direct"` all along; every
+study deck and every bundled example specifies `direct`.
+
+| level | direct | cg | speedup | max relative displacement difference |
+|---|---|---|---|---|
+| d=16 | 156.9 s | 157.4 s | 1.00x | 8.3e-15 |
+| d=24 | 820.2 s | 488.1 s | **1.68x** | 2.7e-14 |
+
+CG returns the *same answer* — the displacement fields agree to 3e-14 and the
+volume-averaged axial stress to six significant figures — so this is a pure
+cost change with no accuracy cost. Per-element cost is flat under CG (30.3
+against 29.1 ms/element at the two levels), i.e. the total scales roughly
+linearly, where the direct solve made it superlinear.
+
+**Action taken.** Every study deck now specifies `linear_method = cg`. The
+framework default is left alone: at small sizes the two are indistinguishable,
+and changing a default would move bundled goldens for no benefit.
+
+**Caveat worth carrying.** CG assumes a symmetric positive-definite system.
+The agreement above shows the CP tangent is close enough to symmetric for
+Jacobi-CG to converge to the direct answer at these two levels, but that is a
+measurement at d=16 and d=24 under a specific load state, not a proof. The
+convergence study should re-verify CG against direct at one damaged, strongly
+non-symmetric state before the fine-mesh results are trusted; `linear.py`'s own
+TODO notes that AMG/ILU preconditioners remain future work if Jacobi stalls.
 
 ### G20 — FIXED — load-path resolution is a first-order discretization axis, and the default was far too coarse
 

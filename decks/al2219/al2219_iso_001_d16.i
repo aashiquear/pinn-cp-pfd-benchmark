@@ -229,7 +229,7 @@
     n_steps       = 1
     newton_tol    = 1.0e-6
     max_iter      = 50
-    linear_method = direct
+    linear_method = cg
     t_end         = 10.0
   []
   [./damage]

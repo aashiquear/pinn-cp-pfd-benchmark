@@ -170,7 +170,14 @@
     n_steps       = @MECH_STEPS@
     newton_tol    = 1.0e-6
     max_iter      = 50
-    linear_method = direct
+    # Jacobi-preconditioned CG, not the direct solve. Measured on the void
+    # mesh: the sparse DIRECT solve scales as n^2.91 -- at d=24 it was already
+    # 677 s of an 837 s run (81%), against 14% at d=16 -- so it, not the
+    # constitutive integration, is what makes the fine meshes unreachable. CG
+    # returns the same answer (max relative displacement difference 3e-14,
+    # sigma_zz identical to six figures) and makes the total scale roughly
+    # linearly in element count.
+    linear_method = cg
     t_end         = 10.0
   []
   [./damage]
