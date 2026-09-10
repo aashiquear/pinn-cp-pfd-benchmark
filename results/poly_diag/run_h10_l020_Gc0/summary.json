@@ -41,7 +41,7 @@
     "functions": {
       "axial": {
         "kind": "parsed",
-        "expression": "2*t/10.0"
+        "expression": "4*t/10.0"
       }
     },
     "materials": {
@@ -148,8 +148,8 @@
     },
     "executioner": {
       "type": "staggered",
-      "n_steps": 2,
-      "max_iterations": 1,
+      "n_steps": 4,
+      "max_iterations": 3,
       "tolerance": 0.0001,
       "snapshots_every": 1,
       "mechanics": {
@@ -196,13 +196,13 @@
     }
   },
   "residuals": {
-    "fem_iterations": 2.0
+    "fem_iterations": 4.0
   },
   "stress_strain": {
-    "strain_min": -0.008149482413695208,
-    "strain_max": 0.020000000000009403,
-    "stress_min": -2.353441293758987e-10,
-    "stress_max": 3.4943974871278647e-10,
-    "final_stress": 2.1760215537944593e-10
+    "strain_min": -0.01777994680552429,
+    "strain_max": 0.040000000000017605,
+    "stress_min": 4.6179397632829285e-09,
+    "stress_max": 5.145924747290704e-09,
+    "final_stress": 4.990284346696438e-09
   }
 }

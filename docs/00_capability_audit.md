@@ -31,6 +31,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
 | G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
+| G22 | A | **fixed** | `aef2302` | `_snapshot_material_state` returned None on every call: the alternation state restore was a silent no-op |
+| G23 | B | open | — | Coupled restart implemented but NOT bit-exact against an uninterrupted run |
 | G21 | R | **fixed** | (this session) | Sparse DIRECT solve scales n^2.91 and made fine meshes unreachable; CG is exact and ~linear |
 | G20 | A | **fixed** | `1f0834d` | Load-path resolution: threshold measured, enforced in the harness, guarded in the framework |
 | G17 | A | **fixed** | `7156159` | Newton hardcoded a DENSE tangent; 3 of 5 mesh levels could not allocate |
@@ -44,8 +46,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Seventeen of twenty-two closed. **Three remain open**, and none is severity A:
-G6 and G11 are development items, G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
+Eighteen of twenty-four closed. **Four remain open**, and none is severity A:
+G6, G11 and G23 are development items, G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
 The separate genuinely open research item is R5, the history-aware CP state
@@ -289,6 +291,66 @@ encodes it too.
 stress at the converged displacement against the state as it stood at the START
 of the step -- rather than re-evaluating after `update_state`. The same applies
 to the per-step snapshot stress added for the damage-evidence work.
+
+### G22 — FIXED — the material-state snapshot and restore never did anything
+
+**Found while implementing restart, and it invalidated work I had already
+reported as done.** `_mechanics_material` read `sub_exec.kernel`.
+`CPQuasiStaticExecutioner` has no such attribute — the kernels live on
+`problem.kernels` — so the accessor returned `None` on **every** call, and
+every snapshot and restore built on it was a no-op. That includes the
+alternation state restore introduced with ADR 0024, whose whole purpose is to
+stop each alternation piling plasticity on the previous one.
+
+A bare `except Exception: return None` wrapped the lookup. That is what let a
+no-op pass for working code for as long as it did, and it is gone: a kernel
+that advertises `make_material` and then fails is a real defect and must
+surface.
+
+**Two further defects surfaced the moment the exception stopped being
+swallowed**, neither of which could have been seen while the accessor
+returned None:
+
+* `make_material(backend, dim)` cannot supply `n_qp`, which is part of the
+  material cache key, so the call always MISSED and tried to construct a
+  second callback. On an orientation-field deck it fails outright with an
+  orientation-shape mismatch; on a deck where it succeeds it would have
+  returned a *fresh* object carrying virgin state, so the snapshot would have
+  operated on something the sub-solve never uses. The live cached instance is
+  read instead.
+* The phase-field irreversibility history `H = max(H, psi+)` lives on the
+  driving-force material, not in the damage field, so a restart reinstating
+  only `d` would resume with `H = 0`.
+
+**Blast radius on committed results is zero, and that is a measurement, not a
+hope.** The full suite was re-run after the fix and **no golden moved** (12
+failures against the 11-item baseline, the twelfth being stale generated
+syntax docs from three new parameters). The bundled coupled cases converge in
+a single alternation, and with one alternation there is nothing to restore.
+
+**Where it does bite: this study's own runs.** The Gc calibration sweep was
+dispatched with three alternations per load step. Wherever a step took more
+than one, plasticity was counted once per alternation. All six runs were
+cancelled rather than harvested.
+
+### G23 — OPEN, severity B — coupled restart is implemented but not bit-exact
+
+`checkpoint_every`, `checkpoint_path` and `restart_from` are declared on the
+staggered executioner and write the quadrature-point constitutive state, the
+damage field, the irreversibility history, the displacement and the load-step
+index. Writing a checkpoint is verified to be bitwise non-perturbing: a run
+with checkpointing enabled produces results identical to one without.
+
+**Resuming is not yet equivalent.** A run restarted from step 3 of 6 differs
+from an uninterrupted run by 9.5e-4 relative in displacement and 7.1% in
+stress. The cause is not yet identified — the constitutive state, damage
+field and history are all confirmed present in the checkpoint. Until this
+closes the parameters exist but must not be used for production runs, and the
+campaign remains limited to what fits in one allocation.
+
+The equivalence test itself is the right acceptance criterion and should be
+kept: a restart that merely looks plausible is worse than no restart, because
+a long campaign would silently accumulate the discrepancy at every resume.
 
 ### G21 — FIXED — the direct linear solve, not the constitutive integration, is what made the fine meshes unreachable
 
