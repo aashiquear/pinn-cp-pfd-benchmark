@@ -6,3 +6,4 @@ meshes/*.e
 out/
 pinnacle_complete.tar.gz
 results/smoke/
+runs/deckcheck/
