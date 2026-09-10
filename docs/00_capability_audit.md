@@ -322,7 +322,9 @@ only the subdivision of the load path differs. The rate-sensitive flow rule
   larger than the mesh effects the convergence study was designed to measure. A
   mesh-convergence study run at 1 sub-step would have converged the wrong
   answer.
-* The cost model changes: 25 sub-steps cost 15x one sub-step on this case.
+* The cost model changes, though by less than the sub-step count suggests --
+  see the measured 4.7x below, not 8x, because the state update does not
+  scale with subdivision.
   Subdividing the MECHANICS sub-solve rather than the staggered loop is the
   cheaper lever, since the damage solve still runs once per staggered step.
 * Load-path resolution must be a declared axis of the convergence study
