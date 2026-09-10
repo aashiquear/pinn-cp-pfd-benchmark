@@ -257,7 +257,11 @@ beside it.
 2. *Plastic regime — a transverse stress that cannot exist.* The same
    homogeneous single crystal with free lateral faces must have sigma_xx = 0
    identically. It reports sigma_xx = 148-217 MPa against sigma_zz = 319-447
-   MPa, a ratio of 0.5-0.8. For the polycrystal the volume average is 207 MPa
+   MPa. The per-step ratios are 148.64/319.4 = 0.465, 217.13/330.3 = 0.657,
+   152.39/447.0 = 0.341 and 211.42/418.4 = 0.505, i.e. 0.34-0.66. (An earlier
+   revision wrote "0.5-0.8", which came from pairing the extremes of the two
+   MPa ranges rather than dividing each step's pair.) For the polycrystal the
+   volume average is 207 MPa
    against 695 MPa. The average-stress theorem makes the volume average of
    sigma_xx zero for a traction-free lateral surface, so this is not a
    heterogeneity effect.
