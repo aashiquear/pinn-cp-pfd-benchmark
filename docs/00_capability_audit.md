@@ -59,9 +59,18 @@ evidence for it was badly chosen: it rested on a Gc = 2.0 MPa.um case where
 the specimen severed within five load steps, so the run reached a terminal
 state and *looked* complete. Re-run at Gc = 30 MPa.um, inside the physical
 band, with 60 load steps and the coarsest mesh, the solve fails at step 12
-while still carrying 144.8 MPa, 60.2% of its 192.4 MPa peak, with only 12%
-of the domain damaged -- that is the onset of crack propagation, not the end
-of it. G26 removed a common trigger and let runs get much further; it did
+while still carrying **144.8 MPa, 60.2% of its 240.6 MPa peak**, with only
+6.1% of the domain damaged -- that is the onset of crack propagation, not
+the end of it. The failure is also not a clean zeroing: step 12 applies
+1.657% strain where 2.600% was prescribed, i.e. a partially applied
+boundary condition.
+
+(An earlier revision of this paragraph paired the 60.2% figure with a
+192.4 MPa peak. Those two numbers are inconsistent -- 144.8/192.4 = 75.3%.
+The 60.2% came from the harness, which maximises over all 60 rows; 192.4
+was the largest value in a printout sampling every tenth row, which missed
+the true peak of 240.59 MPa at step 6. The ratio was right and the peak was
+wrong. Verified against the saved results.csv.) G26 removed a common trigger and let runs get much further; it did
 not make the coupled solve traverse propagation.
 
 The other four open items do not block: **G6** and **G11** are development
