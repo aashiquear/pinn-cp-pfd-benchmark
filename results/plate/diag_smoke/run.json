@@ -1,0 +1,78 @@
+{
+ "tag": "diag_smoke",
+ "geometry": "plain",
+ "density": 1,
+ "n_elements": 128,
+ "n_nodes": 306,
+ "orientation": "[1.0, 0.0, 0.0]",
+ "Gc_MPa_um": 1000000000.0,
+ "l0_um": 1.0,
+ "target_strain": 0.01,
+ "load_steps": 3,
+ "mech_substeps": 5,
+ "alternations": 1,
+ "strain_increment_per_update": 0.0006666666666666668,
+ "wall_seconds": 14.876829223998357,
+ "diagnostics": {
+  "staggered": [
+   {
+    "step": 0,
+    "step_factor": 0.3333333333333333,
+    "iterations": 1,
+    "damage_increment": 7.82129016440009e-10,
+    "converged": true
+   },
+   {
+    "step": 1,
+    "step_factor": 0.6666666666666666,
+    "iterations": 1,
+    "damage_increment": 2.038366939082877e-09,
+    "converged": true
+   },
+   {
+    "step": 2,
+    "step_factor": 1.0,
+    "iterations": 1,
+    "damage_increment": 2.071269871992976e-09,
+    "converged": true
+   }
+  ],
+  "mech_converged": null,
+  "mech_failed_steps": null
+ },
+ "status": "complete",
+ "steps_retained": 3,
+ "vtk_series": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/diag_smoke/fields/fields.pvd",
+ "csv": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/diag_smoke/results.csv",
+ "n_steps": 3,
+ "vtk_files": 0,
+ "columns": [
+  "step",
+  "load_factor",
+  "total_volume",
+  "damage_volume",
+  "damage_volume_fraction",
+  "peak_damage_nodal",
+  "peak_damage_element",
+  "mean_damage",
+  "boundary_strain",
+  "boundary_displacement",
+  "avg_stress_xx",
+  "avg_stress_yy",
+  "avg_stress_zz",
+  "avg_stress_xy",
+  "avg_stress_xz",
+  "avg_stress_yz",
+  "avg_stress_vm",
+  "avg_stress_axial",
+  "avg_strain_xx",
+  "avg_strain_yy",
+  "avg_strain_zz",
+  "avg_strain_xy",
+  "avg_strain_xz",
+  "avg_strain_yz",
+  "avg_strain_vm",
+  "avg_strain_axial"
+ ],
+ "damage_threshold": 0.85
+}

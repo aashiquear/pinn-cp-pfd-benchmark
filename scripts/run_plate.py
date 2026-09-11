@@ -44,6 +44,11 @@ CAL_AL2219 = {
 }
 
 
+def _nvl(value):
+    """Absent status is reported as such, never as a falsy-looking None."""
+    return "not_reported" if value is None else value
+
+
 def build_deck(*, mesh: Path, orient: str, gc: float, l0: float, nsteps: int,
                mechsub: int, maxalt: int, strain: float, out_dir: Path,
                cal: dict[str, str], maxcutbacks: int = 15) -> Path:
@@ -130,8 +135,14 @@ def main() -> int:
     # per-load-step alternation record.
     diag = {
         "staggered": _find(result, "staggered"),
-        "mech_converged": _find(result, "converged"),
-        "mech_failed_steps": _find(result, "failed_steps"),
+        # The coupled executioner does not propagate the mechanics
+        # sub-result's top-level keys, so these are frequently absent. They
+        # are recorded as "not_reported" rather than None, because a null
+        # here would read as "nothing failed" -- the exact confusion G25 is
+        # about. The authoritative check remains the physical invariant
+        # below, which does not depend on any status flag.
+        "mech_converged": _nvl(_find(result, "converged")),
+        "mech_failed_steps": _nvl(_find(result, "failed_steps")),
     }
     snaps = _find(result, "snapshots") or []
     summary = write_run_results(
@@ -140,7 +151,9 @@ def main() -> int:
         gauge_length=PLATE_LENGTH, load_axis=0, write_vtk=not args.no_vtk,
     )
     _early = dict(diag)
-    _early.update({"tag": tag, "n_elements": int(n_elem), "wall_seconds": wall,
+    _early.update({"tag": tag, "n_elements": int(cells.shape[0]),
+                   "n_nodes": int(nodes.shape[0]), "wall_seconds": wall,
+                   "steps_written": summary.get("n_steps"),
                    "status": "pending_validation"})
     (out_dir / "run.json").write_text(json.dumps(_early, indent=1, default=str))
 
