@@ -29,6 +29,8 @@ mesh-independent in the limit.
 
 from __future__ import annotations
 
+import json
+
 from pathlib import Path
 from typing import Any
 
@@ -118,6 +120,18 @@ def collect_step_rows(
             # from damage smeared over the whole domain.
             row["mean_damage"] = float(np.sum(d_elem * vol) / total_vol)
 
+        # Crack driving force. Damage initiation is a threshold ON this, so
+        # recording it lets a damage-SUPPRESSED run predict the Gc at which a
+        # specimen would initiate, instead of re-running once per candidate
+        # Gc. For a locally uniform H the AT2 solution is
+        # d = 2H / (Gc/l0 + 2H), so d = d_crit at H_crit gives
+        # Gc = l0 * H_crit * 2 * (1 - d_crit) / d_crit.
+        h = sn.get("driving_H")
+        if h is not None:
+            h = np.asarray(h, dtype=float).ravel()
+            row["max_driving_H_MPa"] = float(h.max())
+            row["mean_driving_H_MPa"] = float(h.mean())
+
         u = sn.get("displacement")
         if u is not None:
             un = np.asarray(u, dtype=float).reshape(len(nodes), -1)
@@ -200,6 +214,73 @@ def write_vtk_series(
     return written
 
 
+def initiation_record(rows, snapshots, nodes, cells, threshold=0.85):
+    """Locate fracture initiation and the state there.
+
+    Phase-field damage on a coarse mesh routinely stops converging shortly
+    after damage localizes: the load increment the solver can take collapses
+    once a band forms. Standard practice is therefore to run until damage has
+    significantly initiated and report that, rather than to insist on
+    propagation the discretization cannot carry.
+
+    Initiation is the first load step at which the ELEMENT NODAL AVERAGE
+    damage reaches ``threshold`` anywhere. The element average is used rather
+    than a nodal peak because a single hot node is a discretization artifact,
+    while an element whose average has crossed the threshold has genuinely
+    lost load-carrying capacity over a finite volume.
+
+    Returns the step index, the state there, and where it happened -- the
+    centroid of the first element to cross -- or None if it never does.
+    """
+    hit = next((r for r in rows if float(r["peak_damage_element"]) >= threshold), None)
+    if hit is None:
+        return None
+    step = int(hit["step"])
+    rec = {
+        "criterion": f"element nodal-average damage >= {threshold}",
+        "step": step,
+        "load_factor": float(hit["load_factor"]),
+        "boundary_strain": float(hit["boundary_strain"]),
+        "boundary_displacement": float(hit["boundary_displacement"]),
+        "avg_stress_axial_MPa": float(hit["avg_stress_axial"]),
+        "damage_volume": float(hit["damage_volume"]),
+        "damage_volume_fraction": float(hit["damage_volume_fraction"]),
+        "peak_damage_element": float(hit["peak_damage_element"]),
+    }
+    # How well is the initiation strain actually resolved? It is bracketed
+    # between the previous step (below threshold) and this one, so the
+    # uncertainty is one load increment. Initiation at step 0 has no lower
+    # bracket at all: damage was already past the threshold at the first
+    # recorded state, so the reported strain is an upper bound, not a
+    # measurement, and the ramp was too coarse.
+    prior = [r for r in rows if int(r["step"]) < step]
+    if prior:
+        lo = float(prior[-1]["boundary_strain"])
+        rec["strain_bracket"] = [lo, rec["boundary_strain"]]
+        rec["strain_resolution"] = rec["boundary_strain"] - lo
+        rec["resolved"] = True
+    else:
+        rec["strain_bracket"] = [0.0, rec["boundary_strain"]]
+        rec["strain_resolution"] = rec["boundary_strain"]
+        rec["resolved"] = False
+        rec["warning"] = (
+            "initiation occurred at the FIRST recorded step, so the strain is "
+            "an upper bound rather than a measurement -- rerun with more load "
+            "steps before quoting it"
+        )
+
+    snap = next((s for s in snapshots if int(s.get("step", -1)) == step), None)
+    if snap is not None and snap.get("damage") is not None:
+        d_nodal = np.asarray(snap["damage"], dtype=float).ravel()
+        d_elem = d_nodal[cells].mean(axis=1)
+        e = int(np.argmax(d_elem))
+        centroid = nodes[cells[e]].mean(axis=0)
+        rec["initiation_element"] = e
+        rec["initiation_centroid"] = [float(x) for x in centroid]
+        rec["initiation_element_damage"] = float(d_elem[e])
+    return rec
+
+
 def write_run_results(
     out_dir: Path | str,
     snapshots: list[dict[str, Any]],
@@ -233,6 +314,9 @@ def write_run_results(
         for r in rows:
             w.writerow(r)
     files = write_vtk_series(out / "fields", snapshots, nodes, cells) if write_vtk else []
-    return {"csv": str(out / "results.csv"), "n_steps": len(rows),
+    init = initiation_record(rows, snapshots, nodes, cells, threshold=0.85)
+    if init is not None:
+        (out / "initiation.json").write_text(json.dumps(init, indent=1))
+    return {"csv": str(out / "results.csv"), "n_steps": len(rows), "initiation": init,
             "vtk_files": len(files), "columns": cols,
             "damage_threshold": threshold}

@@ -1,0 +1,24 @@
+{
+ "criterion": "element nodal-average damage >= 0.85",
+ "step": 8,
+ "load_factor": 0.6,
+ "boundary_strain": 0.018000000000000002,
+ "boundary_displacement": 1.8000000000000003,
+ "avg_stress_axial_MPa": 234.12099585455334,
+ "damage_volume": 148.03406134896068,
+ "damage_volume_fraction": 0.0030065883043511005,
+ "peak_damage_element": 0.8888177695128087,
+ "strain_bracket": [
+  0.016000000000000004,
+  0.018000000000000002
+ ],
+ "strain_resolution": 0.0019999999999999983,
+ "resolved": true,
+ "initiation_element": 6,
+ "initiation_centroid": [
+  48.707022554637724,
+  30.418298575758115,
+  5.0
+ ],
+ "initiation_element_damage": 0.8888177695128087
+}

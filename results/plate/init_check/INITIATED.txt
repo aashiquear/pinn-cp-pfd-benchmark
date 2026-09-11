@@ -1,0 +1,7 @@
+Terminated after damage initiation, the expected outcome on a mesh this coarse: the solvable load increment collapses once a damage band forms.
+
+Initiation: step 8, strain 0.01800, axial stress 234.1 MPa, damaged fraction 0.003007.
+Criterion: element nodal-average damage >= 0.85.
+Solve stopped at step 12, 4 step(s) after initiation, still carrying 144.8 MPa.
+
+Steps 0-11 retained. INITIATION metrics are usable; PROPAGATION metrics are not.

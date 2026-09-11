@@ -1,0 +1,186 @@
+{
+ "tag": "init_check",
+ "geometry": "hole",
+ "density": 1,
+ "n_elements": 108,
+ "n_nodes": 264,
+ "orientation": "[1.0, 0.0, 0.0]",
+ "Gc_MPa_um": 30.0,
+ "l0_um": 1.5,
+ "target_strain": 0.03,
+ "load_steps": 15,
+ "mech_substeps": 3,
+ "alternations": 2,
+ "strain_increment_per_update": 0.0006666666666666666,
+ "wall_seconds": 948.2094853379967,
+ "diagnostics": {
+  "staggered": [
+   {
+    "step": 0,
+    "step_factor": 0.06666666666666667,
+    "iterations": 2,
+    "damage_increment": 0.03476366655999527,
+    "converged": false
+   },
+   {
+    "step": 1,
+    "step_factor": 0.13333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.11369818561204469,
+    "converged": true
+   },
+   {
+    "step": 2,
+    "step_factor": 0.2,
+    "iterations": 2,
+    "damage_increment": 0.14421559034326972,
+    "converged": true
+   },
+   {
+    "step": 3,
+    "step_factor": 0.26666666666666666,
+    "iterations": 2,
+    "damage_increment": 0.11523149634718866,
+    "converged": true
+   },
+   {
+    "step": 4,
+    "step_factor": 0.3333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.10150220635297807,
+    "converged": true
+   },
+   {
+    "step": 5,
+    "step_factor": 0.4,
+    "iterations": 2,
+    "damage_increment": 0.10029837923597629,
+    "converged": true
+   },
+   {
+    "step": 6,
+    "step_factor": 0.4666666666666667,
+    "iterations": 2,
+    "damage_increment": 0.10963468400553644,
+    "converged": true
+   },
+   {
+    "step": 7,
+    "step_factor": 0.5333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.11909977682923067,
+    "converged": true
+   },
+   {
+    "step": 8,
+    "step_factor": 0.6,
+    "iterations": 2,
+    "damage_increment": 0.13243354735790336,
+    "converged": true
+   },
+   {
+    "step": 9,
+    "step_factor": 0.6666666666666666,
+    "iterations": 2,
+    "damage_increment": 0.15283816408738182,
+    "converged": true
+   },
+   {
+    "step": 10,
+    "step_factor": 0.7333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.15924316258112814,
+    "converged": true
+   },
+   {
+    "step": 11,
+    "step_factor": 0.8,
+    "iterations": 2,
+    "damage_increment": 0.17708927457447632,
+    "converged": true
+   },
+   {
+    "step": 12,
+    "step_factor": 0.8666666666666667,
+    "iterations": 2,
+    "damage_increment": 0.16124031024432095,
+    "converged": true
+   },
+   {
+    "step": 13,
+    "step_factor": 0.9333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.03505642493494848,
+    "converged": true
+   },
+   {
+    "step": 14,
+    "step_factor": 1.0,
+    "iterations": 1,
+    "damage_increment": 0.0,
+    "converged": true
+   }
+  ],
+  "mech_converged": "not_reported",
+  "mech_failed_steps": "not_reported"
+ },
+ "initiation": {
+  "criterion": "element nodal-average damage >= 0.85",
+  "step": 8,
+  "load_factor": 0.6,
+  "boundary_strain": 0.018000000000000002,
+  "boundary_displacement": 1.8000000000000003,
+  "avg_stress_axial_MPa": 234.12099585455334,
+  "damage_volume": 148.03406134896068,
+  "damage_volume_fraction": 0.0030065883043511005,
+  "peak_damage_element": 0.8888177695128087,
+  "strain_bracket": [
+   0.016000000000000004,
+   0.018000000000000002
+  ],
+  "strain_resolution": 0.0019999999999999983,
+  "resolved": true,
+  "initiation_element": 6,
+  "initiation_centroid": [
+   48.707022554637724,
+   30.418298575758115,
+   5.0
+  ],
+  "initiation_element_damage": 0.8888177695128087
+ },
+ "status": "initiated",
+ "steps_retained": 12,
+ "vtk_series": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/init_check/fields/fields.pvd",
+ "csv": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/init_check/results.csv",
+ "n_steps": 15,
+ "vtk_files": 0,
+ "columns": [
+  "step",
+  "load_factor",
+  "total_volume",
+  "damage_volume",
+  "damage_volume_fraction",
+  "peak_damage_nodal",
+  "peak_damage_element",
+  "mean_damage",
+  "boundary_strain",
+  "boundary_displacement",
+  "avg_stress_xx",
+  "avg_stress_yy",
+  "avg_stress_zz",
+  "avg_stress_xy",
+  "avg_stress_xz",
+  "avg_stress_yz",
+  "avg_stress_vm",
+  "avg_stress_axial",
+  "avg_strain_xx",
+  "avg_strain_yy",
+  "avg_strain_zz",
+  "avg_strain_xy",
+  "avg_strain_xz",
+  "avg_strain_yz",
+  "avg_strain_vm",
+  "avg_strain_axial"
+ ],
+ "damage_threshold": 0.85
+}
