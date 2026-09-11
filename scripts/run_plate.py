@@ -39,6 +39,7 @@ PLATE_LENGTH = 100.0               # um, the loaded (x) dimension
 
 # Calibrated Al2219 CP set (plain-plate refit supersedes this in Phase 1).
 CAL_AL2219 = {
+    "NEXP": "8.333333333333334",
     "TAUC0": "60.31771394231891", "RHO0": "2.393387495846754",
     "K1": "0.08114503403820844", "YC2": "0.0020581167904802733",
 }
@@ -65,6 +66,49 @@ def _voronoi_grains(pts2: np.ndarray, n_grains: int, seed: int):
     seeds = rng.uniform(lo, hi, size=(n_grains, pts2.shape[1]))
     d2 = ((pts2[:, None, :] - seeds[None, :, :]) ** 2).sum(axis=2)
     return np.argmin(d2, axis=1), seeds
+
+
+def _equiaxed_grains(pts2: np.ndarray, target_size: float, extent, seed: int):
+    """Voronoi grains of near-equal size, seeded on a jittered triangular lattice.
+
+    Uniformly random seeds (Poisson) give a broad grain-size distribution:
+    some grains come out a few elements across while others span a quarter of
+    the specimen, which is what made the first 12-grain specimen pathological
+    (smallest grain 3 elements, 69% of elements on a misorientation
+    discontinuity). A jittered lattice fixes the mean spacing, so every grain
+    has area ~ target_size**2 and the element count per grain is roughly
+    uniform.
+
+    ``target_size`` should be set to the plate THICKNESS for a genuinely
+    equiaxed structure: the pseudo-3D mesh is one element through thickness,
+    so a grain is a prism of height 10 um, and only an in-plane size of about
+    10 um makes it equiaxed rather than columnar.
+    """
+    L, W = float(extent[0]), float(extent[1])
+    d = float(target_size)
+    row_h = d * np.sqrt(3.0) / 2.0          # triangular lattice row spacing
+    rng = np.random.default_rng(seed)
+    seeds = []
+    n_rows = max(1, int(np.ceil(W / row_h)))
+    for j in range(n_rows):
+        y = (j + 0.5) * row_h
+        offset = 0.5 * d if (j % 2) else 0.0
+        n_cols = max(1, int(np.ceil(L / d)))
+        for i in range(n_cols):
+            x = offset + (i + 0.5) * d
+            if x > L + 0.5 * d:
+                continue
+            # jitter by a quarter spacing: keeps the structure irregular
+            # (grain boundaries are not all aligned with the mesh) without
+            # reintroducing the near-degenerate grains a Poisson process gives
+            seeds.append((x + rng.uniform(-0.25, 0.25) * d,
+                          y + rng.uniform(-0.25, 0.25) * row_h))
+    seeds = np.asarray(seeds, dtype=float)
+    d2 = ((pts2[:, None, :] - seeds[None, :, :]) ** 2).sum(axis=2)
+    gid = np.argmin(d2, axis=1)
+    # drop empty seeds and relabel consecutively
+    used, gid = np.unique(gid, return_inverse=True)
+    return gid, seeds[used]
 
 
 def _nvl(value):
@@ -129,6 +173,13 @@ def main() -> int:
     ap.add_argument("--density", type=int, required=True)
     ap.add_argument("--geometry", choices=("hole", "plain"), default="hole")
     ap.add_argument("--orientation", default="[1.0, 0.0, 0.0]")
+    ap.add_argument("--nexp", type=float, default=0.0,
+                    help="Rate exponent n = 1/m_s. 0 keeps the set's value.")
+    ap.add_argument("--equiaxed", type=float, default=0.0,
+                    help="Target in-plane grain size (um). Overrides --grains "
+                         "and builds equiaxed grains on a jittered triangular "
+                         "lattice. Set this to the plate thickness (10 um) for "
+                         "a genuinely equiaxed structure.")
     ap.add_argument("--grains", type=int, default=0,
                     help="0 = single crystal. N > 0 builds an N-grain columnar "
                          "polycrystal by Voronoi tessellation of the element "
@@ -179,6 +230,8 @@ def main() -> int:
     cal = dict(CAL_AL2219)
     if args.cp_set:
         cal.update({k: f"{float(v):.17g}" for k, v in json.load(open(args.cp_set)).items()})
+    if args.nexp > 0.0:
+        cal["NEXP"] = f"{args.nexp:.17g}"
 
     # t_end follows from the strain and the imposed rate, instead of being a
     # fixed number in the template. With t_end = 10 s a 17% ramp runs at
@@ -195,15 +248,22 @@ def main() -> int:
 
     cfg = load_input(str(deck))
     grain_info = None
-    if args.grains > 0:
+    if args.grains > 0 or args.equiaxed > 0.0:
         # Columnar polycrystal: the tessellation is done on the in-plane
         # element centroids, so every grain spans the full thickness. With one
         # element through z that is the only representation available, and it
         # is NOT the experiment's equiaxed 3-D grain structure -- a difference
         # that belongs in the calibration's caveats, not buried here.
         cent = nodes[cells].mean(axis=1)
-        gid, seeds = _voronoi_grains(cent[:, :2], args.grains, args.grain_seed)
-        eul = _random_orientations(args.grains, args.orientation_seed)
+        if args.equiaxed > 0.0:
+            extent = (float(nodes[:, 0].max()), float(nodes[:, 1].max()))
+            gid, seeds = _equiaxed_grains(cent[:, :2], args.equiaxed, extent,
+                                          args.grain_seed)
+            n_grains = int(gid.max()) + 1
+        else:
+            gid, seeds = _voronoi_grains(cent[:, :2], args.grains, args.grain_seed)
+            n_grains = args.grains
+        eul = _random_orientations(n_grains, args.orientation_seed)
         n_gauss = 8
         euler_qp = np.repeat(eul[gid], n_gauss, axis=0)
         cfg["orientation_field"] = {"euler_angles": euler_qp}

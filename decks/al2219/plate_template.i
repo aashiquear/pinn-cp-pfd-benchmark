@@ -2,7 +2,7 @@
 #
 # PLACEHOLDERS, substituted by scripts/run_plate.py:
 #   @MESH@ @ORIENT@ @GC@ @L0@ @NSTEPS@ @MECHSUB@ @MAXALT@ @STRAIN@ @OUTDIR@
-#   @TAUC0@ @RHO0@ @K1@ @YC2@   (calibrated CP set)
+#   @TAUC0@ @RHO0@ @K1@ @YC2@ @NEXP@   (calibrated CP set)
 #
 # STRESS STATE. Generalized plane stress: both z faces are traction-free, so
 # sigma_zz = 0 and the single linear element through the thickness carries a
@@ -75,7 +75,10 @@
     C44                   = 28.5e3
     mu                    = 25.7e3
     gamma0                = 1.0e-5
-    rate_exponent_n       = 8.333333333333334
+    # n = 1/m_s. Published m_s = 0.12 gives 8.333; a higher n is less
+    # rate sensitive, so it needs LESS overstress to reach a given slip
+    # rate (1.26x tau_c at n=20 against 1.74x at n=8.33).
+    rate_exponent_n       = @NEXP@
     tau_c0                = @TAUC0@
     q_lat                 = 1.4
     alpha0                = 0.4

@@ -1,0 +1,62 @@
+[
+ {
+  "density": 1,
+  "n_elements": 128,
+  "n_grains": 60,
+  "min_elem": 1,
+  "max_elem": 4,
+  "median_elem": 2,
+  "median_aspect": 6250000001.0,
+  "pct_at_gb": 99.21875
+ },
+ {
+  "density": 2,
+  "n_elements": 512,
+  "n_grains": 60,
+  "min_elem": 3,
+  "max_elem": 12,
+  "median_elem": 9,
+  "median_aspect": 1.49999999992,
+  "pct_at_gb": 77.734375
+ },
+ {
+  "density": 3,
+  "n_elements": 1152,
+  "n_grains": 60,
+  "min_elem": 9,
+  "max_elem": 26,
+  "median_elem": 19,
+  "median_aspect": 1.2499999999699996,
+  "pct_at_gb": 57.204861111111114
+ },
+ {
+  "density": 4,
+  "n_elements": 2048,
+  "n_grains": 60,
+  "min_elem": 15,
+  "max_elem": 49,
+  "median_elem": 34,
+  "median_aspect": 1.1833333333116445,
+  "pct_at_gb": 45.3125
+ },
+ {
+  "density": 5,
+  "n_elements": 3200,
+  "n_grains": 60,
+  "min_elem": 22,
+  "max_elem": 75,
+  "median_elem": 54,
+  "median_aspect": 1.1428571428408163,
+  "pct_at_gb": 37.15625
+ },
+ {
+  "density": 6,
+  "n_elements": 4608,
+  "n_grains": 60,
+  "min_elem": 33,
+  "max_elem": 109,
+  "median_elem": 77,
+  "median_aspect": 1.11805555554213,
+  "pct_at_gb": 31.66232638888889
+ }
+]
