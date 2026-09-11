@@ -1,0 +1,3 @@
+Terminated after damage PROPAGATION: the damaged fraction grew from 0.008674 to 0.1218 over 4 steps and -0.02000 strain after initiation.
+Stop reason: load-step behavior not reported by the solver.
+

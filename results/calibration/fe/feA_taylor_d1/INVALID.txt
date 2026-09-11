@@ -1,0 +1,1 @@
+Failed at step 14 carrying 1255 MPa (16.2% of peak 7755 MPa) and BEFORE damage initiation, so it measured nothing.

@@ -44,6 +44,29 @@ CAL_AL2219 = {
 }
 
 
+def _random_orientations(n: int, seed: int) -> np.ndarray:
+    """Uniformly random orientations as Bunge Euler triples (degrees).
+
+    Uniform in SO(3), not uniform in the Euler angles: phi is drawn from
+    arccos of a uniform variate, because sampling all three angles uniformly
+    clusters orientations at the poles.
+    """
+    rng = np.random.default_rng(seed)
+    phi1 = rng.uniform(0.0, 360.0, n)
+    Phi = np.degrees(np.arccos(rng.uniform(-1.0, 1.0, n)))
+    phi2 = rng.uniform(0.0, 360.0, n)
+    return np.column_stack([phi1, Phi, phi2])
+
+
+def _voronoi_grains(pts2: np.ndarray, n_grains: int, seed: int):
+    """Assign each point to the nearest of n_grains random seed points."""
+    rng = np.random.default_rng(seed)
+    lo, hi = pts2.min(axis=0), pts2.max(axis=0)
+    seeds = rng.uniform(lo, hi, size=(n_grains, pts2.shape[1]))
+    d2 = ((pts2[:, None, :] - seeds[None, :, :]) ** 2).sum(axis=2)
+    return np.argmin(d2, axis=1), seeds
+
+
 def _nvl(value):
     """Absent status is reported as such, never as a falsy-looking None."""
     return "not_reported" if value is None else value
@@ -51,11 +74,12 @@ def _nvl(value):
 
 def build_deck(*, mesh: Path, orient: str, gc: float, l0: float, nsteps: int,
                mechsub: int, maxalt: int, strain: float, out_dir: Path,
-               cal: dict[str, str], maxcutbacks: int = 15) -> Path:
+               cal: dict[str, str], maxcutbacks: int = 15,
+               t_end: float = 10.0) -> Path:
     src = (STUDY / "decks/al2219/plate_template.i").read_text()
     sub = dict(cal, MESH=str(mesh), ORIENT=orient, GC=f"{gc:.9g}", L0=f"{l0:.9g}",
                NSTEPS=str(nsteps), MECHSUB=str(mechsub), MAXALT=str(maxalt),
-               MAXCUTBACKS=str(maxcutbacks),
+               MAXCUTBACKS=str(maxcutbacks), TEND=f'{t_end:.10g}',
                STRAIN=f"{strain:.9g}", OUTDIR=str(out_dir / "solver"))
     for k, v in sub.items():
         src = src.replace(f"@{k}@", v)
@@ -66,6 +90,25 @@ def build_deck(*, mesh: Path, orient: str, gc: float, l0: float, nsteps: int,
     path = out_dir / "deck.i"
     path.write_text(src)
     return path
+
+
+def _find_list(obj, key, depth=0):
+    """Recursive search for ``key`` whose value is a LIST.
+
+    Distinguishes the wanted leaf from same-named container dicts on the way
+    down, which a plain key search cannot do.
+    """
+    if depth > 7:
+        return None
+    if isinstance(obj, dict):
+        got = obj.get(key)
+        if isinstance(got, list):
+            return got
+        for value in obj.values():
+            found = _find_list(value, key, depth + 1)
+            if found is not None:
+                return found
+    return None
 
 
 def _find(obj, key, depth=0):
@@ -86,9 +129,24 @@ def main() -> int:
     ap.add_argument("--density", type=int, required=True)
     ap.add_argument("--geometry", choices=("hole", "plain"), default="hole")
     ap.add_argument("--orientation", default="[1.0, 0.0, 0.0]")
+    ap.add_argument("--grains", type=int, default=0,
+                    help="0 = single crystal. N > 0 builds an N-grain columnar "
+                         "polycrystal by Voronoi tessellation of the element "
+                         "centroids, with one random orientation per grain.")
+    ap.add_argument("--grain-seed", type=int, default=20260911)
+    ap.add_argument("--orientation-seed", type=int, default=20260910)
+    ap.add_argument("--cp-set", default=None,
+                    help="JSON file with TAUC0/RHO0/K1/YC2 overriding the built-in "
+                         "calibrated set (used by the CP calibration loop).")
     ap.add_argument("--gc", type=float, default=10.0)
     ap.add_argument("--l0", type=float, default=1.0)
     ap.add_argument("--strain", type=float, default=0.12)
+    ap.add_argument("--strain-rate", type=float, default=1.0e-3,
+                    help="Imposed engineering strain rate (1/s). The constitutive "
+                         "law is rate dependent (power-law slip, reference rate "
+                         "gamma0 = 1e-5 /s), so this MUST match the rate the "
+                         "parameters were calibrated at or the set does not "
+                         "transfer. The deck's t_end is derived as strain/rate.")
     # Denser by default than the smoke runs: at 20 steps to 12% strain the
     # first recorded point is already at 0.6%, past yield, so the elastic
     # branch is one point wide and fracture initiation is bracketed to a
@@ -118,14 +176,48 @@ def main() -> int:
     z = np.load(mesh_npz)
     nodes, cells = z["nodes"], z["cells"]
 
+    cal = dict(CAL_AL2219)
+    if args.cp_set:
+        cal.update({k: f"{float(v):.17g}" for k, v in json.load(open(args.cp_set)).items()})
+
+    # t_end follows from the strain and the imposed rate, instead of being a
+    # fixed number in the template. With t_end = 10 s a 17% ramp runs at
+    # 1.7e-2 /s, 17x the 1e-3 /s the parameters were fitted at, which at
+    # n = 8.33 is a 1.4x stress difference -- and drives the overstress that
+    # exhausts the CP sub-step budget.
+    t_end = args.strain / args.strain_rate
+
     deck = build_deck(mesh=mesh_e, orient=args.orientation, gc=args.gc, l0=args.l0,
                       nsteps=args.load_steps, mechsub=mechsub,
                       maxalt=args.alternations, strain=args.strain,
-                      out_dir=out_dir, cal=CAL_AL2219,
-                      maxcutbacks=args.max_cutbacks)
+                      out_dir=out_dir, cal=cal,
+                      maxcutbacks=args.max_cutbacks, t_end=t_end)
+
+    cfg = load_input(str(deck))
+    grain_info = None
+    if args.grains > 0:
+        # Columnar polycrystal: the tessellation is done on the in-plane
+        # element centroids, so every grain spans the full thickness. With one
+        # element through z that is the only representation available, and it
+        # is NOT the experiment's equiaxed 3-D grain structure -- a difference
+        # that belongs in the calibration's caveats, not buried here.
+        cent = nodes[cells].mean(axis=1)
+        gid, seeds = _voronoi_grains(cent[:, :2], args.grains, args.grain_seed)
+        eul = _random_orientations(args.grains, args.orientation_seed)
+        n_gauss = 8
+        euler_qp = np.repeat(eul[gid], n_gauss, axis=0)
+        cfg["orientation_field"] = {"euler_angles": euler_qp}
+        counts = np.bincount(gid, minlength=args.grains)
+        grain_info = {"n_grains": int(args.grains),
+                      "grain_seed": args.grain_seed,
+                      "orientation_seed": args.orientation_seed,
+                      "elements_per_grain_min": int(counts.min()),
+                      "elements_per_grain_max": int(counts.max()),
+                      "elements_per_grain_mean": float(counts.mean()),
+                      "structure": "columnar (one element through thickness)"}
 
     t0 = time.perf_counter()
-    result = Runner.from_config(load_input(str(deck)))
+    result = Runner.from_config(cfg)
     wall = time.perf_counter() - t0
 
     # Diagnostics kept for BOTH outcomes. A failed run is when the
@@ -135,6 +227,17 @@ def main() -> int:
     # per-load-step alternation record.
     diag = {
         "staggered": _find(result, "staggered"),
+        # NOT ``_find(result, "history").get("mechanics")``: _find returns the
+        # FIRST "history" it meets, which is the runner's outer wrapper, and
+        # the mechanics list lives one level further in
+        # (history -> history -> mechanics). Asking the wrapper for
+        # "mechanics" yields None, which then reads as "the solver reported
+        # nothing" when in fact the record was right there.
+        "target_strain": args.strain,
+        "strain_rate_per_s": args.strain_rate,
+        "mech_history": _find_list(result, "mechanics"),
+        "mechanics_cutbacks_max": _find(result, "mechanics_cutbacks_max"),
+        "mechanics_converged": _find(result, "mechanics_converged"),
         # The coupled executioner does not propagate the mechanics
         # sub-result's top-level keys, so these are frequently absent. They
         # are recorded as "not_reported" rather than None, because a null
@@ -208,8 +311,31 @@ def main() -> int:
         # initiation measurement and its pre-failure steps are kept. A run
         # that quits BEFORE initiation measured nothing and is rejected.
         initiated = init is not None and int(init["step"]) < first_bad
+        prop = summary.get("propagation")
+        propagated = bool(prop and prop.get("propagated"))
+        # Why did it stop? "Damage exists" is not a reason to stop -- a
+        # resolved mesh should carry propagation. The reason is the load
+        # increment collapsing under repeated cutback, which the mechanics
+        # history now reports per step as increment_fraction.
+        mech_hist = diag.get("mech_history") or []
+        depths = [int(h.get("cutbacks", 0)) for h in mech_hist if h.get("converged")]
+        if not mech_hist:
+            # No mechanics history means the question was not answered, not
+            # that the increment held up. Saying "no deep cutback" here would
+            # report an absence of evidence as evidence of absence.
+            stop_reason = "load-step behavior not reported by the solver"
+            worst = -1
+        else:
+            worst = max(depths) if depths else 0
+        stop_reason = stop_reason if not mech_hist else (
+            "load increment collapsed under cutback "
+            f"(deepest {worst} halvings = 1/{2 ** worst} of the nominal step)"
+            if worst >= 3 else
+            "solve failed without deep cutback -- not an increment-size limit"
+        )
         if severed or initiated:
-            status = "fractured" if severed else "initiated"
+            status = ("fractured" if severed
+                      else ("propagated" if propagated else "initiated"))
             with (out_dir / "results.csv").open("w", newline="") as fh:
                 w = _csv.DictWriter(fh, fieldnames=list(valid[0].keys()))
                 w.writeheader()
@@ -221,8 +347,15 @@ def main() -> int:
                     f"{peak:.4g} MPa ({100 * last_ok / peak:.2f}%).\n"
                 )
             else:
-                (out_dir / "INITIATED.txt").write_text(
-                    "Terminated after damage initiation, the expected outcome on a "
+                (out_dir / f"{status.upper()}.txt").write_text(
+                    (f"Terminated after damage PROPAGATION: the damaged fraction grew "
+                     f"from {prop['damaged_fraction_at_initiation']:.4g} to "
+                     f"{prop['damaged_fraction_at_last_step']:.4g} over "
+                     f"{prop['steps_after_initiation']} steps and "
+                     f"{prop['strain_span_after_initiation']:.5f} strain after "
+                     f"initiation.\nStop reason: {stop_reason}.\n\n"
+                     if propagated else
+                     "Terminated after damage initiation, the expected outcome on a "
                     "mesh this coarse: the solvable load increment collapses once a "
                     "damage band forms.\n\n"
                     f"Initiation: step {init['step']}, strain "
@@ -234,7 +367,8 @@ def main() -> int:
                     f"{first_bad - int(init['step'])} step(s) after initiation, "
                     f"still carrying {last_ok:.4g} MPa.\n\n"
                     f"Steps 0-{first_bad - 1} retained. INITIATION metrics are "
-                    "usable; PROPAGATION metrics are not.\n"
+                    "usable; PROPAGATION metrics are not.\n")
+                    + (f"\nStop reason: {stop_reason}.\n" if not propagated else "")
                 )
         else:
             (out_dir / "INVALID.txt").write_text(
@@ -254,12 +388,18 @@ def main() -> int:
         "tag": tag, "geometry": args.geometry, "density": args.density,
         "n_elements": int(cells.shape[0]), "n_nodes": int(nodes.shape[0]),
         "orientation": args.orientation, "Gc_MPa_um": args.gc, "l0_um": args.l0,
-        "target_strain": args.strain, "load_steps": args.load_steps,
+        "target_strain": args.strain,
+        "strain_rate_per_s": args.strain_rate,
+        "t_end_s": t_end, "load_steps": args.load_steps,
         "mech_substeps": mechsub, "alternations": args.alternations,
         "strain_increment_per_update": d_eps / mechsub,
         "wall_seconds": wall,
         "diagnostics": diag,
+        "grains": grain_info,
+        "cp_set": cal,
         "initiation": init,
+        "propagation": summary.get("propagation"),
+        "stop_reason": stop_reason if bad else "ran to the target strain",
         "status": status,
         "steps_retained": len(valid),
         "vtk_series": str(out_dir / "fields" / "fields.pvd"),

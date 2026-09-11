@@ -1,0 +1,188 @@
+{
+ "tag": "histcheck",
+ "geometry": "hole",
+ "density": 1,
+ "n_elements": 108,
+ "n_nodes": 264,
+ "orientation": "[1.0, 0.0, 0.0]",
+ "Gc_MPa_um": 30.0,
+ "l0_um": 1.5,
+ "target_strain": 0.03,
+ "load_steps": 12,
+ "mech_substeps": 4,
+ "alternations": 2,
+ "strain_increment_per_update": 0.000625,
+ "wall_seconds": 598.9513598110061,
+ "diagnostics": {
+  "staggered": [
+   {
+    "step": 0,
+    "step_factor": 0.08333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.058704885296794754,
+    "converged": false
+   },
+   {
+    "step": 1,
+    "step_factor": 0.16666666666666666,
+    "iterations": 2,
+    "damage_increment": 0.1668756085809206,
+    "converged": false
+   },
+   {
+    "step": 2,
+    "step_factor": 0.25,
+    "iterations": 2,
+    "damage_increment": 0.1552921798528852,
+    "converged": true
+   },
+   {
+    "step": 3,
+    "step_factor": 0.3333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.12667543737193737,
+    "converged": true
+   },
+   {
+    "step": 4,
+    "step_factor": 0.4166666666666667,
+    "iterations": 2,
+    "damage_increment": 0.12061212205162342,
+    "converged": true
+   },
+   {
+    "step": 5,
+    "step_factor": 0.5,
+    "iterations": 2,
+    "damage_increment": 0.13062876749354424,
+    "converged": true
+   },
+   {
+    "step": 6,
+    "step_factor": 0.5833333333333334,
+    "iterations": 2,
+    "damage_increment": 0.1394370754122779,
+    "converged": true
+   },
+   {
+    "step": 7,
+    "step_factor": 0.6666666666666666,
+    "iterations": 2,
+    "damage_increment": 0.15650058726846372,
+    "converged": true
+   },
+   {
+    "step": 8,
+    "step_factor": 0.75,
+    "iterations": 2,
+    "damage_increment": 0.17034185860893658,
+    "converged": true
+   },
+   {
+    "step": 9,
+    "step_factor": 0.8333333333333334,
+    "iterations": 2,
+    "damage_increment": 0.18694132095138805,
+    "converged": true
+   },
+   {
+    "step": 10,
+    "step_factor": 0.9166666666666666,
+    "iterations": 2,
+    "damage_increment": 0.17207081134072266,
+    "converged": true
+   },
+   {
+    "step": 11,
+    "step_factor": 1.0,
+    "iterations": 2,
+    "damage_increment": 0.03289659587835103,
+    "converged": true
+   }
+  ],
+  "mech_history": null,
+  "mechanics_cutbacks_max": 0,
+  "mechanics_converged": true,
+  "mech_converged": "not_reported",
+  "mech_failed_steps": "not_reported"
+ },
+ "grains": null,
+ "cp_set": {
+  "TAUC0": "60.31771394231891",
+  "RHO0": "2.393387495846754",
+  "K1": "0.08114503403820844",
+  "YC2": "0.0020581167904802733"
+ },
+ "initiation": {
+  "criterion": "element nodal-average damage >= 0.85",
+  "step": 7,
+  "load_factor": 0.6666666666666666,
+  "boundary_strain": 0.02,
+  "boundary_displacement": 2.0,
+  "avg_stress_axial_MPa": 236.99157840669875,
+  "damage_volume": 427.0699561151407,
+  "damage_volume_fraction": 0.008673838463221591,
+  "peak_damage_element": 0.9385632836841478,
+  "strain_bracket": [
+   0.0175,
+   0.02
+  ],
+  "strain_resolution": 0.0024999999999999988,
+  "resolved": true,
+  "initiation_element": 14,
+  "initiation_centroid": [
+   51.29297744536228,
+   19.581701424241885,
+   5.0
+  ],
+  "initiation_element_damage": 0.9385632836841478
+ },
+ "propagation": {
+  "steps_after_initiation": 4,
+  "strain_at_initiation": 0.02,
+  "strain_at_last_step": 0.0,
+  "strain_span_after_initiation": -0.02,
+  "damaged_fraction_at_initiation": 0.008673838463221591,
+  "damaged_fraction_at_last_step": 0.12175152922925313,
+  "damaged_fraction_growth": 0.11307769076603154,
+  "propagated": true
+ },
+ "stop_reason": "load-step behavior not reported by the solver",
+ "status": "propagated",
+ "steps_retained": 11,
+ "vtk_series": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/histcheck/fields/fields.pvd",
+ "csv": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/histcheck/results.csv",
+ "n_steps": 12,
+ "vtk_files": 0,
+ "columns": [
+  "step",
+  "load_factor",
+  "total_volume",
+  "damage_volume",
+  "damage_volume_fraction",
+  "peak_damage_nodal",
+  "peak_damage_element",
+  "mean_damage",
+  "max_driving_H_MPa",
+  "mean_driving_H_MPa",
+  "boundary_strain",
+  "boundary_displacement",
+  "avg_stress_xx",
+  "avg_stress_yy",
+  "avg_stress_zz",
+  "avg_stress_xy",
+  "avg_stress_xz",
+  "avg_stress_yz",
+  "avg_stress_vm",
+  "avg_stress_axial",
+  "avg_strain_xx",
+  "avg_strain_yy",
+  "avg_strain_zz",
+  "avg_strain_xy",
+  "avg_strain_xz",
+  "avg_strain_yz",
+  "avg_strain_vm",
+  "avg_strain_axial"
+ ],
+ "damage_threshold": 0.85
+}

@@ -59,7 +59,11 @@
 [Functions]
   [./axial]
     kind       = parsed
-    expression = @STRAIN@*100.0*t/10.0
+    # t/@TEND@ -- NOT t/10.0. This ramp and the executioner's t_end are
+    # the same quantity; hard-coding 10.0 here while t_end is derived from
+    # the strain rate makes the ramp t_end/10 times too steep, so the first
+    # load step demands the whole deformation at once.
+    expression = @STRAIN@*100.0*t/@TEND@
   []
 []
 
@@ -177,7 +181,10 @@
     # Always sparse: see the parameter doc. The 12,000-DOF default would put
     # every density level below 5 on a dense tangent, 2.3-5.2x slower.
     sparse_threshold = 0
-    t_end         = 10.0
+    # Derived by the harness as strain/strain_rate. The constitutive law
+    # is rate dependent, so this must match the rate the CP parameters
+    # were calibrated at.
+    t_end         = @TEND@
   []
   [./damage]
     variable          = d

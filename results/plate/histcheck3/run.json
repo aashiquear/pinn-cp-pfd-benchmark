@@ -1,0 +1,403 @@
+{
+ "tag": "histcheck3",
+ "geometry": "hole",
+ "density": 1,
+ "n_elements": 108,
+ "n_nodes": 264,
+ "orientation": "[1.0, 0.0, 0.0]",
+ "Gc_MPa_um": 30.0,
+ "l0_um": 1.5,
+ "target_strain": 0.012,
+ "load_steps": 6,
+ "mech_substeps": 3,
+ "alternations": 2,
+ "strain_increment_per_update": 0.0006666666666666666,
+ "wall_seconds": 55.04316104100144,
+ "diagnostics": {
+  "staggered": [
+   {
+    "step": 0,
+    "step_factor": 0.16666666666666666,
+    "iterations": 2,
+    "damage_increment": 0.03476366655999498,
+    "converged": false
+   },
+   {
+    "step": 1,
+    "step_factor": 0.3333333333333333,
+    "iterations": 2,
+    "damage_increment": 0.11369818561204441,
+    "converged": true
+   },
+   {
+    "step": 2,
+    "step_factor": 0.5,
+    "iterations": 2,
+    "damage_increment": 0.14421559034326914,
+    "converged": true
+   },
+   {
+    "step": 3,
+    "step_factor": 0.6666666666666666,
+    "iterations": 2,
+    "damage_increment": 0.11523149634719082,
+    "converged": true
+   },
+   {
+    "step": 4,
+    "step_factor": 0.8333333333333334,
+    "iterations": 2,
+    "damage_increment": 0.10150220635297846,
+    "converged": true
+   },
+   {
+    "step": 5,
+    "step_factor": 1.0,
+    "iterations": 2,
+    "damage_increment": 0.10029837923597706,
+    "converged": true
+   }
+  ],
+  "mech_history": [
+   {
+    "step": 1,
+    "load_factor": 0.05555555555555555,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.1111111111111111,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.16666666666666666,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.05555555555555555,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.1111111111111111,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.16666666666666666,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.2222222222222222,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.2777777777777778,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.3333333333333333,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.2222222222222222,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.2777777777777778,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.3333333333333333,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.3888888888888889,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.4444444444444444,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.5,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.3888888888888889,
+    "iterations": 3,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.4444444444444444,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.5,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.5555555555555556,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.611111111111111,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.6666666666666666,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.5555555555555556,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.611111111111111,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.6666666666666666,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.7222222222222222,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.7777777777777778,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.8333333333333334,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.7222222222222222,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.7777777777777778,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 0.8333333333333334,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.888888888888889,
+    "iterations": 5,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.9444444444444444,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 1.0,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 1,
+    "load_factor": 0.888888888888889,
+    "iterations": 5,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 2,
+    "load_factor": 0.9444444444444444,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   },
+   {
+    "step": 3,
+    "load_factor": 1.0,
+    "iterations": 4,
+    "converged": true,
+    "cutbacks": 0,
+    "increment_fraction": 1.0
+   }
+  ],
+  "mechanics_cutbacks_max": 0,
+  "mechanics_converged": true,
+  "mech_converged": "not_reported",
+  "mech_failed_steps": "not_reported"
+ },
+ "grains": null,
+ "cp_set": {
+  "TAUC0": "60.31771394231891",
+  "RHO0": "2.393387495846754",
+  "K1": "0.08114503403820844",
+  "YC2": "0.0020581167904802733"
+ },
+ "initiation": null,
+ "propagation": null,
+ "stop_reason": "ran to the target strain",
+ "status": "complete",
+ "steps_retained": 6,
+ "vtk_series": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/histcheck3/fields/fields.pvd",
+ "csv": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/plate/histcheck3/results.csv",
+ "n_steps": 6,
+ "vtk_files": 0,
+ "columns": [
+  "step",
+  "load_factor",
+  "total_volume",
+  "damage_volume",
+  "damage_volume_fraction",
+  "peak_damage_nodal",
+  "peak_damage_element",
+  "mean_damage",
+  "max_driving_H_MPa",
+  "mean_driving_H_MPa",
+  "boundary_strain",
+  "boundary_displacement",
+  "avg_stress_xx",
+  "avg_stress_yy",
+  "avg_stress_zz",
+  "avg_stress_xy",
+  "avg_stress_xz",
+  "avg_stress_yz",
+  "avg_stress_vm",
+  "avg_stress_axial",
+  "avg_strain_xx",
+  "avg_strain_yy",
+  "avg_strain_zz",
+  "avg_strain_xy",
+  "avg_strain_xz",
+  "avg_strain_yz",
+  "avg_strain_vm",
+  "avg_strain_axial"
+ ],
+ "damage_threshold": 0.85
+}

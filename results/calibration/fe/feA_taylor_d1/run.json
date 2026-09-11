@@ -1,0 +1,188 @@
+{
+ "staggered": [
+  {
+   "step": 0,
+   "step_factor": 0.04,
+   "iterations": 1,
+   "damage_increment": 4.046943892613284e-09,
+   "converged": true
+  },
+  {
+   "step": 1,
+   "step_factor": 0.08,
+   "iterations": 1,
+   "damage_increment": 6.9807658836049606e-09,
+   "converged": true
+  },
+  {
+   "step": 2,
+   "step_factor": 0.12,
+   "iterations": 1,
+   "damage_increment": 7.438889927712325e-09,
+   "converged": true
+  },
+  {
+   "step": 3,
+   "step_factor": 0.16,
+   "iterations": 1,
+   "damage_increment": 7.525464210140972e-09,
+   "converged": true
+  },
+  {
+   "step": 4,
+   "step_factor": 0.2,
+   "iterations": 1,
+   "damage_increment": 7.614455286118479e-09,
+   "converged": true
+  },
+  {
+   "step": 5,
+   "step_factor": 0.24,
+   "iterations": 1,
+   "damage_increment": 7.72449108001204e-09,
+   "converged": true
+  },
+  {
+   "step": 6,
+   "step_factor": 0.28,
+   "iterations": 1,
+   "damage_increment": 7.840559292509936e-09,
+   "converged": true
+  },
+  {
+   "step": 7,
+   "step_factor": 0.32,
+   "iterations": 1,
+   "damage_increment": 7.965611485209468e-09,
+   "converged": true
+  },
+  {
+   "step": 8,
+   "step_factor": 0.36,
+   "iterations": 1,
+   "damage_increment": 8.118634486027489e-09,
+   "converged": true
+  },
+  {
+   "step": 9,
+   "step_factor": 0.4,
+   "iterations": 1,
+   "damage_increment": 8.273951779056481e-09,
+   "converged": true
+  },
+  {
+   "step": 10,
+   "step_factor": 0.44,
+   "iterations": 1,
+   "damage_increment": 8.432739739324846e-09,
+   "converged": true
+  },
+  {
+   "step": 11,
+   "step_factor": 0.48,
+   "iterations": 1,
+   "damage_increment": 8.752919439293041e-09,
+   "converged": true
+  },
+  {
+   "step": 12,
+   "step_factor": 0.52,
+   "iterations": 1,
+   "damage_increment": 9.100121545420712e-09,
+   "converged": true
+  },
+  {
+   "step": 13,
+   "step_factor": 0.56,
+   "iterations": 1,
+   "damage_increment": 1.705569236303924e-07,
+   "converged": true
+  },
+  {
+   "step": 14,
+   "step_factor": 0.6,
+   "iterations": 1,
+   "damage_increment": 1.3956785211824529e-07,
+   "converged": true
+  },
+  {
+   "step": 15,
+   "step_factor": 0.64,
+   "iterations": 1,
+   "damage_increment": 4.11590746358433e-07,
+   "converged": true
+  },
+  {
+   "step": 16,
+   "step_factor": 0.68,
+   "iterations": 1,
+   "damage_increment": 6.628301552036358e-07,
+   "converged": true
+  },
+  {
+   "step": 17,
+   "step_factor": 0.72,
+   "iterations": 1,
+   "damage_increment": 0.0,
+   "converged": true
+  },
+  {
+   "step": 18,
+   "step_factor": 0.76,
+   "iterations": 1,
+   "damage_increment": 0.0,
+   "converged": true
+  },
+  {
+   "step": 19,
+   "step_factor": 0.8,
+   "iterations": 1,
+   "damage_increment": 0.0,
+   "converged": true
+  },
+  {
+   "step": 20,
+   "step_factor": 0.84,
+   "iterations": 1,
+   "damage_increment": 7.19604671392414e-07,
+   "converged": true
+  },
+  {
+   "step": 21,
+   "step_factor": 0.88,
+   "iterations": 1,
+   "damage_increment": 5.987457121982463e-07,
+   "converged": true
+  },
+  {
+   "step": 22,
+   "step_factor": 0.92,
+   "iterations": 1,
+   "damage_increment": 0.0,
+   "converged": true
+  },
+  {
+   "step": 23,
+   "step_factor": 0.96,
+   "iterations": 1,
+   "damage_increment": 0.0,
+   "converged": true
+  },
+  {
+   "step": 24,
+   "step_factor": 1.0,
+   "iterations": 1,
+   "damage_increment": 0.0,
+   "converged": true
+  }
+ ],
+ "mech_history": null,
+ "mech_converged": "not_reported",
+ "mech_failed_steps": "not_reported",
+ "tag": "feA_taylor_d1",
+ "n_elements": 128,
+ "n_nodes": 306,
+ "wall_seconds": 4533.316432070002,
+ "steps_written": 25,
+ "status": "pending_validation"
+}

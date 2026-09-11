@@ -83,5 +83,22 @@
   "hole_nodes": 160,
   "file": "plate_hole_d5.npz",
   "hole": true
+ },
+ {
+  "density": 6,
+  "n_elements": 3888,
+  "n_nodes": 8064,
+  "n_dofs_mech": 24192,
+  "n_side": 24,
+  "n_r": 24,
+  "grading": 3.0,
+  "first_layer_um": 0.22789963212667885,
+  "background_h_um": 1.944444444444457,
+  "min_signed_area": 0.0809170530535539,
+  "n_inverted": 0,
+  "max_aspect": 1.9068907221796163,
+  "hole_nodes": 192,
+  "file": "plate_hole_d6.npz",
+  "hole": true
  }
 ]

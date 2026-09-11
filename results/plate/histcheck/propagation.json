@@ -1,0 +1,10 @@
+{
+ "steps_after_initiation": 4,
+ "strain_at_initiation": 0.02,
+ "strain_at_last_step": 0.0,
+ "strain_span_after_initiation": -0.02,
+ "damaged_fraction_at_initiation": 0.008673838463221591,
+ "damaged_fraction_at_last_step": 0.12175152922925313,
+ "damaged_fraction_growth": 0.11307769076603154,
+ "propagated": true
+}

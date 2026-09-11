@@ -1,0 +1,8 @@
+{
+ "tag": "ramp_sc_d1",
+ "n_elements": 128,
+ "mech_substeps": 9,
+ "n_steps": 25,
+ "vtk_files": 0,
+ "wall_seconds": 304.25573091499973
+}

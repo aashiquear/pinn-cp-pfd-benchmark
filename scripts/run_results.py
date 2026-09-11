@@ -281,6 +281,43 @@ def initiation_record(rows, snapshots, nodes, cells, threshold=0.85):
     return rec
 
 
+def propagation_record(rows, init, threshold=0.85):
+    """How far did the crack get after initiation, and what stopped the run?
+
+    Stopping AT initiation discards the propagation a resolved mesh can
+    deliver, so a run is allowed to continue past initiation and is judged on
+    two things instead: whether damage actually grew, and whether the load
+    increment collapsed. The second is what says the solve has stopped being
+    useful -- not the mere presence of damage.
+
+    ``damage_volume_fraction`` is the crack-extent proxy: it is a
+    volume-weighted count of material above the initiation threshold, so its
+    growth after initiation measures propagation directly rather than through
+    a derived crack length that would need its own definition.
+    """
+    if init is None:
+        return None
+    i0 = int(init["step"])
+    after = [r for r in rows if int(r["step"]) >= i0]
+    if not after:
+        return None
+    f0 = float(after[0]["damage_volume_fraction"])
+    fN = float(after[-1]["damage_volume_fraction"])
+    return {
+        "steps_after_initiation": len(after) - 1,
+        "strain_at_initiation": float(after[0]["boundary_strain"]),
+        "strain_at_last_step": float(after[-1]["boundary_strain"]),
+        "strain_span_after_initiation": float(after[-1]["boundary_strain"]) - float(after[0]["boundary_strain"]),
+        "damaged_fraction_at_initiation": f0,
+        "damaged_fraction_at_last_step": fN,
+        "damaged_fraction_growth": fN - f0,
+        # A run that merely touched the threshold and stopped has not shown
+        # propagation, however many steps it survived. The growth in damaged
+        # volume is what distinguishes the two.
+        "propagated": bool(fN - f0 > 2.0 * max(f0, 1e-12)) and (len(after) - 1) >= 2,
+    }
+
+
 def write_run_results(
     out_dir: Path | str,
     snapshots: list[dict[str, Any]],
@@ -317,6 +354,10 @@ def write_run_results(
     init = initiation_record(rows, snapshots, nodes, cells, threshold=0.85)
     if init is not None:
         (out / "initiation.json").write_text(json.dumps(init, indent=1))
+    prop = propagation_record(rows, init, threshold=0.85)
+    if prop is not None:
+        (out / "propagation.json").write_text(json.dumps(prop, indent=1))
     return {"csv": str(out / "results.csv"), "n_steps": len(rows), "initiation": init,
+            "propagation": prop,
             "vtk_files": len(files), "columns": cols,
             "damage_threshold": threshold}
