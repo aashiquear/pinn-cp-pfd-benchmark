@@ -34,7 +34,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G24 | A | **fixed** | `981e2dd` | Damage never fed back into the mechanics stress: three wiring faults, both CP and J2 routes |
 | G27 | A | **fixed** | `5216640` | J2 degradation multiplied the whole stress instead of splitting tension from compression |
 | G26 | A | **fixed** | `e74e5fa` | Degradation applied to the Cauchy stress post-hoc instead of to the 2nd Piola-Kirchhoff stress per Eq. (29) |
-| G25 | A | open, guarded | — | A load step abandoned at the cutback floor returns a field violating its own Dirichlet BC; study runs now refuse to write results |
+| G25 | A | open, BLOCKING | — | A load step abandoned at the cutback floor returns a field violating its own Dirichlet BC; study runs now refuse to write results |
 | G22 | A | **fixed** | `aef2302` | `_snapshot_material_state` returned None on every call: the alternation state restore was a silent no-op |
 | G23 | B | open | — | Coupled restart implemented but NOT bit-exact against an uninterrupted run |
 | G21 | R | **fixed** | (this session) | Sparse DIRECT solve scales n^2.91 and made fine meshes unreachable; CG is exact and ~linear |
@@ -50,11 +50,19 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Twenty-one of twenty-eight closed. **Five remain open**. G25 is severity A but
-no longer blocks the fracture study: with G26 fixed and a sufficiently dense
-load ramp, runs now traverse the softening branch to complete fracture, and
-post-fracture abandonment is classified as a terminal condition rather than
-a failure. G6, G11 and G23 are
+Twenty-one of twenty-eight closed. **Five remain open, and G25 (severity A)
+blocks Phase 1.**
+
+RETRACTION. A previous revision of this section claimed G25 "no longer
+blocks the fracture study" once G26 was fixed. That was wrong, and the
+evidence for it was badly chosen: it rested on a Gc = 2.0 MPa.um case where
+the specimen severed within five load steps, so the run reached a terminal
+state and *looked* complete. Re-run at Gc = 30 MPa.um, inside the physical
+band, with 60 load steps and the coarsest mesh, the solve fails at step 12
+while still carrying 144.8 MPa, 60.2% of its 192.4 MPa peak, with only 12%
+of the domain damaged -- that is the onset of crack propagation, not the end
+of it. G26 removed a common trigger and let runs get much further; it did
+not make the coupled solve traverse propagation. G6, G11 and G23 are
 development items; G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
