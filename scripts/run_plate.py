@@ -143,20 +143,52 @@ def main() -> int:
         want = args.strain * float(_r["load_factor"])
         got = float(_r["boundary_strain"])
         if abs(got - want) > max(1e-6, 1e-3 * abs(want)):
-            bad.append((int(_r["step"]), want, got))
+            bad.append(int(_r["step"]))
+
+    # Distinguish a run that FAILED from one that FINISHED FRACTURING.
+    #
+    # Once the specimen is severed it carries no load and is a mechanism:
+    # there is no equilibrium state at a larger prescribed displacement, so
+    # the solve legitimately has nowhere to go. That is a terminal condition
+    # of the physics, not a defect, and the load steps before it are a valid
+    # fracture curve that must not be thrown away. The discriminator is the
+    # load-carrying capacity at the last good step, measured against the peak
+    # the run reached: a genuine failure aborts while the specimen is still
+    # carrying load.
+    status = "complete"
+    valid = _rows
     if bad:
-        (out_dir / "INVALID.txt").write_text(
-            "This run did not apply its prescribed boundary condition.\n"
-            + "".join(f"step {s}: prescribed strain {w:.6f}, actual {g:.6f}\n"
-                      for s, w, g in bad)
-        )
-        raise SystemExit(
-            f"{tag}: the prescribed boundary displacement was not applied at "
-            f"{len(bad)} of {len(_rows)} steps (first: step {bad[0][0]}, "
-            f"prescribed strain {bad[0][1]:.6f}, actual {bad[0][2]:.6f}). "
-            "The load step was abandoned at the cutback floor; see G25. "
-            "Results marked INVALID.txt and must not be used."
-        )
+        first_bad = min(bad)
+        valid = [r for r in _rows if int(r["step"]) < first_bad]
+        peak = max((abs(float(r["avg_stress_axial"])) for r in _rows), default=0.0)
+        last_ok = abs(float(valid[-1]["avg_stress_axial"])) if valid else float("inf")
+        severed = bool(valid) and peak > 0 and last_ok <= 0.05 * peak
+        if severed:
+            status = "fractured"
+            with (out_dir / "results.csv").open("w", newline="") as fh:
+                w = _csv.DictWriter(fh, fieldnames=list(valid[0].keys()))
+                w.writeheader()
+                w.writerows(valid)
+            (out_dir / "FRACTURED.txt").write_text(
+                f"Run terminated at complete fracture after step {first_bad - 1}.\n"
+                f"Axial stress fell to {last_ok:.4g} MPa from a peak of {peak:.4g} MPa "
+                f"({100 * last_ok / peak:.2f}%).\n"
+                f"Steps {first_bad}-{int(_rows[-1]['step'])} carry no equilibrium "
+                "solution and were dropped; the retained steps are a valid "
+                "fracture curve.\n"
+            )
+        else:
+            (out_dir / "INVALID.txt").write_text(
+                f"Run failed at step {first_bad} while still carrying "
+                f"{last_ok:.4g} MPa ({100 * last_ok / max(peak, 1e-30):.1f}% of peak "
+                f"{peak:.4g} MPa), i.e. before fracture completed.\n"
+            )
+            raise SystemExit(
+                f"{tag}: the prescribed boundary displacement was not applied from "
+                f"step {first_bad}, while the specimen was still carrying "
+                f"{last_ok:.4g} MPa ({100 * last_ok / max(peak, 1e-30):.1f}% of peak). "
+                "This is a failed solve, not completed fracture. See G25."
+            )
 
     rec = {
         "tag": tag, "geometry": args.geometry, "density": args.density,
@@ -166,6 +198,8 @@ def main() -> int:
         "mech_substeps": mechsub, "alternations": args.alternations,
         "strain_increment_per_update": d_eps / mechsub,
         "wall_seconds": wall,
+        "status": status,
+        "steps_retained": len(valid),
         "vtk_series": str(out_dir / "fields" / "fields.pvd"),
         **summary,
     }

@@ -1,0 +1,8 @@
+This run did not apply its prescribed boundary condition.
+step 5: prescribed strain 0.015000, actual 0.000000
+step 6: prescribed strain 0.017500, actual 0.000000
+step 7: prescribed strain 0.020000, actual 0.000000
+step 8: prescribed strain 0.022500, actual 0.000000
+step 9: prescribed strain 0.025000, actual 0.000000
+step 10: prescribed strain 0.027500, actual 0.000000
+step 11: prescribed strain 0.030000, actual 0.000000

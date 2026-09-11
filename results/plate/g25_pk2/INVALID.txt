@@ -1,0 +1,2 @@
+This run did not apply its prescribed boundary condition.
+step 2: prescribed strain 0.030000, actual 0.000000

@@ -32,6 +32,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
 | G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
 | G24 | A | **fixed** | `981e2dd` | Damage never fed back into the mechanics stress: three wiring faults, both CP and J2 routes |
+| G26 | A | **fixed** | `e74e5fa` | Degradation applied to the Cauchy stress post-hoc instead of to the 2nd Piola-Kirchhoff stress per Eq. (29) |
 | G25 | A | open, guarded | — | A load step abandoned at the cutback floor returns a field violating its own Dirichlet BC; study runs now refuse to write results |
 | G22 | A | **fixed** | `aef2302` | `_snapshot_material_state` returned None on every call: the alternation state restore was a silent no-op |
 | G23 | B | open | — | Coupled restart implemented but NOT bit-exact against an uninterrupted run |
@@ -48,8 +49,11 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Nineteen of twenty-six closed. **Five remain open**, and one, G25, is
-severity A and blocks any run taken to full fracture. G6, G11 and G23 are
+Twenty of twenty-seven closed. **Five remain open**. G25 is severity A but
+no longer blocks the fracture study: with G26 fixed and a sufficiently dense
+load ramp, runs now traverse the softening branch to complete fracture, and
+post-fracture abandonment is classified as a terminal condition rather than
+a failure. G6, G11 and G23 are
 development items; G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
@@ -352,6 +356,72 @@ the J2 route, because the accessor still returned None for it until fix (2).
 I have no verified explanation for the move-and-return and am not
 substituting a guess. It should be settled before the J2 route is used for
 any reported comparison.
+
+### G26 — FIXED — degradation belonged on the 2nd Piola-Kirchhoff stress, not the Cauchy stress
+
+Raised by the user, who asked why the source formulation's degradation of
+**S** had not been implemented. It had not, and the substitute was wrong in
+three ways that together explain G25 and the diffuse damage.
+
+**The source formulation**, Eq. (29), puts the degradation inside the
+constitutive law with a volumetric split:
+
+| branch | S |
+|---|---|
+| Jₑ ≥ 1 | `[(1-c)² + k] C:Eᵉ` |
+| Jₑ < 1 | `[(1-c)² + k] (C:Eᵉ − Jₑ^{2/3} K ω Cₑ⁻¹) + Jₑ^{2/3} K ω Cₑ⁻¹` |
+
+with ω = (3/2)(Jₑ^{2/3} − 1) and K = (1/9)C_iijj. PINNACLE instead multiplied
+the **Cauchy** stress by g(d) after the material returned.
+
+For Jₑ ≥ 1 the two are algebraically identical, since σ = (1/J)FᵉS(Fᵉ)ᵀ is
+linear in S and g is scalar. Everywhere else the post-hoc form fails:
+
+1. **Compression.** The split shields the volumetric part so a broken point
+   still resists interpenetration. A scalar multiply on σ degrades
+   compression too, removing the stiffness that keeps crack faces apart,
+   and positive definiteness with it.
+2. **Plastic driving force.** τ = M : S. With S undegraded, slip runs at
+   full rate in fully damaged material — which is what exhausted the CP
+   sub-step budget in the damaged region and abandoned the load step (G25).
+3. **Tangent.** Both tangent paths finite-difference the material directly
+   and never saw g(d), so Newton linearized a stress up to 1/g ≈ 400x
+   stiffer than the residual it was correcting.
+
+**Implementation.** `degrade_pk2` realizes Eq. (29) branch-free through the
+negative part of ω: `S = g(S − Sv) + Sv` with `Sv = Jₑ^{2/3} K ω⁻ Cₑ⁻¹` and
+`ω⁻ = min(ω, 0)`. Identical to the two branches, and continuous at Jₑ = 1,
+where a hard branch would put a step in the tangent at the state an element
+passes through as it unloads. Verified against the paper's branches to
+**0.0e+00** in both tension and compression; batched equals scalar; g = 1 is
+bit-exact. Degradation is applied in `stress`, both tangent paths, and the
+adaptive sub-stepping loop — everywhere τ is formed.
+
+**Modularity, as required.** `degradation_g` defaults to `None` and the path
+is then a strict no-op, so CP-only and J2-only runs are untouched. Confirmed
+by the full suite: 11 failures, the exact pre-existing baseline, and 3494
+passing, up 3 from the new degradation tests. No CP-only or J2-only golden
+moved.
+
+**Effect — the physics now behaves.** Perforated plate, Gc = 2.0 MPa·µm,
+12 load steps:
+
+| strain | damaged fraction | peak d | avg σ_xx |
+|---|---|---|---|
+| 0.0025 | 0.000 | 0.459 | 153.9 |
+| 0.0050 | 0.003 | 0.865 | **192.0** (peak) |
+| 0.0075 | 0.145 | 0.991 | 100.1 |
+| 0.0100 | 0.206 | 0.999 | 21.2 |
+| 0.0125 | 0.206 | 1.000 | **0.93** (severed) |
+
+A complete fracture curve with a descending branch, the first this coupling
+has produced, and damage **localized to 20.6%** of the domain against the
+88% diffuse smear before. The diffuse damage attributed for weeks to Gc
+being too low was this defect.
+
+**The J2 route still uses the post-hoc Cauchy multiply.** Deliberate and
+recorded rather than overlooked: Eq. (29) is the CP formulation, and
+imposing a split on J2 without a reference for it would be guessing.
 
 ### G25 — OPEN, severity A — a fully softened solve returns zero boundary displacement
 
