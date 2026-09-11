@@ -62,12 +62,14 @@ band, with 60 load steps and the coarsest mesh, the solve fails at step 12
 while still carrying 144.8 MPa, 60.2% of its 192.4 MPa peak, with only 12%
 of the domain damaged -- that is the onset of crack propagation, not the end
 of it. G26 removed a common trigger and let runs get much further; it did
-not make the coupled solve traverse propagation. G6, G11 and G23 are
-development items; G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
-metrics). G9 and G10 are documentation notes requiring no code. All three are
-development work with no unknowns in them; none is research-grade difficulty.
-The separate genuinely open research item is R5, the history-aware CP state
-surrogate, scoped as its own track rather than as a gap.
+not make the coupled solve traverse propagation.
+
+The other four open items do not block: **G6** and **G11** are development
+work, **G23** is coupled restart (implemented but not bit-exact), and
+**G8** is the study-metrics register. G9 and G10 are documentation notes
+needing no code. The one genuinely open research item, R5 (the
+history-aware CP state surrogate), is scoped as its own track rather than
+as a gap.
 
 **Both severity-A blockers are now closed.** G15 made the coupled solution
 path-correct in load and in constitutive state, which is what made the study's
