@@ -32,7 +32,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
 | G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
 | G24 | A | **fixed** | `981e2dd` | Damage never fed back into the mechanics stress: three wiring faults, both CP and J2 routes |
-| G25 | A | open | — | A fully softened coupled solve returns zero boundary displacement despite a prescribed Dirichlet value |
+| G25 | A | open, guarded | — | A load step abandoned at the cutback floor returns a field violating its own Dirichlet BC; study runs now refuse to write results |
 | G22 | A | **fixed** | `aef2302` | `_snapshot_material_state` returned None on every call: the alternation state restore was a silent no-op |
 | G23 | B | open | — | Coupled restart implemented but NOT bit-exact against an uninterrupted run |
 | G21 | R | **fixed** | (this session) | Sparse DIRECT solve scales n^2.91 and made fine meshes unreachable; CG is exact and ~linear |
@@ -368,9 +368,32 @@ falling stress at the imposed displacement, not zero displacement. So this
 is not "the specimen broke" — it is the solve returning a state that does
 not satisfy its own boundary conditions, and continuing without raising.
 
-Whether this is a Newton failure reported as success, the damage solve
-zeroing the displacement field, or the near-singular tangent at
-g(d) ≈ 0.002 is not yet established. It must close before any run is taken
+**Mechanism established.** It is not the linear solver: CG converged on all
+2,946 calls (`info = 0`), and the boundary displacement is *exactly* zero at
+every node, which is a boundary condition never applied rather than
+numerical drift. The CP integrator exhausts its sub-step budget in the
+damaged region and `cp_quasi_static` reaches the cutback floor, where it
+appends `{"converged": False, "error": "newton_cutback_floor: ..."}` to the
+mechanics history, advances `step_idx`, and **continues** — the load
+increment is never solved, and the run returns success at the top level.
+A silent failure recorded in a structure nothing reads, which is the same
+family as G13, G14, G19, G22 and G24.
+
+**Guarded on the study side, not yet fixed in the framework.**
+`run_plate.py` now verifies the *physical invariant* after every run: the
+measured boundary strain must equal `target_strain x load_factor` at every
+step. On violation it writes `INVALID.txt` and refuses to emit
+`results.csv`, since a results file is consumed downstream as a solved
+result. Guarding on the reported `converged` flag does **not** work and was
+tried first: with a single alternation the staggered record is
+`converged: False` by construction, so the flag cannot distinguish a lagged
+coupling from an abandoned load step. Validated against three saved runs —
+it rejects the failed one (step 1: prescribed strain 0.02000, actual
+0.00000) and accepts both healthy ones.
+
+The framework-side question — whether the cutback floor should raise, or
+sub-cycle the damage field, or accept a reduced load factor and report it —
+is a design decision that has not been made. It must close before any run is taken
 to full fracture, which is every run the fracture study needs. Note it
 would have been invisible without the new `results.csv`: the boundary
 strain column is what exposed it.

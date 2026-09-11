@@ -123,6 +123,41 @@ def main() -> int:
         boundary_nodes=np.asarray(z["set_xmax"], dtype=int),
         gauge_length=PLATE_LENGTH, load_axis=0, write_vtk=not args.no_vtk,
     )
+    # VERIFY THE BOUNDARY CONDITION WAS ACTUALLY APPLIED (study gap G25).
+    #
+    # Checked against the physical invariant rather than a status flag. A
+    # mechanics step that hits the cutback floor is recorded
+    # ``converged: False`` and then ABANDONED -- step_idx advances, the load
+    # increment is never solved, and the run returns success at the top level
+    # with a displacement field that does not satisfy its own Dirichlet
+    # condition. Guarding on the reported flag does not work: with a single
+    # alternation the staggered record is ``converged: False`` by
+    # construction, so it cannot distinguish a lagged coupling from an
+    # abandoned load step. The prescribed displacement is unambiguous.
+    import csv as _csv
+
+    with (out_dir / "results.csv").open() as fh:
+        _rows = list(_csv.DictReader(fh))
+    bad = []
+    for _r in _rows:
+        want = args.strain * float(_r["load_factor"])
+        got = float(_r["boundary_strain"])
+        if abs(got - want) > max(1e-6, 1e-3 * abs(want)):
+            bad.append((int(_r["step"]), want, got))
+    if bad:
+        (out_dir / "INVALID.txt").write_text(
+            "This run did not apply its prescribed boundary condition.\n"
+            + "".join(f"step {s}: prescribed strain {w:.6f}, actual {g:.6f}\n"
+                      for s, w, g in bad)
+        )
+        raise SystemExit(
+            f"{tag}: the prescribed boundary displacement was not applied at "
+            f"{len(bad)} of {len(_rows)} steps (first: step {bad[0][0]}, "
+            f"prescribed strain {bad[0][1]:.6f}, actual {bad[0][2]:.6f}). "
+            "The load step was abandoned at the cutback floor; see G25. "
+            "Results marked INVALID.txt and must not be used."
+        )
+
     rec = {
         "tag": tag, "geometry": args.geometry, "density": args.density,
         "n_elements": int(cells.shape[0]), "n_nodes": int(nodes.shape[0]),
