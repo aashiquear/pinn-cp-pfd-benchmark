@@ -31,6 +31,8 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G14 | A | **fixed** | `4e48301` | Exodus reader silently discarded every file-provided node set |
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
 | G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
+| G24 | A | **fixed** | `981e2dd` | Damage never fed back into the mechanics stress: three wiring faults, both CP and J2 routes |
+| G25 | A | open | — | A fully softened coupled solve returns zero boundary displacement despite a prescribed Dirichlet value |
 | G22 | A | **fixed** | `aef2302` | `_snapshot_material_state` returned None on every call: the alternation state restore was a silent no-op |
 | G23 | B | open | — | Coupled restart implemented but NOT bit-exact against an uninterrupted run |
 | G21 | R | **fixed** | (this session) | Sparse DIRECT solve scales n^2.91 and made fine meshes unreachable; CG is exact and ~linear |
@@ -46,8 +48,9 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Eighteen of twenty-four closed. **Four remain open**, and none is severity A:
-G6, G11 and G23 are development items, G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
+Nineteen of twenty-six closed. **Five remain open**, and one, G25, is
+severity A and blocks any run taken to full fracture. G6, G11 and G23 are
+development items; G8 is the study-metrics register. two **B** items (G6, G11) and one **R** item (G8, the missing study
 metrics). G9 and G10 are documentation notes requiring no code. All three are
 development work with no unknowns in them; none is research-grade difficulty.
 The separate genuinely open research item is R5, the history-aware CP state
@@ -291,6 +294,86 @@ encodes it too.
 stress at the converged displacement against the state as it stood at the START
 of the step -- rather than re-evaluating after `update_state`. The same applies
 to the per-step snapshot stress added for the damage-evidence work.
+
+### G24 — FIXED — damage never fed back into the mechanics stress, on either route
+
+**The single most consequential defect found in this study.** Softening is
+the mechanism phase-field damage exists to represent: without it the driving
+force never relaxes, damage spreads across the domain instead of localizing
+into a band, and the stress-strain curve has no descending branch. Every
+coupled run in this project before this fix was **one-way coupled** —
+mechanics drove damage, damage never softened the material.
+
+Three independent wiring faults, in series, each silent:
+
+1. The coupled executioner gated the damage push on
+   `hasattr(mech_exec, "kernel")`. Neither mechanics sub-executioner has that
+   attribute — the kernels live on `problem.kernels` — so the guard was
+   always false and **neither** route ever received a damage field. Same root
+   cause as G22.
+2. The live-callback accessor read only the CP kernel's `_material_cache`.
+   The J2 kernel keeps its callback in `_callback`, so fixing (1) restored CP
+   and left **J2 still undamaged**. Both names are now checked.
+3. `CPFieldCallback` degrades only when the nodal damage can be scattered to
+   quadrature points, which needs connectivity supplied by
+   `set_gradient_operator` — wired only when GND was enabled. Every coupled
+   CP deck with `gnd = false`, which is all of them here, scattered nothing.
+
+**Measured, not inferred.**
+
+| | before | after |
+|---|---|---|
+| CP: elements above d = 0.85 | 408 of 432 | — |
+| CP: average axial stress there | **356 MPa, still rising** | degraded |
+| CP: g(d) = (1-d)² + k demands | 0.0023 → about 0.8 MPa | — |
+| CP: scatter calls / null returns | — | 802 / 0 |
+| CP: min g(d) applied | never applied | **0.0014** |
+| J2: min g(d) applied | never applied | **0.34** |
+
+**This explains the diffuse damage seen throughout the study.** It was
+repeatedly attributed to Gc being too low. With no softening the driving
+force never relaxes, so damage grows everywhere rather than localizing —
+the Gc calibration must be re-derived, not carried over.
+
+**Regression protection.** `tests/unit/coupling/test_damage_feeds_back.py`
+asserts the end-to-end property on both routes. It sets the load-step and
+alternation counts itself, because damage is solved *after* mechanics within
+an alternation, so a one-step one-alternation deck cannot show coupling
+however correctly it is wired — and several bundled decks are configured
+that way. It also asserts the chosen deck declares a degradation material,
+so it cannot pass vacuously.
+
+**An unexplained observation, recorded rather than smoothed over.** After
+fix (1) alone, three J2 phase-field goldens moved
+(`j2_pfd_function_hardening`, `..._finite_strain`, `j2_pfd_void_in_cube`).
+After fixes (2) and (3) they pass again, and the suite is back to the
+11-item baseline. By code reading, fix (1) should have changed nothing on
+the J2 route, because the accessor still returned None for it until fix (2).
+I have no verified explanation for the move-and-return and am not
+substituting a guess. It should be settled before the J2 route is used for
+any reported comparison.
+
+### G25 — OPEN, severity A — a fully softened solve returns zero boundary displacement
+
+Surfaced immediately once softening worked. On a perforated plate at
+Gc = 2.0 MPa·µm — far below the calibrated range, so the specimen fails
+almost at once — the first load step is normal (boundary strain 0.0100,
+average axial stress 294 MPa), and from the second step onward the reported
+boundary strain is **0.00000** with an average axial stress of −15 MPa,
+while damage freezes at 0.414 of the domain.
+
+The boundary displacement is a **prescribed Dirichlet value**. It must be
+honored whatever the material stiffness; a softened structure should show
+falling stress at the imposed displacement, not zero displacement. So this
+is not "the specimen broke" — it is the solve returning a state that does
+not satisfy its own boundary conditions, and continuing without raising.
+
+Whether this is a Newton failure reported as success, the damage solve
+zeroing the displacement field, or the near-singular tangent at
+g(d) ≈ 0.002 is not yet established. It must close before any run is taken
+to full fracture, which is every run the fracture study needs. Note it
+would have been invisible without the new `results.csv`: the boundary
+strain column is what exposed it.
 
 ### G22 — FIXED — the material-state snapshot and restore never did anything
 
