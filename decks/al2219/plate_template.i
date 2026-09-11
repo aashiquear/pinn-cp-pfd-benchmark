@@ -166,6 +166,13 @@
     n_steps       = @MECHSUB@
     newton_tol    = 1.0e-6
     max_iter      = 50
+    # The crack tip drives a strain-rate concentration into the undamaged
+    # material beside the band, which exhausts the constitutive sub-step
+    # budget. The executioner responds by halving the increment, but the
+    # default of 6 halvings bottoms out at 1/64 of a load step and the step
+    # is then abandoned. Propagation needs a finer floor, and a cutback only
+    # costs time on the steps that actually need it.
+    max_cutbacks  = @MAXCUTBACKS@
     linear_method = cg
     # Always sparse: see the parameter doc. The 12,000-DOF default would put
     # every density level below 5 on a dense tangent, 2.3-5.2x slower.

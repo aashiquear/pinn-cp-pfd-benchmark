@@ -46,10 +46,11 @@ CAL_AL2219 = {
 
 def build_deck(*, mesh: Path, orient: str, gc: float, l0: float, nsteps: int,
                mechsub: int, maxalt: int, strain: float, out_dir: Path,
-               cal: dict[str, str]) -> Path:
+               cal: dict[str, str], maxcutbacks: int = 15) -> Path:
     src = (STUDY / "decks/al2219/plate_template.i").read_text()
     sub = dict(cal, MESH=str(mesh), ORIENT=orient, GC=f"{gc:.9g}", L0=f"{l0:.9g}",
                NSTEPS=str(nsteps), MECHSUB=str(mechsub), MAXALT=str(maxalt),
+               MAXCUTBACKS=str(maxcutbacks),
                STRAIN=f"{strain:.9g}", OUTDIR=str(out_dir / "solver"))
     for k, v in sub.items():
         src = src.replace(f"@{k}@", v)
@@ -91,6 +92,10 @@ def main() -> int:
     # count per step falls as the increment shrinks.
     ap.add_argument("--load-steps", type=int, default=60)
     ap.add_argument("--alternations", type=int, default=2)
+    ap.add_argument("--max-cutbacks", type=int, default=15,
+                    help="Load-increment halvings before a step is abandoned. "
+                         "The framework default of 6 bottoms out at 1/64 of a "
+                         "load step, which is too coarse at the crack tip.")
     ap.add_argument("--no-vtk", action="store_true")
     ap.add_argument("--tag", default=None)
     ap.add_argument("--out", default="results/plate")
@@ -111,18 +116,34 @@ def main() -> int:
     deck = build_deck(mesh=mesh_e, orient=args.orientation, gc=args.gc, l0=args.l0,
                       nsteps=args.load_steps, mechsub=mechsub,
                       maxalt=args.alternations, strain=args.strain,
-                      out_dir=out_dir, cal=CAL_AL2219)
+                      out_dir=out_dir, cal=CAL_AL2219,
+                      maxcutbacks=args.max_cutbacks)
 
     t0 = time.perf_counter()
     result = Runner.from_config(load_input(str(deck)))
     wall = time.perf_counter() - t0
 
+    # Diagnostics kept for BOTH outcomes. A failed run is when the
+    # alternation history is most wanted, and re-running to obtain it costs
+    # what the run cost. ``converged``/``failed_steps`` are the top-level
+    # flags the mechanics executioner now reports; ``staggered`` is the
+    # per-load-step alternation record.
+    diag = {
+        "staggered": _find(result, "staggered"),
+        "mech_converged": _find(result, "converged"),
+        "mech_failed_steps": _find(result, "failed_steps"),
+    }
     snaps = _find(result, "snapshots") or []
     summary = write_run_results(
         out_dir, snaps, nodes, cells,
         boundary_nodes=np.asarray(z["set_xmax"], dtype=int),
         gauge_length=PLATE_LENGTH, load_axis=0, write_vtk=not args.no_vtk,
     )
+    _early = dict(diag)
+    _early.update({"tag": tag, "n_elements": int(n_elem), "wall_seconds": wall,
+                   "status": "pending_validation"})
+    (out_dir / "run.json").write_text(json.dumps(_early, indent=1, default=str))
+
     # VERIFY THE BOUNDARY CONDITION WAS ACTUALLY APPLIED (study gap G25).
     #
     # Checked against the physical invariant rather than a status flag. A
@@ -198,6 +219,7 @@ def main() -> int:
         "mech_substeps": mechsub, "alternations": args.alternations,
         "strain_increment_per_update": d_eps / mechsub,
         "wall_seconds": wall,
+        "diagnostics": diag,
         "status": status,
         "steps_retained": len(valid),
         "vtk_series": str(out_dir / "fields" / "fields.pvd"),

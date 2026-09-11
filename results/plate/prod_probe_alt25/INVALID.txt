@@ -1,0 +1,1 @@
+Run failed at step 13 while still carrying 79.89 MPa (33.2% of peak 240.7 MPa), i.e. before fracture completed.
