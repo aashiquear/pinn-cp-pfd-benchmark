@@ -1,0 +1,10 @@
+{
+ "full_run_seconds_d1": 559.2601737060031,
+ "n_tangent": 2004,
+ "mech_substeps": 8,
+ "load_steps": 20,
+ "alternations": 2,
+ "strain": 0.12,
+ "single_step_seconds_d1": 1.1536,
+ "multiplier": 484.7955736009042
+}
