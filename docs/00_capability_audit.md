@@ -32,6 +32,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G15 | A | **fixed** | `43dd6fd`, ADR 0023 | `staggered` never incremented the load and reset CP state each sub-solve |
 | G19 | A | **fixed** | (this session) | `cp_quasi_static`'s reported stress was evaluated after the state advance, double-counting plasticity |
 | G24 | A | **fixed** | `981e2dd` | Damage never fed back into the mechanics stress: three wiring faults, both CP and J2 routes |
+| G27 | A | **fixed** | `5216640` | J2 degradation multiplied the whole stress instead of splitting tension from compression |
 | G26 | A | **fixed** | `e74e5fa` | Degradation applied to the Cauchy stress post-hoc instead of to the 2nd Piola-Kirchhoff stress per Eq. (29) |
 | G25 | A | open, guarded | — | A load step abandoned at the cutback floor returns a field violating its own Dirichlet BC; study runs now refuse to write results |
 | G22 | A | **fixed** | `aef2302` | `_snapshot_material_state` returned None on every call: the alternation state restore was a silent no-op |
@@ -49,7 +50,7 @@ codes: **A** blocks a faithful reproduction, **B** blocks part of the study,
 | G11 | B | open | — | `backend`/`device` are `[Global]`-only, so a hybrid can't split hardware |
 | G12 | A | **fixed** | `b49fa70` | Two contraction errors in the batched CP path |
 
-Twenty of twenty-seven closed. **Five remain open**. G25 is severity A but
+Twenty-one of twenty-eight closed. **Five remain open**. G25 is severity A but
 no longer blocks the fracture study: with G26 fixed and a sufficiently dense
 load ramp, runs now traverse the softening branch to complete fracture, and
 post-fracture abandonment is classified as a terminal condition rather than
@@ -356,6 +357,61 @@ the J2 route, because the accessor still returned None for it until fix (2).
 I have no verified explanation for the move-and-return and am not
 substituting a guess. It should be settled before the J2 route is used for
 any reported comparison.
+
+### G27 — FIXED — the J2 route degraded compression along with tension
+
+Closes the asymmetry left open by G26. The user supplied the reference,
+MOOSE `ComputeCrackedStress`, which decomposes the uncracked stress
+spectrally and degrades only its tensile part:
+
+    sigma = (P+ h + P-) : sigma0,    P- = I4sym - P+
+
+Because the projectors partition the identity this is exactly
+
+    sigma = sigma0 - (1 - h) sigma+,   sigma+ = sum_a <lambda_a>+ n_a (x) n_a
+
+PINNACLE multiplied the entire stress by g. Cracked material must sustain
+compression but not tension; a uniform multiply removes the stiffness that
+keeps crack faces apart and takes positive definiteness with it.
+
+**Verification.** Matches the reference form `(P+ h + P-):sigma0` to
+**7.1e-14** on a general non-diagonal stress. Limits pinned as tests:
+
+| state | result |
+|---|---|
+| all principal stresses tensile | reduces to `g * sigma0` — the old behavior, exactly where it was right |
+| all principal stresses compressive | **unchanged** — crack closure |
+| mixed (+200, −150) | +200 → +0.46 degraded, **−150 preserved** |
+| g = 1 | bit-exact no-op |
+
+**Tangent.** The reference degrades the tangent with the same operator,
+`J = (P+ h + P-) : J0`. A uniform g on C is no longer the derivative of the
+split stress, so with damage bound the tangent is central-differenced from
+the split stress. Undamaged J2 keeps its analytic tangent — the CP lesson
+(G26) was that an inconsistent tangent is what breaks Newton.
+
+**Modularity, as required.** With no damage bound the split path does not
+execute, pinned by `test_degradation_leaves_an_undamaged_callback_untouched`
+asserting bit-identical stress and tangent. Suite at the 11-item baseline,
+3495 passing.
+
+**Blast radius.** `j2_pfd_void_in_cube` regenerated: final stress +0.034%,
+peak +0.73% — small because that case is largely tensile, with the
+difference confined to the compressive region around the void.
+`j2_pfd_function_hardening` and its finite-strain variant did not move at
+all, consistent with being in tension throughout. The replaced unit test
+asserted the uniform multiply; a tension-only test cannot distinguish the
+two formulations, which is how this went unnoticed.
+
+**Normalization difference, recorded not reconciled.** The reference writes
+`h = (1-c)^2 (1-k) + k`, so `h(0) = 1` exactly; PINNACLE's `pfd_degradation`
+supplies `g = (1-c)^2 + k`, so `g(0) = 1 + k`. They differ by O(k) = 1e-3
+and agree at c = 1. The deck's g is used, so the **split** follows the
+reference while the **degradation function** stays the deck's pluggable
+choice. These are independent modeling decisions, which matters because the
+user plans to add further splits — of the four in common use, two are now
+implemented: the volumetric split on S for CP (G26) and the spectral
+stress split for J2 (this entry).
 
 ### G26 — FIXED — degradation belonged on the 2nd Piola-Kirchhoff stress, not the Cauchy stress
 
