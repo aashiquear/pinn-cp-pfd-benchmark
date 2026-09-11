@@ -65,3 +65,63 @@ takes SI-unit defaults (C11 = 108.2e9 Pa) in a um/MPa deck, producing
 stresses around 1e10 MPa and rho around 1e18 with no error raised. Two
 separate diagnostics in this study were invalidated this way before it was
 recognized.
+
+## The limit is stress concentration, not the polycrystal
+
+Later runs broadened the picture. Every configuration containing a stress
+concentrator stalls before 17%; the homogeneous one does not.
+
+| configuration | initial cutbacks | reached 17%? |
+|---|---|---|
+| plain plate, single crystal | 0 | yes, verified to 0.22% against the material point |
+| plain plate, 12 grains, d=1 (3 elem/grain) | 180 | no, 10.2% |
+| plain plate, 12 grains, d=2 (~14 elem/grain) | 6 | no, stalled later |
+| plain plate, 12 grains, d=3 (33 elem/grain) | 1 | no, stalled later |
+| holed plate, single crystal [-1 4 9], d=4/5/6 | 779 / 163 / 202 | no |
+
+Two readings follow, and only the first is established.
+
+**Elements per grain matters, and the original specimen was pathological.**
+At d=1, 69% of elements straddled a misorientation discontinuity, the
+smallest grain was 3 elements, and only 2 of 12 grains were interior.
+Raising resolution cut the initial cutback count from 180 to 1. An earlier
+suggestion to add MORE grains is wrong: at fixed mesh it worsens the same
+quantity (108 grains gives 2 elements/grain and 75% of elements on a
+boundary).
+
+**Resolution delays the wall but does not remove it.** The d=2 and d=3 runs
+stalled at higher strain with cutbacks climbing again, and the holed SINGLE
+crystal stalls with no grains at all. So the controlling factor is the
+presence of a stress concentrator, not grain structure specifically.
+
+## Mechanism, quantified, with what is NOT established
+
+The slip law raises a local overstress to the power n = 8.33, so a
+concentration is amplified enormously in the slip rate:
+
+| local Kt | tau/tau_c | gamma_dot (1/s) | sub-steps needed |
+|---|---|---|---|
+| 1.0 (homogeneous) | 1.46 | 2.3e-4 | ~0 |
+| 2.0 | 2.92 | 7.6e-2 | 57 |
+| 3.0 (circular hole) | 4.38 | 2.2 | 1,674 |
+| 3.5 | 5.11 | 8.0 | 6,050 |
+
+Exhausting the 100,000 sub-step budget requires tau/tau_c = 7.15, i.e.
+**4.9x** the homogeneous value. The elastic Kt = 3 of a circular hole gives
+1,674 sub-steps, comfortably inside budget. **So the elastic concentration
+alone does not explain the failures**; additional localization is involved,
+either plastic strain concentrating beyond the elastic field or
+misorientation across a grain boundary. Which one is NOT established, and
+should not be asserted without measuring the local field at the failing
+point.
+
+## Integration tolerance is now explicit
+
+`max_shear_increment` (1e-3) and `max_substeps` (100,000) were hard-coded in
+`CPFieldCallback.update_state`. They set both the accuracy/cost trade-off and
+whether a solve completes at all, so they are now constructor parameters with
+unchanged defaults (pinnacle 06e6c17). **Whether the cap can be loosened is
+unresolved**: a hand-rolled emulation of the sub-stepping produced 269 MPa
+where the verified material point gives 313 MPa under identical conditions,
+so it did not reproduce a validated result and cannot be used to judge the
+cap. A faithful test must drive the real callback.

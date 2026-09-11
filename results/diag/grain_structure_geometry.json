@@ -1,0 +1,38 @@
+{
+ "d1_n12": {
+  "n_elements": 128,
+  "n_grains": 12,
+  "interior_grains": 2,
+  "pct_interior": 16.7,
+  "pct_elements_at_gb": 68.8,
+  "min_grain_elements": 3,
+  "median_grain_elements": 9
+ },
+ "d3_n12": {
+  "n_elements": 1152,
+  "n_grains": 12,
+  "interior_grains": 3,
+  "pct_interior": 25.0,
+  "pct_elements_at_gb": 27.5,
+  "min_grain_elements": 33,
+  "median_grain_elements": 82
+ },
+ "d3_n48": {
+  "n_elements": 1152,
+  "n_grains": 48,
+  "interior_grains": 25,
+  "pct_interior": 52.1,
+  "pct_elements_at_gb": 53.6,
+  "min_grain_elements": 5,
+  "median_grain_elements": 22
+ },
+ "d3_n108": {
+  "n_elements": 1152,
+  "n_grains": 108,
+  "interior_grains": 72,
+  "pct_interior": 66.7,
+  "pct_elements_at_gb": 75.0,
+  "min_grain_elements": 2,
+  "median_grain_elements": 9
+ }
+}
