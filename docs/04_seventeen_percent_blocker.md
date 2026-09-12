@@ -154,10 +154,25 @@ ordering is the OPPOSITE of the Kt^n prediction -- n = 20 got furthest. The
 rate exponent is not the controlling variable.
 
 **Initial dislocation density**, rho0 = 220 / 50 / 10 / 2.39 at n = 12: all
-four failed with no output. Final cutback counts 40 / 42 / 6 / 41 -- no
-trend. An apparently clean monotonic trend at 89 minutes (40 / 28 / 6 / 5)
-was transient, reflecting differing run speeds, and was reported prematurely
-before being falsified by the completed runs.
+four failed with no output.
+
+| rho0 (um^-2) | tau_c(0) MPa | final cutbacks |
+|---|---|---|
+| 220 | 176.9 | 40 |
+| 50 | 84.5 | 48 |
+| 10 | 37.9 | 10 |
+| 2.39 | 18.7 | 46 |
+
+No trend: the lowest and highest densities bracket the largest count. An
+apparently clean monotonic trend observed at 89 minutes (40 / 28 / 6 / 5) was
+transient, reflecting differing run speeds, and was reported prematurely
+before the completed runs falsified it.
+
+Counts verified against the logs three ways after all processes exited
+(`grep -c`, `grep -o | wc`, and counting `cutback #` lines); an earlier
+version of this table read 40 / 42 / 6 / 41 from a snapshot taken while the
+logs were still being appended to, which is the same mid-run-counter error
+the method note below describes.
 
 ## What the fields established, and what they refuted
 
@@ -196,8 +211,9 @@ parameter tuning.
 
 ## Method note
 
-Five claims in this line of work were reported from mid-run counters and then
-withdrawn when the runs completed. Cutback counts during a run do not
+Six claims in this line of work were reported from mid-run counters and then
+corrected when the runs completed -- including this document's own first
+rho0 table. Cutback counts during a run do not
 distinguish progress from thrash: a run further along the load program has had
 more opportunities to cut back, and runs at different thread counts advance at
 different rates. Only reached strain from a written results.csv is a result.
