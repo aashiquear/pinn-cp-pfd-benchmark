@@ -125,3 +125,79 @@ unresolved**: a hand-rolled emulation of the sub-stepping produced 269 MPa
 where the verified material point gives 313 MPa under identical conditions,
 so it did not reproduce a validated result and cannot be used to judge the
 cap. A faithful test must drive the real callback.
+
+## Three parameter sweeps, all negative
+
+The strain limit was attacked from every parameter direction available. All
+three sweeps were run to completion at d=3 on the holed plate (the geometry
+that binds), damage suppressed, 17% target at 1e-3 /s.
+
+**Mesh resolution.** d=1 completes at every rate exponent tried; d=3 fails at
+every one. A coarse mesh under-resolves the hole crown, so the integrator
+never sees the true local concentration -- refining the mesh makes the
+constitutive integration harder, which means a convergence series makes its
+own finest members the hardest to run.
+
+**Rate exponent**, n = 8.33 / 10 / 12 / 14 / 16 / 20 at rho0 = 220:
+
+| n | reached | peak MPa |
+|---|---|---|
+| 8.33 | 6.18% | 832 |
+| 10 | 6.69% | 973 |
+| 12 | 6.95% | 952 |
+| 14 | 7.11% | 791 |
+| 16 | 7.21% | 1269 |
+| 20 | 7.72% | 885 |
+
+All stall between 6.2% and 7.7% across a factor-2.4 change in n, and the
+ordering is the OPPOSITE of the Kt^n prediction -- n = 20 got furthest. The
+rate exponent is not the controlling variable.
+
+**Initial dislocation density**, rho0 = 220 / 50 / 10 / 2.39 at n = 12: all
+four failed with no output. Final cutback counts 40 / 42 / 6 / 41 -- no
+trend. An apparently clean monotonic trend at 89 minutes (40 / 28 / 6 / 5)
+was transient, reflecting differing run speeds, and was reported prematurely
+before being falsified by the completed runs.
+
+## What the fields established, and what they refuted
+
+Field output at d=3, n=20 (25 steps, `results/nsweep_d3/`):
+
+| step | far-field vm | crown vm | measured Kt | crown vm / tau_c(0) |
+|---|---|---|---|---|
+| 0 | 397.7 | 827.4 | 2.08 | 4.68 |
+| 9 | 525.7 | 1101.9 | 2.10 | 6.23 |
+| 10 | 678.0 | 1427.0 | 2.10 | 8.07 |
+| 11 (first invalid) | 739.9 | 1587.6 | 2.15 | 8.98 |
+
+* **The crown is NOT elastic.** It sits at 4.7x tau_c(0) from the first step,
+  refuting the hypothesis that a high tau_c(0) keeps the crown elastic and so
+  preserves the concentration. That hypothesis was what the rho0 sweep was
+  dispatched to test; the fields falsified it before the sweep returned.
+* **The measured concentration factor is 2.1, not 3.0**, stable across every
+  step. Every sub-step estimate quoted earlier using Kt = 3 was therefore too
+  pessimistic, including the claim that a hole gives 1,674 sub-steps.
+* **Both stress levels run away together** (398 -> 526 -> 678 -> 740 MPa)
+  while their ratio stays flat, so the breakdown is global rather than a
+  crown-localised instability.
+
+## Where this leaves the diagnosis
+
+The failure signature is identical in every case: the constitutive sub-step
+budget exhausts at a SINGLE mechanics sub-step with dt driven to 1.8e-5 s,
+about 1e6 times below nominal, without ever succeeding. A budget that cannot
+be satisfied at 1e-5 s is not a step-size problem.
+
+Parameter space is exhausted as an explanation. The remaining candidate is the
+explicit sub-stepping scheme itself, which would make the fix an implicit
+constitutive update -- Newton on the slip-system equations rather than forward
+sub-stepping under a shear-increment cap. That is framework work, not
+parameter tuning.
+
+## Method note
+
+Five claims in this line of work were reported from mid-run counters and then
+withdrawn when the runs completed. Cutback counts during a run do not
+distinguish progress from thrash: a run further along the load program has had
+more opportunities to cut back, and runs at different thread counts advance at
+different rates. Only reached strain from a written results.csv is a result.

@@ -1,0 +1,1 @@
+Failed at step 11 carrying 682.1 MPa (50.2% of peak 1358 MPa) and BEFORE damage initiation, so it measured nothing.

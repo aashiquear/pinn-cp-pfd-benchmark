@@ -1,0 +1,8 @@
+{
+ "tag": "hole_n12",
+ "n_elements": 108,
+ "mech_substeps": 9,
+ "n_steps": 25,
+ "vtk_files": 0,
+ "wall_seconds": 1045.9274361880089
+}

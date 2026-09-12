@@ -1,0 +1,72 @@
+[
+ {
+  "n": 8.3,
+  "reached_strain": 0.061766666666666685,
+  "peak_stress_MPa": 832.188862948404,
+  "n_valid_steps": 1,
+  "status": "stalled before 17%"
+ },
+ {
+  "n": 10.0,
+  "reached_strain": 0.0669138888888889,
+  "peak_stress_MPa": 972.7182140798518,
+  "n_valid_steps": 1,
+  "status": "stalled before 17%"
+ },
+ {
+  "n": 12.0,
+  "reached_strain": 0.06948749999999998,
+  "peak_stress_MPa": 952.0092598846798,
+  "n_valid_steps": 1,
+  "status": "stalled before 17%"
+ },
+ {
+  "n": 14.0,
+  "reached_strain": 0.07108406880696609,
+  "peak_stress_MPa": 790.5440183341633,
+  "n_valid_steps": 1,
+  "status": "stalled before 17%"
+ },
+ {
+  "n": 16.0,
+  "reached_strain": 0.0720611111111111,
+  "peak_stress_MPa": 1269.1942671427923,
+  "n_valid_steps": 1,
+  "status": "stalled before 17%"
+ },
+ {
+  "n": 20.0,
+  "reached_strain": 0.07720833333333336,
+  "peak_stress_MPa": 885.0235695485776,
+  "n_valid_steps": 1,
+  "status": "stalled before 17%"
+ },
+ {
+  "rho0": 220.0,
+  "n": 12.0,
+  "cutbacks": 40,
+  "reached_strain": null,
+  "status": "no output written"
+ },
+ {
+  "rho0": 50.0,
+  "n": 12.0,
+  "cutbacks": 48,
+  "reached_strain": null,
+  "status": "no output written"
+ },
+ {
+  "rho0": 10.0,
+  "n": 12.0,
+  "cutbacks": 10,
+  "reached_strain": null,
+  "status": "no output written"
+ },
+ {
+  "rho0": 2.393387495846754,
+  "n": 12.0,
+  "cutbacks": 46,
+  "reached_strain": null,
+  "status": "no output written"
+ }
+]

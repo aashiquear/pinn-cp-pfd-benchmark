@@ -1,0 +1,8 @@
+{
+ "tag": "n20_sc_plain",
+ "n_elements": 1152,
+ "mech_substeps": 9,
+ "n_steps": 25,
+ "vtk_files": 0,
+ "wall_seconds": 3990.095893019985
+}
