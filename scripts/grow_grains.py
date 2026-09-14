@@ -147,7 +147,20 @@ def build_deck(*, n_grains: int, n_ops: int, seeds: np.ndarray, div: tuple[int, 
 
 [Executioner]
   type             = pf_fem_transient
-  scheme           = bdf1
+  # convex_splitting, not bdf1. Measured on this problem at 861 nodes, 2 steps:
+  # bdf1 at dt = 0.05 costs 41.6 s/step, convex_splitting 18.9 s/step, and
+  # convex_splitting is insensitive to dt (18.3 s/step at dt = 0.25) because it
+  # linearises the convex part implicitly and gives unconditional energy decay
+  # -- which is what the executioner's own documentation recommends when Newton
+  # stalls on a stiff well. A first attempt used bdf1 at dt = 1.16, which is
+  # 0.32 of the interface relaxation time w_GB^2/(M_GB sigma); the reference
+  # MOOSE example's ratio is 0.078, and at 4x that a Newton scheme spends its
+  # whole budget on cutbacks -- 55 minutes produced no completed step.
+  #
+  # Cost is dominated by per-step overhead, not the linear solve: 3.9x the
+  # nodes cost 1.1x the time, so the fine grid the diffuse boundary needs is
+  # essentially free.
+  scheme           = convex_splitting
   n_steps          = {n_steps}
   dt               = {dt:.6g}
   linear_solver    = direct
@@ -203,7 +216,12 @@ def main() -> int:
     ap.add_argument("--grains", type=int, required=True)
     ap.add_argument("--density", type=int, default=3)
     ap.add_argument("--n-ops", type=int, default=8)
-    ap.add_argument("--steps", type=int, default=40)
+    ap.add_argument("--steps", type=int, default=60)
+    # dt as a fraction of the interface relaxation time. 0.07 matches the
+    # reference MOOSE example's ratio; convex_splitting tolerates more.
+    ap.add_argument("--dt-over-tint", type=float, default=0.30)
+    # Fraction of the GRAIN time to relax for. 0 keeps --steps as given.
+    ap.add_argument("--horizon-over-tau", type=float, default=0.0)
     ap.add_argument("--wgb-over-grain", type=float, default=1 / 8.0)
     ap.add_argument("--h-over-wgb", type=float, default=1 / 3.0)
     ap.add_argument("--out", default="results/graingrowth")
@@ -220,19 +238,34 @@ def main() -> int:
     z = np.load(STUDY / f"meshes/plate/poly_d{args.density}_n{args.grains}.npz")
     seeds = np.asarray(z["seeds"], dtype=float)
 
-    # Characteristic curvature-driven time: grain_width^2 / (M_GB sigma) with
-    # both normalized to 1. Relax a modest fraction of it -- enough to curve
-    # the boundaries and settle the junctions, not enough to coarsen the grain
-    # count away, which is the stopping criterion.
+    # TWO timescales matter and they are far apart. Triple junctions
+    # equilibrate on the INTERFACE time t_int = w_GB^2/(M_GB sigma); grains
+    # coarsen on the much longer GRAIN time tau = grain_width^2/(M_GB sigma),
+    # which is 64x larger at w_GB = grain/8. The morphology wanted here --
+    # curved boundaries and 120-degree junctions at an essentially unchanged
+    # grain count -- lives between them, so the step is set from the interface
+    # time and the horizon is a few multiples of it.
     tau = gw * gw
-    dt = 0.02 * tau / args.steps * 10.0
+    t_int = w_gb * w_gb
+    # Horizon from the GRAIN time. dt is still referenced to the interface
+    # time for accuracy of the boundary profile; the number of steps is what
+    # sets how far the network migrates.
+    dt = args.dt_over_tint * t_int
+    if args.horizon_over_tau > 0.0:
+        n_steps_needed = int(np.ceil(args.horizon_over_tau * tau / dt))
+        args.steps = n_steps_needed
 
     out = STUDY / args.out / f"n{args.grains}"
     deck = build_deck(n_grains=args.grains, n_ops=args.n_ops, seeds=seeds, div=div,
                       w_gb=w_gb, n_steps=args.steps, dt=dt, out_dir=out)
     print(json.dumps({"n_grains": args.grains, "grain_width_um": gw, "w_GB_um": w_gb,
                       "h_um": h, "divisions": list(div), "n_nodes": (div[0]+1)*(div[1]+1),
-                      "tau_um2": tau, "dt": dt, "n_steps": args.steps,
+                      "tau_grain_um2": tau, "t_interface_um2": t_int,
+                      "tau_over_t_int": tau / t_int,
+                      "dt": dt, "dt_over_t_int": args.dt_over_tint,
+                      "horizon_over_t_int": args.steps * args.dt_over_tint,
+                      "horizon_over_tau_grain": args.steps * dt / tau,
+                      "n_steps": args.steps,
                       "deck": str(deck)}, indent=1))
     return 0
 

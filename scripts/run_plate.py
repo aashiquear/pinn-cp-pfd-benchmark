@@ -19,6 +19,7 @@ from pathlib import Path
 import sys
 
 import numpy as np
+from pinnacle.solvers.time_integration import graded_step_times
 
 warnings.filterwarnings("ignore")
 # The harness is run by path from the study root, so its own directory is not
@@ -34,6 +35,7 @@ from pinnacle.runner.runner import Runner  # noqa: E402
 from run_results import write_run_results  # noqa: E402
 
 STUDY = Path(__file__).resolve().parent.parent
+DAMAGE_SUPPRESSED_GC = 1.0e6  # at or above this Gc, damage cannot initiate: plasticity-only run
 MAX_STRAIN_INCREMENT = 8.0e-4      # per constitutive update; study gap G20
 PLATE_LENGTH = 100.0               # um, the loaded (x) dimension
 
@@ -320,6 +322,9 @@ def main() -> int:
     # Graded stepping: first step as a fraction of the program, then geometric
     # growth. Required to draw the elastic regime on a large-strain run --
     # uniform steps put the first reported point past yield.
+    ap.add_argument("--mechsub", type=int, default=0,
+                    help="Force the mechanics sub-step count (0 = derive it "
+                         "from the largest load step and the G20 threshold).")
     ap.add_argument("--graded-first", type=float, default=0.0)
     ap.add_argument("--graded-growth", type=float, default=1.10)
     ap.add_argument("--alternations", type=int, default=2)
@@ -338,8 +343,30 @@ def main() -> int:
 
     # G20: the constitutive increment per update must stay at or below 8e-4.
     # Derived, not passed, so a run cannot be silently under-resolved.
-    d_eps = args.strain / max(1, args.load_steps)
+    #
+    # Size on the LARGEST load step, not the average. Under uniform stepping
+    # the two are the same, but a graded schedule's last step is several times
+    # the mean: at 40 steps to 20% strain with growth 1.10 the mean step is
+    # 0.50% and the largest is 1.98%, so sizing on the mean under-resolves the
+    # final third of the program by up to 3.5x. That is exactly the G20
+    # violation -- the frozen-state trial stress over too large an increment --
+    # and it made the graded curves 32-38% STIFFER than the uniform ones at
+    # 20% strain while the elastic branch stayed correct to 0.1%. Sampling must
+    # not change the answer; sizing on the maximum is what makes that true.
+    if args.graded_first > 0.0:
+        _t = np.asarray(graded_step_times(args.load_steps, args.graded_first,
+                                          args.graded_growth), dtype=float)
+        _lam = np.cumsum(_t) / _t.sum()
+        d_eps = float(np.diff(np.concatenate([[0.0], _lam])).max() * args.strain)
+    else:
+        d_eps = args.strain / max(1, args.load_steps)
     mechsub = max(1, int(np.ceil(d_eps / MAX_STRAIN_INCREMENT)))
+    # Override, for a convergence study in the number of constitutive updates.
+    # G20's 8e-4 threshold is a choice, not a converged result; a graded and a
+    # uniform schedule that BOTH satisfy it disagreed by 30% at 20% strain,
+    # so the threshold itself has to be tested rather than trusted.
+    if args.mechsub > 0:
+        mechsub = int(args.mechsub)
 
     tag = args.tag or f"{args.geometry}_d{args.density}_Gc{args.gc:g}_l0{args.l0:g}"
     out_dir = STUDY / args.out / tag
@@ -560,6 +587,24 @@ def main() -> int:
                     "usable; PROPAGATION metrics are not.\n")
                     + (f"\nStop reason: {stop_reason}.\n" if not propagated else "")
                 )
+        elif args.gc >= DAMAGE_SUPPRESSED_GC:
+            # Damage is suppressed by construction at this Gc, so initiation
+            # could never occur and "failed before initiation" would be a
+            # category error: the run was a PLASTICITY run. It still measured
+            # the stress-strain response over the steps that converged, so the
+            # valid portion is retained rather than rejected.
+            (out_dir / "PLASTICITY_PARTIAL.txt").write_text(
+                f"Damage suppressed (Gc = {args.gc:.3g} MPa.um), so this was a "
+                "plasticity run and damage initiation is not applicable.\n\n"
+                f"The solve stopped at step {first_bad} of {args.load_steps}, at "
+                f"{100 * valid[-1]['boundary_strain'] if valid else float('nan'):.3f}% "
+                f"strain, carrying {last_ok:.4g} MPa "
+                f"({100 * last_ok / max(peak, 1e-30):.1f}% of peak {peak:.4g} MPa).\n"
+                f"Stop reason: {stop_reason}.\n\n"
+                f"Steps 0-{first_bad - 1} are retained and their stress-strain "
+                "response is usable up to the strain reached. NOTHING is claimed "
+                "about behavior beyond it.\n"
+            )
         else:
             (out_dir / "INVALID.txt").write_text(
                 f"Failed at step {first_bad} carrying {last_ok:.4g} MPa "
@@ -581,7 +626,8 @@ def main() -> int:
         "target_strain": args.strain,
         "strain_rate_per_s": args.strain_rate,
         "t_end_s": t_end, "load_steps": args.load_steps,
-        "mech_substeps": mechsub, "alternations": args.alternations,
+        "mech_substeps": mechsub,
+        "mech_substeps_forced": bool(args.mechsub > 0), "alternations": args.alternations,
         "strain_increment_per_update": d_eps / mechsub,
         "wall_seconds": wall,
         "diagnostics": diag,
