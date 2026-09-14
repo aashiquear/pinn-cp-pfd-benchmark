@@ -1,0 +1,8 @@
+# IPF triangle positions -> PINNACLE single-crystal input records
+# Plate decks pull along x: loading_direction names the crystal direction
+# aligned with the x axis. free_rotation_deg = 0 (minimal rotation).
+ipf_color,label,h,k,l,deck_loading_direction,phi1_x,Phi_x,phi2_x,phi1_z,Phi_z,phi2_z,polar_from_001_deg
+blue,[001],0,0,1,"[0.0, 0.0, 1.0]",-90.0000,90.0000,90.0000,0.0000,0.0000,0.0000,0.0000
+red,[101],1,0,1,"[1.0, 0.0, 1.0]",-90.0000,45.0000,90.0000,90.0000,45.0000,-90.0000,45.0000
+green,[111],1,1,1,"[1.0, 1.0, 1.0]",-110.1039,37.9381,69.8961,45.0000,54.7356,-45.0000,54.7356
+black,[2 1 9],2,1,9,"[2.0, 1.0, 9.0]",-95.0690,76.9836,84.9310,63.4349,13.9527,-63.4349,13.9527

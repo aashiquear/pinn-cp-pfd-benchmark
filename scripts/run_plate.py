@@ -228,11 +228,13 @@ BC_SETS = {"minimal": BC_MINIMAL, "clamped": BC_CLAMPED,
 def build_deck(*, mesh: Path, orient: str, gc: float, l0: float, nsteps: int,
                mechsub: int, maxalt: int, strain: float, out_dir: Path,
                cal: dict[str, str], maxcutbacks: int = 15,
-               t_end: float = 10.0, bc: str = "minimal") -> Path:
+               t_end: float = 10.0, bc: str = "minimal",
+               graded_f: float = 0.0, graded_g: float = 1.10) -> Path:
     src = (STUDY / "decks/al2219/plate_template.i").read_text()
     sub = dict(cal, MESH=str(mesh), ORIENT=orient, GC=f"{gc:.9g}", L0=f"{l0:.9g}",
                NSTEPS=str(nsteps), MECHSUB=str(mechsub), MAXALT=str(maxalt),
                MAXCUTBACKS=str(maxcutbacks), TEND=f'{t_end:.10g}',
+               GRADEDF=f"{graded_f:.10g}", GRADEDG=f"{graded_g:.10g}",
                STRAIN=f"{strain:.9g}", OUTDIR=str(out_dir / "solver"),
                BCBLOCK=BC_SETS[bc])
     for k, v in sub.items():
@@ -315,6 +317,11 @@ def main() -> int:
     # multiply damage solves but NOT constitutive work, since the sub-step
     # count per step falls as the increment shrinks.
     ap.add_argument("--load-steps", type=int, default=60)
+    # Graded stepping: first step as a fraction of the program, then geometric
+    # growth. Required to draw the elastic regime on a large-strain run --
+    # uniform steps put the first reported point past yield.
+    ap.add_argument("--graded-first", type=float, default=0.0)
+    ap.add_argument("--graded-growth", type=float, default=1.10)
     ap.add_argument("--alternations", type=int, default=2)
     ap.add_argument("--max-cutbacks", type=int, default=15,
                     help="Load-increment halvings before a step is abandoned. "
@@ -363,7 +370,8 @@ def main() -> int:
                       nsteps=args.load_steps, mechsub=mechsub,
                       maxalt=args.alternations, strain=args.strain,
                       out_dir=out_dir, cal=cal,
-                      maxcutbacks=args.max_cutbacks, t_end=t_end, bc=args.bc)
+                      maxcutbacks=args.max_cutbacks, t_end=t_end, bc=args.bc,
+                      graded_f=args.graded_first, graded_g=args.graded_growth)
 
     cfg = load_input(str(deck))
     grain_info = None
@@ -386,8 +394,11 @@ def main() -> int:
         n_gauss = 8
         euler_qp = np.repeat(eul[gid], n_gauss, axis=0)
         cfg["orientation_field"] = {"euler_angles": euler_qp}
-        counts = np.bincount(gid, minlength=args.grains)
-        grain_info = {"n_grains": int(args.grains),
+        # n_grains, NOT args.grains: with --equiaxed the count is derived from
+        # the target grain size, so args.grains is 0 and both the bincount
+        # length and the recorded count would be wrong.
+        counts = np.bincount(gid, minlength=n_grains)
+        grain_info = {"n_grains": int(n_grains),
                       "grain_seed": args.grain_seed,
                       "orientation_seed": args.orientation_seed,
                       "elements_per_grain_min": int(counts.min()),

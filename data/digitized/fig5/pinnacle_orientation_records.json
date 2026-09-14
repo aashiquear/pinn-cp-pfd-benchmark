@@ -1,0 +1,98 @@
+[
+ {
+  "ipf_color": "blue",
+  "label": "[001]",
+  "hkl": [
+   0,
+   0,
+   1
+  ],
+  "deck_loading_direction": "[0.0, 0.0, 1.0]",
+  "free_rotation_deg": 0.0,
+  "euler_about_x": [
+   -90.0,
+   90.0,
+   90.0
+  ],
+  "euler_about_z": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "residual_x": 8.659560562354933e-17,
+  "residual_z": 0.0,
+  "polar_from_001_deg": 0.0
+ },
+ {
+  "ipf_color": "red",
+  "label": "[101]",
+  "hkl": [
+   1,
+   0,
+   1
+  ],
+  "deck_loading_direction": "[1.0, 0.0, 1.0]",
+  "free_rotation_deg": 0.0,
+  "euler_about_x": [
+   -90.0,
+   45.00000000000001,
+   90.0
+  ],
+  "euler_about_z": [
+   90.0,
+   45.00000000000001,
+   -90.0
+  ],
+  "residual_x": 1.432013523346678e-16,
+  "residual_z": 1.5612998289779395e-16,
+  "polar_from_001_deg": 45.00000000000001
+ },
+ {
+  "ipf_color": "green",
+  "label": "[111]",
+  "hkl": [
+   1,
+   1,
+   1
+  ],
+  "deck_loading_direction": "[1.0, 1.0, 1.0]",
+  "free_rotation_deg": 0.0,
+  "euler_about_x": [
+   -110.1039093610171,
+   37.9381274271855,
+   69.89609063898291
+  ],
+  "euler_about_z": [
+   45.0,
+   54.735610317245346,
+   -45.0
+  ],
+  "residual_x": 1.8332270689013217e-16,
+  "residual_z": 1.2718284400839837e-16,
+  "polar_from_001_deg": 54.735610317245346
+ },
+ {
+  "ipf_color": "black",
+  "label": "[2 1 9]",
+  "hkl": [
+   2,
+   1,
+   9
+  ],
+  "deck_loading_direction": "[2.0, 1.0, 9.0]",
+  "free_rotation_deg": 0.0,
+  "euler_about_x": [
+   -95.06902146351149,
+   76.98356131951121,
+   84.93097853648852
+  ],
+  "euler_about_z": [
+   63.43494882292201,
+   13.952736395536723,
+   -63.43494882292201
+  ],
+  "residual_x": 2.973540107760848e-16,
+  "residual_z": 8.088067971705972e-17,
+  "polar_from_001_deg": 13.952736395536723
+ }
+]
