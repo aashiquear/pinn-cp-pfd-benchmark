@@ -1,0 +1,40 @@
+{
+ "claim_retracted": "That the phase-field relaxation visibly curved the grain boundaries.",
+ "measurement": "Relabelled each relaxed grain onto its majority Voronoi ancestor, so a changed cell means the BOUNDARY moved rather than a label being reassigned, then counted changed cells and divided the changed area by the Voronoi boundary length to get a mean displacement.",
+ "results": {
+  "n16_0.25_grain_times": {
+   "cells_changed": 49,
+   "pct_of_domain": 0.385,
+   "mean_move_um": 0.045
+  },
+  "n16_1.5_grain_times": {
+   "cells_changed": 50,
+   "pct_of_domain": 0.393,
+   "mean_move_um": 0.046
+  },
+  "n32_0.25_grain_times": {
+   "cells_changed": 104,
+   "pct_of_domain": 0.495,
+   "mean_move_um": 0.035
+  },
+  "n32_1.5_grain_times": {
+   "cells_changed": 111,
+   "pct_of_domain": 0.528,
+   "mean_move_um": 0.038
+  }
+ },
+ "scale": {
+  "mean_grain_width_um": {
+   "n16": 17.7,
+   "n32": 12.5
+  },
+  "diffuse_interface_w_GB_um": {
+   "n16": 1.9,
+   "n32": 1.48
+  },
+  "grid_spacing_um": 0.633
+ },
+ "reading": "The boundaries moved 0.2-0.3% of a grain width, 2-3% of the diffuse interface width, and under a tenth of one grid cell. They did not move. Six times the horizon (0.25 to 1.5 grain times) bought ONE additional changed cell at n=16, which is consistent with the mobility being inert.",
+ "consequence_for_the_junction_numbers": "This puts a caveat on the junction-spread improvement I reported for the phase-field route (31.8 -> 25.4 degrees at n=16). With ~30 junctions and 49 changed cells, that is about 1.6 cells per junction -- and changed cells concentrate at junctions, where curvature is highest. A sub-cell change in the diffuse field can rotate a measured boundary TANGENT without the boundary migrating. So that improvement is plausibly a sub-cell labelling effect at the junctions rather than relaxation, and it should not be read as the phase-field route partially working.",
+ "unaffected": "The threshold-dynamics route moves boundaries by construction (the argmax of a diffused indicator), and its boundary length falls monotonically by 2-7%, so its morphology change is real. Its numbers stand."
+}
