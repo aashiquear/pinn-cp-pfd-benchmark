@@ -23,11 +23,30 @@ STUDY = Path(__file__).resolve().parent.parent
 
 
 def _curve(path: Path):
-    eps, sig = [], []
-    with open(path) as fh:
-        for row in csv.DictReader(fh):
-            eps.append(float(row["boundary_strain"]))
-            sig.append(float(row["avg_stress_axial"]))
+    """Strain (%) and axial stress, truncated at the first INVALID step.
+
+    A run that loses the boundary-strain invariant writes rows past that point
+    that are not solutions -- strain stops tracking the prescribed value and
+    the stress can go negative or absurd. Reading past it produces a curve
+    that looks like physics and is not; that mistake has already been made
+    once in this study. Validity is inferred from the DATA (strain must track
+    load_factor times the program) rather than from run.json, because the
+    partial record a stalled run writes omits the strain program -- metadata
+    is missing exactly when it matters.
+    """
+    rows = list(csv.DictReader(open(path)))
+    eps = np.array([float(r["boundary_strain"]) for r in rows])
+    sig = np.array([float(r["avg_stress_axial"]) for r in rows])
+    lam = np.array([float(r["load_factor"]) for r in rows])
+    good = np.ones(len(rows), dtype=bool)
+    pos = lam > 1.0e-12
+    if pos.any():
+        target = float(np.median(eps[pos] / lam[pos]))
+        dev = np.abs(eps - lam * target)
+        good = dev <= np.maximum(1.0e-6, 1.0e-3 * np.abs(lam * target))
+    if not good.all():
+        first_bad = int(np.argmin(good))
+        eps, sig = eps[:first_bad], sig[:first_bad]
     order = np.argsort(eps)
     return np.asarray(eps)[order] * 100.0, np.asarray(sig)[order]
 
@@ -47,6 +66,10 @@ def main() -> int:
     ap.add_argument("--markers", default="data/digitized/al2219_fig3_experiment_markers.csv")
     ap.add_argument("--title", default="Calibrated CP set reproduces the measured curve")
     ap.add_argument("--out", default="figures/stress_strain_convergence.png")
+    ap.add_argument("--inset", type=float, default=0.0,
+                    help="Upper strain limit (%) of the elastic-regime inset; "
+                         "0 disables it. Graded steps make this the only way "
+                         "to read the elastic branch on a 20% program.")
     args = ap.parse_args()
 
     apply_figure_style()
@@ -61,6 +84,15 @@ def main() -> int:
     cmap = plt.get_cmap("viridis")
     specs = [s.split("=", 1) for s in args.runs]
     n = len(specs)
+    # Elastic-regime inset. Graded load steps put the elastic samples between
+    # 0.004% and 0.2% strain, which on an axis spanning 20% is a single pixel
+    # against the origin -- the elastic branch and the knee are present in the
+    # data but invisible. The inset is the only way to actually read them.
+    axi = None
+    if args.inset > 0.0:
+        axi = ax.inset_axes((0.56, 0.13, 0.40, 0.38))
+        axi.set_title("elastic regime", fontsize=7, pad=2)
+        axi.tick_params(labelsize=6)
     for i, (label, rel) in enumerate(specs):
         p = STUDY / rel
         if not p.exists():
@@ -71,6 +103,10 @@ def main() -> int:
                 color=cmap(0.15 + 0.7 * i / max(1, n - 1)),
                 alpha=1.0 if focal else 0.75, zorder=4 if focal else 3,
                 label=label)
+        if axi is not None:
+            k = eps <= args.inset
+            axi.plot(eps[k], sig[k], "-o", ms=2.6, lw=1.2,
+                     color=cmap(0.15 + 0.7 * i / max(1, n - 1)))
         init = p.parent / "initiation.json"
         if init.exists():
             rec = json.load(open(init))
@@ -84,6 +120,11 @@ def main() -> int:
     ax.annotate("fracture in test", xy=(xe[-1], ax.get_ylim()[0]),
                 xytext=(-6, 14), textcoords="offset points",
                 rotation=90, ha="right", va="bottom", color="#B4462F", fontsize=6)
+
+    if axi is not None:
+        axi.set_xlabel("strain (%)", fontsize=6, labelpad=1)
+        axi.set_ylabel("stress (MPa)", fontsize=6, labelpad=1)
+        axi.grid(alpha=0.25, lw=0.4)
 
     ax.set_xlabel("engineering strain (%)")
     ax.set_ylabel("volume-averaged axial stress (MPa)")
