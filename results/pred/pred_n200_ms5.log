@@ -1,0 +1,8 @@
+{
+ "tag": "pred_n200_ms5",
+ "n_elements": 1152,
+ "mech_substeps": 5,
+ "n_steps": 200,
+ "vtk_files": 0,
+ "wall_seconds": 4862.931374022039
+}

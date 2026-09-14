@@ -1,0 +1,24 @@
+{
+ "status": "OPEN and BLOCKING. No FE plasticity number from this study is currently trustworthy.",
+ "reference_uniaxial_stress_material_point_MPa": 989.2,
+ "fe_stress_at_20pct_MPa": {
+  "uniform_40x25": 758.83,
+  "uniform_100x10": 563.62,
+  "uniform_200x5": 520.25,
+  "graded_40x25": 984.83
+ },
+ "control": "total constitutive work held at 1000 updates in every row, so the comparison is not confounded by resolution",
+ "falsified_hypotheses": [
+  "Under-resolved constitutive increment. Sizing the sub-step count on the largest load step changed nothing (+32.3% after, +32.4% before).",
+  "The G20 threshold being too loose. At 2000 updates the uniform increment is 0.01% per update, an eighth of the limit, and 22% of the error remains.",
+  "The load path. A material point driven along both schedules converges to the same answer, 0.07% apart at 100 sub-steps.",
+  "Crossing the elastic-plastic knee in one increment. THIS TEST. Moving the first step from 0.500% to 0.100% -- from well past yield to well below it -- made the answer WORSE, 758.8 -> 520.3 MPa, the opposite of the prediction."
+ ],
+ "what_the_data_now_says": [
+  "Every FE result is SOFTER than the material point, and the deficit GROWS with the number of outer load steps at fixed total constitutive work: 40 steps -23%, 100 steps -43%, 200 steps -47%.",
+  "But step COUNT alone is not the variable either: graded and uniform both use 40 outer steps and differ by 23 percentage points, so the step-size DISTRIBUTION matters too.",
+  "The signature -- error growing with the number of outer steps -- is what an error accumulating once per outer step would produce, independent of the sub-step integration inside it."
+ ],
+ "next_diagnostic": "Stop hypothesising and localise it. Instrument the FE run to record, per outer step, the volume-averaged lateral stretch and the accumulated plastic strain, and compare both against the material point integrated along the identical load-factor sequence. The material point is schedule-independent and matches the reference, so any divergence in those two quantities localises the defect to the outer load loop rather than to the constitutive law, the schedule, or the mesh.",
+ "consequence_for_the_study": "The three FE-based plasticity conclusions reported earlier are suspended, not merely caveated: the approved uniform curves, the rho0 sweep ordering derived from FE stresses, and any statement about agreement with experiment that used an FE number. The rho0 screen at the MATERIAL POINT stands, because it never used the FE solve."
+}
