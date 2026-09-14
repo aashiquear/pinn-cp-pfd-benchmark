@@ -1,0 +1,39 @@
+{
+ "question": "graded and uniform FE schedules disagree by 30% at 20% strain; which is right?",
+ "material_point_reference": {
+  "note": "The plate's lateral faces are FREE, so the matching material-point drive is UNIAXIAL STRESS (lateral stretch solved so sigma_xx = sigma_yy = 0), not isochoric. An isochoric drive fixes the lateral stretch at 1/sqrt(lambda_z) and is a DIFFERENT boundary condition.",
+  "uniaxial_stress_MPa": {
+   "substeps_25": 988.91,
+   "substeps_50": 989.08,
+   "substeps_100": 989.16
+  },
+  "isochoric_MPa": {
+   "substeps_25": 687.49,
+   "substeps_50": 686.77,
+   "substeps_100": 686.41
+  }
+ },
+ "schedule_independence_at_material_point": {
+  "note": "Both schedules converge to the same answer, as a consistent scheme requires, so the load path itself is not the cause of the FE gap.",
+  "isochoric_uniform_vs_graded_pct": {
+   "ss7": 1.0,
+   "ss25": 0.27,
+   "ss50": 0.14,
+   "ss100": 0.07
+  }
+ },
+ "fe_results_20pct_MPa": {
+  "uniform_ms7": 734.09,
+  "uniform_ms14": 751.43,
+  "uniform_ms25": 758.83,
+  "uniform_richardson_limit": 769,
+  "graded_ms25": 984.8
+ },
+ "conclusion": "The GRADED FE run agrees with the correct uniaxial-stress material point to 0.4% (984.8 vs 989.2). The UNIFORM FE runs converge to ~769 MPa, 22% BELOW it, and that error does NOT vanish as the constitutive sub-step count rises. So the graded runs are right and the uniform runs are systematically too soft -- the reverse of what was reported earlier.",
+ "retracted": [
+  "That the uniform runs were the trustworthy ones and the graded ones were 32-38% too stiff. The opposite holds.",
+  "That the graded discrepancy was under-resolution of the constitutive increment. Sizing on the largest step did not change it, and the material point shows no schedule dependence.",
+  "The earlier claim that the FE plain plate reproduces a material point to 0.22% was made against an ISOCHORIC drive, which is not the plate's boundary condition; that agreement was with the wrong reference."
+ ],
+ "leading_hypothesis": "A uniform 40-step program to 20% strain puts its FIRST outer step at 0.5% strain, past the ~0.21% yield, so the elastic-plastic knee is crossed in one increment. In FE the lateral contraction is SOLVED, not prescribed, so an overshoot there can settle on a wrong lateral state that persists. The graded schedule resolves the knee with 8 sub-yield points. Prediction: a uniform program with enough steps that its first step lands below yield should converge to ~989 MPa."
+}
