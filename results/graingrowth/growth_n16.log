@@ -1,0 +1,16 @@
+{
+ "n_grains": 16,
+ "wall_s": 1162.2504642009735,
+ "n_steps": 54,
+ "field_shape": [
+  12720,
+  8
+ ],
+ "n_nodes": 12720,
+ "energy_first": 28062.96750948094,
+ "energy_last": 28018.937365399306,
+ "energy_drop_pct": 0.15689767686456368,
+ "energy_monotone": true,
+ "n_features_first": 16,
+ "n_features_last": 16
+}

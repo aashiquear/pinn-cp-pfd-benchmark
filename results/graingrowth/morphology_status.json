@@ -1,0 +1,45 @@
+{
+ "status": "NOT DELIVERED -- the relaxed morphology is not usable yet",
+ "what_ran": {
+  "horizons": [
+   "0.25 grain times (54 steps)",
+   "1.5 grain times (96 steps)"
+  ],
+  "grain_counts": [
+   16,
+   32
+  ],
+  "energy_monotone": true,
+  "grain_count_held": "yes: 16->16 and 32->32 at both horizons"
+ },
+ "morphology_measured": {
+  "control_floor_hexagons": {
+   "junction_rms_deg": 4.39,
+   "within_15deg_pct": 100.0,
+   "circularity": 0.9232,
+   "analytic_circularity": 0.9069
+  },
+  "n16": {
+   "voronoi": 31.76,
+   "relaxed_0.25tau": 25.38,
+   "relaxed_1.5tau": 26.39
+  },
+  "n32": {
+   "voronoi": 30.34,
+   "relaxed_0.25tau": 28.35,
+   "relaxed_1.5tau": 25.51
+  },
+  "note": "junction RMS deviation from 120 deg, in degrees"
+ },
+ "why_not_usable": [
+  "Relaxation STALLS: six times the horizon (0.25 -> 1.5 grain times) moved the free energy only from 0.16% to 0.22% total, and the junction spread from 25.4 to 26.4 deg for n=16 -- i.e. it got slightly WORSE, which a monotone relaxation cannot do.",
+  "The adjacency network is unchanged to the digit: interior neighbour counts are identical (4.80+/-1.17 and 5.33+/-0.87) at every horizon, so no boundary has swept far enough to change a neighbour relation.",
+  "At 25-26 deg against a 4.39 deg floor the structure is nowhere near equilibrated, so handing it to the CP run would mean running a Voronoi structure with slightly rounded corners and calling it natural."
+ ],
+ "kinetics_calibration": {
+  "intent": "measure the effective dA/dt against the analytic -2 pi M_GB sigma = -6.2832 for a circular grain, to size the horizon from a measured rate instead of the nominal one",
+  "outcome": "INVALID, not a result. The feature count reported 67-99 grains for what should be two, which means the `circle` IC set BOTH order parameters to 1 inside and 0 outside -- a circle in vacuum, not a circle in a matrix. The apparent ratio of 0.351 is therefore not a measurement of anything.",
+  "fix": "initialize eta_0 = 1 inside / 0 outside and eta_1 = 0 inside / 1 outside explicitly, then re-measure."
+ },
+ "candidate_explanation_untested": "In 2-D the von Neumann-Mullins law is exact: dA/dt = (pi/3) M sigma (n - 6), so a six-sided grain does not change area at all and a near-equilibrium network barely coarsens. Measured interior neighbour counts are 4.80 and 5.33, close enough to 6 that the net area rates are small and partly cancelling, which would make slow AREA evolution physical. It does NOT explain the stalled junction angles, which relax by local rotation rather than by area change. Both need the kinetics calibration before either can be claimed."
+}

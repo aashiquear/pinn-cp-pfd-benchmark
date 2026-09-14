@@ -1,0 +1,157 @@
+{
+  "config": {
+    "global": {
+      "backend": "numpy",
+      "use_gpu": false,
+      "precision": "float64",
+      "seed": 0,
+      "output_dir": "/mnt/extended/projects/pinn-cp-pfd-benchmark/results/graingrowth/n16/solver"
+    },
+    "mesh": {
+      "type": "box_mesh",
+      "dim": 2,
+      "domain": [
+        0,
+        0,
+        100,
+        50
+      ],
+      "divisions": [
+        158,
+        79
+      ]
+    },
+    "variables": {
+      "eta": {
+        "family": "fem",
+        "components": 8,
+        "order": 2
+      }
+    },
+    "materials": {
+      "gb": {
+        "kind": "gb_evolution",
+        "M_GB": 1.0,
+        "w_GB": 1.90376,
+        "sigma": 1.0,
+        "gamma": 1.5
+      }
+    },
+    "kernels": {
+      "deta_dt": {
+        "type": "time_derivative",
+        "variable": "eta",
+        "coefficient": 1.0
+      },
+      "bulk": {
+        "type": "ac_bulk",
+        "variable": "eta",
+        "material": "gb",
+        "spatial_dim": 2
+      },
+      "interface": {
+        "type": "ac_interface",
+        "variable": "eta",
+        "material": "gb",
+        "spatial_dim": 2
+      }
+    },
+    "ics": {
+      "grains": {
+        "variable": "eta",
+        "kind": "polycrystal_coloring",
+        "n_grains": 16,
+        "n_order_params": 8,
+        "seeds": [
+          21.375858,
+          23.045362,
+          75.718029,
+          45.159014,
+          63.156194,
+          29.624736,
+          66.365345,
+          17.009656,
+          24.174361,
+          15.065615,
+          73.147485,
+          23.932946,
+          97.353649,
+          34.135987,
+          64.704549,
+          28.935469,
+          51.892754,
+          37.376832,
+          61.399728,
+          26.761573,
+          64.888254,
+          37.133289,
+          97.137358,
+          40.047967,
+          90.186312,
+          29.428829,
+          18.431662,
+          26.014469,
+          35.953548,
+          35.925936,
+          80.988959,
+          14.328497
+        ],
+        "periodic": false,
+        "int_width": 1.90376,
+        "inside": 1.0,
+        "outside": 0.0
+      }
+    },
+    "utilities": {
+      "count": {
+        "kind": "feature_flood_count",
+        "threshold": 0.5
+      }
+    },
+    "executioner": {
+      "type": "pf_fem_transient",
+      "scheme": "convex_splitting",
+      "n_steps": 60,
+      "dt": 0.253702,
+      "linear_solver": "direct"
+    },
+    "postprocessors": {
+      "gb_area": {
+        "type": "grain_boundary_area",
+        "fields": [
+          "eta"
+        ],
+        "grains_per_side": 2,
+        "delta_eta": 1.0
+      }
+    },
+    "output": {
+      "formats": [
+        "csv",
+        "json"
+      ],
+      "fields": [
+        "eta"
+      ]
+    },
+    "problem": {
+      "type": "composed",
+      "dimension": 2,
+      "finite_strain": false
+    }
+  },
+  "residuals": {},
+  "postprocessors": {
+    "gb_area": 396.96120173385737
+  },
+  "phase_field": {
+    "invariants": {
+      "primary": "eta",
+      "conserved": [],
+      "mass_drift": -0.009223864559036931,
+      "max_energy_increase": 0.0,
+      "energy_final": 28015.992797203206,
+      "max_newton_iters": 2
+    }
+  }
+}
