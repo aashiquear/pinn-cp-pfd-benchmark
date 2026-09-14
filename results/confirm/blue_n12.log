@@ -1,0 +1,8 @@
+{
+ "tag": "blue_n12",
+ "n_elements": 1152,
+ "mech_substeps": 7,
+ "n_steps": 40,
+ "vtk_files": 40,
+ "wall_seconds": 1380.0359260740224
+}

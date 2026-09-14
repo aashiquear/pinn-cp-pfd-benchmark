@@ -1,0 +1,41 @@
+[Materials]
+  [./cp]
+    type                  = dislocation_density_cp
+    C11                   = 108.0e3
+    C12                   = 61.3e3
+    C44                   = 28.5e3
+    mu                    = 25.7e3
+    gamma0                = 1.0e-5
+    # n = 1/m_s. Published m_s = 0.12 gives 8.333; a higher n is less
+    # rate sensitive, so it needs LESS overstress to reach a given slip
+    # rate (1.26x tau_c at n=20 against 1.74x at n=8.33).
+    rate_exponent_n       = 12
+    tau_c0                = 0.26490000000000002
+    q_lat                 = 1.4
+    alpha0                = 0.4
+    burgers               = 0.000286
+    rho0                  = 25
+    k1                    = 0.34320000000000001
+    annihilation_diameter = 0.0026800000000000001
+    [./crystal]
+      structure         = fcc
+      loading_direction = [2.0, 1.0, 9.0]
+      free_rotation_deg = 0.0
+    []
+  []
+  [./frac]
+    kind         = pfd_fracture
+    Gc           = 1e+09
+    length_scale = 1
+    damage_model = at2
+    anisotropy   = isotropic
+  []
+  [./drive]
+    kind                   = pfd_driving_force
+    plastic_work_prefactor = 1.0
+  []
+  [./deg]
+    kind = pfd_degradation
+    k    = 0.001
+  []
+[]

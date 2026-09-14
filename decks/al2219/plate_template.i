@@ -136,6 +136,11 @@
 [Executioner]
   type            = staggered
   n_steps         = @NSTEPS@
+  # Graded OUTER load steps. This block owns the load factor that is sampled
+  # into results.csv, so grading the mechanics sub-solve does nothing for
+  # output resolution. Uniform steps put the first reported point past yield.
+  graded_first_fraction = @GRADEDF@
+  graded_growth         = @GRADEDG@
   max_iterations  = @MAXALT@
   tolerance       = 1.0e-4
   snapshots_every = 1
@@ -152,13 +157,6 @@
     # is then abandoned. Propagation needs a finer floor, and a cutback only
     # costs time on the steps that actually need it.
     max_cutbacks  = @MAXCUTBACKS@
-    # Graded load steps. Uniform steps cannot resolve the elastic regime of a
-    # 20% program: the first reported point would land past yield, so the
-    # elastic branch and the knee never appear in the stress-strain curve.
-    # Lambda stays linear in t, so the loading RATE is unchanged -- only the
-    # sampling moves.
-    graded_first_fraction = @GRADEDF@
-    graded_growth         = @GRADEDG@
     linear_method = cg
     # Always sparse: see the parameter doc. The 12,000-DOF default would put
     # every density level below 5 on a dense tangent, 2.3-5.2x slower.
