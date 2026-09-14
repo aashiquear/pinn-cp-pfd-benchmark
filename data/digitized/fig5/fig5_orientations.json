@@ -1,0 +1,67 @@
+[
+ {
+  "orientation": "[001]  (blue)",
+  "miller": [
+   0.0,
+   0.0,
+   1.0
+  ],
+  "phi1_deg": 0.0,
+  "Phi_deg": 0.0,
+  "phi2_deg": 0.0,
+  "alignment_residual": 0.0,
+  "polar_from_001_deg": 0.0
+ },
+ {
+  "orientation": "[101]  (red)",
+  "miller": [
+   1.0,
+   0.0,
+   1.0
+  ],
+  "phi1_deg": 90.0,
+  "Phi_deg": 45.00000000000001,
+  "phi2_deg": -90.0,
+  "alignment_residual": 1.5612998289779395e-16,
+  "polar_from_001_deg": 45.00000000000001
+ },
+ {
+  "orientation": "[111]  (green)",
+  "miller": [
+   1.0,
+   1.0,
+   1.0
+  ],
+  "phi1_deg": 45.0,
+  "Phi_deg": 54.735610317245346,
+  "phi2_deg": -45.0,
+  "alignment_residual": 1.2718284400839837e-16,
+  "polar_from_001_deg": 54.735610317245346
+ },
+ {
+  "orientation": "[-1 4 9] (caption)",
+  "miller": [
+   -1.0,
+   4.0,
+   9.0
+  ],
+  "phi1_deg": -14.036243467926479,
+  "Phi_deg": 24.613597652978576,
+  "phi2_deg": 14.036243467926479,
+  "alignment_residual": 1.4693633021003757e-16,
+  "polar_from_001_deg": 24.613597652978576
+ },
+ {
+  "orientation": "[2 1 10] (digitized dot)",
+  "miller": [
+   2.0,
+   1.0,
+   10.0
+  ],
+  "phi1_deg": 63.43494882292201,
+  "Phi_deg": 12.604382648379175,
+  "phi2_deg": -63.43494882292201,
+  "alignment_residual": 1.370424502068077e-16,
+  "polar_from_001_deg": 12.604382648379175
+ }
+]

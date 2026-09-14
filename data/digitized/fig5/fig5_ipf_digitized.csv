@@ -1,0 +1,9 @@
+"# Rezwan (2025) Fig. 5(a) IPF inset, digitized at 300 DPI"
+# calibration: 3 corner markers; [001]-[101] edge horizontal to 0.03 px;
+# [111] residual 1.06 px; scale 285.078 px per stereographic unit
+label,h,k,l,stereo_X,stereo_Y,polar_from_001_deg,note
+[001],0,0,1,0.0,0.0,0.0,"corner, blue"
+[101],1,0,1,0.41421356237309503,0.0,45.0,"corner, red"
+[111],1,1,1,0.3660254037844387,0.3660254037844387,54.7356,"corner, green"
+digitized 4th marker,2.19,1.0,9.689,0.11132951365459427,0.05083422945890269,13.955,"black dot, as drawn"
+[-1 4 9] per caption,-1,4,9,0.2116458674380389,0.052911466859509725,24.6136,where the caption's label belongs
