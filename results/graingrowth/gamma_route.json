@@ -1,0 +1,37 @@
+{
+ "question": "With mobility inert, can the one connected strong knob (gamma, the Moelans multi-well coupling) drive the phase-field route to a natural morphology?",
+ "answer": "No, not at any horizon this study can afford.",
+ "n16_comparison": {
+  "gamma_1.5": {
+   "energy_drop_pct": 0.224,
+   "cells_changed": 50,
+   "mean_boundary_move_um": 0.046,
+   "junction_spread_deg": 26.39,
+   "boundary_length_um": [
+    401.4,
+    397.1
+   ],
+   "grains": [
+    16,
+    16
+   ]
+  },
+  "gamma_3.0": {
+   "energy_drop_pct": 0.814,
+   "cells_changed": 150,
+   "mean_boundary_move_um": 0.137,
+   "junction_spread_deg": 25.91,
+   "boundary_length_um": [
+    401.4,
+    405.3
+   ],
+   "grains": [
+    16,
+    16
+   ]
+  }
+ },
+ "reading": "Doubling gamma gives 3.6x the energy drop and 3x the boundary motion, confirming gamma is connected. But the motion is still 0.137 um against a 17.7 um grain width -- 0.8% -- and the junction spread barely improves (26.39 to 25.91 deg against a 6.0 deg floor). Reaching the threshold-dynamics level would need roughly another order of magnitude in delivered relaxation, which gamma cannot supply without abandoning the quantitative isotropic value entirely.",
+ "a_further_warning_sign": "At gamma = 3.0 the measured total boundary length INCREASED, 401.4 to 405.3 um. Curvature-driven flow must decrease it, as it did at gamma = 1.5 (401.4 to 397.1). Changing gamma changes the free-energy functional and hence the equilibrium interface profile, so an argmax-labelled length can move for reasons unrelated to migration -- which is itself a reason not to use gamma as a morphology knob.",
+ "conclusion": "The phase-field grain-growth route is BLOCKED pending the mobility defect. It is a framework fix, not study work. The threshold-dynamics structures are the usable polycrystals: they move boundaries by construction, reach 6.8-8.4 degrees of junction spread against a 6.0 degree floor, hold their grain counts, and have no mobility parameter to be inert."
+}
