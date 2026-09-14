@@ -1,0 +1,49 @@
+{
+ "claim_retracted": "That seeding over a padded box and sectioning is what fixed the unnatural edge grains. The matched test does not support it.",
+ "why_the_original_comparison_was_invalid": "Two variables changed at once: the pad was added AND the diffusion length per sweep went from 0.06 to 0.14 grain widths. The before/after (edge 15.22 -> 9.43 deg) therefore attributes to the pad an improvement that the length change could equally explain.",
+ "matched_test": {
+  "controls": "n=32 target, overseed 0.80, grid 320x160, diffusion length 0.14 grain widths, 16 sweeps -- identical but for the pad",
+  "pad_off": {
+   "grains": 24,
+   "slivers": 0,
+   "edge_rms_deg": [
+    6.87,
+    9.48,
+    9.96
+   ],
+   "interior_rms_deg": [
+    7.64,
+    8.41,
+    8.56
+   ],
+   "sweeps": [
+    14,
+    15,
+    16
+   ]
+  },
+  "pad_on": {
+   "grains": 33,
+   "slivers": 9,
+   "edge_rms_deg": [
+    9.46,
+    8.84,
+    9.43
+   ],
+   "interior_rms_deg": [
+    8.53,
+    9.87,
+    7.2
+   ],
+   "sweeps": [
+    14,
+    15,
+    16
+   ]
+  },
+  "reading": "Edge junction spread is comparable with and without the pad at matched diffusion length. The pad did NOT measurably improve the edge angles."
+ },
+ "what_actually_fixed_it": "The diffusion length per sweep. At 0.06 grain widths the junctions were under-relaxed everywhere and worst at the edge (edge 15.22, interior 12.17); at 0.14 both fall to 7-10 deg. The earlier edge/interior RATIO was 1.25 and is now 1.31, i.e. essentially unchanged -- what improved is the absolute level, not the edge's relative standing.",
+ "what_the_pad_is_still_for": "A physical argument, not a measured improvement in angles: the plate is a section cut from a larger polycrystal, so its edge grains should have real neighbours rather than a reflecting wall, and boundaries should meet the cut at whatever angle the outside network dictates. It also changes the composition -- 33 grains plus 9 slivers with the pad against 24 grains and no slivers without it -- which is the more consequential difference for a CP run, since every grain and sliver needs an orientation.",
+ "residual_edge_gap": "At 32 grains the edge is still worse than the interior (9.43 against 7.20 deg, 31% higher). At 8 and 16 grains the edge is BELOW the interior. So the blanket statement 'edge junctions now match the interior' is wrong at the highest grain count and is withdrawn."
+}
