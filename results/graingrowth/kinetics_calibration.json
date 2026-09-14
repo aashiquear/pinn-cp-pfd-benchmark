@@ -19,6 +19,20 @@
  },
  "delivered_rate_fraction": 0.545,
  "why_the_correction": "The first measurement spanned t in [0, 0.2] and the rate was still climbing at the end. Extending to t = 0.6 shows it settling into a linear regime -- the t>0.4 and last-third fits agree at 0.543 and 0.545 with R^2 = 0.9988 -- so the asymptotic deficit is 1.8x, not the 5x the short window implied. The framework's own verification fits the POST-TRANSIENT slope for exactly this reason, which I should have followed first.",
- "not_established": "Where the remaining 1.8x is lost. The material map and the kernel precedence are both verified correct, and the time scheme and step size are ruled out (bdf1 and convex_splitting within 17%, fourfold dt refinement under 4%). Spatial resolution is the untested candidate: the interface spans about 4.5 cells here, which satisfies the material's own h <= w_GB/3 guidance but may still under-resolve the curvature-driven velocity.",
- "consequence": "Tuning M_GB by 20x, chosen against the superseded 0.17 figure, is an 11x OVERSHOOT of the nominal rate. The correctly sized factor is about 1.8x."
+ "not_established": "Where the remaining 1.8x is lost. The material map and the kernel precedence are both verified correct. The SCHEME accounts for only ~17% (bdf1 against convex_splitting at matched dt), so it cannot explain 1.8x on its own. Step size is NOT ruled out: convex_splitting, the scheme the production runs use, moved 11.5% on a fourfold dt refinement, and that comparison was made only on the transient-dominated short window, so no post-transient dt convergence has been established for either scheme. Spatial resolution is also untested: the interface spans about 4.5 cells, which satisfies the material's own h <= w_GB/3 guidance but may under-resolve the curvature-driven velocity.",
+ "consequence": "Tuning M_GB by 20x, chosen against the superseded 0.17 figure, is an 11x OVERSHOOT of the nominal rate. The correctly sized factor is about 1.8x.",
+ "scheme_and_dt_sensitivity": {
+  "measured_on": "the SHORT window t in [0,0.2], which is transient-dominated and whose absolute ratios are superseded by the post-transient 0.545",
+  "convex_splitting": {
+   "dt_0.005_ratio": 0.165,
+   "dt_0.00125_ratio": 0.184,
+   "change_on_fourfold_refinement_pct": 11.5
+  },
+  "bdf1": {
+   "dt_0.005_ratio": 0.197,
+   "dt_0.00125_ratio": 0.193,
+   "change_on_fourfold_refinement_pct": 2.0
+  },
+  "reading": "bdf1 is dt-converged on this window; convex_splitting is NOT -- it moves 11.5% on a fourfold refinement, and it is the scheme the production growth runs use. Step size is therefore NOT ruled out for the production configuration. The scheme choice itself still only accounts for ~17% (bdf1 against convex_splitting at matched dt), so it cannot explain a 1.8x deficit, but dt sensitivity of the scheme in use is an open contributor that has not been measured post-transient."
+ }
 }
