@@ -320,6 +320,8 @@ def main() -> int:
                     help="Load-increment halvings before a step is abandoned. "
                          "The framework default of 6 bottoms out at 1/64 of a "
                          "load step, which is too coarse at the crack tip.")
+    ap.add_argument("--mesh-prefix", choices=("plate", "zconst"), default="plate",
+                    help="Mesh family: near-cubic elements, or z fixed at 1 unit.")
     ap.add_argument("--bc", choices=tuple(BC_SETS), default="minimal",
                     help="Boundary-condition set; see the BC_* blocks.")
     ap.add_argument("--no-vtk", action="store_true")
@@ -334,8 +336,13 @@ def main() -> int:
 
     tag = args.tag or f"{args.geometry}_d{args.density}_Gc{args.gc:g}_l0{args.l0:g}"
     out_dir = STUDY / args.out / tag
-    mesh_npz = STUDY / f"meshes/plate/plate_{args.geometry}_d{args.density}.npz"
-    mesh_e = STUDY / f"meshes/plate/plate_{args.geometry}_d{args.density}.e"
+    # ``--mesh-prefix`` selects the mesh FAMILY at fixed in-plane
+    # discretization. "plate" keeps the through-thickness extent equal to the
+    # in-plane element size (near-cubic elements); "zconst" fixes it at 1 unit
+    # regardless of density. The two differ only in z, so a pair of runs
+    # isolates the through-thickness discretization.
+    mesh_npz = STUDY / f"meshes/plate/{args.mesh_prefix}_{args.geometry}_d{args.density}.npz"
+    mesh_e = STUDY / f"meshes/plate/{args.mesh_prefix}_{args.geometry}_d{args.density}.e"
     z = np.load(mesh_npz)
     nodes, cells = z["nodes"], z["cells"]
 
