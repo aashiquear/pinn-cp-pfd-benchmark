@@ -1,0 +1,8 @@
+{
+ "tag": "conv_u_ms50",
+ "n_elements": 1152,
+ "mech_substeps": 50,
+ "n_steps": 40,
+ "vtk_files": 0,
+ "wall_seconds": 9280.607213967945
+}

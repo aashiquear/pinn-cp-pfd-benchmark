@@ -1,0 +1,40 @@
+{
+ "reference_uniaxial_stress_material_point_MPa": 989.2,
+ "uniform_40step": {
+  "substeps": [
+   7,
+   14,
+   25,
+   50
+  ],
+  "stress_at_20pct_MPa": [
+   734.09,
+   751.43,
+   758.83,
+   763.46
+  ],
+  "richardson_limit_MPa": 768.1,
+  "richardson_check": "predicts the ms25 point as 758.8 against 758.8 measured",
+  "converged": true,
+  "error_vs_reference_pct": -22.4
+ },
+ "graded_40step": {
+  "substeps": [
+   25,
+   50
+  ],
+  "stress_at_20pct_MPa": [
+   984.8,
+   984.83
+  ],
+  "converged": true,
+  "error_vs_reference_pct": -0.4
+ },
+ "conclusion": "BOTH schedules are converged in the constitutive sub-step count -- uniform to 768 MPa with clean first-order behaviour (Richardson predicts its own intermediate point exactly), graded to 984.8 MPa to three significant figures. Two converged discretisations of one problem cannot disagree by 22%, so one carries a consistency error. The graded answer matches an INDEPENDENT uniaxial-stress material point to 0.4%, so the uniform schedule is the one in error.",
+ "what_this_rules_out": [
+  "Sub-step resolution as the cause: refining it from 280 to 2000 updates moves the uniform answer by 4% and leaves 22% on the table.",
+  "The G20 threshold being too loose: at 2000 updates the uniform increment is 0.01% per update, an eighth of the 0.08% limit, and it still does not approach the reference.",
+  "The load path itself: a material point driven along both schedules converges to the same answer (0.07% apart at 100 sub-steps)."
+ ],
+ "open": "The mechanism. Leading hypothesis is that a uniform 40-step program crosses the ~0.21% yield inside its FIRST 0.5% step, and because the FE lateral contraction is SOLVED rather than prescribed, the overshoot settles on a lateral state that persists. Under test at matched total constitutive work with the first step at 0.10% and 0.20%."
+}

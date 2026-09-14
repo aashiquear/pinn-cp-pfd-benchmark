@@ -1,0 +1,8 @@
+{
+ "tag": "conv_u_ms7",
+ "n_elements": 1152,
+ "mech_substeps": 7,
+ "n_steps": 40,
+ "vtk_files": 0,
+ "wall_seconds": 1413.5779658649117
+}
