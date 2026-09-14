@@ -1,0 +1,242 @@
+{
+ "n_grains_requested": 32,
+ "grid": [
+  320,
+  160
+ ],
+ "diffusion_length_um": 0.75,
+ "diffusion_length_px": [
+  2.4,
+  2.4
+ ],
+ "mean_grain_width_um": 12.5,
+ "sweeps": 24,
+ "length_frac": 0.06,
+ "trajectory": [
+  {
+   "sweep": 0,
+   "n_grains": 32,
+   "total_boundary_length_um": 650.2730714070739,
+   "circularity_mean": 0.70598389228442,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 30.255186420431393,
+   "junction_frac_within_15deg": 0.3798449612403101
+  },
+  {
+   "sweep": 1,
+   "n_grains": 32,
+   "total_boundary_length_um": 642.551587643846,
+   "circularity_mean": 0.7314165536067762,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 21.312649336441527,
+   "junction_frac_within_15deg": 0.5348837209302325
+  },
+  {
+   "sweep": 2,
+   "n_grains": 32,
+   "total_boundary_length_um": 639.9781124144607,
+   "circularity_mean": 0.7406075021867664,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 18.959173437100553,
+   "junction_frac_within_15deg": 0.6201550387596899
+  },
+  {
+   "sweep": 3,
+   "n_grains": 32,
+   "total_boundary_length_um": 636.8505978543053,
+   "circularity_mean": 0.7520023892575508,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 16.222714889137393,
+   "junction_frac_within_15deg": 0.6744186046511628
+  },
+  {
+   "sweep": 4,
+   "n_grains": 32,
+   "total_boundary_length_um": 635.0519312279405,
+   "circularity_mean": 0.7586246865976958,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 15.951141094822544,
+   "junction_frac_within_15deg": 0.7131782945736435
+  },
+  {
+   "sweep": 5,
+   "n_grains": 32,
+   "total_boundary_length_um": 633.5346449332823,
+   "circularity_mean": 0.7621331434495134,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 15.772261381683425,
+   "junction_frac_within_15deg": 0.7333333333333333
+  },
+  {
+   "sweep": 6,
+   "n_grains": 32,
+   "total_boundary_length_um": 631.9963034790752,
+   "circularity_mean": 0.7684316496498049,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 14.772030286656644,
+   "junction_frac_within_15deg": 0.6888888888888889
+  },
+  {
+   "sweep": 7,
+   "n_grains": 32,
+   "total_boundary_length_um": 630.5509039957066,
+   "circularity_mean": 0.7744417981492222,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 14.45208208691713,
+   "junction_frac_within_15deg": 0.6814814814814815
+  },
+  {
+   "sweep": 8,
+   "n_grains": 32,
+   "total_boundary_length_um": 629.6261548566536,
+   "circularity_mean": 0.7785495556587675,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 14.098804061567284,
+   "junction_frac_within_15deg": 0.7037037037037037
+  },
+  {
+   "sweep": 9,
+   "n_grains": 32,
+   "total_boundary_length_um": 629.2071678158202,
+   "circularity_mean": 0.7785073699744001,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 13.759412905902984,
+   "junction_frac_within_15deg": 0.7111111111111111
+  },
+  {
+   "sweep": 10,
+   "n_grains": 32,
+   "total_boundary_length_um": 628.2824186767671,
+   "circularity_mean": 0.7826739013089976,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 13.081339505168856,
+   "junction_frac_within_15deg": 0.7407407407407407
+  },
+  {
+   "sweep": 11,
+   "n_grains": 32,
+   "total_boundary_length_um": 627.567163058131,
+   "circularity_mean": 0.7847686191122182,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.850457667990634,
+   "junction_frac_within_15deg": 0.7481481481481481
+  },
+  {
+   "sweep": 12,
+   "n_grains": 32,
+   "total_boundary_length_um": 626.678357324723,
+   "circularity_mean": 0.7868426341442308,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.168230376686028,
+   "junction_frac_within_15deg": 0.7851851851851852
+  },
+  {
+   "sweep": 13,
+   "n_grains": 32,
+   "total_boundary_length_um": 626.3102019356304,
+   "circularity_mean": 0.7879115034075439,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.695064115100665,
+   "junction_frac_within_15deg": 0.7851851851851852
+  },
+  {
+   "sweep": 14,
+   "n_grains": 32,
+   "total_boundary_length_um": 625.9271583004419,
+   "circularity_mean": 0.7877464229692174,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.056114648955202,
+   "junction_frac_within_15deg": 0.7703703703703704
+  },
+  {
+   "sweep": 15,
+   "n_grains": 32,
+   "total_boundary_length_um": 625.2478460874506,
+   "circularity_mean": 0.7902545844331962,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.409924932492945,
+   "junction_frac_within_15deg": 0.7703703703703704
+  },
+  {
+   "sweep": 16,
+   "n_grains": 32,
+   "total_boundary_length_um": 625.1251276244197,
+   "circularity_mean": 0.7904950965637884,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.51903538450429,
+   "junction_frac_within_15deg": 0.762962962962963
+  },
+  {
+   "sweep": 17,
+   "n_grains": 32,
+   "total_boundary_length_um": 624.7420839892313,
+   "circularity_mean": 0.7911330761237274,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.192664084621498,
+   "junction_frac_within_15deg": 0.7925925925925926
+  },
+  {
+   "sweep": 18,
+   "n_grains": 32,
+   "total_boundary_length_um": 624.4966470631696,
+   "circularity_mean": 0.7914037604476801,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.129578104091264,
+   "junction_frac_within_15deg": 0.7851851851851852
+  },
+  {
+   "sweep": 19,
+   "n_grains": 32,
+   "total_boundary_length_um": 624.2363218910119,
+   "circularity_mean": 0.7924985120111661,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.54584270492209,
+   "junction_frac_within_15deg": 0.762962962962963
+  },
+  {
+   "sweep": 20,
+   "n_grains": 32,
+   "total_boundary_length_um": 623.8173348501784,
+   "circularity_mean": 0.7925917337785939,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.404148275979237,
+   "junction_frac_within_15deg": 0.7777777777777778
+  },
+  {
+   "sweep": 21,
+   "n_grains": 32,
+   "total_boundary_length_um": 623.7813914445335,
+   "circularity_mean": 0.7923726156851986,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.443521132201994,
+   "junction_frac_within_15deg": 0.7481481481481481
+  },
+  {
+   "sweep": 22,
+   "n_grains": 32,
+   "total_boundary_length_um": 623.1888542889282,
+   "circularity_mean": 0.7932020148986524,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.279211163512072,
+   "junction_frac_within_15deg": 0.7555555555555555
+  },
+  {
+   "sweep": 23,
+   "n_grains": 32,
+   "total_boundary_length_um": 623.1020792315422,
+   "circularity_mean": 0.7935492090916688,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.593564889057033,
+   "junction_frac_within_15deg": 0.7555555555555555
+  },
+  {
+   "sweep": 24,
+   "n_grains": 32,
+   "total_boundary_length_um": 622.9434173628665,
+   "circularity_mean": 0.7934146941438698,
+   "n_junctions": 45,
+   "junction_rms_dev_from_120": 12.510962610879153,
+   "junction_frac_within_15deg": 0.7481481481481481
+  }
+ ]
+}
