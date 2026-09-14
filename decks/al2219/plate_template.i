@@ -129,37 +129,9 @@
   []
 []
 
-[BCs]
-  [./xmin_fixed]
-    variable   = u
-    kind       = dirichlet
-    node_set   = xmin
-    components = [0]
-    values     = [0.0]
-  []
-  [./pin_y]
-    variable   = u
-    kind       = dirichlet
-    node_set   = pin_y
-    components = [1]
-    values     = [0.0]
-  []
-  [./zmin_roller]
-    variable   = u
-    kind       = dirichlet
-    node_set   = zmin
-    components = [2]
-    values     = [0.0]
-  []
-  [./xmax_tension]
-    variable   = u
-    kind       = dirichlet
-    node_set   = xmax
-    components = [0]
-    values     = [1.0]
-    function   = axial
-  []
-[]
+@BCBLOCK@
+
+
 
 [Executioner]
   type            = staggered

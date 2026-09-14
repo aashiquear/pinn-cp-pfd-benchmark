@@ -116,15 +116,125 @@ def _nvl(value):
     return "not_reported" if value is None else value
 
 
+BC_MINIMAL = """[BCs]
+  # Statically minimal: exactly enough to remove the six rigid-body modes.
+  # Both end faces stay free to contract laterally and through-thickness, so
+  # the only stress concentrator is the hole and no grip state is imposed.
+  # Measured against the clamped set on an identical mesh, this holds
+  # |sigma_zz|/sigma_xx_max to <= 6% everywhere against 46% for clamped ends.
+  [./xmin_fixed]
+    variable   = u
+    kind       = dirichlet
+    node_set   = xmin
+    components = [0]
+    values     = [0.0]
+  []
+  [./pin_y]
+    variable   = u
+    kind       = dirichlet
+    node_set   = pin_y
+    components = [1]
+    values     = [0.0]
+  []
+  [./zmin_roller]
+    variable   = u
+    kind       = dirichlet
+    node_set   = zmin
+    components = [2]
+    values     = [0.0]
+  []
+  [./xmax_tension]
+    variable   = u
+    kind       = dirichlet
+    node_set   = xmax
+    components = [0]
+    values     = [1.0]
+    function   = axial
+  []
+[]
+"""
+
+BC_CLAMPED = """[BCs]
+  # Clamped ends: xmin fully fixed, xmax prescribed in x with u_y = u_z = 0.
+  # Physically a gripped specimen, but it suppresses Poisson contraction at
+  # both ends and so adds a triaxial boundary layer; measured decay is 22% of
+  # peak sigma_zz at the end faces falling to 0.76% at the hole band.
+  [./xmin_fixed]
+    variable   = u
+    kind       = dirichlet
+    node_set   = xmin
+    components = [0, 1, 2]
+    values     = [0.0, 0.0, 0.0]
+  []
+  [./xmax_tension]
+    variable   = u
+    kind       = dirichlet
+    node_set   = xmax
+    components = [0, 1, 2]
+    values     = [1.0, 0.0, 0.0]
+    function   = axial
+  []
+[]
+"""
+
+BC_FACEROLLER = """[BCs]
+  # Face rollers with one fixed end: xmin holds u_x = 0, ymin holds u_y = 0,
+  # zmin holds u_z = 0, xmax carries the prescribed u_x.
+  #
+  # Differs from BC_MINIMAL only in the transverse restraint -- a whole FACE
+  # of y-rollers instead of a single pin line. It removes the same rigid-body
+  # rotation but also forbids the ymin face from narrowing, so the specimen
+  # cannot contract freely on that side. Whether that is benign is
+  # measurable, not assumed: a thin plate in uniaxial tension must carry
+  # sigma_yy ~ 0, so transverse stress near ymin is the test.
+  #
+  # Differs from BC_CLAMPED in NOT holding u_y or u_z on the LOADED face, so
+  # no triaxial grip state is created where the load is applied.
+  [./xmin_fixed]
+    variable   = u
+    kind       = dirichlet
+    node_set   = xmin
+    components = [0]
+    values     = [0.0]
+  []
+  [./ymin_roller]
+    variable   = u
+    kind       = dirichlet
+    node_set   = ymin
+    components = [1]
+    values     = [0.0]
+  []
+  [./zmin_roller]
+    variable   = u
+    kind       = dirichlet
+    node_set   = zmin
+    components = [2]
+    values     = [0.0]
+  []
+  [./xmax_tension]
+    variable   = u
+    kind       = dirichlet
+    node_set   = xmax
+    components = [0]
+    values     = [1.0]
+    function   = axial
+  []
+[]
+"""
+
+BC_SETS = {"minimal": BC_MINIMAL, "clamped": BC_CLAMPED,
+           "faceroller": BC_FACEROLLER}
+
 def build_deck(*, mesh: Path, orient: str, gc: float, l0: float, nsteps: int,
                mechsub: int, maxalt: int, strain: float, out_dir: Path,
                cal: dict[str, str], maxcutbacks: int = 15,
-               t_end: float = 10.0) -> Path:
+               t_end: float = 10.0, bc: str = "minimal") -> Path:
     src = (STUDY / "decks/al2219/plate_template.i").read_text()
     sub = dict(cal, MESH=str(mesh), ORIENT=orient, GC=f"{gc:.9g}", L0=f"{l0:.9g}",
                NSTEPS=str(nsteps), MECHSUB=str(mechsub), MAXALT=str(maxalt),
                MAXCUTBACKS=str(maxcutbacks), TEND=f'{t_end:.10g}',
-               STRAIN=f"{strain:.9g}", OUTDIR=str(out_dir / "solver"))
+               STRAIN=f"{strain:.9g}", OUTDIR=str(out_dir / "solver"),
+               BCBLOCK=BC_SETS[bc])
     for k, v in sub.items():
         src = src.replace(f"@{k}@", v)
     leftover = set(re.findall(r"@([A-Z0-9_]+)@", re.sub(r"#.*", "", src)))
@@ -210,6 +320,8 @@ def main() -> int:
                     help="Load-increment halvings before a step is abandoned. "
                          "The framework default of 6 bottoms out at 1/64 of a "
                          "load step, which is too coarse at the crack tip.")
+    ap.add_argument("--bc", choices=tuple(BC_SETS), default="minimal",
+                    help="Boundary-condition set; see the BC_* blocks.")
     ap.add_argument("--no-vtk", action="store_true")
     ap.add_argument("--tag", default=None)
     ap.add_argument("--out", default="results/plate")
@@ -244,7 +356,7 @@ def main() -> int:
                       nsteps=args.load_steps, mechsub=mechsub,
                       maxalt=args.alternations, strain=args.strain,
                       out_dir=out_dir, cal=cal,
-                      maxcutbacks=args.max_cutbacks, t_end=t_end)
+                      maxcutbacks=args.max_cutbacks, t_end=t_end, bc=args.bc)
 
     cfg = load_input(str(deck))
     grain_info = None

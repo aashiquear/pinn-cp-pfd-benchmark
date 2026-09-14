@@ -51,7 +51,33 @@ from pathlib import Path
 
 import numpy as np
 
-WIDTH, HEIGHT, THICK = 100.0, 50.0, 10.0
+def _median_in_plane_edge(pts2, quads) -> float:
+    """Median in-plane quad edge length, used as the extrusion thickness.
+
+    Measured from the built mesh instead of derived from the density, because
+    the O-grid around the hole is graded: its elements near the hole are much
+    smaller than the background, and a density-derived estimate would give the
+    wrong thickness for the family that actually matters.
+    """
+    import numpy as _np
+
+    q = _np.asarray(quads, dtype=int)
+    p = _np.asarray(pts2, dtype=float)
+    e = []
+    for a, b in ((0, 1), (1, 2), (2, 3), (3, 0)):
+        e.append(_np.linalg.norm(p[q[:, a]] - p[q[:, b]], axis=1))
+    return float(_np.median(_np.concatenate(e)))
+
+
+WIDTH, HEIGHT = 100.0, 50.0
+# THICKNESS IS NOT A FIXED LENGTH. It is set to the in-plane element size, so
+# the single through-thickness element stays near-cubic at every density.
+# Holding it at 10 um while refining in x and y degraded the aspect ratio from
+# 1.6 at d=1 to 9.6 at d=6 -- and d=1 converged at every rate exponent while
+# d=3 (aspect 4.8) converged at none. Refining in-plane was therefore
+# resolving the hole and wrecking the element shape at the same time, so the
+# two effects could not be separated. THICK is computed per density below.
+THICK = 10.0  # default, overwritten per density by _thickness_for()
 HOLE_R = 5.0
 CX, CY = WIDTH / 2.0, HEIGHT / 2.0
 # Transition square around the hole; its half-extents set where the O-grid
@@ -207,6 +233,13 @@ def build_plate(density: int, *, n_r: int, grading: float, hole: bool = True) ->
     n2 = pts2.shape[0]
 
     # --- extrude one element through the thickness ---
+    # The extrusion length is the MEDIAN IN-PLANE EDGE, measured from the mesh
+    # that was just built rather than predicted from the density, so it stays
+    # correct for the graded O-grid around the hole as well as for the plain
+    # structured block.
+    thick = _median_in_plane_edge(pts2, quads)
+    global THICK
+    THICK = thick
     nodes = np.zeros((2 * n2, 3), dtype=float)
     nodes[:n2, :2] = pts2
     nodes[:n2, 2] = 0.0
@@ -227,7 +260,8 @@ def build_plate(density: int, *, n_r: int, grading: float, hole: bool = True) ->
         "ymin": np.flatnonzero(np.abs(y - 0.0) < tol),
         "ymax": np.flatnonzero(np.abs(y - HEIGHT) < tol),
         "zmin": np.flatnonzero(np.abs(z - 0.0) < tol),
-        "zmax": np.flatnonzero(np.abs(z - THICK) < tol),
+        # thickness is per-density now, so compare against the actual max
+        "zmax": np.flatnonzero(np.abs(z - z.max()) < tol),
         "hole": np.flatnonzero(np.abs(r - HOLE_R) < 1.0e-6),
         # The outer boundary excluding the hole: this is what a damage
         # Dirichlet condition should use if one is imposed at all. Pinning
