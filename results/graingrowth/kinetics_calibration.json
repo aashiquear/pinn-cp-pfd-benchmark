@@ -1,0 +1,24 @@
+{
+ "case": "single grain shrinking against the eta=0 background, FEM path, reproducing examples/pinn/phase_field/grain_growth/grain_shrink_law_2d.i in physics and parameters",
+ "analytic_law": "dA/dt = -2 pi L kappa = -2 pi M_GB sigma = -0.31416 for M_GB=1, sigma=0.05",
+ "material_map_verified": "gb_evolution maps L = 4 M_GB/(3 w_GB) and kappa = 3 sigma w_GB/4, so L*kappa = M_GB*sigma EXACTLY -- the map is self-consistent and is not the deficit",
+ "precedence_verified": "removing the deck's explicit mobility and gradient_coefficient from the kernels changed the result BIT-IDENTICALLY (-0.05169 both), so the bound quantitative material is used and the explicit kernel params are correctly ignored",
+ "measurements": {
+  "short_window_t_to_0.2": {
+   "all_t_ratio": 0.165,
+   "second_half_ratio": 0.226,
+   "note": "TRANSIENT-DOMINATED, superseded"
+  },
+  "long_window_t_to_0.6": {
+   "all_t_ratio": 0.369,
+   "t_gt_0.2_ratio": 0.461,
+   "t_gt_0.4_ratio": 0.543,
+   "last_third_ratio": 0.545,
+   "last_third_R2": 0.99876
+  }
+ },
+ "delivered_rate_fraction": 0.545,
+ "why_the_correction": "The first measurement spanned t in [0, 0.2] and the rate was still climbing at the end. Extending to t = 0.6 shows it settling into a linear regime -- the t>0.4 and last-third fits agree at 0.543 and 0.545 with R^2 = 0.9988 -- so the asymptotic deficit is 1.8x, not the 5x the short window implied. The framework's own verification fits the POST-TRANSIENT slope for exactly this reason, which I should have followed first.",
+ "not_established": "Where the remaining 1.8x is lost. The material map and the kernel precedence are both verified correct, and the time scheme and step size are ruled out (bdf1 and convex_splitting within 17%, fourfold dt refinement under 4%). Spatial resolution is the untested candidate: the interface spans about 4.5 cells here, which satisfies the material's own h <= w_GB/3 guidance but may still under-resolve the curvature-driven velocity.",
+ "consequence": "Tuning M_GB by 20x, chosen against the superseded 0.17 figure, is an 11x OVERSHOOT of the nominal rate. The correctly sized factor is about 1.8x."
+}
