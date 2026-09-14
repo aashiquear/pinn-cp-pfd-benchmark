@@ -1,0 +1,586 @@
+{
+ "n16_relaxed 0.25 grain times": [
+  {
+   "new": 0,
+   "ancestor": 4,
+   "majority": 0.9931807111544082,
+   "n_ancestors": 4
+  },
+  {
+   "new": 1,
+   "ancestor": 7,
+   "majority": 0.9847328244274809,
+   "n_ancestors": 2
+  },
+  {
+   "new": 2,
+   "ancestor": 1,
+   "majority": 0.9984447900466563,
+   "n_ancestors": 2
+  },
+  {
+   "new": 3,
+   "ancestor": 6,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 4,
+   "ancestor": 0,
+   "majority": 0.9939759036144579,
+   "n_ancestors": 3
+  },
+  {
+   "new": 5,
+   "ancestor": 9,
+   "majority": 0.9906015037593985,
+   "n_ancestors": 4
+  },
+  {
+   "new": 6,
+   "ancestor": 5,
+   "majority": 0.9952380952380953,
+   "n_ancestors": 3
+  },
+  {
+   "new": 7,
+   "ancestor": 11,
+   "majority": 0.9953917050691244,
+   "n_ancestors": 3
+  },
+  {
+   "new": 8,
+   "ancestor": 14,
+   "majority": 0.9964488636363636,
+   "n_ancestors": 6
+  },
+  {
+   "new": 9,
+   "ancestor": 3,
+   "majority": 0.9976019184652278,
+   "n_ancestors": 3
+  },
+  {
+   "new": 10,
+   "ancestor": 10,
+   "majority": 0.9957446808510638,
+   "n_ancestors": 3
+  },
+  {
+   "new": 11,
+   "ancestor": 12,
+   "majority": 0.9944521497919556,
+   "n_ancestors": 4
+  },
+  {
+   "new": 12,
+   "ancestor": 13,
+   "majority": 0.9978757302177377,
+   "n_ancestors": 4
+  },
+  {
+   "new": 13,
+   "ancestor": 8,
+   "majority": 0.9975990396158463,
+   "n_ancestors": 3
+  },
+  {
+   "new": 14,
+   "ancestor": 15,
+   "majority": 0.999251497005988,
+   "n_ancestors": 2
+  },
+  {
+   "new": 15,
+   "ancestor": 2,
+   "majority": 1.0,
+   "n_ancestors": 1
+  }
+ ],
+ "n16_relaxed 1.5 grain times": [
+  {
+   "new": 0,
+   "ancestor": 4,
+   "majority": 0.9922178988326849,
+   "n_ancestors": 5
+  },
+  {
+   "new": 1,
+   "ancestor": 7,
+   "majority": 0.9777777777777777,
+   "n_ancestors": 3
+  },
+  {
+   "new": 2,
+   "ancestor": 1,
+   "majority": 0.9984472049689441,
+   "n_ancestors": 2
+  },
+  {
+   "new": 3,
+   "ancestor": 6,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 4,
+   "ancestor": 0,
+   "majority": 0.996969696969697,
+   "n_ancestors": 2
+  },
+  {
+   "new": 5,
+   "ancestor": 9,
+   "majority": 0.9943396226415094,
+   "n_ancestors": 4
+  },
+  {
+   "new": 6,
+   "ancestor": 5,
+   "majority": 0.9952380952380953,
+   "n_ancestors": 2
+  },
+  {
+   "new": 7,
+   "ancestor": 11,
+   "majority": 0.9976958525345622,
+   "n_ancestors": 2
+  },
+  {
+   "new": 8,
+   "ancestor": 14,
+   "majority": 0.9950389794472005,
+   "n_ancestors": 5
+  },
+  {
+   "new": 9,
+   "ancestor": 3,
+   "majority": 0.9984,
+   "n_ancestors": 3
+  },
+  {
+   "new": 10,
+   "ancestor": 10,
+   "majority": 0.9936170212765958,
+   "n_ancestors": 3
+  },
+  {
+   "new": 11,
+   "ancestor": 12,
+   "majority": 0.9930651872399445,
+   "n_ancestors": 4
+  },
+  {
+   "new": 12,
+   "ancestor": 13,
+   "majority": 0.9984051036682615,
+   "n_ancestors": 3
+  },
+  {
+   "new": 13,
+   "ancestor": 8,
+   "majority": 0.9975990396158463,
+   "n_ancestors": 3
+  },
+  {
+   "new": 14,
+   "ancestor": 15,
+   "majority": 0.9992509363295881,
+   "n_ancestors": 2
+  },
+  {
+   "new": 15,
+   "ancestor": 2,
+   "majority": 1.0,
+   "n_ancestors": 1
+  }
+ ],
+ "n32_relaxed 0.25 grain times": [
+  {
+   "new": 0,
+   "ancestor": 21,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 1,
+   "ancestor": 4,
+   "majority": 0.9972093023255814,
+   "n_ancestors": 3
+  },
+  {
+   "new": 2,
+   "ancestor": 14,
+   "majority": 0.9953703703703703,
+   "n_ancestors": 5
+  },
+  {
+   "new": 3,
+   "ancestor": 30,
+   "majority": 0.9882926829268293,
+   "n_ancestors": 5
+  },
+  {
+   "new": 4,
+   "ancestor": 9,
+   "majority": 0.9783783783783784,
+   "n_ancestors": 5
+  },
+  {
+   "new": 5,
+   "ancestor": 1,
+   "majority": 0.9959128065395095,
+   "n_ancestors": 4
+  },
+  {
+   "new": 6,
+   "ancestor": 31,
+   "majority": 0.996937212863706,
+   "n_ancestors": 2
+  },
+  {
+   "new": 7,
+   "ancestor": 11,
+   "majority": 0.9823008849557522,
+   "n_ancestors": 3
+  },
+  {
+   "new": 8,
+   "ancestor": 13,
+   "majority": 0.9966159052453468,
+   "n_ancestors": 2
+  },
+  {
+   "new": 9,
+   "ancestor": 18,
+   "majority": 0.9892802450229708,
+   "n_ancestors": 3
+  },
+  {
+   "new": 10,
+   "ancestor": 8,
+   "majority": 0.9963269054178145,
+   "n_ancestors": 3
+  },
+  {
+   "new": 11,
+   "ancestor": 3,
+   "majority": 0.9925581395348837,
+   "n_ancestors": 4
+  },
+  {
+   "new": 12,
+   "ancestor": 12,
+   "majority": 0.9944852941176471,
+   "n_ancestors": 2
+  },
+  {
+   "new": 13,
+   "ancestor": 19,
+   "majority": 0.9985250737463127,
+   "n_ancestors": 2
+  },
+  {
+   "new": 14,
+   "ancestor": 23,
+   "majority": 0.9980132450331126,
+   "n_ancestors": 3
+  },
+  {
+   "new": 15,
+   "ancestor": 27,
+   "majority": 0.9980769230769231,
+   "n_ancestors": 2
+  },
+  {
+   "new": 16,
+   "ancestor": 16,
+   "majority": 0.9977477477477478,
+   "n_ancestors": 2
+  },
+  {
+   "new": 17,
+   "ancestor": 29,
+   "majority": 0.9873417721518988,
+   "n_ancestors": 4
+  },
+  {
+   "new": 18,
+   "ancestor": 2,
+   "majority": 0.9929078014184397,
+   "n_ancestors": 2
+  },
+  {
+   "new": 19,
+   "ancestor": 5,
+   "majority": 0.9876796714579056,
+   "n_ancestors": 6
+  },
+  {
+   "new": 20,
+   "ancestor": 6,
+   "majority": 0.9941860465116279,
+   "n_ancestors": 2
+  },
+  {
+   "new": 21,
+   "ancestor": 20,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 22,
+   "ancestor": 17,
+   "majority": 0.9970059880239521,
+   "n_ancestors": 2
+  },
+  {
+   "new": 23,
+   "ancestor": 28,
+   "majority": 0.9852216748768473,
+   "n_ancestors": 3
+  },
+  {
+   "new": 24,
+   "ancestor": 7,
+   "majority": 0.990909090909091,
+   "n_ancestors": 3
+  },
+  {
+   "new": 25,
+   "ancestor": 15,
+   "majority": 0.9968503937007874,
+   "n_ancestors": 5
+  },
+  {
+   "new": 26,
+   "ancestor": 22,
+   "majority": 0.9953703703703703,
+   "n_ancestors": 3
+  },
+  {
+   "new": 27,
+   "ancestor": 25,
+   "majority": 0.9861111111111112,
+   "n_ancestors": 2
+  },
+  {
+   "new": 28,
+   "ancestor": 0,
+   "majority": 0.9950738916256158,
+   "n_ancestors": 2
+  },
+  {
+   "new": 29,
+   "ancestor": 24,
+   "majority": 0.9857142857142858,
+   "n_ancestors": 3
+  },
+  {
+   "new": 30,
+   "ancestor": 10,
+   "majority": 0.9961880559085133,
+   "n_ancestors": 3
+  },
+  {
+   "new": 31,
+   "ancestor": 26,
+   "majority": 1.0,
+   "n_ancestors": 1
+  }
+ ],
+ "n32_relaxed 1.5 grain times": [
+  {
+   "new": 0,
+   "ancestor": 21,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 1,
+   "ancestor": 4,
+   "majority": 0.9972041006523765,
+   "n_ancestors": 4
+  },
+  {
+   "new": 2,
+   "ancestor": 14,
+   "majority": 0.9930555555555556,
+   "n_ancestors": 5
+  },
+  {
+   "new": 3,
+   "ancestor": 30,
+   "majority": 0.9902152641878669,
+   "n_ancestors": 5
+  },
+  {
+   "new": 4,
+   "ancestor": 9,
+   "majority": 0.9757412398921833,
+   "n_ancestors": 4
+  },
+  {
+   "new": 5,
+   "ancestor": 1,
+   "majority": 0.9932065217391305,
+   "n_ancestors": 5
+  },
+  {
+   "new": 6,
+   "ancestor": 31,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 7,
+   "ancestor": 11,
+   "majority": 0.9801762114537445,
+   "n_ancestors": 3
+  },
+  {
+   "new": 8,
+   "ancestor": 13,
+   "majority": 0.9949409780775716,
+   "n_ancestors": 2
+  },
+  {
+   "new": 9,
+   "ancestor": 18,
+   "majority": 0.9908116385911179,
+   "n_ancestors": 2
+  },
+  {
+   "new": 10,
+   "ancestor": 8,
+   "majority": 0.9935897435897436,
+   "n_ancestors": 5
+  },
+  {
+   "new": 11,
+   "ancestor": 3,
+   "majority": 0.9925650557620818,
+   "n_ancestors": 4
+  },
+  {
+   "new": 12,
+   "ancestor": 12,
+   "majority": 0.9890310786106032,
+   "n_ancestors": 4
+  },
+  {
+   "new": 13,
+   "ancestor": 19,
+   "majority": 0.9985250737463127,
+   "n_ancestors": 2
+  },
+  {
+   "new": 14,
+   "ancestor": 23,
+   "majority": 0.9973527465254798,
+   "n_ancestors": 5
+  },
+  {
+   "new": 15,
+   "ancestor": 27,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 16,
+   "ancestor": 16,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 17,
+   "ancestor": 29,
+   "majority": 0.9935691318327974,
+   "n_ancestors": 3
+  },
+  {
+   "new": 18,
+   "ancestor": 2,
+   "majority": 0.9929078014184397,
+   "n_ancestors": 2
+  },
+  {
+   "new": 19,
+   "ancestor": 5,
+   "majority": 0.9937888198757764,
+   "n_ancestors": 3
+  },
+  {
+   "new": 20,
+   "ancestor": 6,
+   "majority": 0.9883720930232558,
+   "n_ancestors": 2
+  },
+  {
+   "new": 21,
+   "ancestor": 20,
+   "majority": 0.9969167523124358,
+   "n_ancestors": 4
+  },
+  {
+   "new": 22,
+   "ancestor": 17,
+   "majority": 0.9910979228486647,
+   "n_ancestors": 4
+  },
+  {
+   "new": 23,
+   "ancestor": 28,
+   "majority": 0.9900990099009901,
+   "n_ancestors": 2
+  },
+  {
+   "new": 24,
+   "ancestor": 7,
+   "majority": 0.9864864864864865,
+   "n_ancestors": 3
+  },
+  {
+   "new": 25,
+   "ancestor": 15,
+   "majority": 0.9976359338061466,
+   "n_ancestors": 4
+  },
+  {
+   "new": 26,
+   "ancestor": 22,
+   "majority": 0.9969040247678018,
+   "n_ancestors": 2
+  },
+  {
+   "new": 27,
+   "ancestor": 25,
+   "majority": 1.0,
+   "n_ancestors": 1
+  },
+  {
+   "new": 28,
+   "ancestor": 0,
+   "majority": 0.995,
+   "n_ancestors": 2
+  },
+  {
+   "new": 29,
+   "ancestor": 24,
+   "majority": 0.990521327014218,
+   "n_ancestors": 2
+  },
+  {
+   "new": 30,
+   "ancestor": 10,
+   "majority": 0.9949238578680203,
+   "n_ancestors": 4
+  },
+  {
+   "new": 31,
+   "ancestor": 26,
+   "majority": 0.9935760171306209,
+   "n_ancestors": 3
+  }
+ ]
+}
