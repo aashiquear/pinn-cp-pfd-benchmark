@@ -1,0 +1,50 @@
+{
+ "drive": "material point, uniaxial STRESS (lateral stretch solved so sigma_xx=0)",
+ "why_material_point": "cheap, and free of the unresolved FE load-schedule question; the graded FE agrees with this drive to 0.4% so it is the right reference",
+ "orientation": "[001]",
+ "n_exponent": 8.33,
+ "experiment_MPa_at_17pct": 592.6,
+ "rows": [
+  {
+   "rho0": 0.25,
+   "tau_c0_total": 6.22,
+   "s5": 287.0,
+   "s12": 600.4,
+   "s17": 786.0
+  },
+  {
+   "rho0": 1.0,
+   "tau_c0_total": 12.17,
+   "s5": 302.4,
+   "s12": 613.4,
+   "s17": 797.7
+  },
+  {
+   "rho0": 5.0,
+   "tau_c0_total": 26.89,
+   "s5": 342.0,
+   "s12": 646.5,
+   "s17": 827.4
+  },
+  {
+   "rho0": 25.0,
+   "tau_c0_total": 59.8,
+   "s5": 436.8,
+   "s12": 725.1,
+   "s17": 897.5
+  }
+ ],
+ "taylor_note": {
+  "M_001": 2.45,
+  "M_random_polycrystal": 3.06,
+  "implied_single_crystal_target_MPa": 474.5,
+  "reasoning": "The experiment is a POLYCRYSTAL. A [001] single crystal has a LOWER Taylor factor than a random aggregate, so it should carry LESS stress at the same strain, by roughly M_001/M_random. The [001] curve should therefore sit BELOW the measured polycrystal, near 474 MPa at 17%, not above it."
+ },
+ "findings": [
+  "rho0 alone cannot close the gap. A 100-fold reduction, 25 -> 0.25, moves the 17% stress only from +51.5% to +32.6% against the experiment, and against the Taylor-implied single-crystal target the residual is about +66%.",
+  "The sign is wrong, not just the magnitude: a [001] single crystal above a measured polycrystal is the wrong side of the Taylor bound.",
+  "So the excess is in the hardening RATE, not the initial density: k1 (storage) and y_c (annihilation) set d(rho)/d(gamma), and the law carries a 1/b prefactor with 1/b = 3497 per micrometer, so hardening is rapid by construction at k1 = 0.3432.",
+  "Consequence for the plan: the rho0 screen and the hardening-coefficient fit are NOT independent stages. Holding one constant while varying the other still applies, but the order matters -- k1 and y_c have to move first, then rho0 as the finer adjustment."
+ ],
+ "not_done": "No fit was performed. This is a screen to size the calibration, and the calibration itself belongs on the polycrystal as directed."
+}
