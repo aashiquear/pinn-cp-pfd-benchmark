@@ -160,6 +160,7 @@ def triple_junction_angles(gid: np.ndarray, hx: float, hy: float,
 
     # precompute boundary midpoints per grain pair
     angs = []
+    xy = []
     for cx, cy, key in junc:
         i0, i1 = max(0, int(cx - radius)), min(nx, int(cx + radius) + 2)
         j0, j1 = max(0, int(cy - radius)), min(ny, int(cy + radius) + 2)
@@ -193,14 +194,20 @@ def triple_junction_angles(gid: np.ndarray, hx: float, hy: float,
             continue
         th = sorted(np.degrees(np.arctan2(d[1], d[0])) % 360.0 for d in dirs.values())
         angs.extend([th[1] - th[0], th[2] - th[1], 360.0 - th[2] + th[0]])
+        # Position in MICROMETRES, one entry per angle (three per junction), so
+        # a caller can select a spatial subset -- e.g. junctions in a band along
+        # the domain edge, where an edge condition on the diffusion distorts
+        # them and a domain-wide average would hide it.
+        xy.extend([(cx * hx, cy * hy)] * 3)
     if not angs:
         return {"n_junctions": len(junc), "angles": [], "rms_dev_from_120": np.nan,
-                "frac_within_15deg": np.nan, "std": np.nan}
+                "frac_within_15deg": np.nan, "std": np.nan, "angle_xy": []}
     a = np.asarray(angs, dtype=float)
     return {"n_junctions": len(junc), "angles": a.tolist(),
             "mean": float(a.mean()), "std": float(a.std()),
             "rms_dev_from_120": float(np.sqrt(np.mean((a - 120.0) ** 2))),
-            "frac_within_15deg": float(np.mean(np.abs(a - 120.0) <= 15.0))}
+            "frac_within_15deg": float(np.mean(np.abs(a - 120.0) <= 15.0)),
+            "angle_xy": [[float(u), float(v)] for u, v in xy]}
 
 
 def summarize(gid: np.ndarray, hx: float, hy: float, label: str) -> dict:
