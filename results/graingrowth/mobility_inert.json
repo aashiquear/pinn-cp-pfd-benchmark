@@ -1,0 +1,63 @@
+{
+ "finding": "In the multi-order-parameter (8 component) polycrystal FEM configuration, the Allen-Cahn MOBILITY is inert: the relaxation rate does not respond to it.",
+ "configuration": "box_mesh 158x79, eta with 8 components, gb_evolution material named by ac_bulk and ac_interface, pf_fem_transient with convex_splitting, 6 load steps",
+ "evidence": {
+  "material_M_GB": {
+   "1.0": 0.02266,
+   "5.0": 0.02267,
+   "20.0": 0.02268,
+   "units": "percent free-energy drop over 6 steps",
+   "reading": "a twentyfold change moves the result by 0.09%"
+  },
+  "explicit_kernel_mobility": {
+   "none (material only)": 0.02266,
+   "L=0.70037 (the M_GB=1 map)": 0.02266,
+   "L=14.00737 (the M_GB=20 map)": 0.02266,
+   "reading": "passing the mobility directly on BOTH kernels, verified present in the generated deck, is equally inert"
+  },
+  "material_map_is_correct": {
+   "M_GB=1": {
+    "L": 0.70037,
+    "kappa": 1.42782,
+    "L_kappa": 1.0
+   },
+   "M_GB=5": {
+    "L": 3.50184,
+    "kappa": 1.42782,
+    "L_kappa": 5.0
+   },
+   "M_GB=20": {
+    "L": 14.00737,
+    "kappa": 1.42782,
+    "L_kappa": 20.0
+   },
+   "reading": "L = 4 M_GB/(3 w_GB) and L*kappa = M_GB*sigma hold exactly, so the material is not the defect"
+  }
+ },
+ "other_parameters_DO_act": {
+  "sigma": {
+   "1.0": 0.02266,
+   "5.0": 0.02267,
+   "20.0": 0.02268,
+   "note": "the energy SCALE moves with sigma (28063 -> 561259) but the fractional drop does not, so sigma rescales the functional without changing the relaxation rate"
+  },
+  "gamma": {
+   "1.5": 0.02266,
+   "3.0": 0.10827,
+   "note": "gamma DOES change the rate, 4.8x"
+  },
+  "w_GB": {
+   "1.904": 0.02266,
+   "0.952": 0.02978,
+   "note": "w_GB changes the rate, 1.3x"
+  }
+ },
+ "consequences": [
+  "The instruction to tune GB mobility cannot be carried out on this route as it stands: the knob is not connected in this configuration.",
+  "It explains the stalled relaxation, and why 0.25 and 1.5 grain times gave nearly the same junction spread.",
+  "It retracts my '11x overshoot' framing of the 20x run: that run was a NO-OP, reproducing the 1x run's energy drop to four decimals (0.22430 against 0.22421), not an overshoot to be bracketed. The bracket I promised does not exist.",
+  "The two knobs that do act are gamma (the Moelans multi-well coupling, 4.8x across 1.5 to 3.0) and w_GB (1.3x on halving), so a phase-field morphology route is still tunable -- but gamma = 1.5 is the quantitative isotropic value, so moving it trades the model's quantitative standing for rate."
+ ],
+ "not_established": "Where the mobility is dropped between the material's coefficients() map and the assembled residual. The binding code reads L from the map when the material exposes coefficients(), and the map is exact, so the loss is in between. Not traced further, and not guessed at.",
+ "unaffected": "The threshold-dynamics route has no mobility parameter and is not touched by this. Its structures stand."
+}
