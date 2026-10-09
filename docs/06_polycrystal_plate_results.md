@@ -177,3 +177,33 @@ Readings, all tier 3 or weaker (no experiment is matched here):
    test-compliance question for the calibration stage, not a model one.
 4. Calibration is the next step, as the plan says: the CP parameters are
    model- and framework-sensitive and the reference set is a starting point.
+
+## 6. Backend measurement on the host GPU (2026-10-09)
+
+Host: Radeon 8060S (gfx1151, 20 CUs, unified memory), ROCm 7.2.4. The torch
+wheel must match the runtime: `torch==2.13.0+rocm7.2` works; the rocm7.1
+wheel segfaults on the first device tensor. The user's August probe records
+the APU's float64 dense throughput at 0.37 TFLOPs on the GPU against 0.375
+on the CPU (fp32: 2.36 against 1.05).
+
+Same 4-step CP plate deck (h40 mesh, 800 elements, 30 grains), identical
+stresses to eight digits on all three:
+
+| backend | wall | max RSS |
+|---|---|---|
+| numpy, CPU (8 threads) | 32 s | 0.2 GB |
+| torch, CPU | 145 s | -- |
+| torch, GPU | 549 s | 2.2 GB |
+
+Reading: the CP field solve is dispatch- and transfer-bound. `CPFieldCallback`
+keeps the quadrature-point state as a Python list of per-point dicts and
+crosses to numpy (`backend.to_numpy`) at more than fifteen places per
+evaluation, so a device backend pays a host-device round trip per point per
+sub-step. ADR 0015 recorded the same structure on an 8-element bicrystal
+(17 s numpy, unfinished after 50 min on torch). Making the CP path
+GPU-resident -- state as stacked device tensors, the sub-stepper and tangent
+batched on device, assembly without per-point marshalling -- is a framework
+project with this deck as its benchmark; on this APU the ceiling for float64
+is parity with the CPU, so the gain would be in batching, not in the device.
+Until that lands, the parameter study runs on numpy, per the measured-policy
+rule of the guidelines.
