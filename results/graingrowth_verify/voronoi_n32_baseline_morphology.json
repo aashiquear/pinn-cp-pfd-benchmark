@@ -1,0 +1,19 @@
+{
+ "label": "voronoi_n32",
+ "n_grains": 32,
+ "n_shape_grains": 15,
+ "total_boundary_length_um": 648.5890536033628,
+ "area_mean_um2": 97.73334621204805,
+ "area_cv": 0.4782045759581479,
+ "circularity_mean": 0.7154893234444958,
+ "circularity_std": 0.07103479230747023,
+ "neighbours_mean": 5.333333333333333,
+ "neighbours_std": 0.869226987360353,
+ "neighbours_min": 4,
+ "neighbours_max": 7,
+ "n_interior": 15,
+ "n_junctions": 45,
+ "junction_angle_mean": 120.00000000000001,
+ "junction_rms_dev_from_120": 30.34004561301143,
+ "junction_frac_within_15deg": 0.34959349593495936
+}

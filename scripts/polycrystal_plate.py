@@ -267,7 +267,8 @@ def stage_curve(cfg: dict, deck: Path, out: Path) -> dict:
     strain_max = float(mech["strain"])
     recs = []
     for r in rows:
-        if r.get("converged", "True") not in ("True", "1", "1.0", "true"):
+        conv = str(r.get("converged", "1")).strip().lower()
+        if conv in ("false", "0", "nan") or (conv.replace(".", "", 1).replace("e+00", "").isdigit() and float(conv) == 0.0):
             continue
         lam = float(r["load_factor"])
         rec = {"step": int(float(r["step"])), "load_factor": lam,
