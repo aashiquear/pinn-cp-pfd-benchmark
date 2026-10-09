@@ -16,52 +16,41 @@ project.
 
 | Path | Contents |
 |---|---|
-| `bib/references.bib` | The single central bibliography, 184 entries, keys `author-year-significantword` |
-| `bib/citation_keys.md` | Key → full citation → prose form, grouped by topic; verification flags |
-| `data/extracted/` | `benchmark_dataset.csv` (314 provenance-tagged rows), `gap_register.csv` (C.1–C.16) |
-| `data/digitized/` | Per-figure extracted data, one CSV per panel |
-| `data/reference/` | Reference simulation and experimental data |
-| `decks/al2219/`, `decks/ni/` | Study input decks |
-| `meshes/` | Generated meshes and generation scripts |
-| `env/` | `pinnacle_syntax_dump.json` — the 249-component registry snapshot audited |
-| `docs/` | Reports, listed below |
-| `results/`, `figures/`, `runs/` | Outputs |
-| `scripts/` | Harnesses and analysis code |
+| `bib/references.bib` | The single central bibliography, keys `author-year-significantword` |
+| `data/extracted/` | `benchmark_dataset.csv` (provenance-tagged rows), `gap_register.csv` (C.1–C.16) |
+| `data/digitized/` | Per-figure extracted data |
+| `data/reference/` | `moose_cpfe_plain_plate_stress_strain.csv`, the MOOSE test deck's curve |
+| `moose/` | The MOOSE reference decks (CP-only plate, coupled CP-PFD test); their Exodus outputs stay on disk, ignored by git |
+| `decks/graingrowth/` | Phase-field grain-growth decks: scheme verification set and the 32-grain pilots |
+| `decks/polycrystal_plate/` | The CP plate template and the pipeline decks that drive `scripts/polycrystal_plate.py` |
+| `scripts/` | `polycrystal_plate.py` (label → orient → deck → curve), `grain_morphology.py`, plotting, `tools/exodus_summary.py`, the material-point and backend-envelope harnesses |
+| `meshes/plate/poly_d3_n32.npz` | The 32 Voronoi seeds of the pilot |
+| `results/`, `figures/` | Outputs of the current pipeline only (field files are not committed) |
+| `env/` | `pinnacle_syntax_dump.json` — the registry snapshot audited |
+| `archive/` | The first campaign (Sept 2026): its scripts, decks, results, figures and two reports; see `archive/README.md` |
 
 ## Reports
 
 | Document | Contents |
 |---|---|
-| `docs/PROJECT_GUIDELINES.md` | Project-wide rules; includes the project-description block |
-| `docs/00_capability_audit.md` | Solver routes available; gap register G1–G11 |
-| `docs/01_bundled_deck_assessment.md` | Why the bundled Rezwan decks are a demonstration, not a reproduction |
-| `docs/02_backend_envelope.md` | Measured backend/device policy (research question R2) |
-| `docs/reconciliation.md` | Independent extraction vs the companion data sheet, discrepancy by discrepancy |
-| `docs/digitization_uncertainty.md` | Per-figure digitization method, calibration, and error |
+| `docs/PROJECT_GUIDELINES.md` | Project-wide rules |
+| `docs/00_capability_audit.md` | Solver routes available; gap register G1–G27 |
+| `docs/02_backend_envelope.md` | Measured backend/device policy |
+| `docs/03_material_point_verification.md` | Constitutive law verified at one quadrature point; gap C.15 |
+| `docs/05_orientation_notation.md` | Miller-direction and Euler conventions |
+| `docs/06_polycrystal_plate_results.md` | Phase-field grain growth verified; the 30-grain plate and its first CPFE run |
+| `docs/workflow_polycrystal_plate.md` | How the plate pipeline works and why each setting |
+| `docs/reproduce_polycrystal_plate.md` | Exact commands and environment on the ROCm host |
+| `docs/reconciliation.md`, `docs/digitization_uncertainty.md` | Source extraction and its error |
 
-## Status
+## Status (2026-10-09)
 
-**Phase 0 complete.** Sources extracted and reconciled, bibliography built,
-framework audited, backend policy measured.
+The phase-field grain-growth route works under the fully implicit scheme, a
+30-grain pseudo-3D plate exists, and a full crystal-plasticity run on it
+completes from a PINNACLE deck plus two CSV companions. The reference CP set
+overshoots the experiment by about 2x, so the next stage is calibration on
+the x-loaded 100 x 50 x 1 um plate with 30 grains, the paper as ground truth.
 
-Carried limits, to be restated wherever they affect a result:
-
-- **46 of 93** Al2219 orientations are recoverable, and only as loading-axis
-  directions (two of three rotational degrees of freedom). Every IPF-based
-  comparison reports `n = 46` and declares the third-angle convention it fixed.
-- Simulated failure **stress** per Ni specimen is not recovered; failure
-  **strain** is.
-- Six blocking framework gaps (G1–G6) and G11 must close before a faithful
-  reproduction is possible. G1 (no plastic-work term in the fracture driving
-  force) and G2 (Taylor prefactor α₀ absent) would otherwise produce wrong
-  answers silently rather than errors.
-- Gap **C.15** — whether the Taylor term uses the per-system self density
-  (τ_c(0) = 43.72 MPa) or the latent-hardened sum over 12 systems
-  (176.60 MPa, a factor √(1+11q) = 4.05) — must be settled against the digitized
-  calibration curve before any calibration run. PINNACLE implements the latent
-  sum; the paper's own reported value corresponds to the self term.
-- Gap **C.16** — the reported Gc differs between the two materials by a factor
-  of 5,495 (22.75 J/m² for Al2219 against 1.25 × 10⁵ J/m² for Ni). The Al2219
-  value is far below the range expected for a metal, so it is treated as an
-  effective regularized value pending sensitivity analysis, not as a
-  transferable material property.
+Carried limits from Phase 0 (unchanged): 46 of 93 Al2219 orientations
+recoverable, loading-axis only; Ni failure stress not recovered; gaps C.15
+(Taylor-term density convention) and C.16 (Gc transferability) open.

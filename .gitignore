@@ -1,9 +1,32 @@
-runs/
+# Scratch and build
 __pycache__/
 *.pyc
 .venv/
-meshes/*.e
+scratch/
+runs/
 out/
-pinnacle_complete.tar.gz
-results/smoke/
-runs/deckcheck/
+.jf/
+
+# Large or binary simulation artifacts never enter git. Shipped outputs are a
+# later decision; until then every field file, mesh binary, checkpoint and
+# archive bundle stays local.
+*.e
+*.exo
+*.g
+*.vtk
+*.vtu
+*.vtp
+*.pvd
+*.pkl
+*.pt
+*.h5
+*.hdf5
+*.tar.gz
+*.zip
+*.npy
+# Field snapshots and solver dumps inside results
+results/**/solver/fields*
+results/**/fields/
+results/**/final_field.npz
+# The reference MOOSE outputs stay on disk beside their decks, not in git
+moose/*_out.e

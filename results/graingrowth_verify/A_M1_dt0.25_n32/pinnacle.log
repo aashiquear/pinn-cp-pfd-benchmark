@@ -1,0 +1,9 @@
+2026-10-09 12:31:22 INFO    pinnacle: Logging to results/graingrowth_verify/A_M1_dt0.25_n32/pinnacle.log (level=info, console=False)
+2026-10-09 12:31:22 INFO    pinnacle.cli.main: Starting run from deck 'decks/graingrowth/verify/A_M1_dt0.25_n32.i'
+2026-10-09 12:31:22 INFO    pinnacle.runner.builder: Built backend 'numpy' on device 'cpu' with precision 'float64' (composed path)
+2026-10-09 12:34:59 INFO    pinnacle.system.problem: Postprocessor 'gb_area' -> 399.0773261093426
+2026-10-09 12:34:59 INFO    pinnacle.runner.runner: Wrote CSV output to results/graingrowth_verify/A_M1_dt0.25_n32/stress_strain.csv
+2026-10-09 12:34:59 INFO    pinnacle.runner.runner: Wrote postprocessor CSV to results/graingrowth_verify/A_M1_dt0.25_n32/postprocessors.csv
+2026-10-09 12:34:59 INFO    pinnacle.runner.runner: Wrote per-step solver history to results/graingrowth_verify/A_M1_dt0.25_n32/solver_history.csv
+2026-10-09 12:34:59 INFO    pinnacle.runner.runner: Wrote summary to results/graingrowth_verify/A_M1_dt0.25_n32/summary.json
+2026-10-09 12:34:59 INFO    pinnacle.cli.main: Run complete; outputs in results/graingrowth_verify/A_M1_dt0.25_n32

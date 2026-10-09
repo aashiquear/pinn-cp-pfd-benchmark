@@ -1,0 +1,4 @@
+CP sub-step budget exhausted at step 9/9 — cutting back dt from 1.889e+01 to 9.444e+00 s (cutback #1)
+CP sub-step budget exhausted at step 9/9 — cutting back dt from 9.444e+00 to 4.722e+00 s (cutback #2)
+CP sub-step budget exhausted at step 9/9 — cutting back dt from 4.722e+00 to 2.361e+00 s (cutback #3)
+CP sub-step budget exhausted at step 9/9 — cutting back dt from 2.361e+00 to 1.181e+00 s (cutback #4)

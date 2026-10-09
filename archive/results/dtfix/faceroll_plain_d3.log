@@ -1,0 +1,8 @@
+{
+ "tag": "faceroll_plain_d3",
+ "n_elements": 1152,
+ "mech_substeps": 9,
+ "n_steps": 25,
+ "vtk_files": 25,
+ "wall_seconds": 2160.0634628029075
+}

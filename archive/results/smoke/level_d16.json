@@ -1,0 +1,50 @@
+{
+ "density": 16,
+ "n_elements": 5176,
+ "first_layer_um": 0.3796542065342976,
+ "points_across_l0": 2.6339758200721026,
+ "under_resolved_at_l0": true,
+ "n_nodes": 6096,
+ "n_dofs": 18288,
+ "load_steps": 1,
+ "max_alternations": 1,
+ "wall_seconds": 188.57163000106812,
+ "history": [
+  {
+   "step": 0,
+   "step_factor": 1.0,
+   "iterations": 1,
+   "damage_increment": 1.0,
+   "converged": false
+  }
+ ],
+ "all_steps_converged": false,
+ "global": {
+  "max_displacement_um": 6.0,
+  "mean_stress": -2.9621962778559157,
+  "max_stress": 2074.7789761019817
+ },
+ "local": {
+  "peak_damage": 1.0,
+  "mean_damage": 0.7269589106473431,
+  "damaged_node_fraction_gt_0p65": 0.7477034120734908,
+  "damage_max_location_um": [
+   3.125,
+   3.125,
+   3.125
+  ],
+  "damage_max_radius_um": 37.888611415569194,
+  "damage_max_distance_from_void_surface_um": 32.888611415569194,
+  "half_peak_band_width_um": 32.888611415569194,
+  "half_peak_band_width_over_l0": 32.888611415569194
+ },
+ "provenance": {
+  "pinnacle_rev": "7156159",
+  "study_rev": "edb677e",
+  "deck": "al2219_iso_001_d16_run.i",
+  "mesh": "meshes/al2219/void_r5_L50_d16.e",
+  "python": "3.11.15",
+  "precision": "float64",
+  "backend": "numpy"
+ }
+}

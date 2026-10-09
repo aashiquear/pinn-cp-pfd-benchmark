@@ -1,0 +1,8 @@
+{
+ "tag": "dtfix_plain_d1",
+ "n_elements": 128,
+ "mech_substeps": 9,
+ "n_steps": 25,
+ "vtk_files": 25,
+ "wall_seconds": 199.91809110203758
+}

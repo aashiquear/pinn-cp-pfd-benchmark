@@ -1,0 +1,42 @@
+{
+ "clamped_plain_d1": {
+  "reached_strain": 0.17,
+  "peak_stress_MPa": 767.9945045962921,
+  "n_valid_steps": 25
+ },
+ "clamped_plain_d3": {
+  "reached_strain": 0.14279999999999998,
+  "peak_stress_MPa": 684.8222201513651,
+  "n_valid_steps": 21
+ },
+ "clamped_hole_d1": {
+  "reached_strain": 0.14960000000000004,
+  "peak_stress_MPa": 826.5234659088467,
+  "n_valid_steps": 22
+ },
+ "clamped_hole_d3": {
+  "reached_strain": 0.05661944444444442,
+  "peak_stress_MPa": 734.0870966252886,
+  "n_valid_steps": 1
+ },
+ "minimal_plain_d1": {
+  "reached_strain": 0.17,
+  "peak_stress_MPa": 677.0193628985634,
+  "n_valid_steps": 25
+ },
+ "minimal_plain_d3": {
+  "reached_strain": 0.14279999999999998,
+  "peak_stress_MPa": 978.9867043621603,
+  "n_valid_steps": 21
+ },
+ "minimal_hole_d1": {
+  "reached_strain": 0.17,
+  "peak_stress_MPa": 677.2860012598435,
+  "n_valid_steps": 25
+ },
+ "minimal_hole_d3": {
+  "reached_strain": 0.06948749999999998,
+  "peak_stress_MPa": 952.0092598846784,
+  "n_valid_steps": 1
+ }
+}

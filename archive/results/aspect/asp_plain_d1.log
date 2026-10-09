@@ -1,0 +1,8 @@
+{
+ "tag": "asp_plain_d1",
+ "n_elements": 128,
+ "mech_substeps": 9,
+ "n_steps": 25,
+ "vtk_files": 25,
+ "wall_seconds": 874.2696597000177
+}

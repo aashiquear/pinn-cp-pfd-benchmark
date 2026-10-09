@@ -1,0 +1,10 @@
+{
+ "note": "clamped-end sigma_zz boundary layer, plain d=1, step 12 of 25",
+ "mean_abs_szz_over_max_sxx": {
+  "end_band_0_12.5um": 0.2230744469678896,
+  "quarter_span_25_37.5um": 0.022272154477004334,
+  "hole_band_45_55um": 0.007640700967974296
+ },
+ "max_abs_szz_over_max_sxx": 0.4581125010708041,
+ "reading": "Saint-Venant boundary layer at the grips, symmetric, decays ~25x from end to mid-span"
+}

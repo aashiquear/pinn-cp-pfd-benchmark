@@ -1,0 +1,15 @@
+{
+ "deck_set": {
+  "k1": 0.3432,
+  "y_c_um": 0.00268,
+  "k2_um": 0.00536,
+  "rho_star_um^-2": 4099.82178658944
+ },
+ "earlier_fit": {
+  "k1": 0.081145,
+  "y_c_um": 0.00205812,
+  "k2_um": 0.00411624,
+  "rho_star_um^-2": 388.617319500157
+ },
+ "note": "rho* = (k1/k2)^2, the density at which the KM bracket vanishes"
+}

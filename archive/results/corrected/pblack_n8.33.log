@@ -1,0 +1,8 @@
+{
+ "tag": "pblack_n8.33",
+ "n_elements": 1152,
+ "mech_substeps": 25,
+ "n_steps": 40,
+ "vtk_files": 40,
+ "wall_seconds": 6350.440296059009
+}

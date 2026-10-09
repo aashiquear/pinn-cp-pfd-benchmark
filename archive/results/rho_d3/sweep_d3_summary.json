@@ -1,0 +1,102 @@
+[
+ {
+  "rho0": 0.25,
+  "tau_c0_total": 6.218108266660926,
+  "geometry": "plain",
+  "cutbacks": null,
+  "reached_strain": 0.14947407383388941,
+  "peak_stress_MPa": 453.90552277131445,
+  "stress_at_reached_MPa": 423.17376661451794,
+  "experiment_at_same_strain_MPa": 587.5380502897447
+ },
+ {
+  "rho0": 0.25,
+  "tau_c0_total": 6.218108266660926,
+  "geometry": "hole",
+  "cutbacks": null,
+  "reached_strain": 0.1088,
+  "peak_stress_MPa": 405.26405596877197,
+  "stress_at_reached_MPa": 405.26405596877197,
+  "experiment_at_same_strain_MPa": 550.7826110571293
+ },
+ {
+  "rho0": 1,
+  "tau_c0_total": 12.171316533321853,
+  "geometry": "plain",
+  "cutbacks": null,
+  "reached_strain": 0.14279999999999998,
+  "peak_stress_MPa": 456.0108430102766,
+  "stress_at_reached_MPa": 456.0108430102766,
+  "experiment_at_same_strain_MPa": 582.6228671084757
+ },
+ {
+  "rho0": 1,
+  "tau_c0_total": 12.171316533321853,
+  "geometry": "hole",
+  "cutbacks": null,
+  "reached_strain": 0.14279999999999995,
+  "peak_stress_MPa": 973.3901522084024,
+  "stress_at_reached_MPa": 644.715451999806,
+  "experiment_at_same_strain_MPa": 582.6228671084757
+ },
+ {
+  "rho0": 10,
+  "tau_c0_total": 37.91629501598314,
+  "geometry": "plain",
+  "cutbacks": null,
+  "reached_strain": 0.14279999999999998,
+  "peak_stress_MPa": 470.9902724041083,
+  "stress_at_reached_MPa": 470.9902724041083,
+  "experiment_at_same_strain_MPa": 582.6228671084757
+ },
+ {
+  "rho0": 10,
+  "tau_c0_total": 37.91629501598314,
+  "geometry": "hole",
+  "cutbacks": null,
+  "reached_strain": 0.10199999999999998,
+  "peak_stress_MPa": 411.86142926938254,
+  "stress_at_reached_MPa": 411.86142926938254,
+  "experiment_at_same_strain_MPa": 542.301459002915
+ },
+ {
+  "rho0": 25,
+  "tau_c0_total": 59.79698266660927,
+  "geometry": "plain",
+  "cutbacks": null,
+  "reached_strain": 0.1496,
+  "peak_stress_MPa": 813.0252517028516,
+  "stress_at_reached_MPa": 813.0252517028516,
+  "experiment_at_same_strain_MPa": 587.6307897752754
+ },
+ {
+  "rho0": 25,
+  "tau_c0_total": 59.79698266660927,
+  "geometry": "hole",
+  "cutbacks": null,
+  "reached_strain": 0.09519999999999998,
+  "peak_stress_MPa": 419.7271519498121,
+  "stress_at_reached_MPa": 419.7271519498121,
+  "experiment_at_same_strain_MPa": 533.8203069487007
+ },
+ {
+  "rho0": 100,
+  "tau_c0_total": 119.32906533321854,
+  "geometry": "plain",
+  "cutbacks": null,
+  "reached_strain": 0.136,
+  "peak_stress_MPa": 555.389121971458,
+  "stress_at_reached_MPa": 555.389121971458,
+  "experiment_at_same_strain_MPa": 577.6149444416762
+ },
+ {
+  "rho0": 100,
+  "tau_c0_total": 119.32906533321854,
+  "geometry": "hole",
+  "cutbacks": null,
+  "reached_strain": 0.07978194444444445,
+  "peak_stress_MPa": 874.7961979357017,
+  "stress_at_reached_MPa": 874.7961979357017,
+  "experiment_at_same_strain_MPa": 514.590472603555
+ }
+]
