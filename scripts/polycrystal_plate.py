@@ -271,8 +271,15 @@ def stage_curve(cfg: dict, deck: Path, out: Path) -> dict:
     recs = []
     for r in rows:
         conv = str(r.get("converged", "1")).strip().lower()
-        if conv in ("false", "0", "nan") or (conv.replace(".", "", 1).replace("e+00", "").isdigit() and float(conv) == 0.0):
-            continue
+        try:
+            ok = float(conv) == 1.0
+        except ValueError:
+            ok = conv == "true"
+        if not ok:
+            # A failed step advances the load without the state; every later
+            # row is an elastic artifact. Stop at the first failure.
+            print(f"stopping at the first failed step {r['step']} (load factor {r['load_factor']})")
+            break
         lam = float(r["load_factor"])
         rec = {"step": int(float(r["step"])), "load_factor": lam,
                "nominal_strain": lam * strain_max, "load_axis": axis,

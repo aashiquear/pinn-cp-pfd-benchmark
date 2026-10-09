@@ -19,5 +19,6 @@ and what it returned in one line.
 | backend-4step | 2026-10-09 | scratch copies of `results/cp_study/h40_base/cpfe.i`, 4 steps | `pinnacle run` | 141ebd8 | rocm / 1 (CPU), GPU | 32 / 145 / 549 s | numpy / torch-CPU / torch-GPU, identical stresses | 06 §6 |
 | backend-scaling | 2026-10-09 | same 4-step numpy deck at OMP 1/4/16 | `pinnacle run` | 141ebd8 | rocm | 32.2 / 32.5 / 32.4 s | no thread scaling; ~100% of one core each | 06 §6 |
 | gpu-profile | 2026-10-09 | same deck, 1 step, torch-GPU | `python -m cProfile -m pinnacle run` | 141ebd8 | rocm / GPU | 130 s | 108 s in the per-point tangent (224k evaluations) | 06 §6 |
-| cp-h40-base | 2026-10-09 | `decks/cp_study/h40_base.i` -> `results/cp_study/h40_base/cpfe.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | (running) | x-loaded, 256 steps to 20% at 1e-3/s | 07 (pending) |
+| cp-h40-base | 2026-10-09 | `decks/cp_study/h40_base.i` -> `results/cp_study/h40_base/cpfe.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | 38 min | x-loaded; sub-step budget exhausted at step 100 (7.77%); 125/258 rows converged; curve valid to 7.8% | 07 §1 |
+| cp-h20-base | 2026-10-09 | `decks/cp_study/h20_base.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | (running) | h20 twin of the base case, to locate the wall on a coarser mesh | 07 §2 |
 | cp-oat-h40 | prepared, not launched | `decks/cp_study/oat_h40.i` | `cp_parameter_study.py prepare` | 141ebd8 | -- | -- | 9 cases + base written under `results/cp_study/` | -- |
