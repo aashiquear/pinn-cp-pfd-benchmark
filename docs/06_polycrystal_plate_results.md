@@ -219,3 +219,10 @@ Scoped fix for the GPU track: route `tangent` and `stress` through the
 batched constitutive path on every backend, with the point state held as
 stacked device tensors rather than a list of per-point dicts; expected to
 remove the per-point launch cost, which is the whole 17x. Not started.
+
+Thread scaling (same 4-step numpy deck, `OMP_NUM_THREADS` = 1 / 4 / 16):
+32.2 / 32.5 / 32.4 s at 99-108% CPU. A run uses one physical core whatever
+the thread count, because the per-point constitutive loop is Python-bound
+and the sparse CG solve is a small fraction. The host has 16 physical cores
+(32 threads), so the practical policy is one core per run and up to ~14
+runs concurrently; more cores per run buy nothing.

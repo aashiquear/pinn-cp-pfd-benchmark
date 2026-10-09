@@ -1,0 +1,62 @@
+# Findings and working rules for agents on this study (as of 2026-10-09)
+
+Read `README.md` and `PROJECT_GUIDELINES.md` first. This file holds what is
+NOT derivable from the code: measured facts, decisions, and traps.
+
+## Decisions by the author (Rezwan)
+- Study plate: 100 x 50 x 1 um, ONE element through thickness, loaded along
+  **x** (the 100 um length). Mesh level hN = N elements along x, N/2 along y.
+- 30 grains for every mesh, from phase-field grain growth of a Voronoi seeding.
+- Ground truth is the paper (Rezwan 2025 intragranular) and its digitized
+  experiment markers; the MOOSE decks in `moose/` are initial tests only.
+- Runs must reach >= 20% strain.
+- Fixed CP parameters: C11, C12, C44, b, mu, q, alpha0, eta, c_thr. gamma0 and
+  m (= 1/n) change only for a convergence reason and only with the author.
+  Free, fit in this order: rho0, k_m (k1), y_c, tau_c0. Report what each does
+  to the curve, then fit the experimental shape, then error analysis.
+- Taylor term uses the LATENT-HARDENED SUM (PINNACLE's convention), to be
+  discussed as a model limitation later.
+- Phase-field (damage) parameters are revisited after CPFE is settled.
+- Compute: CPU for now. The author wants GPU eventually; see below.
+- Never launch a multi-run campaign without (1) one checked single case and
+  (2) the author's agreement on the design.
+- Every run is reproducible from a PINNACLE `.i` deck; pipeline scripts read a
+  deck. Workflow, reproduction steps and results are separate documents.
+  Each run is logged in `docs/run_ledger.md`.
+
+## Measured facts
+- Phase-field grain growth: use `scheme = bdf1`. `convex_splitting` is
+  lag-dominated for multi-order-parameter energies (stabiliser 147.5 mu for
+  8 components) and makes mobility look inert. dt = 0.5/(L mu) is converged
+  to 0.2%. Junctions equilibrate by 2.5 interface times; longer only rounds
+  grains and consumes small ones. Details: `docs/06_polycrystal_plate_results.md` §1-2.
+- CP plate run cost (numpy): ~8 s per load step on 800 elements; one core per
+  run regardless of OMP threads (Python-bound). Host has 16 physical cores:
+  run cases concurrently, ~14 at a time.
+- torch backend on the same deck: CPU 4.5x slower, GPU (Radeon 8060S) 17x
+  slower than numpy. Cause: per-point single evaluations in the tangent
+  (224k calls per step). The APU's fp64 GPU throughput equals its CPU's.
+  Working wheel: `torch==2.13.0+rocm7.2` (the rocm7.1 wheel segfaults).
+- With the reference parameter set, PINNACLE's 30-grain plate (y-loaded,
+  3%) gives 961 MPa at 3% and MOOSE's single crystal 809; the experiment is
+  ~412 MPa at 2%. Calibration is required; parameters are framework-sensitive.
+
+## Traps found
+- `[OrientationField]` in a deck was silently dropped by the translator until
+  PINNACLE 141ebd8 (fixed). Always check `pinnacle.log` for the line
+  "[OrientationField] ... resolved on N elements".
+- A FLAT `config["material"]` dict in CrystalPlasticity takes SI defaults in a
+  um/MPa deck and produces stresses ~1e10 MPa silently (earlier campaign).
+- Mid-run counters (cutbacks, steps) are not results; only a written
+  `solver_history.csv` is.
+- MOOSE deck `moose/CPFE.i` has y_c = 0.00286; the paper table says 0.00268.
+
+## Where things are
+- Host: `ssh rocm-server`, study mirror `~/projects/pinn-cp-pfd-benchmark`
+  (rsync, not git), PINNACLE `~/projects/pinnacle` on `feat/pinn_benchmark`,
+  venv `~/venvs/pinnacle`. Use `OMP_NUM_THREADS=1` per run.
+- Pipeline: `scripts/polycrystal_plate.py <pipeline deck> label orient deck | curve`;
+  study driver `scripts/cp_parameter_study.py <study deck> prepare|run|collect`.
+- Earlier campaign (Sept 2026) is in `archive/`; its reports still hold
+  valid findings (G20 strain-increment limit 8e-4 per step, G25 cutback
+  behaviour, the stress-concentrator sub-step wall).
