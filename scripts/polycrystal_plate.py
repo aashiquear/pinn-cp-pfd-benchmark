@@ -30,7 +30,7 @@ Pipeline deck blocks (see decks/polycrystal_plate/*.i for a filled example):
   [Mechanics]     out_dir, strain, t_end, n_steps, nx, ny, thickness,
                   newton_tol, max_cutbacks, and the CP material values
                   (C11 C12 C44 mu gamma0 nexp tau_c0 q_lat alpha0 burgers
-                  rho0 k1 y_c)
+                  rho0 k1 y_c); load_axis = x | y picks the template
 
 Usage: polycrystal_plate.py DECK.i STAGE [STAGE ...]   (STAGE in label orient deck curve all)
 """
@@ -49,7 +49,8 @@ from scipy import ndimage
 STUDY = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(STUDY / "scripts"))
 
-TEMPLATE = STUDY / "decks/polycrystal_plate/cpfe_plate_template.i"
+TEMPLATES = {"y": STUDY / "decks/polycrystal_plate/cpfe_plate_template.i",
+             "x": STUDY / "decks/polycrystal_plate/cpfe_plate_x_template.i"}
 MECH_KEYS = {
     # pipeline key -> template placeholder
     "C11": "C11", "C12": "C12", "C44": "C44", "mu": "MU", "gamma0": "GAMMA0",
@@ -236,7 +237,7 @@ def stage_orient(cfg: dict, deck: Path, out: Path) -> dict:
 # --------------------------------------------------------------------------- deck
 def stage_deck(cfg: dict, deck: Path, out: Path) -> Path:
     mech = dict(cfg["mechanics"])
-    src = TEMPLATE.read_text()
+    src = TEMPLATES[str(mech.get("load_axis", "y")).lower()].read_text()
     sub = {"OUTDIR": str(out / "solver"), "POINTFILE": "orientations_points.csv"}
     for key, ph in MECH_KEYS.items():
         if key not in mech:
@@ -265,6 +266,8 @@ def stage_curve(cfg: dict, deck: Path, out: Path) -> dict:
     rows = list(csv.DictReader(hist.open()))
     mech = cfg["mechanics"]
     strain_max = float(mech["strain"])
+    axis = str(mech.get("load_axis", "y")).lower()
+    comp = {"x": "00", "y": "11"}[axis]
     recs = []
     for r in rows:
         conv = str(r.get("converged", "1")).strip().lower()
@@ -272,7 +275,8 @@ def stage_curve(cfg: dict, deck: Path, out: Path) -> dict:
             continue
         lam = float(r["load_factor"])
         rec = {"step": int(float(r["step"])), "load_factor": lam,
-               "nominal_strain_yy": lam * strain_max,
+               "nominal_strain": lam * strain_max, "load_axis": axis,
+               "axial_stress": float(r[f"mean_stress_{comp}"]),
                "cutbacks": int(float(r.get("cutbacks", 0) or 0))}
         for k, v in r.items():
             if k.startswith("mean_stress") or k.startswith("mean_strain") or k == "time":
