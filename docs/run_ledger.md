@@ -20,5 +20,6 @@ and what it returned in one line.
 | backend-scaling | 2026-10-09 | same 4-step numpy deck at OMP 1/4/16 | `pinnacle run` | 141ebd8 | rocm | 32.2 / 32.5 / 32.4 s | no thread scaling; ~100% of one core each | 06 §6 |
 | gpu-profile | 2026-10-09 | same deck, 1 step, torch-GPU | `python -m cProfile -m pinnacle run` | 141ebd8 | rocm / GPU | 130 s | 108 s in the per-point tangent (224k evaluations) | 06 §6 |
 | cp-h40-base | 2026-10-09 | `decks/cp_study/h40_base.i` -> `results/cp_study/h40_base/cpfe.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | 38 min | x-loaded; sub-step budget exhausted at step 100 (7.77%); 125/258 rows converged; curve valid to 7.8% | 07 §1 |
-| cp-h20-base | 2026-10-09 | `decks/cp_study/h20_base.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | (running) | h20 twin of the base case, to locate the wall on a coarser mesh | 07 §2 |
+| cp-h20-base | 2026-10-09 | `decks/cp_study/h20_base.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | 9 min | h20 twin: walls at step 126 (9.83%), 1,227 MPa; agrees with h40 to 3% at 5% strain | 07 §2 |
+| cp-h20-diag | 2026-10-09 | copy of `results/cp_study/h20_base/cpfe.i` | `pinnacle run` | 6271f71 | rocm / 1 | (running) | instrumented rerun to capture the stiff point at the wall | 07 §2 |
 | cp-oat-h40 | prepared, not launched | `decks/cp_study/oat_h40.i` | `cp_parameter_study.py prepare` | 141ebd8 | -- | -- | 9 cases + base written under `results/cp_study/` | -- |

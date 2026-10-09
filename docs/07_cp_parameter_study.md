@@ -48,4 +48,15 @@ fix before any 20% run, independent of parameters; see §2.
 
 ## 2. Diagnosis of the sub-step wall
 
-(in progress: h20 twin running; instrumentation of the failing point)
+**h20 twin** (`decks/cp_study/h20_base.i`, 20 x 10 x 1, run `cp-h20-base`,
+9 min): walls at step 126, 9.83% strain, 1,227 MPa. Up to the wall the two
+meshes agree closely (998.6 vs 1,032.0 MPa at 5%, 3.3%), so the pre-wall
+curve is close to mesh-converged and the wall moves EARLIER with refinement
+(7.8% at h40 against 9.8% at h20) -- the signature of a local stress
+concentration the finer mesh resolves better, at a grain-boundary junction
+or the loaded edge, not of a global instability. Figure
+`figures/cp_study_base_h20_h40.png`.
+
+PINNACLE `6271f71` now reports the stiff point (index, overstress ratio,
+slip resistance, elastic strain, det F_e, density) when the budget fails;
+an instrumented h20 run (`results/cp_study/h20_diag`) captures it.
