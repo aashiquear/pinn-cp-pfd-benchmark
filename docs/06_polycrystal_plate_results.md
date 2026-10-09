@@ -207,3 +207,15 @@ project with this deck as its benchmark; on this APU the ceiling for float64
 is parity with the CPU, so the gain would be in batching, not in the device.
 Until that lands, the parameter study runs on numpy, per the measured-policy
 rule of the guidelines.
+
+Profile of one load step on torch-GPU (`cProfile`, 130 s total): 108 s in
+`CPFieldCallback.tangent`, which called `CrystalPlasticity._evaluate`
+224,000 times -- 35 single-point evaluations per quadrature point (6,400
+points) through `_stress_numpy`, each a handful of 3x3 `einsum` / `inv` /
+`det` launches (1.1 million `einsum` calls, 20 s of launch time alone;
+`torch.as_tensor` host crossings 11 s). The batched finite-difference
+tangent that commit 7156159 added is not the path a torch backend takes.
+Scoped fix for the GPU track: route `tangent` and `stress` through the
+batched constitutive path on every backend, with the point state held as
+stacked device tensors rather than a list of per-point dicts; expected to
+remove the per-point launch cost, which is the whole 17x. Not started.
