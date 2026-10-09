@@ -1,0 +1,193 @@
+{
+  "config": {
+    "global": {
+      "backend": "numpy",
+      "use_gpu": false,
+      "precision": "float64",
+      "seed": 0,
+      "output_dir": "results/graingrowth_pilot/n32_bdf1_h160"
+    },
+    "mesh": {
+      "type": "box_mesh",
+      "dim": 2,
+      "domain": [
+        0,
+        0,
+        100,
+        50
+      ],
+      "divisions": [
+        203,
+        102
+      ]
+    },
+    "variables": {
+      "eta": {
+        "family": "fem",
+        "components": 8,
+        "order": 2
+      }
+    },
+    "materials": {
+      "gb": {
+        "kind": "gb_evolution",
+        "M_GB": 1.0,
+        "w_GB": 1.48456,
+        "sigma": 1.0,
+        "gamma": 1.5
+      }
+    },
+    "kernels": {
+      "deta_dt": {
+        "type": "time_derivative",
+        "variable": "eta",
+        "coefficient": 1.0
+      },
+      "bulk": {
+        "type": "ac_bulk",
+        "variable": "eta",
+        "material": "gb",
+        "spatial_dim": 2
+      },
+      "interface": {
+        "type": "ac_interface",
+        "variable": "eta",
+        "material": "gb",
+        "spatial_dim": 2
+      }
+    },
+    "ics": {
+      "grains": {
+        "variable": "eta",
+        "kind": "polycrystal_coloring",
+        "n_grains": 32,
+        "n_order_params": 8,
+        "seeds": [
+          21.375858,
+          23.045362,
+          75.718029,
+          45.159014,
+          63.156194,
+          29.624736,
+          66.365345,
+          17.009656,
+          24.174361,
+          15.065615,
+          73.147485,
+          23.932946,
+          97.353649,
+          34.135987,
+          64.704549,
+          28.935469,
+          51.892754,
+          37.376832,
+          61.399728,
+          26.761573,
+          64.888254,
+          37.133289,
+          97.137358,
+          40.047967,
+          90.186312,
+          29.428829,
+          18.431662,
+          26.014469,
+          35.953548,
+          35.925936,
+          80.988959,
+          14.328497,
+          31.125088,
+          23.619702,
+          28.641826,
+          25.062145,
+          44.007717,
+          22.199897,
+          98.014032,
+          2.291408,
+          33.174592,
+          3.58713,
+          6.374748,
+          32.996269,
+          85.5581,
+          44.833441,
+          14.472919,
+          21.309166,
+          47.722829,
+          22.734432,
+          97.714474,
+          35.063633,
+          79.690805,
+          22.250247,
+          34.506507,
+          47.157881,
+          48.955963,
+          23.341934,
+          49.203973,
+          24.121772,
+          51.921684,
+          1.72378,
+          95.044895,
+          24.627059
+        ],
+        "periodic": false,
+        "int_width": 1.48456,
+        "inside": 1.0,
+        "outside": 0.0
+      }
+    },
+    "utilities": {
+      "count": {
+        "kind": "feature_flood_count",
+        "threshold": 0.5
+      }
+    },
+    "executioner": {
+      "type": "pf_fem_transient",
+      "scheme": "bdf1",
+      "max_newton_iter": 20,
+      "newton_tol": 1e-08,
+      "max_cutbacks": 6,
+      "n_steps": 160,
+      "dt": 0.137745,
+      "linear_solver": "direct"
+    },
+    "postprocessors": {
+      "gb_area": {
+        "type": "grain_boundary_area",
+        "fields": [
+          "eta"
+        ],
+        "grains_per_side": 2,
+        "delta_eta": 1.0
+      }
+    },
+    "output": {
+      "formats": [
+        "vtk",
+        "csv",
+        "json"
+      ],
+      "fields": [
+        "eta"
+      ]
+    },
+    "problem": {
+      "type": "composed",
+      "dimension": 2,
+      "finite_strain": false
+    }
+  },
+  "residuals": {},
+  "postprocessors": {
+    "gb_area": 527.5884855167376
+  },
+  "phase_field": {
+    "invariants": {
+      "primary": "eta",
+      "conserved": [],
+      "mass_drift": -0.03183556617039779,
+      "max_energy_increase": 0.0,
+      "energy_final": 35893.54091920419,
+      "max_newton_iters": 5
+    }
+  }
+}

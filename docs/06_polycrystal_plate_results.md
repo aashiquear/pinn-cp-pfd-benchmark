@@ -67,7 +67,7 @@ Seeds of `meshes/plate/poly_d3_n32.npz` on the 100 x 50 um plate; grid
 |---|---|---|---|---|---|
 | h40 | 40 | 2.5 | 28 min | 36070.8 -> 35958.2 | 592.4 |
 | h80 | 80 | 5 | 56 min | 36070.8 -> 35936.1 | 570.2 |
-| h160 | 160 | 10 | (pending) | | |
+| h160 | 160 | 10 | 1 h 52 min | 36070.8 -> 35893.5 | 527.6 |
 
 Morphology of the labelled structure (`scripts/grain_morphology.py`,
 interior grains only for shape metrics; junction statistics over all
@@ -79,15 +79,23 @@ junctions), against the Voronoi seeding sampled on the same grid
 | Voronoi seeding | 32 | 45 | 30.3 | 35% | 0.715 | 648.6 |
 | h40 (2.5 t_int) | 30 | 42 | 14.3 | 69% | 0.835 | 600.7 |
 | h80 (5 t_int) | 30 | 42 | 14.1 | 71% | 0.862 | 579.8 |
+| h160 (10 t_int) | 27 | 36 | 15.3 | 61% | 0.879 | 536.7 |
 
-Figures `figures/polycrystal_plate_grains_h40.png` and
-`figures/polycrystal_plate_grains_h40_h80.png` (colours are per panel, not
+Figures `figures/polycrystal_plate_grains_h40.png`,
+`figures/polycrystal_plate_grains_h40_h80.png` and
+`figures/polycrystal_plate_grains_horizons.png` (colours are per panel, not
 matched by identity). Doubling the horizon to 5 t_int keeps 30 grains,
 shortens the boundary network a further 3.5% and rounds the grains
 (circularity 0.835 -> 0.862) while the junction spread is unchanged at 14
 degrees: by 2.5 t_int the junctions have equilibrated and what continues is
 slow curvature-driven migration, including one grain shrinking toward
-extinction (smallest area 21 -> 5.6 um^2). Two small grains were consumed; the boundaries
+extinction (smallest area 21 -> 5.6 um^2). At 10 t_int three more grains
+have gone (27 left, median equivalent diameter 14.3 um), the boundary
+network is 17% shorter than the seeding's and circularity is 0.879; the
+junction spread (15.3 deg) does not improve further because the grains now
+meeting the walls and the newly formed junctions around the vanished grains
+are still relaxing. Horizon is therefore a choice of grain count, not of
+junction quality: 2.5 t_int already delivers equilibrated junctions. Two small grains were consumed; the boundaries
 are curved and the junctions have moved toward 120 degrees. The remaining
 spread of 14.3 degrees includes the grid's own angle-measurement floor
 (about 4-6 degrees at this resolution, measured earlier on a hexagonal

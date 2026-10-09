@@ -1,0 +1,5 @@
+{
+ "n_grains": 27,
+ "orientation_seed": 20261009,
+ "point_file": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/polycrystal_plate/n32_h160/orientations_points.csv"
+}
