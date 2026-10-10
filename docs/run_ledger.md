@@ -21,6 +21,7 @@ and what it returned in one line.
 | gpu-profile | 2026-10-09 | same deck, 1 step, torch-GPU | `python -m cProfile -m pinnacle run` | 141ebd8 | rocm / GPU | 130 s | 108 s in the per-point tangent (224k evaluations) | 06 §6 |
 | cp-h40-base | 2026-10-09 | `decks/cp_study/h40_base.i` -> `results/cp_study/h40_base/cpfe.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | 38 min | x-loaded; sub-step budget exhausted at step 100 (7.77%); 125/258 rows converged; curve valid to 7.8% | 07 §1 |
 | cp-h20-base | 2026-10-09 | `decks/cp_study/h20_base.i` | `polycrystal_plate.py`, `pinnacle run` | 141ebd8 | rocm / 1 | 9 min | h20 twin: walls at step 126 (9.83%), 1,227 MPa; agrees with h40 to 3% at 5% strain | 07 §2 |
-| cp-h20-diag | 2026-10-09 | copy of `results/cp_study/h20_base/cpfe.i` | `pinnacle run` | 6271f71 | rocm / 1 | (running) | instrumented rerun to capture the stiff point at the wall | 07 §2 |
+| cp-h20-diag | 2026-10-09 | copy of `results/cp_study/h20_base/cpfe.i` | `pinnacle run` | 6271f71 | rocm / 1 | 9 min | logs `CG did not converge (info=1386)` at step 126 on every cutback: the wall is the linear solver | 07 §2 |
+| cp-h20-direct | 2026-10-09 | `results/cp_study/h20_base/cpfe.i` with `linear_method = direct` | `pinnacle run` | bb774d0 | rocm / 1 | (running) | does the sparse direct solve pass 9.8%? | 07 §2 |
 | cp-h40-rescaled | 2026-10-09 | `decks/cp_study/h40_rescaled.i` | `polycrystal_plate.py`, `pinnacle run` | 6271f71+ | rocm / 1 | (running) | paper's set in latent-sum form (rho0 13.41, k1 0.08475) | 07 §3 |
 | cp-oat-h40 | prepared, not launched | `decks/cp_study/oat_h40.i` | `cp_parameter_study.py prepare` | 141ebd8 | -- | -- | 9 cases + base written under `results/cp_study/` | -- |

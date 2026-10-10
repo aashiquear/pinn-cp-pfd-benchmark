@@ -57,9 +57,23 @@ concentration the finer mesh resolves better, at a grain-boundary junction
 or the loaded edge, not of a global instability. Figure
 `figures/cp_study_base_h20_h40.png`.
 
-PINNACLE `6271f71` now reports the stiff point (index, overstress ratio,
-slip resistance, elastic strain, det F_e, density) when the budget fails;
-an instrumented h20 run (`results/cp_study/h20_diag`) captures it.
+**The wall is the linear solver.** With PINNACLE `bb774d0`, which logs the
+cause of every cutback, the instrumented h20 rerun (`cp-h20-diag`) shows at
+step 126: `Newton did not converge ... CG did not converge (info=1386)` on
+every cutback. The constitutive sub-stepper never raised. The load stepper's
+old cutback line said "CP sub-step budget exhausted" for both causes, which
+is how the first campaign's "sub-step wall" was read; whether that campaign's
+holed-plate failures were also CG failures is unknown and worth re-checking.
+
+Conjugate gradients requires a symmetric positive-definite matrix. The
+finite-strain CP tangent is not symmetric in general and loses positive
+definiteness as slip localizes (geometric softening of the plastic
+modulus), so CG stalls at the strain where the first points soften --
+earlier on the finer mesh, which resolves the concentration better. The
+study decks used `linear_method = cg` because the first campaign measured
+the sparse direct solve scaling as n^2.91 on 3-D void meshes; this plate
+has 7,749 (h40) / 2,079 (h20) displacement DOFs, where a sparse LU is cheap.
+Test: `cp-h20-direct`, the h20 base case with `linear_method = direct`.
 
 ## 3. Why the reference set does not saturate: the density convention (C.15)
 
