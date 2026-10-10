@@ -42,8 +42,9 @@ def main():
         label, path = spec.split("=", 1)
         x, y = read(path, "nominal_strain", "eng_stress")
         ax.plot([100 * v for v in x], y, color=SERIES[i % len(SERIES)], lw=2, label=label)
-        ax.annotate(label, (100 * x[-1], y[-1]), xytext=(4, 0), textcoords="offset points",
-                    fontsize=8, va="center", color="#333")
+        short = label.split("(")[0].strip()
+        ax.annotate(short, (100 * x[-1], y[-1]), xytext=(-4, 6), textcoords="offset points",
+                    fontsize=8, ha="right", va="bottom", color="#333", clip_on=True)
     if a.moose:
         x, y = read(a.moose, "nominal_strain_yy", "mean_stress_yy")
         ax.plot([100 * v for v in x], y, color=MOOSE, lw=2, label="MOOSE single crystal (0,0,0), reference deck")
