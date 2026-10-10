@@ -41,6 +41,18 @@ NOT derivable from the code: measured facts, decisions, and traps.
   3%) gives 961 MPa at 3% and MOOSE's single crystal 809; the experiment is
   ~412 MPa at 2%. Calibration is required; parameters are framework-sensitive.
 
+- C.15 is a 4.05x effect on tau_c: the paper's Table 2 is a SELF-term set;
+  under PINNACLE's latent-hardened sum the same numbers give a 2,340 MPa
+  plateau (no saturation before ~28% shear). The latent-sum equivalent is
+  rho0 = 13.41, k1 = 0.08475 (y_c, tau_c0 unchanged). Neither reading
+  matches the experiment at 1e-3 /s; calibration from the rescaled set.
+  Rate sensitivity (gamma_dot0 = 1e-5, n = 8.33) multiplies the flow stress
+  by ~2 at 1e-3 /s, so the assumed test rate matters.
+- The explicit CP sub-stepper walls at 7.8% (h40) / 9.8% (h20) on the plate
+  with the reference set; cause being diagnosed (PINNACLE now logs the
+  Newton or budget reason per cutback). Curves are valid only to the first
+  failed step; scripts/polycrystal_plate.py truncates them.
+
 ## Traps found
 - `[OrientationField]` in a deck was silently dropped by the translator until
   PINNACLE 141ebd8 (fixed). Always check `pinnacle.log` for the line

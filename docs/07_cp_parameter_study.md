@@ -100,5 +100,20 @@ tau_c0 unchanged (then rho_sat' = rho_sat / 16.4 and tau_c,sat' = tau_c,sat).
 
 This is a derived starting point for the calibration in the author's order
 (rho0, then k_m), not a fit: run `cp-h40-rescaled`
-(`decks/cp_study/h40_rescaled.i`). Taylor (upper bound) prediction for it
-is recorded in the ledger row; the plate result goes here when it lands.
+(`decks/cp_study/h40_rescaled.i`).
+
+Taylor (upper-bound) prediction for the rescaled set at 1e-3 /s, engineering
+stress: 216 MPa at 0.56%, 242 at 2%, 306 at 7%, 342 at 11%, 375 at 17%,
+against the experiment's 345 / 412 / 502 / 553 / 593. So the paper's
+numbers do not reproduce the experiment in this framework under EITHER
+reading: 2.3x too strong with the latent sum as written, about 0.6x too
+weak once re-expressed. Two framework-specific factors sit between the
+table and the curve: the density convention (4.05x on tau_c) and the rate
+sensitivity (at gamma_dot0 = 1e-5 /s, n = 8.33 and a shear rate of ~3e-3
+/s the flow stress is 1.98x tau_c; the experiment's rate is not recorded).
+Both are the kind of model- and framework-sensitivity the author
+anticipated. The calibration therefore starts from the rescaled set and
+raises rho0 (yield level) and k1 (hardening) in the agreed order; the
+self-term check at the material point (q_lat = 0) could not be run
+directly because the explicit Taylor integrator diverged at that lower
+strength, which is itself the sub-step weakness of §2.
