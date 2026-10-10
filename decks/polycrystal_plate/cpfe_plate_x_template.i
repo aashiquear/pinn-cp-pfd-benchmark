@@ -136,7 +136,10 @@
   newton_tol       = @NEWTONTOL@
   max_iter         = 50
   max_cutbacks     = @MAXCUTBACKS@
-  linear_method    = cg
+  # direct (sparse LU) by default: conjugate gradients stalls once the
+  # finite-strain CP tangent loses positive definiteness (7.8-9.8% strain on
+  # this plate); gmres is the iterative alternative for larger meshes.
+  linear_method    = @LINEAR@
   sparse_threshold = 0
 []
 

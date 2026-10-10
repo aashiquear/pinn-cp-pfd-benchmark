@@ -73,7 +73,18 @@ earlier on the finer mesh, which resolves the concentration better. The
 study decks used `linear_method = cg` because the first campaign measured
 the sparse direct solve scaling as n^2.91 on 3-D void meshes; this plate
 has 7,749 (h40) / 2,079 (h20) displacement DOFs, where a sparse LU is cheap.
-Test: `cp-h20-direct`, the h20 base case with `linear_method = direct`.
+Test: `cp-h20-direct`, the h20 base case with `linear_method = direct`:
+**256 of 256 steps to 20% strain, zero cutbacks, 15 min** (1,618 MPa at
+20%, still hardening -- see §3 for why). The wall was the solver choice.
+`direct` is now the study default (`linear_method` in the pipeline deck's
+[Mechanics], written into the template); PINNACLE `47a41e0` adds
+`linear_method = gmres` (ILU-preconditioned) as the iterative option for
+meshes too large for a sparse LU. The CG runs are kept as
+`results/cp_study/h40_base_cg` and `h20_base_cg`. Figure
+`figures/cp_study_h20_direct_vs_cg.png`.
+
+Open question carried: whether the first campaign's holed-plate "sub-step
+wall" (6-10%) was also CG. Its decks used `linear_method = cg` too.
 
 ## 3. Why the reference set does not saturate: the density convention (C.15)
 

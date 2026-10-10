@@ -238,7 +238,8 @@ def stage_orient(cfg: dict, deck: Path, out: Path) -> dict:
 def stage_deck(cfg: dict, deck: Path, out: Path) -> Path:
     mech = dict(cfg["mechanics"])
     src = TEMPLATES[str(mech.get("load_axis", "y")).lower()].read_text()
-    sub = {"OUTDIR": str(out / "solver"), "POINTFILE": "orientations_points.csv"}
+    sub = {"OUTDIR": str(out / "solver"), "POINTFILE": "orientations_points.csv",
+           "LINEAR": str(mech.get("linear_method", "direct"))}
     for key, ph in MECH_KEYS.items():
         if key not in mech:
             raise SystemExit(f"[Mechanics] is missing '{key}'")

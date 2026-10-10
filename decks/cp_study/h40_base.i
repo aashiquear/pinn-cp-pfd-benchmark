@@ -40,6 +40,7 @@
   thickness    = 1.0
   newton_tol   = 1.0e-6
   max_cutbacks = 10
+  linear_method = direct
   C11     = 108.0e3
   C12     = 61.3e3
   C44     = 28.5e3
