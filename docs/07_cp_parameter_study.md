@@ -60,3 +60,45 @@ or the loaded edge, not of a global instability. Figure
 PINNACLE `6271f71` now reports the stiff point (index, overstress ratio,
 slip resistance, elastic strain, det F_e, density) when the budget fails;
 an instrumented h20 run (`results/cp_study/h20_diag`) captures it.
+
+## 3. Why the reference set does not saturate: the density convention (C.15)
+
+The author asked why the stress keeps rising. The hardening law is working
+as parameterized: a Taylor material point (30 grains, same seed, archived
+`calibrate_cp_polycrystal.taylor_curve`) with the identical set gives 879 /
+1,068 / 1,164 MPa at 2 / 5 / 7% against the plate's 864 / 1,003 / 1,124.
+What is far away is saturation. With tau_c = tau_c0 + alpha0 mu b
+sqrt(sum_b a_ab rho_b) and the latent-hardened sum (a_ab = q = 1.4 off the
+diagonal, 12 FCC systems), every density is multiplied by 1 + 11 q = 16.4
+inside the square root, a factor 4.05 on tau_c:
+
+| quantity | self term | latent sum |
+|---|---|---|
+| tau_c(rho0 = 220 um^-2) | 43.7 MPa | 176.7 MPa |
+| rho_sat = (k1 / 2 y_c)^2 | 4,100 um^-2 | 4,100 um^-2 |
+| tau_c(rho_sat) | 188 MPa | 762 MPa |
+| plateau, Taylor factor 3.07 | 578 MPa | 2,340 MPa |
+| shear to saturate from rho0 | ~0.28 | ~0.28 |
+
+The self-term plateau is the experiment's 590 MPa plateau; the paper's
+Table 2 is therefore a self-term set (as `03_material_point_verification.md`
+concluded for C.15). Under the latent sum, chosen for this study, the same
+numbers are 4.05x too strong and saturate only after ~28% shear, which is
+exactly the curve in §1.
+
+**Latent-sum equivalent of the paper's set.** Requiring the same tau_c at
+every point of the path: rho' = rho / 16.4 and, so that d rho'/d gamma
+reproduces tau_c(gamma), k1' = k1 / sqrt(16.4) = k1 / 4.05 with y_c and
+tau_c0 unchanged (then rho_sat' = rho_sat / 16.4 and tau_c,sat' = tau_c,sat).
+
+| parameter | paper (self term) | latent-sum equivalent |
+|---|---|---|
+| rho0 | 220 | 13.41 um^-2 |
+| k1 (k_m) | 0.3432 | 0.08475 |
+| y_c | 0.00268 | 0.00268 um |
+| tau_c0 | 0.112 | 0.112 MPa |
+
+This is a derived starting point for the calibration in the author's order
+(rho0, then k_m), not a fit: run `cp-h40-rescaled`
+(`decks/cp_study/h40_rescaled.i`). Taylor (upper bound) prediction for it
+is recorded in the ledger row; the plate result goes here when it lands.
