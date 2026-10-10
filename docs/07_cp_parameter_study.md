@@ -296,5 +296,16 @@ set is for THIS mesh (h40) and this grain realization. §5 tests the mesh.
 
 Decks `decks/cp_study/mesh_h{20,80,160}.i` (h40 is the iteration-2 center).
 Same structure, orientations, loading and set; only nx x ny changes.
+Engineering stress (MPa) at 2 / 7 / 17 / 20% and RMSE against the markers
+from 0.1%:
 
-(running)
+| mesh | elements | h (um) | elements across a grain (13.7 um) | 2% | 7% | 17% | 20% | RMSE | wall |
+|---|---|---|---|---|---|---|---|---|---|
+| h20 | 200 | 5.0 | 2.7 | 419.8 | 523.3 | 621.9 | 636.4 | 23.3 | 16 min |
+| h40 | 800 | 2.5 | 5.5 | 406.9 | 502.4 | 591.5 | 603.9 | 14.3 | ~40 min |
+| h80 | 3,200 | 1.25 | 11 | (running) | | | | | |
+| h160 | 12,800 | 0.625 | 22 | (running) | | | | | |
+
+h20 -> h40: -3.1% at 2%, -4.0% at 7%, -5.1% at 17%. The coarse mesh is
+stiffer, as a displacement-based mesh with 2.7 elements across a grain
+should be.
