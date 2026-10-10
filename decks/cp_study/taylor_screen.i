@@ -13,7 +13,7 @@
   n_grains     = 30
   seed         = 20260910
   strain_rate  = 1.0e-3
-  n_increments = 200
+  n_increments = 400
   workers      = 12
   stress       = engineering
 []

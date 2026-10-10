@@ -46,6 +46,15 @@ forward-Euler constitutive update cannot absorb the increment at some
 quadrature point however small dt is made. That is a framework defect to
 fix before any 20% run, independent of parameters; see §2.
 
+**Base case rerun with the direct solver** (`cp-h40-base (direct)`, 68 min
+while sharing the host with six other runs): 256/256 steps to 20%, zero
+cutbacks. Engineering stress 404 / 815 / 1,030 / 1,147 / 1,257 MPa at 0.57
+/ 2 / 7 / 11 / 17% (experiment 345 / 412 / 502 / 553 / 593). The Taylor
+surrogate for the same set gives 407 / 881 / 1,164 / 1,320 / 1,475: the FE
+polycrystal is 0.99 of Taylor at yield and 0.85 at 17%, which is the
+offset the FE correction of §4 has to absorb. Figure
+`figures/cp_study_h40_anchors.png`.
+
 ## 2. Diagnosis of the sub-step wall
 
 **h20 twin** (`decks/cp_study/h20_base.i`, 20 x 10 x 1, run `cp-h20-base`,
@@ -123,9 +132,10 @@ tau_c0 unchanged (then rho_sat' = rho_sat / 16.4 and tau_c,sat' = tau_c,sat).
 | y_c | 0.00268 | 0.00268 um |
 | tau_c0 | 0.112 | 0.112 MPa |
 
-This is a derived starting point for the calibration in the author's order
-(rho0, then k_m), not a fit: run `cp-h40-rescaled`
-(`decks/cp_study/h40_rescaled.i`).
+Run `cp-h40-rescaled` (direct solver, 72 min, zero cutbacks): engineering
+stress 210 / 232 / 281 / 307 / 332 MPa at 0.57 / 2 / 7 / 11 / 17%, i.e.
+0.6x the experiment with the wrong hardening slope. Superseded by §4: the
+calibration targets the experiment directly.
 
 Taylor (upper-bound) prediction for the rescaled set at 1e-3 /s, engineering
 stress: 216 MPa at 0.56%, 242 at 2%, 306 at 7%, 342 at 11%, 375 at 17%,

@@ -112,9 +112,13 @@ def taylor_curve(params: dict, eulers: np.ndarray, sample_at: np.ndarray, edot: 
         states = trial
         he.append(float(eps)); heng.append(float(sig[2, 2]) * lat * lat)
     he_a = np.asarray(he)
-    if he_a.size < 3 or he_a[-1] < 0.98 * eps_max:
+    heng_a = np.asarray(heng)
+    # The explicit integrator can blow up without producing NaN (a soft set at
+    # a coarse increment gave 1e20 MPa, finite). Anything beyond 1e4 MPa is not
+    # a metal; report divergence rather than a number.
+    if he_a.size < 3 or he_a[-1] < 0.98 * eps_max or np.max(np.abs(heng_a)) > 1.0e4:
         return np.full(sample_at.shape, np.nan)
-    return np.interp(sample_at, he_a, np.asarray(heng))
+    return np.interp(sample_at, he_a, heng_a)
 
 
 def _eval(args):
