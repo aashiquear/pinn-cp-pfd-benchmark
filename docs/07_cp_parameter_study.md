@@ -168,3 +168,32 @@ has its own 30 random grains) for OAT sensitivities and a first fit inside
 the bounds; (b) FE at h40, one-at-a-time around that point and a finite-
 difference Gauss-Newton correction, five concurrent runs per iteration;
 (c) error analysis of the final set.
+
+### 4a. Surrogate stage (`results/cp_study/taylor_screen/`)
+
+OAT at the start point (rho0 40, k1 0.05, y_c 0.00268, tau_c0 5), engineering
+stress at the marker strains (0.56 / 2 / 7 / 11 / 13 / 15 / 17%), experiment
+345 / 412 / 502 / 553 / 574 / 588 / 593:
+
+| case | 0.56% | 2% | 7% | 11% | 17% | RMSE |
+|---|---|---|---|---|---|---|
+| start | 344 | 403 | 400 | 396 | 386 | 130 |
+| rho0 = 20 / 80 | 270 / 399 | 281 / 553 | 304 / 532 | 313 / 514 | 317 / 489 | 194 / 75 |
+| k1 = 0.02 / 0.12 | 344 / 344 | 394 / 426 | 360 / 503 | 342 / 545 | 318 / 584 | 173 / 15 |
+| y_c = 0.001 / 0.006 | 344 / 344 | 410 / 391 | 437 / 352 | 454 / 332 | 474 / 310 | 79 / 180 |
+| tau_c0 = 0 / 50 | 329 / 404 | 377 / 622 | 375 / 616 | 372 / 603 | 364 / 583 | 147 / 85 |
+
+What each parameter does (this framework, this law): rho0 moves the yield
+level and, through the Taylor term, the whole curve up; k1 sets the slope
+after yield and the plateau height; y_c lowers the plateau (recovery) and
+with it the late slope; tau_c0 is a uniform offset that also raises the
+early hardening because the slip resistance's rate term scales with it.
+With k1 at the first bound (0.12) the fit was already at 15 MPa RMSE, so the
+bound was widened to 0.30.
+
+Bounded Gauss-Newton (log parameters, 6 iterations, 4 s per curve set):
+**rho0 = 37.19 um^-2, k1 = 0.1256, y_c = 0.002666 um, tau_c0 = 5.43 MPa,
+RMSE 13.2 MPa** (`fit.json`). The paper's y_c survives essentially
+unchanged; rho0 and k1 are 0.17x and 0.37x the table's values under the
+latent sum. This is the FE starting point (`decks/cp_study/cal_center1.i`),
+FE iteration 1 is `decks/cp_study/cal_gn1.i`.

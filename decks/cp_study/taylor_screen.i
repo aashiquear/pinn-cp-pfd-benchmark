@@ -31,7 +31,7 @@
 [Free]
   # name = 'lower upper start'
   rho0   = '20 80 40'
-  k1     = '0.02 0.12 0.05'
+  k1     = '0.02 0.30 0.10'
   annihilation_diameter = '0.001 0.006 0.00268'
   tau_c0 = '0 50 5'
 []

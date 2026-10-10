@@ -25,4 +25,6 @@ and what it returned in one line.
 | cp-h20-direct | 2026-10-09 | `results/cp_study/h20_base/cpfe.i` with `linear_method = direct` | `pinnacle run` | bb774d0 | rocm / 1 | 15 min | 256/256 steps to 20%, 0 cutbacks, 1,618 MPa: the wall was CG | 07 §2 |
 | cp-h40-base (direct) | 2026-10-09 | `decks/cp_study/h40_base.i` (linear_method = direct) | `polycrystal_plate.py`, `pinnacle run` | 47a41e0 | rocm / 1 | (running) | base case to 20% | 07 |
 | cp-h40-rescaled | 2026-10-09 | `decks/cp_study/h40_rescaled.i` | `polycrystal_plate.py`, `pinnacle run` | 6271f71+ | rocm / 1 | killed at 17 min (CG), relaunched with direct | paper's set in latent-sum form (rho0 13.41, k1 0.08475) | 07 §3 |
+| taylor-screen | 2026-10-09 | `decks/cp_study/taylor_screen.i` | `taylor_surrogate.py oat`, `fit` | 47a41e0 | local / 12 | 4 s + ~30 s | surrogate optimum rho0 37.2, k1 0.126, y_c 0.00267, tau_c0 5.4; RMSE 13.2 | 07 §4a |
+| cal-gn1 | 2026-10-09 | `decks/cp_study/cal_gn1.i` (5 cases) | `cp_parameter_study.py prepare, run` | 47a41e0 | rocm / 1 each, 5 concurrent | (running) | FE Gauss-Newton iteration 1 at h40 | 07 §4b |
 | cp-oat-h40 | prepared, not launched | `decks/cp_study/oat_h40.i` | `cp_parameter_study.py prepare` | 141ebd8 | -- | -- | 9 cases + base written under `results/cp_study/` | -- |
