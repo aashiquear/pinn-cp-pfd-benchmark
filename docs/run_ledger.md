@@ -26,5 +26,6 @@ and what it returned in one line.
 | cp-h40-base (direct) | 2026-10-09 | `decks/cp_study/h40_base.i` (linear_method = direct) | `polycrystal_plate.py`, `pinnacle run` | 47a41e0 | rocm / 1 | 68 min | 256/256 to 20%, 0 cutbacks; eng. 1,257 MPa at 17% | 07 §1 |
 | cp-h40-rescaled | 2026-10-09 | `decks/cp_study/h40_rescaled.i` | `polycrystal_plate.py`, `pinnacle run` | 6271f71+ | rocm / 1 | 72 min (direct) | paper's set in latent-sum form: 256/256, 0 cutbacks; eng. 332 MPa at 17% | 07 §3 |
 | taylor-screen | 2026-10-09 | `decks/cp_study/taylor_screen.i` | `taylor_surrogate.py oat`, `fit` | 47a41e0 | local / 12 | 4 s + ~30 s | surrogate optimum rho0 37.2, k1 0.126, y_c 0.00267, tau_c0 5.4; RMSE 13.2 | 07 §4a |
-| cal-gn1 | 2026-10-09 | `decks/cp_study/cal_gn1.i` (5 cases) | `cp_parameter_study.py prepare, run` | 47a41e0 | rocm / 1 each, 5 concurrent | (running) | FE Gauss-Newton iteration 1 at h40 | 07 §4b |
+| cal-gn1 | 2026-10-09 | `decks/cp_study/cal_gn1.i` (5 cases) | `cp_parameter_study.py prepare, run` | 47a41e0 | rocm / 1 each, 5 concurrent | 75 min | all 5 converged; center RMSE 53.8 MPa; step -> rho0 41.2, k1 0.168, y_c 0.0032, tau_c0 5.35 | 07 §4b |
+| cal-gn2 | 2026-10-10 | `decks/cp_study/cal_gn2.i` (5 cases) | `cp_parameter_study.py`, `cp_gauss_newton.py` | 47a41e0 | rocm / 5 concurrent | (running) | FE Gauss-Newton iteration 2 | 07 §4c |
 | cp-oat-h40 | prepared, not launched | `decks/cp_study/oat_h40.i` | `cp_parameter_study.py prepare` | 141ebd8 | -- | -- | 9 cases + base written under `results/cp_study/` | -- |

@@ -207,3 +207,35 @@ RMSE 13.2 MPa** (`fit.json`). The paper's y_c survives essentially
 unchanged; rho0 and k1 are 0.17x and 0.37x the table's values under the
 latent sum. This is the FE starting point (`decks/cp_study/cal_center1.i`),
 FE iteration 1 is `decks/cp_study/cal_gn1.i`.
+
+### 4b. FE iteration 1 at h40 (`decks/cp_study/cal_gn1.i`, `results/cp_study/cal/gn1/`)
+
+Five runs (center = surrogate optimum, one perturbation each: rho0 x1.2, k1
+x1.2, y_c x1.2, tau_c0 x1.5), 256 steps to 20% each, all converged, zero
+cutbacks, ~75 min wall for the set (seven runs shared the host).
+
+Center against the experiment (engineering stress, markers from 0.1%):
+
+| strain | experiment | FE center | error |
+|---|---|---|---|
+| 0.14% | 138 | 99 | -28.0% |
+| 0.57% | 345 | 338 | -2.0% |
+| 2.02% | 412 | 384 | -6.9% |
+| 7.01% | 502 | 454 | -9.7% |
+| 11.02% | 553 | 491 | -11.2% |
+| 13.05% | 574 | 505 | -12.0% |
+| 15.06% | 588 | 516 | -12.3% |
+| 16.98% | 593 | 525 | -11.5% |
+
+RMSE 53.8 MPa: the FE polycrystal is softer than the surrogate,
+as the anchors showed, and the deficit grows with strain.
+
+Sensitivities dS/d(ln p) in MPa at 2 / 7 / 17% (what each parameter does
+in the FE plate): rho0 155 / 132 / 98 (level, fading with strain); k1 36 /
+172 / 328 (hardening, growing with strain); y_c -11 / -70 / -177 (recovery,
+lowers the late curve); tau_c0 28 / 28 / 27 (uniform offset).
+
+Levenberg-Marquardt step (log parameters, bounds of the surrogate deck):
+next center rho0 41.15, k1 0.1677, y_c 0.00320 (at its
+x1.2 perturbation), tau_c0 5.35; linear prediction RMSE
+14.0 MPa. Iteration 2 is `decks/cp_study/cal_gn2.i`.

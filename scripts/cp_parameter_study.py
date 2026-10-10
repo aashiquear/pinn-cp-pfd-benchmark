@@ -144,6 +144,10 @@ def _markers(path: Path):
 def stage_collect(cfg: dict, study: Path) -> None:
     out_root = _resolve(str(cfg["study"]["out_root"]), study)
     ex_e, ex_s = _markers(_resolve(str(cfg["study"]["markers"]), study))
+    # The origin marker (0.0026% strain) sits below the first load step and
+    # would dominate a relative error; the FE curve is compared from 0.1% on.
+    keep = ex_e >= 1.0e-3
+    ex_e, ex_s = ex_e[keep], ex_s[keep]
     rows = []
     for name, params in cases_of(cfg):
         d = out_root / name
