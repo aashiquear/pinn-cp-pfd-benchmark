@@ -153,7 +153,7 @@ def stage_collect(cfg: dict, study: Path) -> None:
         subprocess.run([sys.executable, str(PIPE), str(d / "pipeline.i"), "curve"],
                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         r = list(csv.DictReader((d / "results.csv").open()))
-        e = np.array([float(x["nominal_strain"]) for x in r]); s = np.array([float(x["axial_stress"]) for x in r])
+        e = np.array([float(x["nominal_strain"]) for x in r]); s = np.array([float(x["eng_stress"]) for x in r])
         reached = float(e.max())
         inside = ex_e <= reached + 1e-9
         sim = np.interp(ex_e[inside], e, s)

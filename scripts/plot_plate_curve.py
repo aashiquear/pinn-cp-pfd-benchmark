@@ -31,7 +31,7 @@ def read(path, xcol, ycol):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", nargs="+", required=True, help="label=path/to/results.csv")
-    ap.add_argument("--moose", default=str(STUDY / "data/reference/moose_cpfe_plain_plate_stress_strain.csv"))
+    ap.add_argument("--moose", default="", help="optional MOOSE reference CSV; off by default")
     ap.add_argument("--markers", default=str(STUDY / "data/digitized/al2219_fig3_experiment_markers.csv"))
     ap.add_argument("--xmax", type=float, default=0.0)
     ap.add_argument("--title", default="Polycrystal plate, crystal plasticity only")
@@ -40,14 +40,15 @@ def main():
     fig, ax = plt.subplots(figsize=(7.2, 4.4), dpi=150)
     for i, spec in enumerate(a.runs):
         label, path = spec.split("=", 1)
-        x, y = read(path, "nominal_strain", "axial_stress")
+        x, y = read(path, "nominal_strain", "eng_stress")
         ax.plot([100 * v for v in x], y, color=SERIES[i % len(SERIES)], lw=2, label=label)
         ax.annotate(label, (100 * x[-1], y[-1]), xytext=(4, 0), textcoords="offset points",
                     fontsize=8, va="center", color="#333")
-    x, y = read(a.moose, "nominal_strain_yy", "mean_stress_yy")
-    ax.plot([100 * v for v in x], y, color=MOOSE, lw=2, label="MOOSE single crystal (0,0,0), reference deck")
-    ax.annotate("MOOSE single crystal", (100 * x[-1], y[-1]), xytext=(4, 0), textcoords="offset points",
-                fontsize=8, va="center", color="#333")
+    if a.moose:
+        x, y = read(a.moose, "nominal_strain_yy", "mean_stress_yy")
+        ax.plot([100 * v for v in x], y, color=MOOSE, lw=2, label="MOOSE single crystal (0,0,0), reference deck")
+        ax.annotate("MOOSE single crystal", (100 * x[-1], y[-1]), xytext=(4, 0), textcoords="offset points",
+                    fontsize=8, va="center", color="#333")
     if Path(a.markers).exists():
         lines = [ln for ln in open(a.markers) if not ln.startswith("#")]
         rows = list(csv.DictReader(lines))
@@ -58,7 +59,7 @@ def main():
     if a.xmax:
         ax.set_xlim(0, 100 * a.xmax)
     ax.set_xlabel("Nominal strain along the pull axis (%)")
-    ax.set_ylabel("Mean axial stress (MPa)")
+    ax.set_ylabel("Engineering axial stress (MPa)")
     ax.set_title(a.title, fontsize=10, loc="left")
     ax.grid(True, color="#e6e6e6", lw=0.6); ax.spines[["top", "right"]].set_visible(False)
     ax.legend(fontsize=8, frameon=False, loc="lower right")

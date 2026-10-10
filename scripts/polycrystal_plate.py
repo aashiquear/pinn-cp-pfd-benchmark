@@ -282,9 +282,17 @@ def stage_curve(cfg: dict, deck: Path, out: Path) -> dict:
             print(f"stopping at the first failed step {r['step']} (load factor {r['load_factor']})")
             break
         lam = float(r["load_factor"])
+        # Engineering stress = force / original area. The mean Cauchy stress
+        # acts on the current cross-section, whose area is the original times
+        # the two transverse stretches (1 + mean H_jj), so S = sigma * ly * lz.
+        trans = [c for c in ("00", "11", "22") if c != comp]
+        area_ratio = 1.0
+        for c in trans:
+            area_ratio *= 1.0 + float(r.get(f"mean_strain_{c}", 0.0) or 0.0)
         rec = {"step": int(float(r["step"])), "load_factor": lam,
                "nominal_strain": lam * strain_max, "load_axis": axis,
                "axial_stress": float(r[f"mean_stress_{comp}"]),
+               "eng_stress": float(r[f"mean_stress_{comp}"]) * area_ratio,
                "cutbacks": int(float(r.get("cutbacks", 0) or 0))}
         for k, v in r.items():
             if k.startswith("mean_stress") or k.startswith("mean_strain") or k == "time":

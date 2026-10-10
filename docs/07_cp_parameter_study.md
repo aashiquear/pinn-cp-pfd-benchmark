@@ -142,3 +142,29 @@ raises rho0 (yield level) and k1 (hardening) in the agreed order; the
 self-term check at the material point (q_lat = 0) could not be run
 directly because the explicit Taylor integrator diverged at that lower
 strength, which is itself the sub-step weakness of §2.
+
+## 4. Calibration (decision 2026-10-09 evening)
+
+Objective: the parameter set that minimizes the error against the
+experimental curve in THIS framework at THIS mesh (h40). Neither the paper's
+numbers nor their re-expression is a target; both are framework- and
+model-dependent. The MOOSE decks are convergence tests of the input and are
+not compared against further.
+
+Conventions, stated once: stress is ENGINEERING (force over original
+area) on both sides -- the markers are from a tensile test, and the FE mean
+Cauchy stress is converted with the two mean transverse stretches
+(`polycrystal_plate.py curve`, column `eng_stress`); strain rate 1e-3 /s
+(assumed, not reported); latent-hardened sum; error = RMSE over the nine
+markers plus the per-marker relative error.
+
+Free, in the author's order: rho0, k1 (k_m), y_c, tau_c0. Bounds from the
+experiment's features (`decks/cp_study/taylor_screen.i`): rho0 20-80
+um^-2, k1 0.02-0.12, y_c 0.001-0.006 um, tau_c0 0-50 MPa.
+
+Procedure: (a) Taylor material-point surrogate (`scripts/taylor_surrogate.py`;
+30 grains, same seed as the FE orientations are NOT shared -- the surrogate
+has its own 30 random grains) for OAT sensitivities and a first fit inside
+the bounds; (b) FE at h40, one-at-a-time around that point and a finite-
+difference Gauss-Newton correction, five concurrent runs per iteration;
+(c) error analysis of the final set.
