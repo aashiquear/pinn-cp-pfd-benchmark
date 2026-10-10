@@ -239,3 +239,62 @@ Levenberg-Marquardt step (log parameters, bounds of the surrogate deck):
 next center rho0 41.15, k1 0.1677, y_c 0.00320 (at its
 x1.2 perturbation), tau_c0 5.35; linear prediction RMSE
 14.0 MPa. Iteration 2 is `decks/cp_study/cal_gn2.i`.
+
+### 4c. FE iteration 2 and the calibrated h40 set (`results/cp_study/cal/gn2/`)
+
+Center rho0 41.15, k1 0.1677, y_c 0.0032, tau_c0 5.35; five runs, all
+converged, zero cutbacks. The next Levenberg-Marquardt step moves no
+parameter by more than 2.5% (rho0 41.20, k1 0.1716, y_c 0.00325, tau_c0
+5.14) and predicts no gain (14.0 vs 14.3 MPa), so the iteration is stopped.
+
+**Calibrated set (h40, latent-hardened sum, 1e-3 /s, engineering stress):
+rho0 = 41.15 um^-2, k1 = 0.1677, y_c = 0.0032 um, tau_c0 = 5.35 MPa.**
+Fixed by decision: C11 108.0, C12 61.3, C44 28.5 GPa; mu 25.7 GPa; b
+0.000286 um; q 1.4; alpha0 0.4; gamma0 1e-5 /s; n = 8.333.
+
+Error analysis:
+
+| strain | experiment (MPa) | FE (MPa) | error |
+|---|---|---|---|
+| 0.14% | 138 | 99 | -28.0% |
+| 0.57% | 345 | 350 | +1.6% |
+| 2.02% | 412 | 407 | -1.1% |
+| 7.01% | 502 | 502 | +0.0% |
+| 11.02% | 553 | 550 | -0.4% |
+| 13.05% | 574 | 567 | -1.1% |
+| 15.06% | 588 | 581 | -1.3% |
+| 16.98% | 593 | 591 | -0.2% |
+
+RMSE over the eight markers from 0.1%: 14.3 MPa; over the seven from
+0.5%: 4.6 MPa (max |error| 7 MPa, 1.6%).
+The 0.14% marker is the one miss (-28%): it lies on the digitized curve's
+initial slope of ~99 GPa, while the random-texture plate's elastic modulus
+is 71 GPa (Al's polycrystal value is ~70 GPa), so that point reflects the
+test record or its digitization rather than a parameter of this law.
+
+Linearized 1-sigma parameter uncertainty from the post-0.5% residual (4 MPa)
+and the FE Jacobian (a guide to how tightly the data pins each value):
+
+| parameter | value | relative 1-sigma |
+|---|---|---|
+| rho0 | 41.152 | ±59% |
+| k1 | 0.16771 | ±11% |
+| y_c | 0.0031974 | ±20% |
+| tau_c0 | 5.3492 | ±343% |
+
+Sensitivities at the calibrated point, dS/d(ln p) in MPa at 2 / 7 / 17%:
+rho0 160 / 132 / 96; k1 47 / 222 / 403; y_c -14 / -94 / -228; tau_c0 28 /
+28 / 27. rho0 sets the yield level, k1 and y_c the hardening slope and its
+saturation, tau_c0 a uniform offset: the author's reading of Fig.
+`cp_cal_gn1.png`, confirmed by the Jacobian. Figure of the calibrated curve:
+`figures/cp_cal_final_h40.png`.
+
+Caveats carried: the strain rate is assumed; the markers are digitized; the
+set is for THIS mesh (h40) and this grain realization. §5 tests the mesh.
+
+## 5. Mesh sensitivity with the calibrated set
+
+Decks `decks/cp_study/mesh_h{20,80,160}.i` (h40 is the iteration-2 center).
+Same structure, orientations, loading and set; only nx x ny changes.
+
+(running)
