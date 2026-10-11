@@ -548,9 +548,104 @@ transfer of the set to a finer mesh is a small correction in the direction
 of the mesh shift, about +2% on $\rho_0$ and +3% on $k_1$ per halving of
 $h$ from the sensitivities of Table 4.
 
-## 6. Parameter sensitivity on the converged mesh
+## 6. Parameter sensitivity at the chosen mesh
 
-*(planned)*
+### 6.1 Design
+
+Each free parameter of Table 2 was varied one at a time over a factor of
+four, at 0.5, 0.8, 1.25 and 2 times its calibrated value, with the other
+three held at their calibrated values (study deck `decks/cp_study/sens_h40.i`,
+sixteen cases plus the calibrated base, all at h40 on the plate of §2.6).
+Every case completed the 256 load steps to 20% strain without a cutback.
+Table 6 reports the 0.2%-offset yield stress, the engineering stress at
+four strains, the hardening rate at 17% strain and the root-mean-square
+deviation from the experimental markers; Figs. 10 and 11 show the curves.
+
+**Table 6.** One-at-a-time sensitivity at h40. $\sigma_y$ is the 0.2%-offset
+yield stress; $\theta_{17}$ the hardening rate $d\sigma/d\varepsilon$ at
+17% strain; RMSE against the eight markers from 0.1% strain.
+
+| case | $\sigma_y$ (MPa) | 2% | 7% | 17% | 20% | $\theta_{17}$ (GPa) | RMSE (MPa) |
+|---|---|---|---|---|---|---|---|
+| calibrated | 364 | 407 | 502 | 591 | 604 | 0.48 | 14.3 |
+| $\rho_0$ x 0.5 | 272 | 318 | 433 | 542 | 558 | 0.61 | 65.2 |
+| $\rho_0$ x 0.8 | 331 | 375 | 477 | 573 | 587 | 0.53 | 28.3 |
+| $\rho_0$ x 1.25 | 401 | 443 | 532 | 613 | 624 | 0.43 | 26.8 |
+| $\rho_0$ x 2 | 495 | 534 | 610 | 671 | 679 | 0.30 | 85.2 |
+| $k_1$ x 0.5 | 363 | 386 | 409 | 419 | 418 | 0.00 | 118.9 |
+| $k_1$ x 0.8 | 364 | 399 | 463 | 520 | 527 | 0.29 | 52.7 |
+| $k_1$ x 1.25 | 365 | 418 | 553 | 683 | 702 | 0.73 | 60.3 |
+| $k_1$ x 2 | 368 | 450 | 710 | 964 | 1,002 | 1.46 | 247.3 |
+| $y_c$ x 0.5 | 365 | 413 | 556 | 750 | 788 | 1.38 | 93.1 |
+| $y_c$ x 0.8 | 364 | 409 | 522 | 644 | 663 | 0.74 | 32.2 |
+| $y_c$ x 1.25 | 364 | 404 | 481 | 541 | 548 | 0.27 | 37.4 |
+| $y_c$ x 2 | 363 | 395 | 434 | 446 | 445 | -0.03 | 97.7 |
+| $\tau_{c0}$ x 0.5 | 353 | 396 | 491 | 581 | 593 | 0.49 | 18.7 |
+| $\tau_{c0}$ x 0.8 | 360 | 402 | 498 | 587 | 600 | 0.49 | 15.5 |
+| $\tau_{c0}$ x 1.25 | 370 | 412 | 508 | 597 | 609 | 0.48 | 14.3 |
+| $\tau_{c0}$ x 2 | 386 | 429 | 525 | 613 | 625 | 0.47 | 22.4 |
+
+**Figure 10.** One parameter varied at a time over a factor of four (top
+left to bottom right: $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$); the calibrated
+curve and the experimental markers in every panel.
+
+![sensitivity panels](../../figures/report/sens_panels.png)
+
+**Figure 11.** Engineering stress at fixed strains against the multiple of
+each parameter.
+
+![sensitivity summary](../../figures/report/sens_summary.png)
+
+### 6.2 Results
+
+**$\rho_0$ sets the yield level.** The yield stress follows the initial
+density closely, from 272 MPa at half the calibrated value to 495 MPa at
+twice it, i.e. $\sigma_y$ scales as about $\rho_0^{0.43}$, close to the
+square root of Eq. (5) softened by the rate term. The offset it produces
+fades with strain as the stored density overtakes the initial one (from
++128 to +183 MPa per e-fold at 2% down to 66 to 108 MPa per e-fold at 20%),
+and a higher $\rho_0$ also lowers the late hardening rate because the
+density starts closer to saturation. Over the factor of four the curves
+keep their shape; the parameter positions the knee.
+
+**$k_1$ sets the hardening rate and the plateau.** Yield is unchanged (363
+to 368 MPa across the factor of four), while the stress at 20% strain spans
+418 to 1,002 MPa and the hardening rate at 17% strain spans zero to 1.46
+GPa. The sensitivity grows monotonically with strain (30 to 63 MPa per
+e-fold at 2%, 268 to 574 at 20%) and is itself larger at larger $k_1$: the
+response is strongly nonlinear in $k_1$ because the saturation density of
+Eq. (7) scales as $k_1^2$. At half the calibrated value the plate stops
+hardening by 10% strain; at twice it the plate is still hardening at 1.5 GPa
+at 20%. The experiment's slope is matched only within about $\pm 20$% of the
+calibrated value.
+
+**$y_c$ sets the saturation.** Yield is unchanged (363 to 365 MPa) and the
+early curve nearly so (395 to 413 MPa at 2%), while the stress at 20%
+strain spans 445 to 788 MPa in the opposite sense to $k_1$: a larger
+annihilation distance saturates the density earlier and lower. At twice the
+calibrated value the hardening rate is zero by 17% strain; at half it the
+plate hardens at 1.38 GPa at 20%. The sensitivity is about $-230$ to $-265$
+MPa per e-fold at 20% and nearly independent of the multiple, i.e. the
+response is close to logarithmic in $y_c$ over this range. $k_1$ and $y_c$
+therefore act on the same branch of the curve with opposite sign; their
+ratio fixes the plateau through Eq. (7) and their product the rate at which
+the plateau is approached, which is why the calibration determines $k_1$
+and $y_c$ jointly ($\pm 11$% and $\pm 20$% in Table 2) rather than each
+alone.
+
+**$\tau_{c0}$ is a uniform offset.** It shifts the whole curve by 15 to 32
+MPa per e-fold with no change of shape (the hardening rate stays at 0.47 to
+0.49 GPa) and moves the yield stress by only 33 MPa over the factor of four.
+At the calibrated 5.35 MPa it is a minor term against the 76 MPa density
+contribution to the initial slip resistance, which is why it is the least
+determined parameter and the last in the calibration order.
+
+**Order of influence.** On the whole curve the ranking is $k_1$, $y_c$,
+$\rho_0$, $\tau_{c0}$ (RMSE at the x2 case 247, 98, 85 and 22 MPa); at yield
+it is $\rho_0$ first and $\tau_{c0}$ second, with $k_1$ and $y_c$ inert. The
+calibration order $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$ follows this
+separation: yield is fixed first by the parameter that alone controls it,
+the plastic branch second by the pair that controls it, and the offset last.
 
 ## References
 

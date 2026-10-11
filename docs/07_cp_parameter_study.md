@@ -340,7 +340,14 @@ The author chose h40 on the within-5% criterion (§5). Study deck
 parameter at a time at x0.5, x0.8, x1.25 and x2.0 of its calibrated value --
 rho0, k1, y_c, tau_c0, sixteen cases plus the base, ten concurrent. Collected
 with `cp_parameter_study.py collect` against the markers (RMSE, per-marker
-error, stress at 2 / 10 / 17%). Results below when the campaign lands.
+error, stress at 2 / 10 / 17%). Results (all 17 cases 256/256, 0 cutbacks, ~3 h wall for the set at ten
+concurrent): the full table is in the report §6 (Table 6). Yield 272 / 331 /
+364 / 401 / 495 MPa for rho0 x0.5 / 0.8 / 1 / 1.25 / 2 (sigma_y ~ rho0^0.43);
+20% stress 418 / 527 / 604 / 702 / 1,002 MPa for k1 and 788 / 663 / 604 / 548
+/ 445 MPa for y_c over the same multiples; tau_c0 shifts the curve 15-32
+MPa per e-fold with no change of shape. RMSE ranking at x2: k1 247, y_c 98,
+rho0 85, tau_c0 22 MPa. Figures `figures/report/sens_panels.png`,
+`sens_summary.png`; summary `results/cp_study/sens/h40/sens_h40_summary.csv`.
 
 ## 7. Grain-instance check
 

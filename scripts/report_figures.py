@@ -95,10 +95,16 @@ def read_markers(path: Path) -> tuple[np.ndarray, np.ndarray]:
 
 
 # --------------------------------------------------------------------------- style
-def box(ax, fig_cfg: dict, xlabel=True, ylabel=True):
+def box(ax, fig_cfg: dict, xlabel=True, ylabel=True, ymax=None):
+    """Closed axes box from (0, 0); the top is the deck's stress_max, or the next
+    tick block above ``ymax`` when a figure's curves exceed it."""
+    tick = float(fig_cfg["stress_tick"])
+    top = float(fig_cfg["stress_max"])
+    if ymax is not None and ymax > top:
+        top = tick * (np.floor(ymax / tick) + 1)
     ax.set_xlim(0.0, float(fig_cfg["strain_max"]))
-    ax.set_ylim(0.0, float(fig_cfg["stress_max"]))
-    ax.set_yticks(np.arange(0.0, float(fig_cfg["stress_max"]) + 1e-9, float(fig_cfg["stress_tick"])))
+    ax.set_ylim(0.0, top)
+    ax.set_yticks(np.arange(0.0, top + 1e-9, tick))
     ax.grid(False)
     for side in ("top", "right", "bottom", "left"):
         ax.spines[side].set_visible(True)
@@ -284,6 +290,8 @@ def fig_sensitivity_study(cfg, deck, out):
     e0, s0 = read_curve(_resolve(cal["results"], deck))
     ex, ey = read_markers(_resolve(f["markers"], deck))
     names = list(pert)
+    smax = max(float(np.max(read_curve(root / f"{name}_{tag}" / "results.csv")[1]))
+               for name in names for tag in tags)
     fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.6), dpi=int(f["dpi"]), sharex=True, sharey=True)
     for ax, name in zip(axes.ravel(), names):
         sym = _str(pert[name]["symbol"])
@@ -292,7 +300,7 @@ def fig_sensitivity_study(cfg, deck, out):
             ax.plot(e, s, color=col, lw=1.4, label=r"%s $\times$ %g" % (sym, fac))
         ax.plot(e0, s0, color=COLORS["fe"], lw=2.0, label="calibrated")
         exp_marker(ax, ex, ey, label=False)
-        box(ax, f, xlabel=False, ylabel=False)
+        box(ax, f, xlabel=False, ylabel=False, ymax=smax)
         ax.legend(loc="lower right", frameon=False, ncol=1)
     for ax in axes[1]:
         ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)")
@@ -311,7 +319,7 @@ def fig_sensitivity_study(cfg, deck, out):
             ax.plot(xs, ys, marker=mk, ms=4, lw=1.1, color=col, label=r"$\varepsilon$ = %g%%" % eps)
         ax.set_xscale("log", base=2); ax.set_xticks([0.5, 0.8, 1.0, 1.25, 2.0]); ax.set_xticklabels(["0.5", "0.8", "1", "1.25", "2"])
         ax.set_xlabel(r"multiple of calibrated %s" % sym)
-        ax.set_ylim(0.0, float(f["stress_max"])); ax.grid(False)
+        ax.set_ylim(0.0, float(f["stress_tick"]) * (np.floor(smax / float(f["stress_tick"])) + 1)); ax.grid(False)
     axes[0].set_ylabel(r"Engineering stress $\sigma$ (MPa)")
     axes[0].legend(loc="lower right", frameon=False, fontsize=7)
     fig.tight_layout(); fig.savefig(out / "sens_summary.png"); plt.close(fig)
