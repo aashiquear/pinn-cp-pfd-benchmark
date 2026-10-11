@@ -176,7 +176,9 @@ def main(argv):
             frames.append({"index": k, "nodes": v["nodes"], "cells": v["cells"],
                            "disp": v["point"]["displacement"],
                            "peeq": v["cell"]["equivalent_plastic_strain"]})
-        loaded[name] = {"label": str(s.get("label", name)), "frames": frames}
+        lab = s.get("label", name)
+        lab = " ".join(str(x) for x in lab) if isinstance(lab, (list, tuple)) else str(lab)
+        loaded[name] = {"label": lab, "frames": frames}
     n_frames = min(len(v["frames"]) for v in loaded.values())
     # Nominal strain of frame j: the load factor is written in the history, but
     # the series is uniform in load factor, so eps_j = strain_max * (j+1)/n_frames
@@ -192,7 +194,7 @@ def main(argv):
         for ax, name in zip(np.ravel(axes), names):
             fr = loaded[name]["frames"][j]
             quads = top_quads(fr["nodes"], fr["cells"], fr["disp"], scale)
-            pc = PolyCollection(quads, array=fr["peeq"], cmap=cmap, edgecolors="none")
+            pc = PolyCollection(quads, array=fr["peeq"], cmap=cmap, edgecolors="face", linewidths=0.3)
             pc.set_clim(0.0, vmax)
             ax.add_collection(pc)
             ax.set_xlim(-2, 102 + 100 * strain_max * scale + 2); ax.set_ylim(-2, 52)

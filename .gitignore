@@ -26,7 +26,7 @@ out/
 *.npy
 # Field snapshots and solver dumps inside results
 results/**/solver/fields*
-results/**/fields/
+# (results/cp_study/fields/ holds the field-series reruns; their vtk is ignored by *.vtk)
 results/**/final_field.npz
 # The reference MOOSE outputs stay on disk beside their decks, not in git
 moose/*_out.e
