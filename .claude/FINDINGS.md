@@ -58,6 +58,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
   failed step; scripts/polycrystal_plate.py truncates them.
 
 ## Traps found
+- PINNACLE before a311a8b: on an ORIENTATION-FIELD deck the batched CP
+  sub-stepper passed the per-point slip tensors but not the per-point
+  rotated stiffness C, so the state evolved under the material-global
+  elastic law while the residual used the rotated one (single crystals
+  unaffected). Fixed in a311a8b (ADR 0027); the effect on the reported h40
+  curve is measured by `decks/cp_study/check_cfix_h40.i` (docs/07 §9).
 - `[OrientationField]` in a deck was silently dropped by the translator until
   PINNACLE 141ebd8 (fixed). Always check `pinnacle.log` for the line
   "[OrientationField] ... resolved on N elements".

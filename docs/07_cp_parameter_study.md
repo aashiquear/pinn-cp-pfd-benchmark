@@ -384,3 +384,17 @@ runs were repeated with `snapshots_every = 4` (`decks/cp_study/fields_h*.i`,
 (`scripts/plastic_strain_animation.py`, deck
 `decks/report/plastic_strain_animation.i`). The stress-strain curves of the
 reruns must equal the originals; that equality is checked when they land.
+
+## 9. Framework fix found while batching the CP path (2026-10-11)
+
+Making the CP evaluation batched for the GPU (PINNACLE a311a8b, ADR 0027)
+exposed, through a batched-versus-per-point parity test, that the batched
+sub-stepper on an orientation-field deck had been subsetting the per-point
+directions, normals and Schmid tensors but NOT the per-point rotated
+stiffness: the CP state evolved under the material-global elastic law while
+the residual (stress and tangent) used the rotated one. Every polycrystal FE
+run of this study took that path. Al's cubic anisotropy is mild (Zener ratio
+1.22), so the effect on the curve is expected to be small, but it must be
+measured, not assumed: `check_cfix_h40.i` repeats the calibrated h40 run with
+the fix. Result below when it lands; if the curve moves by more than the
+mesh/instance spread, the calibration is repeated with the fixed framework.
