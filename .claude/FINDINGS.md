@@ -17,6 +17,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Taylor term uses the LATENT-HARDENED SUM (PINNACLE's convention), to be
   discussed as a model limitation later.
 - Phase-field (damage) parameters are revisited after CPFE is settled.
+- Grain-instance check: a 30-grain pseudo-3D realization can be a severe
+  outlier (one was 17.5% stronger than the calibrated structure, mostly from
+  grain arrangement). The author drops such outliers and draws another seed;
+  an instance within a few percent is acceptable.
 - Compute: CPU for now. The author wants GPU eventually; see below.
 - Never launch a multi-run campaign without (1) one checked single case and
   (2) the author's agreement on the design.

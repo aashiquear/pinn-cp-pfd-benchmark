@@ -1,0 +1,10 @@
+2026-10-11 11:26:16 INFO    pinnacle: Logging to results/graingrowth_instance/sB/pinnacle.log (level=info, console=False)
+2026-10-11 11:26:16 INFO    pinnacle.cli.main: Starting run from deck 'decks/graingrowth/instances/n32_bdf1_h40_sB.i'
+2026-10-11 11:26:16 INFO    pinnacle.runner.builder: Built backend 'numpy' on device 'cpu' with precision 'float64' (composed path)
+2026-10-11 12:11:41 INFO    pinnacle.system.problem: Postprocessor 'gb_area' -> 601.722213426846
+2026-10-11 12:11:41 INFO    pinnacle.runner.runner: Wrote CSV output to results/graingrowth_instance/sB/stress_strain.csv
+2026-10-11 12:11:41 INFO    pinnacle.runner.runner: Wrote postprocessor CSV to results/graingrowth_instance/sB/postprocessors.csv
+2026-10-11 12:11:41 INFO    pinnacle.runner.runner: Wrote per-step solver history to results/graingrowth_instance/sB/solver_history.csv
+2026-10-11 12:11:41 INFO    pinnacle.runner.runner: Wrote VTK field output to results/graingrowth_instance/sB/fields.vtk
+2026-10-11 12:11:41 INFO    pinnacle.runner.runner: Wrote summary to results/graingrowth_instance/sB/summary.json
+2026-10-11 12:11:41 INFO    pinnacle.cli.main: Run complete; outputs in results/graingrowth_instance/sB

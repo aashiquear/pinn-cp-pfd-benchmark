@@ -104,16 +104,16 @@
   [./calibrated]
     results = ../../results/cp_study/cal/gn2/base/results.csv
     grains  = ../../results/cp_study/cal/gn2/base/grains.npz
-    label   = 'instance 1 (calibrated structure)'
+    label   = 'instance 1 (calibrated structure, seed 20261009)'
   []
-  [./sA]
-    results = ../../results/cp_study/grain_instance/sA/results.csv
-    grains  = ../../results/cp_study/grain_instance/sA/grains.npz
-    label   = 'instance 2'
+  [./sC]
+    results = ../../results/cp_study/grain_instance/sC/results.csv
+    grains  = ../../results/cp_study/grain_instance/sC/grains.npz
+    label   = 'instance 2 (seed 20261013)'
   []
   [./sB]
     results = ../../results/cp_study/grain_instance/sB/results.csv
     grains  = ../../results/cp_study/grain_instance/sB/grains.npz
-    label   = 'instance 3'
+    label   = 'instance 3 (seed 20261012)'
   []
 []

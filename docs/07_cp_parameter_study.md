@@ -350,7 +350,18 @@ plate, rng seeds 20261011 and 20261012, decks written by
 the identical settings), each with its own orientation draw (same seeds), run
 with the calibrated set at h40 (`decks/cp_study/grain_s{A,B}.i`). The curves
 are compared with the calibrated structure's to show the set is not tied to
-one realization. Results below when the runs land.
+one realization.
+
+First pair (2026-10-11): instance B (30 grains, seed 20261012) is within 2%
+of the calibrated structure over the whole curve (593.2 vs 603.9 MPa at 20%,
+-1.8% mean). Instance A (32 grains, seed 20261011) was 17.5% stronger from
+yield onward (729.5 MPa at 20%); its area-weighted Taylor estimate along x
+is only 4.5% above the calibrated set's, so most of the offset was the grain
+arrangement, not the orientation draw. The author's decision: such severe
+outlier realizations occur and are dropped; instance A and the
+texture-swap diagnostic prepared for it were removed, and a replacement
+instance (seed 20261013, `grain_sC.i`) is run instead. Instance B's result
+is accepted.
 
 ## 8. Field series for the plastic-strain animation
 
