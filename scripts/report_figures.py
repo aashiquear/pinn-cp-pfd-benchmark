@@ -21,6 +21,8 @@ Figures written to ``[Figures] out_dir``:
   cal_error.png           per-marker relative error of the calibrated set
   cal_sensitivity.png     dS/d(ln p) of each parameter along the curve
   grain_structure.png     the 30-grain plate used by every run
+  mesh_curves.png         mesh sensitivity curves ([Mesh] block)
+  mesh_convergence.png    stress at fixed strains against element size
 
 Usage: report_figures.py decks/report/cp_calibration_figures.i
 """
@@ -227,6 +229,41 @@ def fig_grains(cfg, deck, out):
     fig.tight_layout(); fig.savefig(out / "grain_structure.png"); plt.close(fig)
 
 
+MESH_COLORS = ["#9e9e9e", "#1f4e9c", "#d1495b", "#111111"]
+
+
+def fig_mesh(cfg, deck, out):
+    """Mesh sensitivity: the four meshes on one axis, plus the stress at 2/7/17/20% vs h."""
+    f = cfg["figures"]; meshes = cfg.get("mesh")
+    if not meshes:
+        return
+    ex, ey = read_markers(_resolve(f["markers"], deck))
+    fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=int(f["dpi"]))
+    hs, curves = [], []
+    for i, (name, m) in enumerate(meshes.items()):
+        e, s = read_curve(_resolve(m["results"], deck))
+        hs.append(float(m["h"])); curves.append((e, s))
+        ax.plot(e, s, color=MESH_COLORS[i % len(MESH_COLORS)], lw=1.6,
+                label=r"%s, $h$ = %g $\mu$m" % (_str(m["label"]), float(m["h"])))
+    exp_marker(ax, ex, ey)
+    box(ax, f)
+    ax.legend(loc="lower right", frameon=False)
+    fig.tight_layout(); fig.savefig(out / "mesh_curves.png"); plt.close(fig)
+    # convergence plot: stress at fixed strains against h
+    fig, ax = plt.subplots(figsize=(5.0, 3.8), dpi=int(f["dpi"]))
+    for j, (eps, mk) in enumerate(((2.0, "o"), (7.0, "s"), (17.0, "^"), (20.0, "D"))):
+        vals = [float(np.interp(eps, e, s)) for e, s in curves]
+        ax.plot(hs, vals, marker=mk, ms=5, lw=1.2, color=["#1f4e9c", "#00798c", "#d1495b", "#111111"][j],
+                label=r"$\varepsilon$ = %g%%" % eps)
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(hs); ax.set_xticklabels([f"{h:g}" for h in hs])
+    ax.set_xlabel(r"Element size $h$ ($\mu$m)")
+    ax.set_ylabel(r"Engineering stress $\sigma$ (MPa)")
+    ax.set_ylim(350, 700); ax.grid(False)
+    ax.legend(loc="upper left", frameon=False, ncol=2)
+    fig.tight_layout(); fig.savefig(out / "mesh_convergence.png"); plt.close(fig)
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__); return 2
@@ -234,7 +271,7 @@ def main(argv):
     cfg = read_deck(deck)
     out = _resolve(cfg["figures"]["out_dir"], deck)
     out.mkdir(parents=True, exist_ok=True)
-    for fn in (fig_final, fig_oat, fig_error, fig_sensitivity, fig_grains):
+    for fn in (fig_final, fig_oat, fig_error, fig_sensitivity, fig_grains, fig_mesh):
         fn(cfg, deck, out)
     print("wrote", sorted(p.name for p in out.glob("*.png")))
     return 0

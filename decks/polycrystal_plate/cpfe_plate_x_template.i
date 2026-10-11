@@ -141,6 +141,9 @@
   # this plate); gmres is the iterative alternative for larger meshes.
   linear_method    = @LINEAR@
   sparse_threshold = 0
+  # Per-step field snapshots (0 = final state only); N writes
+  # fields_step{NNNN}.vtk + fields.pvd every N accepted steps.
+  snapshots_every  = @SNAPSHOTS@
 []
 
 [Output]

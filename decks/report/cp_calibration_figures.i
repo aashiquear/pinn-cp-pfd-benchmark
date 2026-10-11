@@ -61,3 +61,29 @@
     unit    = MPa
   []
 []
+
+# Mesh sensitivity with the calibrated set (decks/cp_study/mesh_h{20,80,160}.i;
+# h40 is the calibrated run itself). label is the legend text; h is the
+# element size in micrometers.
+[Mesh]
+  [./h20]
+    results = ../../results/cp_study/mesh/h20/results.csv
+    label   = h20
+    h       = 5.0
+  []
+  [./h40]
+    results = ../../results/cp_study/cal/gn2/base/results.csv
+    label   = h40
+    h       = 2.5
+  []
+  [./h80]
+    results = ../../results/cp_study/mesh/h80/results.csv
+    label   = h80
+    h       = 1.25
+  []
+  [./h160]
+    results = ../../results/cp_study/mesh/h160/results.csv
+    label   = h160
+    h       = 0.625
+  []
+[]

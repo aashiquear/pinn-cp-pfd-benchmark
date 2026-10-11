@@ -486,8 +486,67 @@ realization and orientation draw. The mesh dependence is quantified in §5.
 
 ## 5. Mesh sensitivity
 
-*(held; runs at h20, h80 and h160 with the calibrated set are complete or in
-progress, see `docs/07_cp_parameter_study.md` §5)*
+### 5.1 Design
+
+The calibrated set of Table 2 was run on four meshes of the same plate, grain
+structure, orientations and loading, changing only the element count:
+h20, h40, h80 and h160 (Table 5; decks `decks/cp_study/mesh_h{20,80,160}.i`,
+h40 being the calibrated run). All four runs completed the 256 load steps to
+20% strain without a cutback.
+
+**Table 5.** Meshes of the sensitivity study and the engineering stress at
+four strains; the last column is the change from the next coarser mesh at
+2 / 7 / 20% strain.
+
+| mesh | elements | $h$ ($\mu$m) | elements across a grain | 2% | 7% | 17% | 20% | change from coarser mesh | wall time |
+|---|---|---|---|---|---|---|---|---|---|
+| h20 | 200 | 5.0 | 2.7 | 419.8 | 523.3 | 621.9 | 636.4 | | 16 min |
+| h40 | 800 | 2.5 | 5.5 | 406.9 | 502.4 | 591.5 | 603.9 | -3.1 / -4.0 / -5.1% | 40 min |
+| h80 | 3,200 | 1.25 | 11 | 401.4 | 492.4 | 575.3 | 586.4 | -1.3 / -2.0 / -2.9% | 4.3 h |
+| h160 | 12,800 | 0.625 | 22 | 398.3 | 486.0 | 563.5 | 573.5 | -0.8 / -1.3 / -2.2% | 17.7 h |
+
+### 5.2 Results
+
+**Figure 7.** Stress-strain curves of the four meshes with the calibrated
+set.
+
+![mesh curves](../../figures/report/mesh_curves.png)
+
+**Figure 8.** Engineering stress at fixed strains against element size.
+
+![mesh convergence](../../figures/report/mesh_convergence.png)
+
+The response softens monotonically with refinement at every strain (Figs. 7
+and 8). The coarse mesh is the stiff one, as a displacement-based
+discretization with fewer than three elements across a grain must be, and
+the change per halving of $h$ decreases: 5.1%, 2.9% and 2.2% at 20% strain.
+The convergence is first-order-like at yield, where the ratio of successive
+changes is 0.56 (apparent order 0.8), but slows on the plastic branch, where
+the ratio rises to 0.74 at 20% strain (apparent order 0.44). The finer
+meshes keep resolving sharper slip bands at grain boundaries and triple
+junctions; the constitutive law of §2 has no internal length, so localized
+slip remains mesh-dependent and the plastic branch does not reach an
+asymptote within the range studied. Extrapolating the last change with its
+local ratio puts the remaining change beyond h160 at about 1% at 2% strain
+and about 6% at 20%, with the latter uncertain because the ratio is still
+rising.
+
+The element-averaged equivalent plastic strain of the four meshes is shown
+in Fig. 9 at 2, 8, 15 and 20% nominal strain, and animated over the full
+loading in `figures/report/plastic_strain_mesh.gif`. *(figures pending the
+field-series reruns, decks `decks/cp_study/fields_h{20,40,80,160}.i`)*
+
+### 5.3 Mesh selection
+
+The author's criterion for the parameter work is a response within 5% of
+the finest mesh. h40 meets it at every strain (at most 5.0% from h160, at
+20%; 2.1% at 2%) at a cost of about 40 min per run on one core, against 4.3
+h for h80 (within 3%) and 17.7 h for h160. **h40 is therefore the mesh of
+the parameter sensitivity study of §6 and of the calibrated set of Table 2;
+the set is reported as a mesh-specific calibration at $h = 2.5\ \mu$m.** A
+transfer of the set to a finer mesh is a small correction in the direction
+of the mesh shift, about +2% on $\rho_0$ and +3% on $k_1$ per halving of
+$h$ from the sensitivities of Table 4.
 
 ## 6. Parameter sensitivity on the converged mesh
 

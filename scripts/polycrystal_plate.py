@@ -30,7 +30,9 @@ Pipeline deck blocks (see decks/polycrystal_plate/*.i for a filled example):
   [Mechanics]     out_dir, strain, t_end, n_steps, nx, ny, thickness,
                   newton_tol, max_cutbacks, and the CP material values
                   (C11 C12 C44 mu gamma0 nexp tau_c0 q_lat alpha0 burgers
-                  rho0 k1 y_c); load_axis = x | y picks the template
+                  rho0 k1 y_c); load_axis = x | y picks the template;
+                  snapshots_every = N (optional, default 0) writes the field
+                  series every N load steps (PINNACLE cp_quasi_static)
 
 Usage: polycrystal_plate.py DECK.i STAGE [STAGE ...]   (STAGE in label orient deck curve all)
 """
@@ -239,7 +241,8 @@ def stage_deck(cfg: dict, deck: Path, out: Path) -> Path:
     mech = dict(cfg["mechanics"])
     src = TEMPLATES[str(mech.get("load_axis", "y")).lower()].read_text()
     sub = {"OUTDIR": str(out / "solver"), "POINTFILE": "orientations_points.csv",
-           "LINEAR": str(mech.get("linear_method", "direct"))}
+           "LINEAR": str(mech.get("linear_method", "direct")),
+           "SNAPSHOTS": str(int(mech.get("snapshots_every", 0)))}
     for key, ph in MECH_KEYS.items():
         if key not in mech:
             raise SystemExit(f"[Mechanics] is missing '{key}'")
