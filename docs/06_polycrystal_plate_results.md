@@ -226,3 +226,16 @@ the thread count, because the per-point constitutive loop is Python-bound
 and the sparse CG solve is a small fraction. The host has 16 physical cores
 (32 threads), so the practical policy is one core per run and up to ~14
 runs concurrently; more cores per run buy nothing.
+
+### 6a. Re-measurement after the batched CP path (2026-10-11)
+
+PINNACLE ADR 0027 (batched `compute_stacked`, stacked quadrature-point
+state, per-point orientations and masks as stacked tensors) re-timed on the
+same 4-step h40 deck and host: numpy 32 -> 6.0 s, torch-CPU 145 -> 4.6 s,
+torch-GPU 549 -> 4.55 s, identical stresses on all three backends and
+against the per-point path. The GPU penalty was launch overhead and host
+crossings, not arithmetic; at this problem size the device time is now a
+few percent of the step and the rest is the sparse LU and assembly, so CPU
+and GPU coincide. Run row `bench-batched` in the ledger; PINNACLE report
+`docs/reports/cp_field_backend_measurement_2026-10-09.md` (its last
+section).

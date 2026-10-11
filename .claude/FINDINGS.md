@@ -37,8 +37,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - CP plate run cost (numpy): ~8 s per load step on 800 elements; one core per
   run regardless of OMP threads (Python-bound). Host has 16 physical cores:
   run cases concurrently, ~14 at a time.
-- torch backend on the same deck: CPU 4.5x slower, GPU (Radeon 8060S) 17x
-  slower than numpy. Cause: per-point single evaluations in the tangent
+- torch backend on the same deck: BEFORE ADR 0027, CPU 4.5x slower, GPU
+  (Radeon 8060S) 17x slower than numpy. AFTER (batched, stacked state,
+  2026-10-11): 4-step h40 plate numpy 6.0 s, torch-CPU 4.6 s, torch-GPU
+  4.55 s, identical results; CP field solves may run on torch at no penalty. Cause: per-point single evaluations in the tangent
   (224k calls per step). The APU's fp64 GPU throughput equals its CPU's.
   Working wheel: `torch==2.13.0+rocm7.2` (the rocm7.1 wheel segfaults).
 - With the reference parameter set, PINNACLE's 30-grain plate (y-loaded,
