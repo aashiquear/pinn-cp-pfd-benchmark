@@ -87,3 +87,33 @@
     h       = 0.625
   []
 []
+
+# Parameter sensitivity at h40 (decks/cp_study/sens_h40.i): results of the
+# study's collect stage plus the case directories. factors are the multiples
+# of the calibrated value, in the order the case names carry them.
+[Sensitivity]
+  root    = ../../results/cp_study/sens/h40
+  summary = ../../results/cp_study/sens/h40/sens_h40_summary.csv
+  factors = '0.5 0.8 1.25 2'
+  tags    = 'x0p5 x0p8 x1p25 x2'
+[]
+
+# Grain-instance check (decks/cp_study/grain_s{A,B}.i): the calibrated set on
+# two further grain structures and orientation draws.
+[Instances]
+  [./calibrated]
+    results = ../../results/cp_study/cal/gn2/base/results.csv
+    grains  = ../../results/cp_study/cal/gn2/base/grains.npz
+    label   = 'instance 1 (calibrated structure)'
+  []
+  [./sA]
+    results = ../../results/cp_study/grain_instance/sA/results.csv
+    grains  = ../../results/cp_study/grain_instance/sA/grains.npz
+    label   = 'instance 2'
+  []
+  [./sB]
+    results = ../../results/cp_study/grain_instance/sB/results.csv
+    grains  = ../../results/cp_study/grain_instance/sB/grains.npz
+    label   = 'instance 3'
+  []
+[]

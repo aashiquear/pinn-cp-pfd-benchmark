@@ -23,6 +23,10 @@ Figures written to ``[Figures] out_dir``:
   grain_structure.png     the 30-grain plate used by every run
   mesh_curves.png         mesh sensitivity curves ([Mesh] block)
   mesh_convergence.png    stress at fixed strains against element size
+  sens_panels.png         parameter sensitivity at h40, one panel per parameter
+  sens_summary.png        stress at fixed strains against the multiple of each parameter
+  instances_curves.png    grain-instance check, three structures
+  instances_grains.png    the three grain maps
 
 Usage: report_figures.py decks/report/cp_calibration_figures.i
 """
@@ -264,6 +268,90 @@ def fig_mesh(cfg, deck, out):
     fig.tight_layout(); fig.savefig(out / "mesh_convergence.png"); plt.close(fig)
 
 
+FACTOR_COLORS = ["#7a2e3a", "#d1495b", "#4f8fdc", "#1f2f5c"]
+
+
+def fig_sensitivity_study(cfg, deck, out):
+    """Parameter sensitivity at h40: one panel per parameter, four multiples each."""
+    f = cfg["figures"]; cal = cfg["calibrated"]; pert = cfg["perturbations"]; sens = cfg.get("sensitivity")
+    if not sens:
+        return
+    root = _resolve(str(sens["root"]), deck)
+    factors = [float(v) for v in _str(sens["factors"]).split()] if isinstance(sens["factors"], str) else [float(v) for v in sens["factors"]]
+    tags = _str(sens["tags"]).split() if isinstance(sens["tags"], str) else [str(v) for v in sens["tags"]]
+    if not all((root / f"{name}_{tag}" / "results.csv").exists() for name in pert for tag in tags):
+        print("sensitivity: results incomplete, figure skipped"); return
+    e0, s0 = read_curve(_resolve(cal["results"], deck))
+    ex, ey = read_markers(_resolve(f["markers"], deck))
+    names = list(pert)
+    fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.6), dpi=int(f["dpi"]), sharex=True, sharey=True)
+    for ax, name in zip(axes.ravel(), names):
+        sym = _str(pert[name]["symbol"])
+        for fac, tag, col in zip(factors, tags, FACTOR_COLORS):
+            e, s = read_curve(root / f"{name}_{tag}" / "results.csv")
+            ax.plot(e, s, color=col, lw=1.4, label=r"%s $\times$ %g" % (sym, fac))
+        ax.plot(e0, s0, color=COLORS["fe"], lw=2.0, label="calibrated")
+        exp_marker(ax, ex, ey, label=False)
+        box(ax, f, xlabel=False, ylabel=False)
+        ax.legend(loc="lower right", frameon=False, ncol=1)
+    for ax in axes[1]:
+        ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)")
+    for ax in axes[:, 0]:
+        ax.set_ylabel(r"Engineering stress $\sigma$ (MPa)")
+    fig.tight_layout(); fig.savefig(out / "sens_panels.png"); plt.close(fig)
+    # summary: stress at fixed strains against the multiple, one panel per parameter
+    fig, axes = plt.subplots(1, 4, figsize=(11.0, 3.2), dpi=int(f["dpi"]), sharey=True)
+    for ax, name in zip(axes, names):
+        sym = _str(pert[name]["symbol"])
+        for eps, mk, col in ((2.0, "o", "#1f4e9c"), (7.0, "s", "#00798c"), (17.0, "^", "#d1495b"), (20.0, "D", "#111111")):
+            xs, ys = [], []
+            for fac, tag in sorted(zip(factors + [1.0], tags + ["cal"])):
+                e, s = (e0, s0) if tag == "cal" else read_curve(root / f"{name}_{tag}" / "results.csv")
+                xs.append(fac); ys.append(float(np.interp(eps, e, s)))
+            ax.plot(xs, ys, marker=mk, ms=4, lw=1.1, color=col, label=r"$\varepsilon$ = %g%%" % eps)
+        ax.set_xscale("log", base=2); ax.set_xticks([0.5, 0.8, 1.0, 1.25, 2.0]); ax.set_xticklabels(["0.5", "0.8", "1", "1.25", "2"])
+        ax.set_xlabel(r"multiple of calibrated %s" % sym)
+        ax.set_ylim(0.0, float(f["stress_max"])); ax.grid(False)
+    axes[0].set_ylabel(r"Engineering stress $\sigma$ (MPa)")
+    axes[0].legend(loc="lower right", frameon=False, fontsize=7)
+    fig.tight_layout(); fig.savefig(out / "sens_summary.png"); plt.close(fig)
+
+
+def fig_instances(cfg, deck, out):
+    """Grain-instance check: three structures, three curves."""
+    f = cfg["figures"]; inst = cfg.get("instances")
+    if not inst:
+        return
+    if not all(_resolve(str(v["results"]), deck).exists() for v in inst.values()):
+        print("instances: results incomplete, figure skipped"); return
+    ex, ey = read_markers(_resolve(f["markers"], deck))
+    cols = [COLORS["fe"], "#d1495b", "#00798c"]
+    fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=int(f["dpi"]))
+    for (name, v), col in zip(inst.items(), cols):
+        e, s = read_curve(_resolve(str(v["results"]), deck))
+        ax.plot(e, s, color=col, lw=1.6, label=_str(v["label"]))
+    exp_marker(ax, ex, ey)
+    box(ax, f)
+    ax.legend(loc="lower right", frameon=False)
+    fig.tight_layout(); fig.savefig(out / "instances_curves.png"); plt.close(fig)
+    # grain maps
+    fig, axes = plt.subplots(1, len(inst), figsize=(4.2 * len(inst), 2.6), dpi=int(f["dpi"]))
+    for ax, (name, v) in zip(np.ravel(axes), inst.items()):
+        gp = _resolve(str(v["grains"]), deck)
+        if not gp.exists():
+            ax.axis("off"); continue
+        z = np.load(gp); gid, xs, ys = z["gid"], z["xs"], z["ys"]
+        rng = np.random.default_rng(3); n = int(gid.max()) + 1; lut = rng.permutation(n)
+        img = plt.get_cmap("tab20", 20)(lut[gid] % 20)
+        edge = np.zeros_like(gid, dtype=bool)
+        edge[1:, :] |= gid[1:, :] != gid[:-1, :]; edge[:, 1:] |= gid[:, 1:] != gid[:, :-1]
+        img[edge] = (0.12, 0.12, 0.12, 1.0)
+        ax.imshow(np.transpose(img, (1, 0, 2)), origin="lower", extent=[xs[0], xs[-1], ys[0], ys[-1]], interpolation="nearest")
+        ax.set_title("%s, %d grains" % (_str(v["label"]), n), fontsize=9, loc="left")
+        ax.set_xticks([0, 50, 100]); ax.set_yticks([0, 25, 50])
+    fig.tight_layout(); fig.savefig(out / "instances_grains.png"); plt.close(fig)
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__); return 2
@@ -271,7 +359,8 @@ def main(argv):
     cfg = read_deck(deck)
     out = _resolve(cfg["figures"]["out_dir"], deck)
     out.mkdir(parents=True, exist_ok=True)
-    for fn in (fig_final, fig_oat, fig_error, fig_sensitivity, fig_grains, fig_mesh):
+    for fn in (fig_final, fig_oat, fig_error, fig_sensitivity, fig_grains, fig_mesh,
+               fig_sensitivity_study, fig_instances):
         fn(cfg, deck, out)
     print("wrote", sorted(p.name for p in out.glob("*.png")))
     return 0
