@@ -60,6 +60,52 @@ python scripts/tools/exodus_summary.py moose/CPFE_out.e --pull-axis y \
     --csv data/reference/moose_cpfe_plain_plate_stress_strain.csv
 ```
 
+## 6. CP parameter study (calibration, mesh, sensitivity, grain instances)
+
+All study decks are under `decks/cp_study/` and ship with the repository.
+
+```
+# calibration iterations (center + one perturbation per parameter)
+python scripts/cp_parameter_study.py decks/cp_study/cal_gn1.i prepare run collect
+python scripts/cp_gauss_newton.py decks/cp_study/cal_gn1.i          # writes cal_center2.i, cal_gn2.i
+python scripts/cp_parameter_study.py decks/cp_study/cal_gn2.i prepare run collect
+
+# mesh sensitivity with the calibrated set (h40 = results/cp_study/cal/gn2/base)
+for m in h20 h80 h160; do
+  python scripts/polycrystal_plate.py decks/cp_study/mesh_$m.i label orient deck
+  (cd results/cp_study/mesh/$m && pinnacle run cpfe.i)
+  python scripts/polycrystal_plate.py decks/cp_study/mesh_$m.i curve
+done
+
+# parameter sensitivity at h40 (base + 16 one-at-a-time cases)
+python scripts/cp_parameter_study.py decks/cp_study/sens_h40.i prepare run collect
+
+# grain instances: new seedings grown, then the calibrated set on each
+pinnacle run decks/graingrowth/instances/n32_bdf1_h40_sA.i
+pinnacle run decks/graingrowth/instances/n32_bdf1_h40_sB.i
+for t in A B; do
+  python scripts/polycrystal_plate.py decks/cp_study/grain_s$t.i label orient deck
+  (cd results/cp_study/grain_instance/s$t && pinnacle run cpfe.i)
+  python scripts/polycrystal_plate.py decks/cp_study/grain_s$t.i curve
+done
+```
+
+## 7. Field series and the plastic-strain animation
+
+```
+for m in h20 h40 h80 h160; do
+  python scripts/polycrystal_plate.py decks/cp_study/fields_$m.i label orient deck
+  (cd results/cp_study/fields/$m && pinnacle run cpfe.i)      # writes fields_step*.vtk + fields.pvd
+done
+python scripts/plastic_strain_animation.py decks/report/plastic_strain_animation.i
+```
+
+## 8. Report figures
+
+```
+python scripts/report_figures.py decks/report/cp_calibration_figures.i   # -> figures/report/
+```
+
 ## Provenance record
 
 | Item | Where |
