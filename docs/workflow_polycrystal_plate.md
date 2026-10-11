@@ -72,6 +72,23 @@ syntax):
 
 ## Stage 3 -- the CPFE run and its curve
 
+Optional `[Mechanics] snapshots_every = N` (default 0) makes the generated
+deck record the fields every N accepted load steps (PINNACLE `cp_quasi_static`
+`snapshots_every`, commit 6517a31): the run then also writes
+`fields_step{NNNN}.vtk` + `fields.pvd`, which `scripts/plastic_strain_animation.py`
+turns into the equivalent-plastic-strain animation of the report. Each frame
+costs one copy of the per-point fields in memory and one VTK file on disk
+(about 10 MB per frame at h160), so the study uses N = 4.
+
+### Further grain instances
+
+`scripts/make_growth_instance.py TEMPLATE.i --seed S --out NEW.i --output-dir D`
+writes a growth deck identical to the pilot's except for a new uniform
+Voronoi seeding drawn with `default_rng(S)`; the coordinates are written into
+the new deck, so the instance is reproducible from the deck alone. A pipeline
+deck then points `[Growth] run_dir` at that run and `[Orientations] seed` at a
+new draw (`decks/cp_study/grain_s{A,B}.i`).
+
 `pinnacle run cpfe.i`. The `cp_quasi_static` executioner records, per
 accepted load step, the ramp time and the quadrature-point mean stress and
 strain tensors (PINNACLE commit 14dd45c), so `solver_history.csv` is the

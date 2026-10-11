@@ -332,3 +332,31 @@ converged to better than a few percent at 20% strain. The RMSE rises away
 from h40 only because the set was calibrated AT h40; the refit on the chosen
 mesh is a small, mostly rho0/k1 correction of the size of the mesh shift
 (about +2% on rho0 and +3% on k1 per halving, from the §4c sensitivities).
+
+## 6. Parameter sensitivity at h40 (decision 2026-10-11: h40 is the mesh)
+
+The author chose h40 on the within-5% criterion (§5). Study deck
+`decks/cp_study/sens_h40.i`: the calibrated center (`cal_center2.i`) and one
+parameter at a time at x0.5, x0.8, x1.25 and x2.0 of its calibrated value --
+rho0, k1, y_c, tau_c0, sixteen cases plus the base, ten concurrent. Collected
+with `cp_parameter_study.py collect` against the markers (RMSE, per-marker
+error, stress at 2 / 10 / 17%). Results below when the campaign lands.
+
+## 7. Grain-instance check
+
+Two further grain structures from new Voronoi seedings (uniform in the
+plate, rng seeds 20261011 and 20261012, decks written by
+`scripts/make_growth_instance.py` from the pilot growth deck and grown with
+the identical settings), each with its own orientation draw (same seeds), run
+with the calibrated set at h40 (`decks/cp_study/grain_s{A,B}.i`). The curves
+are compared with the calibrated structure's to show the set is not tied to
+one realization. Results below when the runs land.
+
+## 8. Field series for the plastic-strain animation
+
+PINNACLE 6517a31 adds `snapshots_every` to `cp_quasi_static`; the four mesh
+runs were repeated with `snapshots_every = 4` (`decks/cp_study/fields_h*.i`,
+64 frames to 20%) so the equivalent plastic strain can be animated
+(`scripts/plastic_strain_animation.py`, deck
+`decks/report/plastic_strain_animation.i`). The stress-strain curves of the
+reruns must equal the originals; that equality is checked when they land.
