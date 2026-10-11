@@ -26,7 +26,8 @@ Pipeline deck blocks (see decks/polycrystal_plate/*.i for a filled example):
   [Growth]        run_dir  = <dir holding fields.vtk of the growth run>
                   deck     = <the growth deck, recorded for provenance>
   [Labeling]      threshold = 0.5   min_cells = 4
-  [Orientations]  seed = <int>
+  [Orientations]  seed = <int>   (or file = <grains.csv of another run>: grain g
+                  takes row g, for texture/geometry swap experiments)
   [Mechanics]     out_dir, strain, t_end, n_steps, nx, ny, thickness,
                   newton_tol, max_cutbacks, and the CP material values
                   (C11 C12 C44 mu gamma0 nexp tau_c0 q_lat alpha0 burgers
@@ -212,8 +213,20 @@ def stage_orient(cfg: dict, deck: Path, out: Path) -> dict:
     z = np.load(out / "grains.npz")
     gid, xs, ys = z["gid"], z["xs"], z["ys"]
     n = int(gid.max()) + 1
-    seed = int(cfg["orientations"]["seed"])
-    euler = uniform_so3_euler(n, seed)
+    ocfg = cfg["orientations"]
+    if "file" in ocfg:
+        # Orientations taken from another run's grains.csv (grain g takes row
+        # g), for swap experiments that separate texture from grain geometry.
+        # The file must hold at least n rows; the seed key is then not used.
+        src = _resolve(str(ocfg["file"]), deck)
+        rows = list(csv.DictReader(src.open()))
+        if len(rows) < n:
+            raise SystemExit(f"{src}: {len(rows)} orientations for {n} grains")
+        euler = np.array([[float(r["phi1"]), float(r["Phi"]), float(r["phi2"])] for r in rows[:n]])
+        seed = f"file:{src}"
+    else:
+        seed = int(ocfg["seed"])
+        euler = uniform_so3_euler(n, seed)
     thickness = float(cfg["mechanics"].get("thickness", 1.0))
     zmid = 0.5 * thickness
     with (out / "grains.csv").open("w", newline="") as fh:

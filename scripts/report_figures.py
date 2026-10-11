@@ -74,7 +74,7 @@ def _resolve(p: str, deck: Path) -> Path:
 def _str(v) -> str:
     """Deck values quoted as a single token come back as a one-element list."""
     if isinstance(v, list):
-        v = v[0] if v else ""
+        v = " ".join(str(x) for x in v)
     return "" if str(v).strip() == "-" else str(v)
 
 
