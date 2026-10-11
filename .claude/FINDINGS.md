@@ -74,6 +74,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
   box from (0, 0) to one tick block above the largest stress (700 MPa) and
   20.5% strain. All of it is in `decks/report/cp_calibration_figures.i`,
   rendered by `scripts/report_figures.py` into `figures/report/`.
+- Mesh sensitivity with the calibrated set (2026-10-11): 20% stress 636.4 /
+  603.9 / 586.4 / 573.5 MPa at h20/h40/h80/h160; change per halving -5.1 /
+  -2.9 / -2.2%, ratio rising to 0.74 at 20% (order ~0.44): slip localization
+  without an internal length keeps the plastic branch mesh-dependent. The
+  converged-mesh choice is the author's; h160 costs 17.7 h per run.
 - h40 has 1,722 nodes / 5,166 displacement DOFs (41 x 21 x 2 nodes); an
   earlier note of 7,749 was wrong.
 

@@ -304,13 +304,31 @@ from 0.1%:
 | h20 | 200 | 5.0 | 2.7 | 419.8 | 523.3 | 621.9 | 636.4 | 23.3 | 16 min |
 | h40 | 800 | 2.5 | 5.5 | 406.9 | 502.4 | 591.5 | 603.9 | 14.3 | ~40 min |
 | h80 | 3,200 | 1.25 | 11 | 401.4 | 492.4 | 575.3 | 586.4 | 19.9 | 259 min |
-| h160 | 12,800 | 0.625 | 22 | (running) | | | | | |
+| h160 | 12,800 | 0.625 | 22 | 398.3 | 486.0 | 563.5 | 573.5 | 26.0 | 1,063 min |
 
-h20 -> h40: -3.1% at 2%, -4.0% at 7%, -5.1% at 20%. h40 -> h80: -1.4%,
--2.0%, -2.9%. The coarse mesh is stiffer, as a displacement-based mesh with
-2.7 elements across a grain should be, and each halving of h removes about
-0.55 of the previous change, so the remaining change beyond h80 is
-expected to be about 3% at 20% (1.7% at 7%); h160 tests that. Figure
-`figures/cp_mesh_sensitivity.png`. The RMSE rises away from h40 because the
-set was calibrated AT h40; the refit on the chosen mesh (next stage) is a
-small, mostly rho0/k1 correction of the same size as the mesh shift.
+h20 -> h40: -3.1% at 2%, -4.0% at 7%, -5.1% at 20%. h40 -> h80: -1.3%,
+-2.0%, -2.9%. h80 -> h160: -0.8%, -1.3%, -2.2% (h160 run `mesh-h160`: 256/256
+steps, zero cutbacks, 17.7 h wall on one core). The coarse mesh is stiffer,
+as a displacement-based mesh with 2.7 elements across a grain should be, and
+every halving softens the plate further. Figure
+`figures/cp_mesh_sensitivity.png`.
+
+The convergence is NOT asymptotically clean. The ratio of successive changes
+(h80->h160 over h40->h80) is 0.56 at 2% strain but 0.74 at 20%, i.e. an
+apparent order of 0.8 at yield falling to 0.44 at 20% strain. At yield the
+response converges like a first-order displacement mesh; on the plastic
+branch the finer meshes keep resolving sharper slip bands at grain
+boundaries and junctions (the CP law has no internal length, so localized
+slip is mesh-dependent), and the change per halving decays slowly. A
+geometric extrapolation with the local ratio puts the remaining change beyond
+h160 at ~4 MPa (1%) at 2% but ~36 MPa (6%) at 20%, and that number is itself
+uncertain because the ratio is still rising. Elapsed-time cost: h40 ~40 min,
+h80 4.3 h, h160 17.7 h per run.
+
+Reading for the mesh decision (the author's call): the per-halving change is
+at most 2.2% at h80->h160 and 2.9% at h40->h80 over the whole curve, so h40
+is within ~5% and h80 within ~3% of h160 everywhere, and no mesh in reach is
+converged to better than a few percent at 20% strain. The RMSE rises away
+from h40 only because the set was calibrated AT h40; the refit on the chosen
+mesh is a small, mostly rho0/k1 correction of the size of the mesh shift
+(about +2% on rho0 and +3% on k1 per halving, from the §4c sensitivities).
