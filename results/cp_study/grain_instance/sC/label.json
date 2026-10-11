@@ -1,0 +1,39 @@
+{
+ "growth_run_dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/graingrowth_instance/sC",
+ "growth_deck": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/decks/graingrowth/instances/n32_bdf1_h40_sC.i",
+ "grid": [
+  204,
+  103
+ ],
+ "h_um": [
+  0.492610837,
+  0.490196078
+ ],
+ "n_order_params": 8,
+ "n_grains": 31,
+ "grain_area_um2": {
+  "min": 21.49135512471506,
+  "median": 147.78325096995073,
+  "max": 419.6851146826379
+ },
+ "equivalent_diameter_um_median": 13.71726937784858,
+ "morphology": {
+  "label": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/graingrowth_instance/sC",
+  "n_grains": 31,
+  "n_shape_grains": 16,
+  "total_boundary_length_um": 617.0513063779678,
+  "area_mean_um2": 138.16949169014492,
+  "area_cv": 0.44663890906264986,
+  "circularity_mean": 0.8366144204320464,
+  "circularity_std": 0.05085168677656372,
+  "neighbours_mean": 5.5,
+  "neighbours_std": 1.4142135623730951,
+  "neighbours_min": 3,
+  "neighbours_max": 9,
+  "n_interior": 16,
+  "n_junctions": 45,
+  "junction_angle_mean": 120.00000000000001,
+  "junction_rms_dev_from_120": 13.748197346269386,
+  "junction_frac_within_15deg": 0.7407407407407407
+ }
+}

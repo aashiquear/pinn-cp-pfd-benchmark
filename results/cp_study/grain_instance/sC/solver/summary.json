@@ -1,0 +1,171 @@
+{
+  "config": {
+    "global": {
+      "backend": "numpy",
+      "use_gpu": false,
+      "precision": "float64",
+      "seed": 0,
+      "output_dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/grain_instance/sC/solver"
+    },
+    "problem": {
+      "type": "composed",
+      "dimension": 3,
+      "finite_strain": true
+    },
+    "mesh": {
+      "type": "box_mesh",
+      "domain": [
+        0,
+        0,
+        0,
+        100,
+        50,
+        1
+      ],
+      "divisions": [
+        40,
+        20,
+        1
+      ]
+    },
+    "variables": {
+      "u": {
+        "family": "fem",
+        "components": 3
+      }
+    },
+    "functions": {
+      "pull": {
+        "kind": "parsed",
+        "expression": "0.2*100.0*t/200"
+      }
+    },
+    "materials": {
+      "cp": {
+        "type": "dislocation_density_cp",
+        "C11": 108000,
+        "C12": 61300,
+        "C44": 28500,
+        "mu": 25700,
+        "gamma0": 1e-05,
+        "rate_exponent_n": 8.33333333333,
+        "tau_c0": 5.34925,
+        "q_lat": 1.4,
+        "alpha0": 0.4,
+        "burgers": 0.000286,
+        "rho0": 41.1521,
+        "k1": 0.16771,
+        "annihilation_diameter": 0.00319744,
+        "crystal": {
+          "structure": "fcc",
+          "euler_angles": [
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "kernels": {
+      "sd_cp": {
+        "type": "stress_divergence_cp",
+        "variable": "u",
+        "material": "cp",
+        "dim": 3,
+        "finite_strain": true,
+        "gnd": false
+      }
+    },
+    "orientation_field": {
+      "source": {
+        "type": "point_file",
+        "path": "orientations_points.csv",
+        "interpolation": "nearest"
+      }
+    },
+    "bcs": {
+      "x_left": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "xmin",
+        "components": [
+          0
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "y_bottom": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "ymin",
+        "components": [
+          1
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "z_back": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "zmin",
+        "components": [
+          2
+        ],
+        "values": [
+          0.0
+        ]
+      },
+      "x_pull": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "xmax",
+        "components": [
+          0
+        ],
+        "values": [
+          1.0
+        ],
+        "function": "pull"
+      }
+    },
+    "executioner": {
+      "type": "cp_quasi_static",
+      "n_steps": 256,
+      "t_end": 200,
+      "newton_tol": 1e-06,
+      "max_iter": 50,
+      "max_cutbacks": 10,
+      "linear_method": "direct",
+      "sparse_threshold": 0,
+      "snapshots_every": 0
+    },
+    "output": {
+      "formats": [
+        "vtk",
+        "csv",
+        "json"
+      ],
+      "save_checkpoint": false,
+      "fields": [
+        "displacement",
+        "stress",
+        "strain",
+        "equivalent_plastic_strain",
+        "slip_activity",
+        "mean_rho"
+      ]
+    }
+  },
+  "residuals": {
+    "fem_iterations": 1665.0
+  },
+  "stress_strain": {
+    "strain_min": -0.10303408955440485,
+    "strain_max": 0.20000000000000065,
+    "stress_min": -8.111915176138234,
+    "stress_max": 757.7959038019994,
+    "final_stress": 2.2738005752920288e-07
+  }
+}

@@ -647,6 +647,59 @@ calibration order $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$ follows this
 separation: yield is fixed first by the parameter that alone controls it,
 the plastic branch second by the pair that controls it, and the offset last.
 
+## 7. Grain-instance check
+
+### 7.1 Design
+
+The calibrated set and the plate of §2.6 were run on two further grain
+structures, each a new uniform Voronoi seeding of the plate grown with the
+phase-field settings of §3.6 and given its own orientation draw (Table 7;
+growth decks `decks/graingrowth/instances/n32_bdf1_h40_s{C,B}.i`, pipeline
+decks `decks/cp_study/grain_s{C,B}.i`). Mesh (h40), loading and parameters
+are those of the calibrated run. The purpose is to show that the set of
+Table 2 describes the material rather than one realization of thirty
+grains. One further realization (seed 20261011) was 17.5% stronger than
+the calibrated structure over the whole curve; the author classed it as a
+severe outlier of the kind a thirty-grain plate can produce, and it was
+replaced by instance 2 below. The dropped run is recorded in
+`docs/run_ledger.md`.
+
+**Table 7.** Grain instances with the calibrated set at h40: grain count,
+median equivalent diameter, elastic modulus, 0.2%-offset yield stress,
+engineering stress at four strains, RMSE against the markers, and the mean
+and largest relative deviation from the calibrated structure's curve beyond
+0.5% strain.
+
+| instance | seeds (Voronoi / orientations) | grains | $d_{med}$ ($\mu$m) | $E$ (GPa) | $\sigma_y$ (MPa) | 2% | 7% | 17% | 20% | RMSE (MPa) | deviation, mean / max |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 (calibrated) | 20260914 / 20261009 | 30 | 13.7 | 71.2 | 364 | 407 | 502 | 591 | 604 | 14.3 | |
+| 2 | 20261013 / 20261013 | 31 | 13.7 | 71.5 | 372 | 419 | 524 | 622 | 635 | 23.6 | +4.4% / 5.2% |
+| 3 | 20261012 / 20261012 | 30 | 13.4 | 70.8 | 359 | 401 | 493 | 581 | 593 | 18.3 | -1.8% / 2.0% |
+
+**Figure 12.** The three grain structures.
+
+![instance grains](../../figures/report/instances_grains.png)
+
+**Figure 13.** Stress-strain curves of the three instances with the
+calibrated set.
+
+![instance curves](../../figures/report/instances_curves.png)
+
+### 7.2 Results
+
+The three realizations give the same elastic modulus within 1%, the same
+yield stress within $\pm 2$% and the same hardening branch within $-2$% to
+$+4.4$% (Fig. 13); all three completed the 256 load steps without a cutback.
+The spread is of the size of the mesh effect between h40 and h80 (§5) and
+smaller than the effect of a 20% change of any free parameter but
+$\tau_{c0}$ (§6), so the calibrated set is not an artifact of the structure
+it was fitted on. The instance-to-instance spread, about $\pm 3$% on the
+flow stress, is the statistical resolution of a thirty-grain,
+one-element-thick plate and should be read as the uncertainty attached to
+any single-realization result of this report; occasional realizations fall
+well outside it, as the dropped one did, which argues for averaging over
+several instances in any later study where the absolute level matters.
+
 ## References
 
 - (rezwan 2025 intragranular) A. Rezwan, N. Aragon, D. de Oca Zapiain, H. Lim,

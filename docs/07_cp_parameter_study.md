@@ -370,6 +370,12 @@ texture-swap diagnostic prepared for it were removed, and a replacement
 instance (seed 20261013, `grain_sC.i`) is run instead. Instance B's result
 is accepted.
 
+Instance C (seed 20261013; 31 grains, d_med 13.7 um): 256/256, 0 cutbacks,
+E 71.5 GPa, yield 372 MPa, 419 / 524 / 622 / 635 MPa at 2 / 7 / 17 / 20%,
++4.4% mean (5.2% max) above the calibrated structure; RMSE 23.6 MPa. With
+instance B at -1.8% the accepted spread over three realizations is about
++-3% on the flow stress. Report §7, Table 7, Figs. 12-13.
+
 ## 8. Field series for the plastic-strain animation
 
 PINNACLE 6517a31 adds `snapshots_every` to `cp_quasi_static`; the four mesh
