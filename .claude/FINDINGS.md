@@ -67,6 +67,15 @@ NOT derivable from the code: measured facts, decisions, and traps.
   `solver_history.csv` is.
 - MOOSE deck `moose/CPFE.i` has y_c = 0.00286; the paper table says 0.00268.
 
+## PINN / hybrid routes for CP (assessed 2026-10-11, docs/08)
+- Neither route can run the CP plate today: the PINN residual for
+  stress_divergence_cp is displacement-only at the virgin state (elastic) and
+  ignores [OrientationField]; pinn_fem_hybrid's corrector never updates the
+  CP state, hardcodes finite_strain = False and does not ramp Dirichlet
+  values. ADR 0017: a coordinates-in network cannot hold CP history. Plan in
+  docs/08: GPU-resident batched CP evaluation first, then a load-path hybrid
+  built on cp_quasi_static, then a per-step "PINN as solver".
+
 ## Technical report (docs/reports/)
 - `docs/reports/cp_fe_calibration_report.md` is the paper-style record; the
   numbered `docs/0N_*.md` stay the lab notebook. The report carries ONLY the
