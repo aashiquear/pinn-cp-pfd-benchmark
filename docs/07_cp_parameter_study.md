@@ -81,7 +81,7 @@ modulus), so CG stalls at the strain where the first points soften --
 earlier on the finer mesh, which resolves the concentration better. The
 study decks used `linear_method = cg` because the first campaign measured
 the sparse direct solve scaling as n^2.91 on 3-D void meshes; this plate
-has 7,749 (h40) / 2,079 (h20) displacement DOFs, where a sparse LU is cheap.
+has 5,166 (h40) / 1,386 (h20) displacement DOFs (41 x 21 x 2 and 21 x 11 x 2 nodes), where a sparse LU is cheap.
 Test: `cp-h20-direct`, the h20 base case with `linear_method = direct`:
 **256 of 256 steps to 20% strain, zero cutbacks, 15 min** (1,618 MPa at
 20%, still hardening -- see §3 for why). The wall was the solver choice.

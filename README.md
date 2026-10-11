@@ -39,6 +39,8 @@ project.
 | `docs/03_material_point_verification.md` | Constitutive law verified at one quadrature point; gap C.15 |
 | `docs/05_orientation_notation.md` | Miller-direction and Euler conventions |
 | `docs/06_polycrystal_plate_results.md` | Phase-field grain growth verified; the 30-grain plate and its first CPFE run |
+| `docs/07_cp_parameter_study.md` | Lab notebook of the CP parameter study: base case, solver diagnosis, calibration, mesh sensitivity |
+| `docs/reports/cp_fe_calibration_report.md` | Technical report (draft): CP FE methodology, numerical method, calibration results; figures from `scripts/report_figures.py` + `decks/report/` |
 | `docs/workflow_polycrystal_plate.md` | How the plate pipeline works and why each setting |
 | `docs/reproduce_polycrystal_plate.md` | Exact commands and environment on the ROCm host |
 | `docs/reconciliation.md`, `docs/digitization_uncertainty.md` | Source extraction and its error |

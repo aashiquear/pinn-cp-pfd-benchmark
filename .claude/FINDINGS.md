@@ -63,6 +63,20 @@ NOT derivable from the code: measured facts, decisions, and traps.
   `solver_history.csv` is.
 - MOOSE deck `moose/CPFE.i` has y_c = 0.00286; the paper table says 0.00268.
 
+## Technical report (docs/reports/)
+- `docs/reports/cp_fe_calibration_report.md` is the paper-style record; the
+  numbered `docs/0N_*.md` stay the lab notebook. The report carries ONLY the
+  final condition: no tests, no verification, no solver diagnosis, unless the
+  author decides otherwise. Abstract and introduction stay blank until all
+  studies are done; mesh sensitivity is held out for now.
+- Report figure rules (author, 2026-10-10): prepend (0, 0) to every
+  stress-strain curve; parameters as math symbols; no grid; closed axes box;
+  box from (0, 0) to one tick block above the largest stress (700 MPa) and
+  20.5% strain. All of it is in `decks/report/cp_calibration_figures.i`,
+  rendered by `scripts/report_figures.py` into `figures/report/`.
+- h40 has 1,722 nodes / 5,166 displacement DOFs (41 x 21 x 2 nodes); an
+  earlier note of 7,749 was wrong.
+
 ## Where things are
 - Host: `ssh rocm-server`, study mirror `~/projects/pinn-cp-pfd-benchmark`
   (rsync, not git), PINNACLE `~/projects/pinnacle` on `feat/pinn_benchmark`,
