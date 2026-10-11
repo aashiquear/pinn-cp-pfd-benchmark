@@ -396,5 +396,28 @@ the residual (stress and tangent) used the rotated one. Every polycrystal FE
 run of this study took that path. Al's cubic anisotropy is mild (Zener ratio
 1.22), so the effect on the curve is expected to be small, but it must be
 measured, not assumed: `check_cfix_h40.i` repeats the calibrated h40 run with
-the fix. Result below when it lands; if the curve moves by more than the
-mesh/instance spread, the calibration is repeated with the fixed framework.
+the fix.
+
+**Result (run `check-cfix-h40`, 256/256, 0 cutbacks):** the curve moves by
+far more than the mesh or instance spread. Engineering stress before -> fixed:
+0.57% 350.8 -> 332.5 (-5.2%), 2% 406.9 -> 375.1 (-7.8%), 7% 502.4 -> 457.9
+(-8.9%), 11% 550.1 -> 499.3 (-9.2%), 17% 591.5 -> 535.0 (-9.6%), 20% 603.9
+-> 545.6 (-9.7%). RMSE against the markers 14.3 -> 48.1 MPa. The anisotropy
+argument was wrong: the elastic stiffness enters the resolved shear stress
+at every grain, and a ~10% error in the driving stress integrates into the
+hardening over the whole path. Which curve is right: the fixed one. Before
+the fix the residual and tangent used the rotated stiffness while the state
+evolved under the material-global one -- the solve was inconsistent by
+construction; after it the batched path equals the per-point path to 1e-10
+(PINNACLE test `test_cp_batched_constitutive_path.py`).
+
+**Consequence:** every polycrystal FE result of this study (base case,
+calibration iterations, calibrated set, mesh sensitivity, parameter
+sensitivity, grain instances, field series) was produced on the inconsistent
+path and is superseded. The decks are unchanged and the framework is now
+4-5x faster (ADR 0027), so the campaign can be repeated as it stands:
+calibration (two Gauss-Newton iterations of five h40 runs, ~10 min each),
+mesh h20/h40/h80/h160, sensitivity (17 runs), grain instances (2 runs),
+field series (4 runs). Decision requested from the author before launching
+(standing rule). The h160 field-series run still in progress on the
+pre-fix code was stopped (its output would have been superseded too).

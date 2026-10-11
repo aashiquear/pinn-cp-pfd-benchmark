@@ -64,8 +64,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
   sub-stepper passed the per-point slip tensors but not the per-point
   rotated stiffness C, so the state evolved under the material-global
   elastic law while the residual used the rotated one (single crystals
-  unaffected). Fixed in a311a8b (ADR 0027); the effect on the reported h40
-  curve is measured by `decks/cp_study/check_cfix_h40.i` (docs/07 §9).
+  unaffected). Fixed in a311a8b (ADR 0027). MEASURED EFFECT (docs/07 §9): the
+  calibrated h40 curve is 5-10% lower with the fix (545.6 vs 603.9 MPa at
+  20%); every pre-fix polycrystal result (calibration, mesh, sensitivity,
+  instances, field series) is superseded and the campaign must be rerun on
+  the fixed framework (decks unchanged; runs now 4-5x faster).
 - `[OrientationField]` in a deck was silently dropped by the translator until
   PINNACLE 141ebd8 (fixed). Always check `pinnacle.log` for the line
   "[OrientationField] ... resolved on N elements".
