@@ -247,6 +247,9 @@ def fig_mesh(cfg, deck, out):
     f = cfg["figures"]; meshes = cfg.get("mesh")
     if not meshes:
         return
+    missing = [n for n, m in meshes.items() if not _resolve(m["results"], deck).exists()]
+    if missing:
+        print(f"mesh: results incomplete ({missing}), figure skipped"); return
     ex, ey = read_markers(_resolve(f["markers"], deck))
     fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=int(f["dpi"]))
     hs, curves = [], []
