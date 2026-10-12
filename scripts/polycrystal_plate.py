@@ -65,7 +65,8 @@ MECH_KEYS = {
     "nexp": "NEXP", "tau_c0": "TAUC0", "q_lat": "QLAT", "alpha0": "ALPHA0",
     "burgers": "BURGERS", "rho0": "RHO0", "k1": "K1", "y_c": "YC",
     "strain": "STRAIN", "t_end": "TEND", "n_steps": "NSTEPS", "nx": "NX", "ny": "NY",
-    "thickness": "THICKNESS", "newton_tol": "NEWTONTOL", "max_cutbacks": "MAXCUTBACKS",
+    "thickness": "THICKNESS", "newton_tol": "NEWTONTOL", "newton_rel_tol": "NEWTONRELTOL",
+    "max_cutbacks": "MAXCUTBACKS",
 }
 
 

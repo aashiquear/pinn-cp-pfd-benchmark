@@ -34,7 +34,8 @@
   nx           = 40
   ny           = 20
   thickness    = 1.0
-  newton_tol   = 1.0e-6
+  newton_tol   = 1.0e-3
+  newton_rel_tol = 0
   max_cutbacks = 10
   linear_method = direct
   snapshots_every = 4

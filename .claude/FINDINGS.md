@@ -26,6 +26,9 @@ NOT derivable from the code: measured facts, decisions, and traps.
   (FE, PINN, PINN+FEM) writes the field series (`snapshots_every = 4` in the
   pipeline deck, i.e. every 0.3125% strain) so fields can be compared
   between routes, not only the stress-strain curve.
+- Newton criterion of every run: `newton_rel_tol = 0`, `newton_tol = 1e-3`
+  (docs/07 §10.0): the relative-to-first-residual test penalises a warm
+  start, so cold and predicted starts must share one absolute criterion.
 - Results are produced with the fixed solver only (PINNACLE a311a8b or
   later); nothing computed before it is kept in results/ or in the report.
 - Never launch a multi-run campaign without (1) one checked single case and

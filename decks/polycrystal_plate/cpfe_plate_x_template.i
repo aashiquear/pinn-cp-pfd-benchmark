@@ -134,6 +134,10 @@
   n_steps          = @NSTEPS@
   t_end            = @TEND@
   newton_tol       = @NEWTONTOL@
+  # Relative test off (0): a warm start from a predictor must be held to the
+  # SAME absolute criterion as a cold start; the relative-to-first-residual
+  # test penalises a good initial guess (docs/07 §10.0 of the study).
+  newton_rel_tol   = @NEWTONRELTOL@
   max_iter         = 50
   max_cutbacks     = @MAXCUTBACKS@
   # direct (sparse LU) by default: conjugate gradients stalls once the

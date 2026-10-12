@@ -434,6 +434,29 @@ the report and the author's mesh decision; parameter sensitivity, grain
 instances and the PINN / PINN+FEM comparisons follow on that mesh. Sections
 1-9 above are the record of the superseded campaign and are not reused.
 
+### 10.0 Convergence criterion of every run (decided 2026-10-11)
+
+PINNACLE's Newton stop test is ``||R|| <= max(rel_tol ||R_0||, tol)`` with
+``||R_0||`` the first iterate's residual. That test is unfair to a warm
+start: a predictor that lands within 0.03% of the increment makes ``R_0``
+tiny, so the step is held to a far stricter target than a cold start and
+runs to the absolute floor -- the linear predictor's 256-step h40 run took
+1,617 Newton iterations against 1,595 cold. A 24-step study on the same
+deck with the relative test off (`results/cp_study/tol_study/`):
+
+| absolute tol (MPa um^2) | cold iterations | linear-predictor iterations |
+|---|---|---|
+| 1e-6 | 105 | 92 |
+| 1e-4 | 85 | 70 |
+| 1e-2 | 66 | 47 |
+
+Protocol for every run of the regenerated study (FE, hybrid, PINN):
+``newton_rel_tol = 0``, ``newton_tol = 1e-3`` MPa um^2 (about 3e-7 of the
+nodal force scale at h40, 4e-6 at h160), written into every pipeline deck
+through the template. The hybrid and PINN-as-solver first checks launched
+before this decision keep the old criterion and are superseded by the runs
+on the chosen mesh.
+
 ### 10.1 Calibration
 
 (results as they land)
