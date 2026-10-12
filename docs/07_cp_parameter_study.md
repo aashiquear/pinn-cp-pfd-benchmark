@@ -421,3 +421,19 @@ mesh h20/h40/h80/h160, sensitivity (17 runs), grain instances (2 runs),
 field series (4 runs). Decision requested from the author before launching
 (standing rule). The h160 field-series run still in progress on the
 pre-fix code was stopped (its output would have been superseded too).
+
+## 10. Regeneration with the fixed solver (from 2026-10-12)
+
+Author's decision: every result of the report is regenerated with PINNACLE
+at a311a8b or later; nothing computed before it stays in `results/` or in
+the report, and every run writes the field series (`snapshots_every = 4`).
+Order: calibration (restarted from the previous set as the center, iteration
+decks `cal_center{N}.i` / `cal_gn{N}.i`), effect of the parameters and
+error analysis, mesh sensitivity h20/h40/h80/h160 with the new set; then
+the report and the author's mesh decision; parameter sensitivity, grain
+instances and the PINN / PINN+FEM comparisons follow on that mesh. Sections
+1-9 above are the record of the superseded campaign and are not reused.
+
+### 10.1 Calibration
+
+(results as they land)
