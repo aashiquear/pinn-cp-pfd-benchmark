@@ -8,15 +8,15 @@
 []
 [Runs]
   [./cold]
-    dir   = ../../results/cp_study/hybrid/h40_cold
+    dir   = ../../results/cp_study/cal/gn2/base
     label = 'cold FE (previous step as initial guess)'
   []
   [./linear]
     dir   = ../../results/cp_study/hybrid/h40_linear
     label = 'linear extrapolation predictor'
   []
-  [./network]
-    dir   = ../../results/cp_study/hybrid/h40_network
-    label = 'network predictor (torch GPU)'
+  [./physics]
+    dir   = ../../results/cp_study/hybrid/h40_physics
+    label = 'physics-trained network predictor (torch GPU)'
   []
 []
