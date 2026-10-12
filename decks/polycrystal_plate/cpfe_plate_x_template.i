@@ -146,6 +146,7 @@
   snapshots_every  = @SNAPSHOTS@
 []
 
+@UTILITIES@
 [Output]
   formats         = 'vtk csv json'
   save_checkpoint = false

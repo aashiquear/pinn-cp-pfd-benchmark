@@ -34,6 +34,9 @@ Pipeline deck blocks (see decks/polycrystal_plate/*.i for a filled example):
                   rho0 k1 y_c); load_axis = x | y picks the template;
                   snapshots_every = N (optional, default 0) writes the field
                   series every N load steps (PINNACLE cp_quasi_static)
+  [Predictor]     optional: keys copied verbatim into a [Utilities] load-step
+                  predictor (kind = load_step_predictor, mode = linear|network,
+                  backend, device, epochs_initial, ... ; PINNACLE ADR 0028)
 
 Usage: polycrystal_plate.py DECK.i STAGE [STAGE ...]   (STAGE in label orient deck curve all)
 """
@@ -250,12 +253,35 @@ def stage_orient(cfg: dict, deck: Path, out: Path) -> dict:
 
 
 # --------------------------------------------------------------------------- deck
+def _utilities_block(cfg: dict) -> str:
+    """Render the pipeline deck's optional [Predictor] block as a [Utilities] block.
+
+    Every key is copied verbatim into one ``[./predictor]`` utility of the
+    generated deck (PINNACLE ``load_step_predictor``, ADR 0028), so the hybrid
+    PINN+FEM route is reproducible from the pipeline deck alone. Absent block:
+    no [Utilities] block, i.e. the plain FE run.
+    """
+    pred = cfg.get("predictor")
+    if not pred:
+        return ""
+    lines = ["[Utilities]", "  [./predictor]"]
+    for k, v in pred.items():
+        if isinstance(v, bool):
+            v = "true" if v else "false"
+        elif isinstance(v, float):
+            v = f"{v:.12g}"
+        lines.append(f"    {k:<16s} = {v}")
+    lines += ["  []", "[]", ""]
+    return "\n".join(lines)
+
+
 def stage_deck(cfg: dict, deck: Path, out: Path) -> Path:
     mech = dict(cfg["mechanics"])
     src = TEMPLATES[str(mech.get("load_axis", "y")).lower()].read_text()
     sub = {"OUTDIR": str(out / "solver"), "POINTFILE": "orientations_points.csv",
            "LINEAR": str(mech.get("linear_method", "direct")),
-           "SNAPSHOTS": str(int(mech.get("snapshots_every", 0)))}
+           "SNAPSHOTS": str(int(mech.get("snapshots_every", 0))),
+           "UTILITIES": _utilities_block(cfg)}
     for key, ph in MECH_KEYS.items():
         if key not in mech:
             raise SystemExit(f"[Mechanics] is missing '{key}'")
