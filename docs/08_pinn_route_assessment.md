@@ -192,3 +192,11 @@ test, which penalises warm starts; protocol fixed in docs/07 §10.0). The
 hybrid column of the benchmark therefore uses the physics-trained
 predictor, with linear extrapolation as the reference; the data-trained
 mode stays available as a documented negative baseline.
+
+**2026-10-12, C2 first check (docs/07 §10.6): negative.** The physics-trained
+network with a soft Dirichlet term and no corrector produces a field that is
+not in equilibrium once the prescribed values are pinned (residual equal to
+the reaction, meaningless stresses), although its own residual loss is
+small. Required before any benchmark of this route: hard Dirichlet
+enforcement in the ansatz and the residual evaluated on the accepted
+field. Deferred until the FE regeneration is complete.

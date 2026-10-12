@@ -513,3 +513,23 @@ criterion of §10.0 it saves about one per step. The physics-trained
 predictor (`mode = physics`) is the route that can be right by
 construction; its first check (`h40_pinn_solver.i`, corrector = none) is
 running.
+
+### 10.6 PINN-as-solver first check at h40 (old set and criterion; framework check only)
+
+`decks/cp_study/hybrid/h40_pinn_solver.i` (physics-trained predictor,
+`corrector = none`, w_data = 0, soft Dirichlet weight 10), 256 steps, 6.5 h
+of training on the GPU (median 98 s per step). The network minimises its
+own scaled strong-form residual to 1e-5, yet the accepted field is not in
+equilibrium: residual_norm / reaction_norm = 1.0 at every step (the
+out-of-balance force equals the load), and the mean stress is meaningless
+(-7,300 MPa at 2%, +14,000 MPa at 20% against 375 / 546 MPa cold). Reading:
+the soft Dirichlet term lets the network's boundary values drift; the
+executioner then pins the prescribed degrees of freedom, and the jump at
+the loaded face puts the boundary elements far from the field the residual
+was evaluated on. With no corrector and no data term the next step trains
+from that field, so the error compounds. Conclusion of the check: the
+route needs the Dirichlet values built into the network ansatz (a hard
+distance-function transform, as `pinn_fem_hybrid bc_mode = hard` does) and
+the residual evaluated on the field that is actually accepted; that is the
+next framework item for this route, after the FE regeneration. Results kept
+in `results/cp_study/hybrid/h40_pinn_solver/` (curve and history only).
