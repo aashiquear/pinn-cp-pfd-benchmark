@@ -560,3 +560,13 @@ Instance 2 (seed 20261013, 31 grains): +3.5% mean / 4.4% max above the
 calibrated structure beyond 0.5% strain, RMSE 20.4 MPa; instance 3 (seed
 20261012, 30 grains): -1.4% / 1.6%, RMSE 17.1 MPa. Both 256/256, 0 cutbacks.
 Report §7.
+
+### 10.7 Neural-route checks at h40 (new set, study criterion)
+
+Reference: the calibrated FE run (`cal/gn2/base`): 1,506 Newton iterations,
+838 s of Newton time over 256 steps. Linear-extrapolation predictor
+(`hybrid/h40_linear`): identical curve, proposal within 0.03% of the
+increment (median; 6.5% max), **948 Newton iterations (-37%) and 667 s of
+Newton time (-20%)** -- under the absolute criterion the warm start pays,
+as the tolerance study predicted. This is the bar for the physics-trained
+network. Physics predictor (Newton corrector) and PINN as solver: running.
