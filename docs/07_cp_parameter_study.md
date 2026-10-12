@@ -484,9 +484,14 @@ tau_c0 = 5.29 MPa.** Per-marker errors: 0.14% -28.0%, 0.57% +1.9%, 2.0%
 Decks `mesh_h{20,80,160}.i` regenerated from `cal_center2.i` (field series
 included); h40 is `cal/gn2/base`. Launched 2026-10-12 00:00 MDT.
 
-h20 (5 min): 413.1 / 518.7 / 616.0 / 629.8 MPa at 2 / 7 / 17 / 20% against
-h40 403.9 / 502.8 / 591.5 / 603.3 (h40 -> h20 +2.3 / +3.2 / +4.1 / +4.4%).
-h80 and h160 running.
+| mesh | 2% | 7% | 17% | 20% | change from the coarser mesh (2 / 7 / 17 / 20%) | wall |
+|---|---|---|---|---|---|---|
+| h20 | 413.1 | 518.7 | 616.0 | 629.8 | | 5 min |
+| h40 | 403.9 | 502.8 | 591.5 | 603.3 | -2.2 / -3.1 / -4.0 / -4.2% | 14 min |
+| h80 | 400.2 | 495.4 | 578.6 | 589.3 | -0.9 / -1.5 / -2.2 / -2.3% | 105 min |
+| h160 | (running) | | | | | |
+
+All 256/256 steps, zero cutbacks, field series written.
 
 ### 10.5 Hybrid first check at h40 (old parameter set and criterion; framework check only)
 
