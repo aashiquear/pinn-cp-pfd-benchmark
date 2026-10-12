@@ -459,4 +459,10 @@ on the chosen mesh.
 
 ### 10.1 Calibration
 
-(results as they land)
+Iteration 1 (`cal_gn1.i`, center = the previous study's set, five runs,
+256/256 each, 0 cutbacks): center RMSE 48.2 MPa against the markers (mean
+relative error -11%); perturbations rho0 x1.2 33.5, k1 x1.2 17.9, y_c x1.2
+70.7, tau_c0 x1.5 39.9 MPa. Sensitivities dS/dln p at 2 / 7 / 17%: rho0 149
+/ 120 / 87, k1 46 / 206 / 368, y_c -13 / -88 / -208, tau_c0 26 / 25 / 24.
+Levenberg-Marquardt step -> center 2: rho0 47.99, k1 0.1988, y_c 0.00344,
+tau_c0 5.29 (predicted RMSE 14.2 MPa). Iteration 2 launched (`cal_gn2.i`).

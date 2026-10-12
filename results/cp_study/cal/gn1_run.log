@@ -1,0 +1,11 @@
+5 cases to run, 5 at a time
+20:18:17 started base
+20:18:17 started rho0_p
+20:18:17 started k1_p
+20:18:17 started y_c_p
+20:18:17 started tau_c0_p
+20:32:17 finished rho0_p exit 0
+20:32:17 finished k1_p exit 0
+20:32:17 finished tau_c0_p exit 0
+20:32:37 finished base exit 0
+20:32:37 finished y_c_p exit 0
