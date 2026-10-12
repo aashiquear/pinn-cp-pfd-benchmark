@@ -569,13 +569,152 @@ grain-instance check and the neural routes is the author's, against the
 cost column of Table 5: h40 is within 4.2% of h160 at every strain for 14
 min per run, h80 within 1.8% for 1.8 h.
 
-## 6. Parameter sensitivity
+## 6. Parameter sensitivity at the chosen mesh
 
-*(on the mesh chosen after §5)*
+### 6.1 Design
+
+Each free parameter of Table 2 was varied one at a time over a factor of
+four, at 0.5, 0.8, 1.25 and 2 times its calibrated value, with the other
+three held at their calibrated values (study deck `decks/cp_study/sens_h40.i`,
+sixteen cases plus the calibrated base, all at h40 on the plate of §2.6,
+field series included). Every case completed the 256 load steps to 20%
+strain without a cutback. Table 6 reports the 0.2%-offset yield stress, the
+engineering stress at four strains, the hardening rate at 17% strain and
+the root-mean-square deviation from the experimental markers; Figs. 10 and
+11 show the curves.
+
+**Table 6.** One-at-a-time sensitivity at h40. $\sigma_y$ is the 0.2%-offset
+yield stress; $\theta_{17}$ the hardening rate $d\sigma/d\varepsilon$ at
+17% strain; RMSE against the eight markers from 0.1% strain.
+
+| case | $\sigma_y$ (MPa) | 2% | 7% | 17% | 20% | $\theta_{17}$ (GPa) | RMSE (MPa) |
+|---|---|---|---|---|---|---|---|
+| calibrated | 364 | 404 | 503 | 591 | 603 | 0.46 | 14.4 |
+| $\rho_0$ x 0.5 | 271 | 316 | 436 | 544 | 560 | 0.59 | 63.9 |
+| $\rho_0$ x 0.8 | 330 | 372 | 478 | 574 | 587 | 0.51 | 28.0 |
+| $\rho_0$ x 1.25 | 402 | 440 | 532 | 612 | 623 | 0.41 | 26.3 |
+| $\rho_0$ x 2 | 496 | 531 | 607 | 668 | 675 | 0.28 | 82.9 |
+| $k_1$ x 0.5 | 362 | 381 | 402 | 411 | 411 | -0.01 | 124.6 |
+| $k_1$ x 0.8 | 363 | 395 | 461 | 517 | 524 | 0.28 | 54.8 |
+| $k_1$ x 1.25 | 365 | 416 | 557 | 687 | 705 | 0.70 | 63.5 |
+| $k_1$ x 2 | 368 | 452 | 724 | 978 | 1,015 | 1.41 | 259.1 |
+| $y_c$ x 0.5 | 364 | 411 | 563 | 763 | 801 | 1.39 | 101.9 |
+| $y_c$ x 0.8 | 364 | 407 | 524 | 647 | 666 | 0.72 | 34.8 |
+| $y_c$ x 1.25 | 364 | 401 | 480 | 538 | 544 | 0.25 | 39.2 |
+| $y_c$ x 2 | 363 | 391 | 429 | 439 | 437 | -0.04 | 102.8 |
+| $\tau_{c0}$ x 0.5 | 354 | 394 | 493 | 582 | 594 | 0.47 | 18.2 |
+| $\tau_{c0}$ x 0.8 | 360 | 400 | 499 | 588 | 600 | 0.47 | 15.4 |
+| $\tau_{c0}$ x 1.25 | 369 | 409 | 508 | 596 | 608 | 0.46 | 14.4 |
+| $\tau_{c0}$ x 2 | 384 | 424 | 523 | 611 | 622 | 0.45 | 21.1 |
+
+**Figure 10.** One parameter varied at a time over a factor of four (top
+left to bottom right: $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$); the calibrated
+curve and the experimental markers in every panel.
+
+![sensitivity panels](../../figures/report/sens_panels.png)
+
+**Figure 11.** Engineering stress at fixed strains against the multiple of
+each parameter.
+
+![sensitivity summary](../../figures/report/sens_summary.png)
+
+### 6.2 Results
+
+**$\rho_0$ sets the yield level.** The yield stress follows the initial
+density closely, from 271 MPa at half the calibrated value to 496 MPa at
+twice it, i.e. $\sigma_y$ scales as about $\rho_0^{0.44}$, close to the
+square root of Eq. (5) softened by the rate term. The offset it produces
+fades with strain as the stored density overtakes the initial one (from
+127 to 183 MPa per e-fold at 2% down to 62 to 104 MPa per e-fold at 20%),
+and a higher $\rho_0$ also lowers the late hardening rate because the
+density starts closer to saturation. Over the factor of four the curves
+keep their shape; the parameter positions the knee.
+
+**$k_1$ sets the hardening rate and the plateau.** Yield is unchanged (362
+to 368 MPa across the factor of four), while the stress at 20% strain spans
+411 to 1,015 MPa and the hardening rate at 17% strain spans zero to 1.41
+GPa. The sensitivity grows monotonically with strain (33 to 70 MPa per
+e-fold at 2%, 277 to 594 at 20%) and is itself larger at larger $k_1$: the
+response is strongly nonlinear in $k_1$ because the saturation density of
+Eq. (7) scales as $k_1^2$. At half the calibrated value the plate stops
+hardening by 10% strain; at twice it the plate is still hardening at 1.4 GPa
+at 20%. The experiment's slope is matched only within about $\pm 20$% of the
+calibrated value.
+
+**$y_c$ sets the saturation.** Yield is unchanged (363 to 364 MPa) and the
+early curve nearly so (391 to 411 MPa at 2%), while the stress at 20%
+strain spans 437 to 801 MPa in the opposite sense to $k_1$: a larger
+annihilation distance saturates the density earlier and lower. At twice the
+calibrated value the hardening rate is zero by 17% strain; at half it the
+plate hardens at 1.39 GPa at 20%. The sensitivity is about $-240$ to $-285$
+MPa per e-fold at 20% and nearly independent of the multiple, i.e. the
+response is close to logarithmic in $y_c$ over this range. $k_1$ and $y_c$
+act on the same branch of the curve with opposite sign; their ratio fixes
+the plateau through Eq. (7) and their product the rate at which the plateau
+is approached, which is why the calibration determines $k_1$ and $y_c$
+jointly ($\pm 11$% and $\pm 20$% in Table 2) rather than each alone.
+
+**$\tau_{c0}$ is a uniform offset.** It shifts the whole curve by 13 to 30
+MPa per e-fold with no change of shape (the hardening rate stays at 0.45 to
+0.47 GPa) and moves the yield stress by only 30 MPa over the factor of four.
+At the calibrated 5.29 MPa it is a minor term against the 82 MPa density
+contribution to the initial slip resistance, which is why it is the least
+determined parameter and the last in the calibration order.
+
+**Order of influence.** On the whole curve the ranking is $k_1$, $y_c$,
+$\rho_0$, $\tau_{c0}$ (RMSE at the x2 case 259, 103, 83 and 21 MPa); at
+yield it is $\rho_0$ first and $\tau_{c0}$ second, with $k_1$ and $y_c$
+inert. The calibration order $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$ follows
+this separation: yield is fixed first by the parameter that alone controls
+it, the plastic branch second by the pair that controls it, and the offset
+last.
 
 ## 7. Grain-instance check
 
-*(on the mesh chosen after §5)*
+### 7.1 Design
+
+The calibrated set and the plate of §2.6 were run on two further grain
+structures, each a new uniform Voronoi seeding of the plate grown with the
+phase-field settings of §3.6 and given its own orientation draw (Table 7;
+growth decks `decks/graingrowth/instances/n32_bdf1_h40_s{C,B}.i`, pipeline
+decks `decks/cp_study/grain_s{C,B}.i`). Mesh (h40), loading, solver
+criterion, field series and parameters are those of the calibrated run. The
+purpose is to show that the set of Table 2 describes the material rather
+than one realization of thirty grains.
+
+**Table 7.** Grain instances with the calibrated set at h40: grain count,
+median equivalent diameter, elastic modulus, 0.2%-offset yield stress,
+engineering stress at four strains, RMSE against the markers, and the mean
+and largest relative deviation from the calibrated structure's curve beyond
+0.5% strain.
+
+| instance | seeds (Voronoi / orientations) | grains | $d_{med}$ ($\mu$m) | $E$ (GPa) | $\sigma_y$ (MPa) | 2% | 7% | 17% | 20% | RMSE (MPa) | deviation, mean / max |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 (calibrated) | 20260914 / 20261009 | 30 | 13.7 | 71.2 | 364 | 404 | 503 | 591 | 603 | 14.4 | |
+| 2 | 20261013 / 20261013 | 31 | 13.7 | 71.5 | 369 | 412 | 519 | 616 | 630 | 20.4 | +3.5% / 4.4% |
+| 3 | 20261012 / 20261012 | 30 | 13.4 | 70.8 | 361 | 399 | 495 | 584 | 597 | 17.1 | -1.4% / 1.6% |
+
+**Figure 12.** The three grain structures.
+
+![instance grains](../../figures/report/instances_grains.png)
+
+**Figure 13.** Stress-strain curves of the three instances with the
+calibrated set.
+
+![instance curves](../../figures/report/instances_curves.png)
+
+### 7.2 Results
+
+The three realizations give the same elastic modulus within 1%, the same
+yield stress within $\pm 1.5$% and the same hardening branch within $-1.4$%
+to $+3.5$% (Fig. 13); all three completed the 256 load steps without a
+cutback. The spread is of the size of the mesh effect between h40 and h80
+(§5) and smaller than the effect of a 20% change of any free parameter but
+$\tau_{c0}$ (§6), so the calibrated set is not an artifact of the structure
+it was fitted on. The instance-to-instance spread, about $\pm 2.5$% on the
+flow stress, is the statistical resolution of a thirty-grain,
+one-element-thick plate and should be read as the uncertainty attached to
+any single-realization result of this report.
 
 ## References
 

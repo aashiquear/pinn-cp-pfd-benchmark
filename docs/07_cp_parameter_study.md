@@ -544,3 +544,19 @@ distance-function transform, as `pinn_fem_hybrid bc_mode = hard` does) and
 the residual evaluated on the field that is actually accepted; that is the
 next framework item for this route, after the FE regeneration. Results kept
 in `results/cp_study/hybrid/h40_pinn_solver/` (curve and history only).
+
+### 10.3 Parameter sensitivity at h40 (v2)
+
+`sens_h40.i` on the new set, 17/17 runs 256/256, 0 cutbacks, ~3 h for the
+set at ten concurrent. Full table in the report §6 (Table 6). Yield 271 /
+330 / 364 / 402 / 496 MPa for rho0 x0.5 / 0.8 / 1 / 1.25 / 2; 20% stress
+411 / 524 / 603 / 705 / 1,015 for k1 and 801 / 666 / 603 / 544 / 437 for
+y_c; tau_c0 13-30 MPa per e-fold, shape unchanged. RMSE ranking at x2: k1
+259, y_c 103, rho0 83, tau_c0 21 MPa.
+
+### 10.4 Grain instances at h40 (v2)
+
+Instance 2 (seed 20261013, 31 grains): +3.5% mean / 4.4% max above the
+calibrated structure beyond 0.5% strain, RMSE 20.4 MPa; instance 3 (seed
+20261012, 30 grains): -1.4% / 1.6%, RMSE 17.1 MPa. Both 256/256, 0 cutbacks.
+Report §7.

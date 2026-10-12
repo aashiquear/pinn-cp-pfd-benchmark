@@ -1,0 +1,35 @@
+17 cases to run, 10 at a time
+09:57:05 started base
+09:57:05 started rho0_x0p5
+09:57:05 started rho0_x0p8
+09:57:05 started rho0_x1p25
+09:57:05 started rho0_x2
+09:57:05 started k1_x0p5
+09:57:05 started k1_x0p8
+09:57:05 started k1_x1p25
+09:57:05 started k1_x2
+09:57:05 started y_c_x0p5
+10:11:45 finished rho0_x0p5 exit 0
+10:11:45 finished k1_x2 exit 0
+10:11:45 started y_c_x0p8
+10:11:45 started y_c_x1p25
+10:12:05 finished base exit 0
+10:12:05 finished rho0_x0p8 exit 0
+10:12:05 finished rho0_x1p25 exit 0
+10:12:05 finished rho0_x2 exit 0
+10:12:05 finished k1_x0p5 exit 0
+10:12:05 finished k1_x0p8 exit 0
+10:12:05 finished k1_x1p25 exit 0
+10:12:05 finished y_c_x0p5 exit 0
+10:12:05 started y_c_x2
+10:12:05 started tau_c0_x0p5
+10:12:05 started tau_c0_x0p8
+10:12:05 started tau_c0_x1p25
+10:12:05 started tau_c0_x2
+10:26:45 finished tau_c0_x1p25 exit 0
+10:27:05 finished y_c_x1p25 exit 0
+10:27:05 finished y_c_x2 exit 0
+10:27:05 finished tau_c0_x0p8 exit 0
+10:27:25 finished tau_c0_x2 exit 0
+10:27:45 finished tau_c0_x0p5 exit 0
+10:35:05 finished y_c_x0p8 exit 0
