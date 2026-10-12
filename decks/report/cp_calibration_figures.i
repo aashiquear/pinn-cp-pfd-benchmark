@@ -23,10 +23,10 @@
   grains      = ../../results/cp_study/cal/gn2/base/grains.npz
   grains_csv  = ../../results/cp_study/cal/gn2/base/grains.csv
   gauss_newton = ../../results/cp_study/cal/gn2/gauss_newton.json
-  rho0        = 41.15
-  k1          = 0.1677
-  y_c         = 0.0032
-  tau_c0      = 5.35
+  rho0        = 47.99
+  k1          = 0.1988
+  y_c         = 0.00344
+  tau_c0      = 5.29
 []
 
 # One-at-a-time perturbations around the calibrated set (same study, cal_gn2.i).
@@ -36,28 +36,28 @@
     results = ../../results/cp_study/cal/gn2/rho0_p/results.csv
     symbol  = $\rho_0$
     factor  = 1.2
-    value   = 49.38
+    value   = 57.58
     unit    = $\mu$m$^{-2}$
   []
   [./k1]
     results = ../../results/cp_study/cal/gn2/k1_p/results.csv
     symbol  = $k_1$
     factor  = 1.2
-    value   = 0.2013
+    value   = 0.2386
     unit    = '-'
   []
   [./y_c]
     results = ../../results/cp_study/cal/gn2/y_c_p/results.csv
     symbol  = $y_c$
     factor  = 1.2
-    value   = 0.00384
+    value   = 0.00413
     unit    = $\mu$m
   []
   [./tau_c0]
     results = ../../results/cp_study/cal/gn2/tau_c0_p/results.csv
     symbol  = $\tau_{c0}$
     factor  = 1.5
-    value   = 8.02
+    value   = 7.94
     unit    = MPa
   []
 []

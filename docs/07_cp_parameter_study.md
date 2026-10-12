@@ -466,3 +466,20 @@ relative error -11%); perturbations rho0 x1.2 33.5, k1 x1.2 17.9, y_c x1.2
 / 120 / 87, k1 46 / 206 / 368, y_c -13 / -88 / -208, tau_c0 26 / 25 / 24.
 Levenberg-Marquardt step -> center 2: rho0 47.99, k1 0.1988, y_c 0.00344,
 tau_c0 5.29 (predicted RMSE 14.2 MPa). Iteration 2 launched (`cal_gn2.i`).
+
+Iteration 2 (`cal_gn2.i`, five runs, 256/256, 0 cutbacks): center RMSE 14.4
+MPa (eight markers from 0.1%), perturbations rho0 x1.2 22.6, k1 x1.2 50.9,
+y_c x1.2 33.6, tau_c0 x1.5 15.7 MPa. Sensitivities dS/dln p at 2 / 7 / 17%:
+rho0 160 / 127 / 92, k1 52 / 238 / 419, y_c -15 / -103 / -241, tau_c0 25 /
+25 / 24. The next Levenberg-Marquardt step moves rho0 1.1%, k1 1.4%, y_c
+0.6%, tau_c0 -5.4% and predicts no gain (14.2 vs 14.4 MPa): iteration
+stopped.
+
+**Calibrated set (h40): rho0 = 47.99 um^-2, k1 = 0.1988, y_c = 0.00344 um,
+tau_c0 = 5.29 MPa.** Per-marker errors: 0.14% -28.0%, 0.57% +1.9%, 2.0%
+-1.8%, 7.0% +0.1%, 11.0% -0.2%, 13.1% -1.0%, 15.1% -1.2%, 17.0% -0.2%.
+
+### 10.2 Mesh sensitivity
+
+Decks `mesh_h{20,80,160}.i` regenerated from `cal_center2.i` (field series
+included); h40 is `cal/gn2/base`. Launched 2026-10-12 00:00 MDT.
