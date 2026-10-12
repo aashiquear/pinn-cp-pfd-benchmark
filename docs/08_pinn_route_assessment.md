@@ -181,3 +181,14 @@ option to accept its proposal without a Newton correction:
 * Outputs and bookkeeping are those of C1, so the three columns of the
   benchmark (cold FE, hybrid, PINN as solver) come from the same executioner
   and the same decks, differing only in `[Utilities]` and `corrector`.
+
+**2026-10-12, C1 first check (docs/07 §10.5).** Data-trained network
+predictor: proposal worse than the previous step (median 1.6x the
+increment), 19% MORE Newton iterations than cold, 4.7 h of training over
+256 steps (quadratic growth). Linear extrapolation: proposal within 0.03%
+of the increment at no cost, about one Newton iteration per step saved
+under an absolute convergence criterion (none under the default relative
+test, which penalises warm starts; protocol fixed in docs/07 §10.0). The
+hybrid column of the benchmark therefore uses the physics-trained
+predictor, with linear extrapolation as the reference; the data-trained
+mode stays available as a documented negative baseline.
