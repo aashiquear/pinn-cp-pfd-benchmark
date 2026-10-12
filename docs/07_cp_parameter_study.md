@@ -489,9 +489,15 @@ included); h40 is `cal/gn2/base`. Launched 2026-10-12 00:00 MDT.
 | h20 | 413.1 | 518.7 | 616.0 | 629.8 | | 5 min |
 | h40 | 403.9 | 502.8 | 591.5 | 603.3 | -2.2 / -3.1 / -4.0 / -4.2% | 14 min |
 | h80 | 400.2 | 495.4 | 578.6 | 589.3 | -0.9 / -1.5 / -2.2 / -2.3% | 105 min |
-| h160 | (running) | | | | | |
+| h160 | 397.9 | 490.6 | 569.2 | 578.9 | -0.6 / -1.0 / -1.6 / -1.8% | ~4 h |
 
-All 256/256 steps, zero cutbacks, field series written.
+All 256/256 steps, zero cutbacks, field series written. RMSE against the
+markers 20.1 / 14.4 / 18.2 / 22.6 MPa (the set was calibrated at h40).
+Ratio of successive changes h80->h160 over h40->h80: 0.62 at 2%, 0.75 at
+20% (apparent order 0.7 falling to 0.4): first-order-like at yield, slower
+on the plastic branch (slip localization without an internal length).
+Distance to h160: h40 +1.5 / +2.5 / +3.9 / +4.2%, h80 +0.6 / +1.0 / +1.7 /
++1.8% at 2 / 7 / 17 / 20%. Report §5; the author chooses the mesh.
 
 ### 10.5 Hybrid first check at h40 (old parameter set and criterion; framework check only)
 
