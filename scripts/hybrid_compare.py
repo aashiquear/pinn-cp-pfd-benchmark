@@ -92,6 +92,10 @@ def main(argv):
     fig_dir = _resolve(str(comp.get("figures", comp["out_dir"])), deck); fig_dir.mkdir(parents=True, exist_ok=True)
     prefix = str(comp.get("prefix", "hybrid"))
     runs = {name: (_resolve(str(r["dir"]), deck), _str(r.get("label", name))) for name, r in cfg["runs"].items()}
+    missing = [n for n, (d, _) in runs.items() if not (d / "solver" / "solver_history.csv").exists()]
+    for n in missing:
+        print(f"skipping {n}: no solver_history.csv yet")
+        runs.pop(n)
     names = list(runs)
     ref = names[0]
     hist = {n: read_history(d) for n, (d, _) in runs.items()}

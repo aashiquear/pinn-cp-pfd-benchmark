@@ -22,6 +22,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
   grain arrangement). The author drops such outliers and draws another seed;
   an instance within a few percent is acceptable.
 - Compute: CPU for now. The author wants GPU eventually; see below.
+- FIELD VARIABLES ARE PART OF EVERY RESULT (author, 2026-10-12): every run
+  (FE, PINN, PINN+FEM) writes the field series (`snapshots_every = 4` in the
+  pipeline deck, i.e. every 0.3125% strain) so fields can be compared
+  between routes, not only the stress-strain curve.
+- Results are produced with the fixed solver only (PINNACLE a311a8b or
+  later); nothing computed before it is kept in results/ or in the report.
 - Never launch a multi-run campaign without (1) one checked single case and
   (2) the author's agreement on the design.
 - Every run is reproducible from a PINNACLE `.i` deck; pipeline scripts read a

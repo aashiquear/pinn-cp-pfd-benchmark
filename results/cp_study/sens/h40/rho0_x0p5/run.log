@@ -1,6 +1,0 @@
-/home/aashiquear/projects/pinnacle/src/pinnacle/materials/cp_field_callback.py:1085: RuntimeWarning: CP load increment is too coarse: max strain increment 0.000853 exceeds 0.0008. The state update sub-steps, but the trial stress driving the Newton solve does not, so the SOLUTION -- not just the state -- is under-resolved. Measured error at 1e-2 is over 100%, and above ~2.4e-3 the integration can diverge. Subdivide the load step (on a coupled run, raise the mechanics sub-solve's n_steps rather than the staggered n_steps, so the damage solve still runs once per step).
-  self._check_strain_increment(strain)
-/home/aashiquear/projects/pinnacle/src/pinnacle/models/composed_model.py:622: RuntimeWarning: Mean of empty slice
-  payload[key] = arr.reshape(n_elements, n_gauss, *arr.shape[1:]).mean(axis=1)
-/home/aashiquear/venvs/pinnacle/lib/python3.12/site-packages/numpy/_core/_methods.py:134: RuntimeWarning: invalid value encountered in divide
-  ret = um.true_divide(

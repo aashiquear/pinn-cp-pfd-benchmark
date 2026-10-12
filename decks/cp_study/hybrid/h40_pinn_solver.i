@@ -37,6 +37,7 @@
   newton_tol   = 1.0e-6
   max_cutbacks = 10
   linear_method = direct
+  snapshots_every = 4
   corrector    = none
   C11     = 108.0e3
   C12     = 61.3e3
