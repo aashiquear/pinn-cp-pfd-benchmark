@@ -1,4 +1,0 @@
-run,label,steps,newton_iterations,newton_time_s,predictor_time_s,train_time_s,total_solve_time_s,predictor_rel_error_median,predictor_rel_error_max,max_curve_dev_vs_ref_MPa
-cold,cold FE (previous step as initial guess),256,1595,1539.3956266295863,0.0,0.0,1539.3956266295863,nan,nan,0.0
-linear,linear extrapolation predictor,256,1617,1571.2532521769172,0.0047464019153267145,0.0,1571.2579985788325,0.0002672588094750221,0.07037770043828512,4.947057163917634e-07
-network,network predictor (torch GPU),256,1896,1812.9877529948717,17085.462689313223,17080.749559271382,18898.450442308094,1.640848916867043,3.4017251598831613,1.8594018911244348e-06
