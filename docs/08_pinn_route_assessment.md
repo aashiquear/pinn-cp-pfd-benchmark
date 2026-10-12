@@ -132,3 +132,52 @@ Alternatives the author may prefer: skip C2 and benchmark only the hybrid
 (then the "PINN" column is a predictor, not a solver, and the claim is
 cost at FE accuracy); or do C2 on a reduced problem first (single crystal,
 h20, 2% strain) to settle feasibility before the plate.
+
+## 5. Status log
+
+**2026-10-11, C3 done.** PINNACLE ADR 0027 (`batched_constitutive`,
+`compute_stacked`, stacked quadrature-point state): the 4-step h40 plate
+runs in 6.0 s on numpy, 4.6 s on torch-CPU and 4.55 s on torch-GPU (was 32
+/ 145 / 549 s), identical stresses. Gate met. Side effect: the batched
+sub-stepper had been evolving the state under the material-global elastic
+stiffness on orientation-field decks; fixed, and the pre-fix FE results of
+the report are superseded (docs/07 §9; recalibration awaits the author).
+
+**2026-10-11, C1 built.** PINNACLE ADR 0028: `cp_quasi_static` calls
+`predict_load_step` / `observe_load_step` on `[Utilities]`; the
+`load_step_predictor` utility offers `mode = linear` (extrapolation) and
+`mode = network` (a network u(x, lambda) fitted online to the corrected
+fields on its own torch backend/device). Per step the history carries
+`newton_time_s`, `predictor_time_s`, `predictor_rel_error` and the training
+cost. Pipeline: a `[Predictor]` block of the pipeline deck is rendered into
+the generated deck. First check launched on h40 (cold / linear / network,
+`decks/cp_study/hybrid/`), compared by `scripts/hybrid_compare.py`.
+
+**C2 design (next): the per-step "PINN as solver".** The same hooks carry
+it; what is new is a physics-trained predictor and the executioner's
+option to accept its proposal without a Newton correction:
+
+* `load_step_predictor mode = physics`: the network u(x, lambda) is trained,
+  per load step, on the strong-form balance of momentum evaluated at the
+  quadrature points of the mesh with the crystal-plasticity state FROZEN
+  there (the quadrature points are the collocation points, so the state
+  needs no interpolation), with the per-point orientations and rotated
+  stiffness, plus the Dirichlet term at the nodes and, optionally, the data
+  term of the corrected previous steps. The residual needs a
+  `compute_stacked` on the predictor's torch backend (the material and the
+  orientation stacks rebuilt there from the same deck config; the state
+  stacks copied from the FE callback each step) and the divergence of the
+  first Piola-Kirchhoff stress by autograd with respect to the quadrature
+  coordinates. The executioner hands the predictor what it needs through
+  `LoadStepContext.extra`: quadrature-point coordinates, the material
+  config, the current state stacks, the per-point orientations and the
+  finite-strain flag.
+* `cp_quasi_static corrector = newton | none`: with `none` the executioner
+  accepts the proposal as the step's solution, evaluates the FE residual
+  norm of it (one assembly) and records it beside the predictor's own
+  loss, then advances the state exactly as for a Newton solution. That is
+  the pure-PINN column: accuracy measured, not enforced. With `newton` the
+  same physics-trained predictor is the hybrid's better initial guess.
+* Outputs and bookkeeping are those of C1, so the three columns of the
+  benchmark (cold FE, hybrid, PINN as solver) come from the same executioner
+  and the same decks, differing only in `[Utilities]` and `corrector`.
