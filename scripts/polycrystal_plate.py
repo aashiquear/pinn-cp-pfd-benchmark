@@ -34,6 +34,8 @@ Pipeline deck blocks (see decks/polycrystal_plate/*.i for a filled example):
                   rho0 k1 y_c); load_axis = x | y picks the template;
                   snapshots_every = N (optional, default 0) writes the field
                   series every N load steps (PINNACLE cp_quasi_static)
+                  corrector = newton | none (optional, default newton; none accepts
+                  the [Predictor]'s proposal as the step's solution: PINN as solver)
   [Predictor]     optional: keys copied verbatim into a [Utilities] load-step
                   predictor (kind = load_step_predictor, mode = linear|network,
                   backend, device, epochs_initial, ... ; PINNACLE ADR 0028)
@@ -281,6 +283,7 @@ def stage_deck(cfg: dict, deck: Path, out: Path) -> Path:
     sub = {"OUTDIR": str(out / "solver"), "POINTFILE": "orientations_points.csv",
            "LINEAR": str(mech.get("linear_method", "direct")),
            "SNAPSHOTS": str(int(mech.get("snapshots_every", 0))),
+           "CORRECTOR": str(mech.get("corrector", "newton")),
            "UTILITIES": _utilities_block(cfg)}
     for key, ph in MECH_KEYS.items():
         if key not in mech:
