@@ -570,3 +570,16 @@ increment (median; 6.5% max), **948 Newton iterations (-37%) and 667 s of
 Newton time (-20%)** -- under the absolute criterion the warm start pays,
 as the tolerance study predicted. This is the bar for the physics-trained
 network. Physics predictor (Newton corrector) and PINN as solver: running.
+
+First physics-trained attempts (2026-10-12, killed after 7.8 h): the
+PINN+FEM run produced a non-finite proposal at step 7 that poisoned Newton
+(NaN residual, singular factorization) for the rest of the run; the
+PINN-as-solver run (corrector = none) went 86 steps without a warning, then
+the accumulated error of its unverified fields blew up the state update at
+step 89 (slip rates 1e28/s); nothing was on disk because the history was
+written at the end. PINNACLE fixes (commit after a2f95d6): proposal guard
+(`predictor_reject_ratio`), `corrector = auto` with `corrector_tol`, live
+`solver_history.csv`, per-step progress log. Both checks relaunched: the
+hybrid with `corrector = newton`, the solver route with `corrector = auto`
+(tol 0.05 of the reaction), so a step the network cannot solve is corrected
+instead of accumulating.

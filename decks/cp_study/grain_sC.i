@@ -1,10 +1,9 @@
-# GRAIN-INSTANCE CHECK, instance C: the calibrated h40 set (cal_center2.i) on a
-# second grain structure -- a new Voronoi seeding (rng seed 20261013, deck
-# decks/graingrowth/instances/n32_bdf1_h40_sC.i) grown with the same
-# phase-field settings, and a new orientation draw (seed 20261013). Everything
-# else (mesh h40, loading, parameters) is the calibrated run's. The curve is
-# compared with the calibrated structure's to show the parameter set is not
-# tied to one grain realization.
+# GRAIN-INSTANCE CHECK, instance 2 (seed 20261013): the calibrated h40 set of
+# cal_center2.i on a second grain structure (new Voronoi seeding grown with the
+# same phase-field settings, decks/graingrowth/instances/n32_bdf1_h40_sC.i)
+# and a new orientation draw (seed 20261013). Everything else (mesh h40, loading,
+# parameters, solver criterion, field series) is the calibrated run's.
+
 [Growth]
   run_dir = ../../results/graingrowth_instance/sC
   deck    = ../graingrowth/instances/n32_bdf1_h40_sC.i
@@ -39,11 +38,11 @@
   mu      = 25.7e3
   gamma0  = 1.0e-5
   nexp    = 8.333333333333334
-  tau_c0  = 5.34925
+  tau_c0  = 5.29147
   q_lat   = 1.4
   alpha0  = 0.4
   burgers = 0.000286
-  rho0    = 41.1521
-  k1      = 0.16771
-  y_c     = 0.00319744
+  rho0    = 47.9872
+  k1      = 0.198833
+  y_c     = 0.00343758
 []

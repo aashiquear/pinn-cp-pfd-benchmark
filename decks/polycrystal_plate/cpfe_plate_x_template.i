@@ -151,6 +151,8 @@
   # newton (default) corrects every step; none accepts a [Utilities]
   # predictor's proposal as the solution (PINN as solver, ADR 0028).
   corrector        = @CORRECTOR@
+  corrector_tol    = @CORRECTORTOL@
+  predictor_reject_ratio = @REJECTRATIO@
 []
 
 @UTILITIES@

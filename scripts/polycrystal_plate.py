@@ -285,6 +285,8 @@ def stage_deck(cfg: dict, deck: Path, out: Path) -> Path:
            "LINEAR": str(mech.get("linear_method", "direct")),
            "SNAPSHOTS": str(int(mech.get("snapshots_every", 0))),
            "CORRECTOR": str(mech.get("corrector", "newton")),
+           "CORRECTORTOL": f"{float(mech.get('corrector_tol', 0.05)):.12g}",
+           "REJECTRATIO": f"{float(mech.get('predictor_reject_ratio', 10.0)):.12g}",
            "UTILITIES": _utilities_block(cfg)}
     for key, ph in MECH_KEYS.items():
         if key not in mech:

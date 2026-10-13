@@ -2,7 +2,10 @@
 # calibrated set of cal_center2.i, the study's solver criterion and field series.
 # The cold FE reference is the calibrated run itself (results/cp_study/cal/gn2/base).
 # Only the [Predictor] block and `corrector` differ between the variants.
-# Variant: PINN as solver: the same physics-trained network accepted as the step solution (corrector = none).
+# Variant: PINN as solver with verification: the physics-trained network's field is
+# accepted as the step solution when its equilibrium residual is below
+# corrector_tol of the reaction (corrector = auto) and corrected by Newton
+# otherwise; corrector_used on every row says which.
 
 [Growth]
   run_dir = ../../../results/graingrowth_pilot/n32_bdf1_h40
@@ -31,7 +34,8 @@
   newton_rel_tol = 0
   max_cutbacks = 10
   linear_method = direct
-  corrector    = none
+  corrector    = auto
+  corrector_tol = 0.05
   snapshots_every = 4
   C11     = 108.0e3
   C12     = 61.3e3
