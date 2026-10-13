@@ -1,0 +1,11 @@
+2026-10-13 00:33:24 INFO    pinnacle: Logging to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens_neural/h40_grain_solver/rho0_x0p8/solver/pinnacle.log (level=info, console=False)
+2026-10-13 00:33:24 INFO    pinnacle.cli.main: Starting run from deck 'cpfe.i'
+2026-10-13 00:33:24 INFO    pinnacle.runner.builder: Built backend 'numpy' on device 'cpu' with precision 'float64' (composed path)
+2026-10-13 00:33:24 INFO    pinnacle.system.problem: [OrientationField] point_file 'orientations_points.csv' resolved on 800 elements: {'n_targets': 800, 'n_source_points': 21012, 'out_of_bounds': 0, 'coverage_fraction': 1.0, 'interpolation': 'nearest', 'fallback': 'uniform'}
+2026-10-13 00:33:26 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/256 accepted (load factor 0.00391, newton, 2 Newton iterations, 1.1 s)
+2026-10-13 00:33:27 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 2/256 accepted (load factor 0.00781, newton, 2 Newton iterations, 1.1 s)
+2026-10-13 00:33:28 INFO    pinnacle.components.predictors.load_step_predictor: load_step_predictor: node features ['orientation', 'grain_boundary'] -> 10 input columns
+2026-10-13 00:33:29 INFO    pinnacle.components.predictors.load_step_predictor: load_step_predictor: network 3x64 (tanh) on backend torch device cuda
+2026-10-13 00:33:29 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 3/256 accepted (load factor 0.01172, none, 0 Newton iterations, 0.0 s)
+2026-10-13 00:33:29 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 4/256 accepted (load factor 0.01562, none, 0 Newton iterations, 0.0 s)
+2026-10-13 00:33:46 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 5/256 accepted (load factor 0.01953, none, 0 Newton iterations, 0.0 s)

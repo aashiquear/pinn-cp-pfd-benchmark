@@ -967,20 +967,16 @@ finite-element cases: a saving of 37% (median) that does not vary with the
 parameter or its level (Fig. 17). The predictor's benefit is a property of
 the load path, not of the material constants.
 
-**PINN as solver, grain-aware, verified.** On the nine cases complete at
-the time of writing (the base and the eight $\times 0.5$ / $\times 2$
-extremes; the four $\times 0.8$ and three of the four $\times 1.25$ cases
-are still running) the route behaves exactly as on the calibrated set:
-the engineering stress stays within 0.3 to 1.3 MPa (at most 0.2%) of the
-finite-element case at every strain, 129 to 137 of the 256 steps are
-solved by the network without Newton, and the Newton count is 611 to 647,
-with no trend against the parameter or its level while the finite-element
-flow stress moves by $-32$% to $+68$%. The acceptance rate of about one
-step in two and the accuracy of the accepted steps are properties of the
-tolerance and of the network's inputs, not of the material constants; the
-cost per run (4,440 to 4,780 s, two runs sharing the host) is likewise
-unchanged. The remaining cases will be added to Table 11 and Fig. 17 when
-they complete.
+**PINN as solver, grain-aware, verified.** On all sixteen cases the
+route behaves exactly as on the calibrated set: the engineering stress
+stays within 0.3 to 1.3 MPa (at most 0.2%) of the finite-element case at
+every strain, 129 to 138 of the 256 steps are solved by the network
+without Newton, and the Newton count is 611 to 647, with no trend against
+the parameter or its level while the finite-element flow stress moves by
+$-32$% to $+68$%. The acceptance rate of about one step in two and the
+accuracy of the accepted steps are properties of the tolerance and of the
+network's inputs, not of the material constants; the cost per run (4,370
+to 4,780 s, two runs sharing the host) is likewise unchanged.
 
 **Table 11.** Parameter sensitivity of the two neural routes: deviation of
 the route from the finite-element case and its cost, per case (full table
@@ -990,17 +986,24 @@ in `results/cp_study/sens_neural/sens_neural_h40.csv`).
 |---|---|---|---|
 | base | 0 | 0.000, 948 | 0.33, 131, 635 |
 | $\rho_0 \times 0.5$ | $-7.2$% | 0.000, 952 | 0.60, 129, 634 |
+| $\rho_0 \times 0.8$ | $-2.7$% | 0.000, 949 | 0.83, 134, 634 |
+| $\rho_0 \times 1.25$ | $+3.2$% | 0.000, 948 | 0.77, 132, 637 |
 | $\rho_0 \times 2$ | $+11.8$% | 0.000, 957 | 1.32, 132, 628 |
 | $k_1 \times 0.5$ | $-31.9$% | 0.000, 974 | 0.36, 137, 611 |
+| $k_1 \times 0.8$ | $-13.2$% | 0.000, 953 | 0.38, 131, 626 |
+| $k_1 \times 1.25$ | $+16.9$% | 0.000, 947 | 0.77, 138, 615 |
 | $k_1 \times 2$ | $+68.2$% | 0.000, 944 | 0.79, 131, 647 |
 | $y_c \times 0.5$ | $+32.8$% | 0.000, 941 | 0.43, 131, 640 |
+| $y_c \times 0.8$ | $+10.4$% | 0.000, 947 | 0.49, 131, 637 |
+| $y_c \times 1.25$ | $-9.8$% | 0.000, 952 | 0.38, 131, 628 |
 | $y_c \times 2$ | $-27.5$% | 0.000, 965 | 0.32, 131, 624 |
 | $\tau_{c0} \times 0.5$ | $-1.6$% | 0.000, 948 | 0.32, 131, 633 |
+| $\tau_{c0} \times 0.8$ | $-0.6$% | 0.000, 948 | 0.39, 131, 634 |
+| $\tau_{c0} \times 1.25$ | $+0.8$% | 0.000, 949 | 0.80, 135, 615 |
 | $\tau_{c0} \times 2$ | $+3.2$% | 0.000, 948 | 1.23, 132, 634 |
 
 **Figure 17.** Deviation from the finite-element case and solve time per
-case for the two routes (the $\times 0.8$ and $\times 1.25$ cases of the
-grain-aware solver are added as they complete).
+case for the two routes.
 
 ![neural sensitivity](../../figures/report/sens_neural_h40_cases.png)
 

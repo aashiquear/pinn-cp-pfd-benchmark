@@ -1,0 +1,72 @@
+Mon Oct 12 11:56:24 PM MDT 2026
+prepared base {}
+prepared rho0_x0p5 {'rho0': 23.9936}
+prepared rho0_x0p8 {'rho0': 38.3898}
+prepared rho0_x1p25 {'rho0': 59.984}
+prepared rho0_x2 {'rho0': 95.9744}
+prepared k1_x0p5 {'k1': 0.0994165}
+prepared k1_x0p8 {'k1': 0.159066}
+prepared k1_x1p25 {'k1': 0.248541}
+prepared k1_x2 {'k1': 0.397666}
+prepared y_c_x0p5 {'y_c': 0.00171879}
+prepared y_c_x0p8 {'y_c': 0.00275006}
+prepared y_c_x1p25 {'y_c': 0.00429697}
+prepared y_c_x2 {'y_c': 0.00687516}
+prepared tau_c0_x0p5 {'tau_c0': 2.64574}
+prepared tau_c0_x0p8 {'tau_c0': 4.23318}
+prepared tau_c0_x1p25 {'tau_c0': 6.61434}
+prepared tau_c0_x2 {'tau_c0': 10.5829}
+17 cases to run, 4 at a time
+23:56:32 started base
+23:56:32 started rho0_x0p5
+23:56:32 started rho0_x0p8
+23:56:32 started rho0_x1p25
+00:03:52 finished base exit 0
+00:03:52 finished rho0_x0p8 exit 0
+00:03:52 finished rho0_x1p25 exit 0
+00:03:52 started rho0_x2
+00:03:52 started k1_x0p5
+00:03:52 started k1_x0p8
+00:04:12 finished rho0_x0p5 exit 0
+00:04:12 started k1_x1p25
+00:11:32 finished rho0_x2 exit 0
+00:11:32 finished k1_x0p5 exit 0
+00:11:32 finished k1_x0p8 exit 0
+00:11:32 finished k1_x1p25 exit 0
+00:11:32 started k1_x2
+00:11:32 started y_c_x0p5
+00:11:32 started y_c_x0p8
+00:11:32 started y_c_x1p25
+00:18:52 finished y_c_x0p5 exit 0
+00:18:52 finished y_c_x1p25 exit 0
+00:18:52 started y_c_x2
+00:18:52 started tau_c0_x0p5
+00:19:12 finished k1_x2 exit 0
+00:19:12 finished y_c_x0p8 exit 0
+00:19:12 started tau_c0_x0p8
+00:19:12 started tau_c0_x1p25
+00:26:12 finished tau_c0_x0p5 exit 0
+00:26:12 started tau_c0_x2
+00:26:32 finished y_c_x2 exit 0
+00:26:32 finished tau_c0_x1p25 exit 0
+00:26:52 finished tau_c0_x0p8 exit 0
+00:33:12 finished tau_c0_x2 exit 0
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens_neural/h40_linear/sens_h40_linear_summary.csv
+base reached 0.2 rmse 14.4 mean rel err -0.038
+rho0_x0p5 reached 0.2 rmse 63.9 mean rel err -0.155
+rho0_x0p8 reached 0.2 rmse 28.0 mean rel err -0.081
+rho0_x1p25 reached 0.2 rmse 26.3 mean rel err 0.008
+rho0_x2 reached 0.2 rmse 82.9 mean rel err 0.116
+k1_x0p5 reached 0.2 rmse 124.6 mean rel err -0.211
+k1_x0p8 reached 0.2 rmse 54.8 mean rel err -0.11
+k1_x1p25 reached 0.2 rmse 63.5 mean rel err 0.054
+k1_x2 reached 0.2 rmse 259.1 mean rel err 0.336
+y_c_x0p5 reached 0.2 rmse 101.9 mean rel err 0.101
+y_c_x0p8 reached 0.2 rmse 34.8 mean rel err 0.009
+y_c_x1p25 reached 0.2 rmse 39.2 mean rel err -0.085
+y_c_x2 reached 0.2 rmse 102.8 mean rel err -0.177
+tau_c0_x0p5 reached 0.2 rmse 18.2 mean rel err -0.055
+tau_c0_x0p8 reached 0.2 rmse 15.4 mean rel err -0.045
+tau_c0_x1p25 reached 0.2 rmse 14.4 mean rel err -0.03
+tau_c0_x2 reached 0.2 rmse 21.1 mean rel err -0.005
+Tue Oct 13 12:33:16 AM MDT 2026

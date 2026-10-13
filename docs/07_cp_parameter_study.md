@@ -749,12 +749,11 @@ a saving of 37% (median) that does not depend on the parameter. The
 predictor's benefit is a property of the load path, not of the material
 constants.
 
-**PINN as solver, grain-aware, verified (extremes first; 9/16 at 09:15
-2026-10-13, two concurrent at four threads):** every complete case is
-within 0.3-1.3 MPa (<= 0.2%) of its FE case, 129-137 steps of 256 solved
-without Newton, 611-647 Newton iterations, 4,440-4,780 s per run; no
-trend with the parameter (report §9.2, Table 11). The x0.8 / x1.25 cases
-are added when the campaign ends.
+**PINN as solver, grain-aware, verified (16/16 done 13:21 2026-10-13,
+two concurrent at four threads):** every case within 0.3-1.3 MPa
+(<= 0.2%) of its FE case, 129-138 steps of 256 solved without Newton,
+611-647 Newton iterations, 4,370-4,780 s per run; no trend with the
+parameter (report §9.2, Table 11, Fig. 17).
 
 
 ### 10.12 Plate surrogate (PINNACLE ADR 0030) on h40
