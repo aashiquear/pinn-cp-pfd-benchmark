@@ -938,6 +938,96 @@ predictor that improves on the linear extrapolation by a few percent of
 the Newton iterations at a net loss of wall time. Trained on the strong
 form the same network solved no step at all.
 
+## 9. Parameter sensitivity of the neural routes
+
+### 9.1 Design
+
+The two routes carried forward from §8, the PINN+FEM hybrid with the
+linear-extrapolation predictor and the verified PINN-as-solver with
+grain-aware inputs, are run through the sixteen one-at-a-time cases of
+§6 (each calibrated parameter at $\times 0.5$, $\times 0.8$, $\times 1.25$
+and $\times 2$, the other three at their calibrated values) with the decks
+of §8 otherwise unchanged. The question is whether a route's accuracy and
+cost depend on the material constants, that is, whether the figures of
+Table 8 hold away from the calibrated set. The finite-element case of §6
+is the reference for every case. Decks:
+`decks/cp_study/sens_h40_linear.i`, `decks/cp_study/sens_h40_grain_solver.i`;
+analysis: `decks/report/neural_sensitivity.i` with
+`scripts/neural_sensitivity.py`.
+
+### 9.2 Results
+
+**PINN+FEM, linear extrapolation.** Every one of the sixteen cases
+reproduces its finite-element curve to the solver tolerance (the largest
+stress difference over all cases and strains is $3 \times 10^{-6}$ MPa),
+while the finite-element effect being tracked ranges from $-32$% to
+$+68$% of the flow stress at 20% strain. The Newton iteration count is
+941 to 974 per case against 1,468 to 1,536 for the corresponding
+finite-element cases: a saving of 37% (median) that does not vary with the
+parameter or its level (Fig. 17). The predictor's benefit is a property of
+the load path, not of the material constants.
+
+@SENS_GRAIN_RESULTS@
+
+## 10. Hardware and time benchmark
+
+### 10.1 Design
+
+All timings in §8 and §9 were taken while other runs shared the host, so
+they measure iterations and assemblies reliably and wall time only
+roughly. This section measures wall time under controlled conditions:
+each case is the first 16 load steps of the calibrated h40 deck (the
+strain per step of §3 unchanged, so the steps are those of the cold
+start, the elastic rise and the first yield), run alone on the host (8
+CPU cores, one GPU), with the thread count pinned. Nine cases: the cold
+finite-element arm on numpy at 1, 2, 4 and 8 threads, on torch CPU at 8
+threads and on the torch GPU; the PINN+FEM route with the linear
+extrapolation; and the verified grain-aware PINN-as-solver route with its
+network on the GPU and on the CPU. For each case: wall time per load
+step, Newton time per iteration, predictor time per step, the number of
+assemblies, the peak resident memory of the process and the peak GPU
+memory. Deck `decks/benchmark/hardware_h40.i`; script
+`scripts/hardware_benchmark.py`.
+
+### 10.2 Results
+
+@HARDWARE_RESULTS@
+
+## 11. The parametric surrogate
+
+### 11.1 Design
+
+The three routes above solve one problem per run. The surrogate route of
+the framework (ADR 0030) trains a network of the deck's **parameters**
+once and answers queries in milliseconds; on crystal plasticity, whose
+response depends on the loading path, the admissible training source is
+sampled finite-element runs (the strong-form residual is not a function
+of parameters and coordinates alone, and §8 measured that it is
+unreachable on a polycrystal in any case), so the surrogate learns the
+**reduced response**, the engineering stress-strain curve, and the
+**final displacement field** at 20% strain, as functions of
+$(\rho_0, k_1, y_c, \tau_{c0})$ over the range of §6 ($\times 0.5$ to
+$\times 2$ of the calibrated values, log-uniform). Twenty-four
+Latin-hypercube samples are run through the pipeline of §2 on the
+calibrated structure (deck `decks/cp_study/surrogate/design_h40.i`); six
+are held out. The curve surrogate is a network
+$\sigma(\mathbf{p}, \varepsilon)$ with five inputs and one output, the
+field surrogate $\mathbf{u}(\mathbf{p}, \mathbf{x})$ with seven inputs and
+three outputs (three hidden layers of 64 tanh units in both), trained on
+the GPU with Adam and L-BFGS. The measures are the held-out error
+(relative L2 of the curve and of the field at parameters the network has
+not seen), the cost of the data (finite-element time of the 18 training
+samples), the training time, the time per query on the GPU and on the
+CPU (1,000 random parameter rows), and the break-even number of queries
+against the finite-element run, the PINN+FEM run and the verified
+PINN-as-solver run of §8. Decks
+`decks/cp_study/surrogate/plate_h40_surrogate_curve.i` and
+`plate_h40_surrogate_field.i`.
+
+### 11.2 Results
+
+@SURROGATE_RESULTS@
+
 ## References
 
 - (rezwan 2025 intragranular) A. Rezwan, N. Aragon, D. de Oca Zapiain, H. Lim,
