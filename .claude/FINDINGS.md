@@ -127,6 +127,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
   0.2-0.4 ms per query (CPU faster than GPU at this network size); break-even
   14 FE runs. Report §11.
 
+- Hardware benchmark h40 (2026-10-13): the numpy CP assembly ignores threads
+  (0.45 s/iteration at 1-8 threads); torch CPU is 6.7x faster per iteration
+  (0.067 s) and torch GPU 5.7x (0.079 s) at 7-9x memory. Use the torch CPU arm
+  for future absolute timings; route ratios are unaffected. The solver route's
+  cost is its training assemblies (42/step), not the network's device.
+
 ## Technical report (docs/reports/)
 - `docs/reports/cp_fe_calibration_report.md` is the paper-style record; the
   numbered `docs/0N_*.md` stay the lab notebook. The report carries ONLY the

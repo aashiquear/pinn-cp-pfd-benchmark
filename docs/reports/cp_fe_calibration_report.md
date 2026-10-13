@@ -1030,7 +1030,59 @@ memory. Deck `decks/benchmark/hardware_h40.i`; script
 
 ### 10.2 Results
 
-@HARDWARE_RESULTS@
+All nine cases converged in the same 16 steps; the three cold
+finite-element cases on numpy, torch CPU and torch GPU took the same 46
+Newton iterations, so they are timed on identical work. Table 12 gives
+the measurements; Fig. 20 the time per step.
+
+**Table 12.** Hardware and time benchmark, first 16 load steps of the
+calibrated h40 deck, one case at a time on the host (8 cores, one GPU).
+The peak resident memory is that of the process; the GPU memory poll did
+not capture a value on this host (its tool prints no per-process figure)
+and is omitted.
+
+| case | FE arm | threads | network device | Newton iterations | Newton time per iteration | predictor time per step | steps without Newton | time per step | peak memory |
+|---|---|---|---|---|---|---|---|---|---|
+| cold FE | numpy | 1 | -- | 46 | 0.45 s | -- | 0 | 1.35 s | 173 MB |
+| cold FE | numpy | 2 | -- | 46 | 0.47 s | -- | 0 | 1.41 s | 174 MB |
+| cold FE | numpy | 4 | -- | 46 | 0.45 s | -- | 0 | 1.34 s | 175 MB |
+| cold FE | numpy | 8 | -- | 46 | 0.45 s | -- | 0 | 1.35 s | 175 MB |
+| cold FE | torch CPU | 8 | -- | 46 | 0.067 s | -- | 0 | 0.36 s | 1,203 MB |
+| cold FE | torch GPU | 8 | -- | 46 | 0.079 s | -- | 0 | 0.50 s | 1,610 MB |
+| PINN+FEM, linear extrapolation | numpy | 8 | -- | 37 | 0.48 s | 0.00 s | 0 | 1.19 s | 1,610 MB (shared poll) |
+| PINN as solver, grain-aware, verified | numpy | 8 | GPU | 22 | 0.48 s | 12.9 s | 8 of 16 | 13.8 s | 1,959 MB |
+| PINN as solver, grain-aware, verified | numpy | 8 | CPU | 22 | 0.47 s | 12.6 s | 8 of 16 | 13.4 s | 1,959 MB |
+
+**The finite-element arm.** On numpy the thread count does not matter:
+the crystal-plasticity assembly is a sequence of small vectorised
+operations that do not use the threaded BLAS, so one core does the work
+of eight (0.45 s per Newton iteration in every case). On torch the same
+batched path runs 6.7 times faster on the CPU (0.067 s per iteration, the
+eight threads used by the tensor library) and 5.7 times faster on the
+GPU (0.079 s): at 800 elements the GPU is slightly slower than the CPU,
+as the first measurement of the batched kernel also found, and both
+torch arms cost 7 to 9 times the memory of numpy. The absolute times of
+§8 and §9, which were measured with the numpy arm, therefore overstate
+every route's cost by the same factor of about 6 relative to what the
+torch CPU arm delivers; the ratios between routes are unchanged, because
+every route is made of the same assemblies.
+
+**The neural routes.** The linear-extrapolation predictor costs nothing
+measurable and removes a fifth of the Newton iterations over these 16
+steps (37 against 46; 37% over the full path, §8). The verified
+grain-aware solver solves 8 of the 16 steps without Newton, but its
+training costs 12.6 to 12.9 s per step, 42 assemblies per step on the
+numpy arm, against 1.35 s for the cold solve. Placing the network on the
+GPU or on the CPU makes no difference (12.9 against 12.6 s): the network
+is small, and the cost of the route is the finite-element assemblies of
+its training loss, not the network. The same conclusion as §8, now under
+controlled timing.
+
+**Figure 20.** Time per load step of the nine cases, split into the
+Newton solve and the predictor (log scale).
+
+![hardware](../../figures/report/hardware_h40_time_per_step.png)
+
 
 ## 11. The parametric surrogate
 
@@ -1151,5 +1203,6 @@ Both entries are in `bib/references.bib`.
 | run ledger rows | `cal-gn1`, `cal-gn2` in `docs/run_ledger.md` |
 | neural routes (§8): pipeline decks | `decks/cp_study/hybrid/h40_linear.i`, `h40_fem_residual.i`, `h40_fem_solver.i`; checks `check_fem_h40*.i` |
 | neural routes: histories, curves, field series | `results/cp_study/hybrid/{h40_linear,h40_fem_residual,h40_fem_solver}/` |
+| hardware benchmark (§10) | `decks/benchmark/hardware_h40.i` + `scripts/hardware_benchmark.py`; `results/cp_study/hardware/hardware_h40.csv` |
 | surrogate (§11): design, samples, decks, runs | `decks/cp_study/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_curve_cpu,plate_h40_surrogate_field}.i`; `results/cp_study/surrogate/h40_data/{design,samples}.csv`, `h40_{curve,curve_cpu,field}/`; `decks/report/surrogate_compare.i` + `scripts/surrogate_compare.py` |
 | neural routes: comparison decks and scripts | `decks/report/hybrid_compare.i` + `scripts/hybrid_compare.py`; `decks/report/neural_compare.i` + `scripts/field_compare.py`; `results/cp_study/hybrid/hybrid_h40_{summary,steps}.csv`, `neural_h40_field_errors.csv` |

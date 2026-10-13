@@ -756,6 +756,20 @@ two concurrent at four threads):** every case within 0.3-1.3 MPa
 parameter (report §9.2, Table 11, Fig. 17).
 
 
+### 10.11 Hardware and time benchmark (report §10)
+
+`decks/benchmark/hardware_h40.i`, `scripts/hardware_benchmark.py`, 16 steps
+per case, one case at a time (2026-10-13 13:30-13:55; the first pass had
+to be repeated for a parsing bug in the script). Findings: numpy FE arm
+0.45 s per Newton iteration at 1, 2, 4 and 8 threads (no threading in the
+CP assembly); torch CPU 0.067 s (6.7x faster), torch GPU 0.079 s (5.7x),
+at 7-9x the memory; linear predictor 37 vs 46 iterations at no cost;
+grain-aware verified solver 8/16 steps without Newton, 12.6-12.9 s of
+training per step whether the network is on the GPU or the CPU (the cost
+is the 42 numpy assemblies per step). GPU memory not captured on this
+host. Implication: all absolute route times of §10.7-10.10 (numpy arm)
+are about 6x what the torch CPU arm would give; ratios unchanged.
+
 ### 10.12 Plate surrogate (PINNACLE ADR 0030) on h40
 
 Design `decks/cp_study/surrogate/design_h40.i`: 24 LHS rows over rho0, k1,
