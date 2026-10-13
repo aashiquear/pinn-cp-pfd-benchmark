@@ -19,11 +19,11 @@
     label = 'PINN+FEM, linear-extrapolation predictor + Newton'
   []
   [./hybrid]
-    dir   = ../../results/cp_study/hybrid/h40_physics
-    label = 'PINN+FEM, physics-trained predictor + Newton'
+    dir   = ../../results/cp_study/hybrid/h40_fem_residual
+    label = 'PINN+FEM, FE-residual-trained predictor + Newton'
   []
   [./pinn]
-    dir   = ../../results/cp_study/hybrid/h40_pinn_solver
-    label = 'PINN as solver (verified, corrector = auto)'
+    dir   = ../../results/cp_study/hybrid/h40_fem_solver
+    label = 'PINN as solver (FE-residual-trained, verified)'
   []
 []

@@ -1,3 +1,3 @@
-run,label,steps,newton_iterations,newton_time_s,predictor_time_s,train_time_s,total_solve_time_s,predictor_rel_error_median,predictor_rel_error_max,max_curve_dev_vs_ref_MPa
-cold,cold FE (previous step as initial guess),256,1506,837.741193423979,0.0,0.0,837.741193423979,nan,nan,0.0
-linear,linear extrapolation predictor,256,948,667.1005795134697,0.004827068420127034,0.0,667.1054065818898,0.0002676466028351542,0.06514134691890906,1.5618309134879382e-06
+run,label,steps,newton_iterations,newton_time_s,predictor_time_s,train_time_s,total_solve_time_s,predictor_rel_error_median,predictor_rel_error_max,residual_ratio_initial_median,residual_ratio_median,assemblies,assembly_time_s,steps_accepted_without_newton,max_curve_dev_vs_ref_MPa
+cold,cold FE (previous step as initial guess),256,1506,837.741193423979,0.0,0.0,837.741193423979,nan,nan,nan,nan,0,0.0,0,0.0
+linear,linear extrapolation predictor,256,948,667.1005795134697,0.004827068420127034,0.0,667.1054065818898,0.0002676466028351542,0.06514134691890906,nan,nan,0,0.0,0,1.5618309134879382e-06

@@ -619,3 +619,40 @@ sigma_xx identical element by element at 2 / 8 / 15 / 20% (relative L2
 difference 0 to the printed precision), as the corrector guarantees;
 figures `figures/report/neural_h40_curves.png`,
 `neural_h40_fields_{2,8,15,20}pct.png`.
+
+### 10.8 Network trained on the assembled (FE) residual at h40 (author's option 1)
+
+Decision of 2026-10-12: train the network on the discrete weak-form
+residual of its own nodal values (docs/08, option a). PINNACLE edecbd0,
+ADR 0029: `fem/residual_bridge.py` (forward: the FE assembler at the frozen
+state with the Dirichlet values overwritten; backward: the transpose of the
+consistent tangent, so the gradient is exact for the discretisation at one
+residual-and-tangent assembly per loss evaluation) and `load_step_predictor
+mode = fem_residual` (the network corrects the linear extrapolation, output
+layer started at zero so epoch 0 is the extrapolation itself; loss = squared
+residual-to-reaction ratio, the test `corrector = auto` applies; early stop
+at `residual_target`; `optimizer = adam | lbfgs`; the best iterate is
+returned). Bridge gradient verified against central differences on every
+free degree of freedom (`tests/unit/fem/test_residual_bridge.py`); on the
+two-element 3-D example the verified solver route accepts every step at a
+ratio of 3e-4 to 6e-4 with the stress within 1e-5 of the cold run.
+
+**Timing and optimizer checks, 8 steps at h40 (to 0.6% strain, yield
+onset), `decks/cp_study/hybrid/check_fem_h40*.i`, FE arm numpy with
+`OMP_NUM_THREADS=8`, network torch on the GPU.** One residual-and-tangent
+assembly costs 0.28 s (a Newton iteration with its direct solve 0.45 s);
+the warm-up steps take 2 Newton iterations, the plastic steps 3. The linear
+extrapolation's residual ratio is 0.004-0.005 while the plate is elastic
+(steps 3-4) and 0.03-0.36 once grains start to yield (steps 5-8).
+
+| optimizer, epochs per step | ratio before -> after training, steps 3-8 | assemblies per step | predictor time per step |
+|---|---|---|---|
+| Adam 2e-3, 40 then 20 | 0.0048 -> 0.0048; 0.19 -> 0.057; 0.047 -> 0.029; 0.12 -> 0.12; 0.36 -> 0.31; 0.27 -> 0.22 | 22 | 6.2 s |
+| Adam 1e-2, 40 then 20 | diverges from step 4: the carried-over correction wrecks the baseline (ratio 0.7-1.3 before training, 0.79-0.99 after) | 22 | 6.2 s |
+| L-BFGS, 3 then 2 (<= 40 inner iterations) | 0.0048 -> 0.0008; 0.0042 -> 0.0031; 0.034 -> 0.023; 0.14 -> 0.11; 0.34 -> 0.29; 0.26 -> 0.20 | 15-54 | 6-16 s |
+
+With the exact weak-form gradient the network improves the extrapolation
+by 20-30% in residual at 10-50 assemblies per step, against 3 Newton
+iterations (1.3 s) that solve the step. Whether this is the optimizer
+budget or the ansatz is the capacity check below (L-BFGS with up to 400
+inner iterations per step, with and without Fourier features).

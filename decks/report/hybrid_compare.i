@@ -1,10 +1,11 @@
-# Hybrid first check at h40: the cold FE run against the linear and network
-# load-step predictors (decks/cp_study/hybrid/h40_*.i). Read by
+# Neural routes at h40: the cold FE run against the linear-extrapolation and
+# FE-residual-trained network predictors and the verified PINN-as-solver run (decks/cp_study/hybrid/h40_*.i). Read by
 # scripts/hybrid_compare.py; the first run is the reference.
 [Compare]
   out_dir = ../../results/cp_study/hybrid
   figures = ../../figures/report
   prefix  = hybrid_h40
+  corrector_tol = 0.05               # drawn on the residual-ratio figure
 []
 [Runs]
   [./cold]
@@ -15,8 +16,12 @@
     dir   = ../../results/cp_study/hybrid/h40_linear
     label = 'linear extrapolation predictor'
   []
-  [./physics]
-    dir   = ../../results/cp_study/hybrid/h40_physics
-    label = 'physics-trained network predictor (torch GPU)'
+  [./fem_residual]
+    dir   = ../../results/cp_study/hybrid/h40_fem_residual
+    label = 'FE-residual-trained network predictor (torch GPU)'
+  []
+  [./fem_solver]
+    dir   = ../../results/cp_study/hybrid/h40_fem_solver
+    label = 'PINN as solver, verified (corrector = auto)'
   []
 []

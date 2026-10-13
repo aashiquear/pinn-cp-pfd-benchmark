@@ -22,11 +22,16 @@ from ``polycrystal_plate.py ... curve``) and reports:
 * Newton iterations per step and in total, Newton wall time, predictor wall
   time, training time, and their sums: the cost side;
 * the predictor's relative error per step (0 = exact proposal, 1 = no
-  better than the previous step): the quality side.
+  better than the previous step): the quality side;
+* for a network trained on the assembled residual (``mode = fem_residual``),
+  the residual-to-reaction ratio of the proposal before and after training
+  (``predictor_residual_ratio_initial`` / ``predictor_residual_ratio``), the
+  assemblies spent and the steps the executioner accepted without Newton
+  (``corrector_used = none``).
 
 Writes ``<prefix>_summary.csv`` (one row per run), ``<prefix>_steps.csv`` (per
-step, every run) and two figures: iterations/time per step and the predictor
-error along the load path.
+step, every run) and three figures: iterations/time per step, the predictor
+error along the load path, and the residual ratio before/after training.
 
 Usage: hybrid_compare.py decks/report/hybrid_compare.i
 """
@@ -110,6 +115,11 @@ def main(argv):
         pred_t = np.array([r.get("predictor_time_s", 0.0) for r in h])
         pred_e = np.array([r.get("predictor_rel_error", np.nan) for r in h])
         train_t = np.array([r.get("predictor_train_time_s", 0.0) for r in h])
+        asm_t = np.nan_to_num(np.array([r.get("predictor_assembly_time_s", 0.0) for r in h]))
+        asm_n = np.nan_to_num(np.array([r.get("predictor_assemblies", 0.0) for r in h]))
+        rr0 = np.array([r.get("predictor_residual_ratio_initial", np.nan) for r in h])
+        rr1 = np.array([r.get("predictor_residual_ratio", np.nan) for r in h])
+        used = [str(r.get("corrector_used", "")) for r in h]
         pred_t = np.nan_to_num(pred_t); train_t = np.nan_to_num(train_t)
         curve_dev = np.nan
         if curves[n] is not None and curves[ref] is not None:
@@ -124,12 +134,18 @@ def main(argv):
             "total_solve_time_s": float(np.nansum(newton) + np.sum(pred_t)),
             "predictor_rel_error_median": float(np.nanmedian(pred_e)) if np.isfinite(pred_e).any() else np.nan,
             "predictor_rel_error_max": float(np.nanmax(pred_e)) if np.isfinite(pred_e).any() else np.nan,
+            "residual_ratio_initial_median": float(np.nanmedian(rr0)) if np.isfinite(rr0).any() else np.nan,
+            "residual_ratio_median": float(np.nanmedian(rr1)) if np.isfinite(rr1).any() else np.nan,
+            "assemblies": int(np.sum(asm_n)),
+            "assembly_time_s": float(np.sum(asm_t)),
+            "steps_accepted_without_newton": int(sum(1 for u in used if u == "none")),
             "max_curve_dev_vs_ref_MPa": curve_dev,
         })
-        for r, it, nt, pt, pe in zip(h, iters, newton, pred_t, pred_e, strict=True):
+        for r, it, nt, pt, pe, a0, a1, u in zip(h, iters, newton, pred_t, pred_e, rr0, rr1, used, strict=True):
             step_rows.append({"run": n, "step": int(r["step"]), "load_factor": r["load_factor"],
                               "iterations": it, "newton_time_s": nt, "predictor_time_s": pt,
-                              "predictor_rel_error": pe})
+                              "predictor_rel_error": pe, "residual_ratio_initial": a0,
+                              "residual_ratio": a1, "corrector_used": u})
     with (out_dir / f"{prefix}_summary.csv").open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(summary[0])); w.writeheader(); w.writerows(summary)
     with (out_dir / f"{prefix}_steps.csv").open("w", newline="") as fh:
@@ -164,6 +180,25 @@ def main(argv):
     ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)"); ax.set_ylabel(r"$\|u_{pred}-u\| / \|u-u_{prev}\|$")
     ax.grid(False); ax.legend(frameon=False)
     fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_prediction_error.png"); plt.close(fig)
+    # Residual ratio before/after training, for the runs that report it.
+    with_ratio = [n for n in names if any(np.isfinite(r.get("predictor_residual_ratio", np.nan)) for r in hist[n])]
+    if with_ratio:
+        fig, ax = plt.subplots(figsize=(5.6, 3.4), dpi=200)
+        for i, n in enumerate(with_ratio):
+            h = hist[n]
+            lam = 100.0 * 0.20 * np.array([r["load_factor"] for r in h])
+            a0 = np.array([r.get("predictor_residual_ratio_initial", np.nan) for r in h])
+            a1 = np.array([r.get("predictor_residual_ratio", np.nan) for r in h])
+            c = colors[(names.index(n)) % 4]
+            ax.plot(lam, a0, lw=1.0, ls="--", color=c, label=f"{runs[n][1]}: before training (baseline)")
+            ax.plot(lam, a1, lw=1.4, color=c, label=f"{runs[n][1]}: after training")
+        tol = float(comp.get("corrector_tol", 0.0))
+        if tol > 0:
+            ax.axhline(tol, color="#777", lw=0.8, ls=":")
+        ax.set_yscale("log"); ax.set_xlim(0, 20.5)
+        ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)"); ax.set_ylabel(r"$\|R\|_{free} / \|R\|_{Dirichlet}$")
+        ax.grid(False); ax.legend(frameon=False, fontsize=7)
+        fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_residual_ratio.png"); plt.close(fig)
     print("wrote", out_dir / f"{prefix}_summary.csv", fig_dir / f"{prefix}_cost.png")
     return 0
 

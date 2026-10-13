@@ -219,3 +219,29 @@ PINN literature's answer to heterogeneous media, considerably more work;
 (c) stop at the hybrid with linear extrapolation (-37% Newton iterations)
 as the measured benefit of a predictor on this problem, and report the
 strong-form PINN as a negative result with the diagnostic above.
+
+**2026-10-12, author's decision: option (a), FE-residual training.** Built
+in PINNACLE edecbd0 (ADR 0029): `fem/residual_bridge.py FEMResidualBridge`
+(forward: the FE assembler at the frozen state with the Dirichlet values
+overwritten; backward: the transpose of the consistent tangent, dense or
+CSR, so the gradient is exact for the discretisation at one
+residual-and-tangent assembly per loss evaluation) and `load_step_predictor
+mode = fem_residual` (the network corrects a `baseline` field, the linear
+extrapolation by default, with its output layer started at zero so epoch 0
+IS the baseline; loss = squared residual-to-reaction ratio, the test
+`corrector = auto` applies; early stop at `residual_target`; `optimizer =
+adam | lbfgs`; `reset_each_step`; the row reports the ratio before and
+after training, the best epoch, the assemblies and their time). The
+executioner passes its assembler, backend and tangent settings to the
+services. Checked on the two-element 3-D example: with `corrector = auto`
+and `residual_target = 1e-3` every step is accepted at a ratio of 3e-4 to
+6e-4 (the extrapolation is already below the target there) and the stress
+stays within 1e-5 of the cold run; with `baseline = none` the network alone
+takes the ratio from 0.9 to 0.02-0.04 in 30-60 Adam epochs; L-BFGS takes the
+first step from 3e-4 to 8e-6 in nine assemblies. Bridge gradient verified
+against central differences on every free degree of freedom
+(`tests/unit/fem/test_residual_bridge.py`). Study decks:
+`decks/cp_study/hybrid/h40_fem_residual.i` (corrector = newton: the hybrid
+column) and `h40_fem_solver.i` (corrector = auto, residual_target = 0.05:
+the verified PINN-as-solver column); `check_fem_h40.i` is the 8-step timing
+check. Results: docs/07 §10.8.
