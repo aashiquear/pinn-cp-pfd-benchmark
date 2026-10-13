@@ -716,6 +716,182 @@ flow stress, is the statistical resolution of a thirty-grain,
 one-element-thick plate and should be read as the uncertainty attached to
 any single-realization result of this report.
 
+## 8. Neural routes on the calibrated problem: PINN+FEM and PINN as solver
+
+### 8.1 Design
+
+Both neural routes run inside the load-stepping executioner of §3 and
+differ from the FE reference only in where the nodal field of a load step
+comes from. A **load-step predictor** proposes the displacement field
+$\mathbf{u}^{\star}_{k+1}$ the step starts from; the executioner pins the
+prescribed degrees of freedom, measures the proposal's equilibrium error,
+and either corrects it with Newton to the criterion of §3 (the **PINN+FEM**
+route) or accepts it as the step's solution when that error is already
+below the tolerance (the **PINN as solver** route). The constitutive state
+lives at the quadrature points of the h40 mesh in both routes and is
+advanced from the accepted field, so the history of the material is that
+of the finite-element discretisation whatever produced the field.
+
+The equilibrium error of a nodal field $\mathbf{u}$ is the assembled
+residual of the discrete weak form at the frozen state of the step,
+$\mathbf{R}(\mathbf{u}) = \mathbf{f}_{\mathrm{int}}(\mathbf{u};\,\mathbf{s}_k) - \mathbf{f}_{\mathrm{ext}}$,
+measured over the free degrees of freedom and scaled by the reaction it
+carries on the constrained ones,
+
+$$
+r(\mathbf{u}) = \frac{\lVert \mathbf{R}_{\mathrm{free}}(\mathbf{u}) \rVert_2}{\lVert \mathbf{R}_{\mathrm{Dirichlet}}(\mathbf{u}) \rVert_2}.
+\tag{9}
+$$
+
+A field with $r \le r_{\mathrm{tol}}$ is a finite-element solution of the
+step to that tolerance; the solver route uses $r_{\mathrm{tol}} = 0.05$ and
+records on every step whether the proposal was accepted or corrected.
+
+The predictor is a network $\mathbf{u}_\theta(\mathbf{x}, \lambda)$ (three
+hidden layers of 64 tanh units; normalised coordinates and the load factor
+$\lambda$ as inputs; the three displacement components as outputs) that
+**corrects the linear extrapolation** of the last two accepted fields,
+
+$$
+\mathbf{u}^{\star}_{k+1} = \mathbf{u}_k + \frac{\lambda_{k+1} - \lambda_k}{\lambda_k - \lambda_{k-1}}\,(\mathbf{u}_k - \mathbf{u}_{k-1}) + \Delta u\;\mathbf{u}_\theta(\mathbf{x}, \lambda_{k+1}),
+\tag{10}
+$$
+
+with $\Delta u$ the size of the last accepted increment and the output
+layer initialised to zero, so that the untrained network returns the
+extrapolation itself and training can only improve on it. The network is
+trained **on the assembled residual of its own nodal values**, with the
+loss $r^2$ of Eq. (9): the residual is assembled by the finite-element arm
+at the frozen state, and its gradient with respect to the nodal values is
+the transpose of the consistent tangent $\mathbf{K} = \partial\mathbf{R}/\partial\mathbf{u}$
+the Newton solver already forms. Every loss evaluation therefore costs
+one residual-and-tangent assembly on the FE arm (numpy, CPU) while the
+network itself is evaluated and differentiated on the GPU (torch); the
+weights are carried from step to step. Training uses L-BFGS with a
+strong-Wolfe line search (two L-BFGS steps per load step, at most 40 inner
+iterations, for the PINN+FEM route; four, at most 80, for the solver route,
+which stops early as soon as $r \le r_{\mathrm{tol}}$), and the best
+iterate seen is returned. The reference for both routes is the same
+executioner with the linear extrapolation alone as predictor, and the cold
+run of §4 with the previous field as initial guess.
+
+This weak-form training replaces the strong-form collocation of the
+balance of momentum, which was found unreachable on this problem: a
+network regressed to within 0.55% (L2) of the finite-element displacement
+of a step still carries $r = 0.73$ and a strong-form residual of order one
+on the $\mu / L$ scale, because the equilibrium of a thirty-grain plate
+lives in the strain kinks at the grain boundaries that a smooth global
+network cannot represent. The weak-form loss is the quantity the corrector
+drives to zero, so an accepted network field is verifiable by
+construction. Decks: `decks/cp_study/hybrid/h40_linear.i`,
+`h40_fem_residual.i`, `h40_fem_solver.i`; the framework pieces are PINNACLE
+ADR 0028 and ADR 0029.
+
+### 8.2 Results
+
+Table 8 summarises the four runs of the same deck family at h40, all to
+20% strain in 256 steps under the criterion of §3 with no cutback.
+
+**Table 8.** Cost and outcome of the neural routes against the FE
+reference at h40. Newton iterations are the cost measure that does not
+depend on host load; the Newton time per iteration varied between runs
+with the machine's occupancy (0.41 to 0.70 s) and is given for
+completeness. The predictor time of the two network runs includes the
+assemblies of the training loss (0.28 s each) and the GPU evaluation of
+the network. $r$ is the equilibrium error of Eq. (9), median over the
+predicted steps.
+
+| run | Newton iterations | steps solved without Newton | Newton time (s) | predictor time (s) | assemblies for training | $r$ before training (median) | $r$ after training (median) | max $\lvert\Delta\sigma\rvert$ vs FE (MPa) |
+|---|---|---|---|---|---|---|---|---|
+| FE, cold start (§4) | 1,506 | 0 | 838 | 0 | 0 | -- | -- | 0 |
+| PINN+FEM, linear extrapolation | 948 | 0 | 667 | 0.005 | 0 | -- | -- | 0.000 |
+| PINN+FEM, FE-residual-trained network | 945 | 0 | 409 | 349 | 1,574 | 0.0008 | 0.0008 | 0.000 |
+| PINN as solver, verified ($r_{\mathrm{tol}} = 0.05$) | 650 | 132 of 256 | 264 | 4,964 | 16,264 | 0.098 | 0.049 | 5.14 |
+
+**PINN+FEM.** The linear extrapolation alone is already a good predictor
+on this load path: beyond 1% strain its proposal is within 0.03% of the
+step's increment (median) and carries an equilibrium error $r$ of about
+$10^{-3}$, and it removes 37% of the Newton iterations of the cold start.
+The network trained on the assembled residual does not improve on it: the
+L-BFGS line search finds no descent worth taking from a proposal that is
+already that close (a median of four assemblies per step), the iteration
+count is the same as with the extrapolation alone (945 against 948; 251
+steps identical, four steps one iteration fewer, one step one more), the
+curve and the fields are identical to the FE reference (Fig. 14, Fig. 15),
+and the training adds 349 s to the run. Where the extrapolation is poor,
+in the first 1% of strain when grains yield one after another and $r$ of
+the extrapolation is 0.03 to 0.4, the network lowers $r$ by about 20%,
+which does not remove a Newton iteration.
+
+**PINN as solver.** With the tolerance $r_{\mathrm{tol}} = 0.05$ the
+network solves 132 of the 256 steps on its own (about every other step,
+evenly from 1% to 20% strain) and the Newton corrector solves the rest,
+so the run needs 650 Newton iterations instead of 1,506. Every accepted
+field is a finite-element solution to $r \le 0.05$ by construction, and
+the price of that tolerance is visible but small: the engineering stress
+is within 5.1 MPa (0.85%) of the reference along the whole curve
+(Fig. 14), and at 2, 8, 15 and 20% strain the displacement, the
+equivalent plastic strain and $\sigma_{xx}$ are within 0.1%, 0.3% and 0.6%
+of the reference fields in relative L2 norm, element by element (Fig. 15,
+Table 9). The cost is the training: a median of 20 s and up to 35 s per
+step, 16,264 assemblies in all, against a Newton solve of 1 to 3 s per
+step, so the run takes 5,228 s where the cold FE run takes 838 s and the
+extrapolation-started run 667 s. The alternation of accepted and corrected
+steps is the mechanism: a step accepted at $r = 0.05$ leaves a slightly
+worse starting point for the next extrapolation, which the network cannot
+bring below the tolerance within its budget, and the following Newton
+solve resets it.
+
+**Table 9.** Relative L2 difference of the fields of the verified
+PINN-as-solver run from the FE reference on the same mesh, element by
+element; the two PINN+FEM runs differ from the reference by zero at the
+printed precision at every strain.
+
+| strain | displacement | $\bar\varepsilon^p$ | $\sigma_{xx}$ | max $\lvert\Delta\bar\varepsilon^p\rvert$ |
+|---|---|---|---|---|
+| 1.9% | 0.04% | 0.26% | 0.05% | 0.0001 |
+| 8.1% | 0.07% | 0.07% | 0.39% | 0.0001 |
+| 15.0% | 0.09% | 0.12% | 0.57% | 0.0004 |
+| 20.0% | 0.06% | 0.12% | 0.54% | 0.0006 |
+
+**Figure 14.** Engineering stress-strain response of the FE reference,
+the two PINN+FEM runs and the verified PINN-as-solver run at h40, with the
+experimental markers.
+
+![neural curves](../../figures/report/neural_h40_curves.png)
+
+**Figure 15.** Equivalent plastic strain on the deformed plate at 20%
+strain: FE reference, the two PINN+FEM runs, the PINN-as-solver run, and
+the difference of the last from the reference (the same panels at 2, 8
+and 15% are `figures/report/neural_h40_fields_{2,8,15}pct.png`).
+
+![neural fields 20](../../figures/report/neural_h40_fields_20pct.png)
+
+**Figure 16.** Left: Newton iterations per step of the four runs along the
+load path. Right: equilibrium error $r$ of the network's proposal before
+(dashed) and after training for the two network runs, with the tolerance
+of the solver route.
+
+![neural cost](../../figures/report/hybrid_h40_cost.png)
+
+![neural residual ratio](../../figures/report/hybrid_h40_residual_ratio.png)
+
+### 8.3 What the two routes measure
+
+The network's value on this problem is bounded by what it can represent.
+A single smooth network of the coordinates and the load factor can carry
+the smooth part of the step-to-step increment, but that part is already
+delivered for free by the linear extrapolation; the remainder, the
+redistribution of plastic strain between grains as they yield, is as
+sharply structured at the grain boundaries as the field itself, and
+neither the strong-form nor the weak-form loss changes that. Trained on
+the assembled residual the network is at least verifiable, and it does
+solve half of the steps to the 0.05 tolerance at a cost of 6 to 8 times
+the FE run; trained on the strong form it solved none. A predictor that
+beats the linear extrapolation on a polycrystal will need to know the
+grain structure (per-grain or orientation-aware inputs, or a
+domain-decomposed ansatz), which is outside the scope of this report.
+
 ## References
 
 - (rezwan 2025 intragranular) A. Rezwan, N. Aragon, D. de Oca Zapiain, H. Lim,
@@ -743,3 +919,6 @@ Both entries are in `bib/references.bib`.
 | experimental markers | `data/digitized/al2219_fig3_experiment_markers.csv` |
 | figure deck and script | `decks/report/cp_calibration_figures.i`, `scripts/report_figures.py` |
 | run ledger rows | `cal-gn1`, `cal-gn2` in `docs/run_ledger.md` |
+| neural routes (§8): pipeline decks | `decks/cp_study/hybrid/h40_linear.i`, `h40_fem_residual.i`, `h40_fem_solver.i`; checks `check_fem_h40*.i` |
+| neural routes: histories, curves, field series | `results/cp_study/hybrid/{h40_linear,h40_fem_residual,h40_fem_solver}/` |
+| neural routes: comparison decks and scripts | `decks/report/hybrid_compare.i` + `scripts/hybrid_compare.py`; `decks/report/neural_compare.i` + `scripts/field_compare.py`; `results/cp_study/hybrid/hybrid_h40_{summary,steps}.csv`, `neural_h40_field_errors.csv` |

@@ -656,3 +656,45 @@ by 20-30% in residual at 10-50 assemblies per step, against 3 Newton
 iterations (1.3 s) that solve the step. Whether this is the optimizer
 budget or the ansatz is the capacity check below (L-BFGS with up to 400
 inner iterations per step, with and without Fourier features).
+
+**Capacity check (`check_fem_h40_lbfgs20{,_fourier}.i`, L-BFGS, 20 epochs
+= up to 400 inner iterations per step):**
+
+| step (strain) | ratio before | plain network, after (assemblies) | Fourier features (freq 4), after (assemblies) |
+|---|---|---|---|
+| 3 (0.23%) | 0.0048 | 0.0008 (32) | 0.0006 (84) |
+| 4 (0.31%) | 0.0042 | 0.0029 (75) | 0.0022 (136) |
+| 5 (0.39%) | 0.034 | 0.034 (122, no improvement) | 0.019 (360) |
+| 6 (0.47%) | 0.16 | 0.11 (235) | 0.081 (453) |
+| 7 (0.55%) | 0.32 / 0.44 | 0.29 (187) | 0.44 (182, no improvement) |
+| 8 (0.63%) | 0.32 / 0.29 | 0.20 (168) | 0.14 (453) |
+
+Up to 453 assemblies (2 min on the FE arm) per step do not bring a plastic
+step below the 0.05 tolerance; the best plastic ratios are 0.08-0.29 and
+two steps do not improve at all. **The limit is the ansatz, not the
+optimizer budget or the loss:** with the exact weak-form gradient, the
+global smooth network of (x, lambda) cannot represent the correction to
+the linear extrapolation once grains start to yield, for the same reason
+the strong-form check failed (the correction is as kinky at the grain
+boundaries as the field itself). Full runs to 20% strain
+(`h40_fem_residual.i`: L-BFGS 2 epochs per step, corrector = newton;
+`h40_fem_solver.i`: L-BFGS 4 epochs per step, corrector = auto,
+residual_target 0.05) launched 2026-10-12 to measure the two routes
+end to end: results below.
+
+**Full runs to 20% (2026-10-12, 1.0 h and 1.5 h on the host; report §8,
+Tables 8-9, Figs. 14-16).** PINN+FEM with the FE-residual-trained network:
+945 Newton iterations against 948 with the linear extrapolation alone
+(251 steps identical), fields identical to FE, 1,574 training assemblies
+(median 4 per step: L-BFGS finds nothing to take from a proposal already
+at r = 1e-3), 349 s of predictor time added. Verified PINN as solver
+(r_tol = 0.05, L-BFGS 4 epochs per step): 132 of 256 steps solved without
+Newton, evenly from 1% to 20% strain, 650 Newton iterations in all; curve
+within 5.1 MPa (0.85%) of FE, fields within 0.1% (u), 0.3% (plastic
+strain), 0.6% (sigma_xx) in relative L2 at 2/8/15/20%; cost 16,264
+assemblies, 4,964 s of training, 5,228 s total against 838 s cold FE.
+Finding: the FE-residual loss makes the network's output verifiable and
+lets it solve half the steps, but on a polycrystal a global smooth network
+of (x, lambda) adds nothing to the linear extrapolation as a predictor and
+costs 6-8x the FE run as a solver; a better predictor needs the grain
+structure as input (docs/08).

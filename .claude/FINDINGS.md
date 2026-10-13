@@ -96,6 +96,25 @@ NOT derivable from the code: measured facts, decisions, and traps.
   docs/08: GPU-resident batched CP evaluation first, then a load-path hybrid
   built on cp_quasi_static, then a per-step "PINN as solver".
 
+- Status 2026-10-12: both routes RUN on the plate (PINNACLE ADR 0027-0029,
+  `cp_quasi_static` + `[Utilities] load_step_predictor`). Measured at h40:
+  linear extrapolation saves 37% of Newton iterations under the absolute
+  criterion; strong-form collocation (`mode = physics`) is unreachable on a
+  30-grain plate (network within 0.55% L2 of the FE field has FE residual
+  0.73 of the reaction); FE-residual training (`mode = fem_residual`, exact
+  consistent-tangent gradient, 0.28 s per assembly epoch) improves the
+  extrapolation's residual ratio by only 20-30% per plastic step even with
+  450 L-BFGS assemblies per step and never reaches the 0.05 tolerance in the
+  plastic regime: the global smooth network of (x, lambda) is the limit, not
+  the loss or the optimizer. Adam lr 1e-2 diverges in this mode; use L-BFGS.
+  Full h40 runs (docs/07 §10.8, report §8): hybrid 945 iterations vs 948
+  with the extrapolation alone (no gain, +349 s); verified solver 132/256
+  steps without Newton, curve within 0.85%, fields within 0.6%, 6-8x the
+  FE cost. Next lever if wanted: grain-aware network inputs (docs/08).
+- Trap: `predictor_residual_ratio_initial` on later steps is the baseline
+  PLUS the carried-over correction, not the pure extrapolation; the pure
+  extrapolation's ratio is on the `h40_linear`-style run (guard columns).
+
 ## Technical report (docs/reports/)
 - `docs/reports/cp_fe_calibration_report.md` is the paper-style record; the
   numbered `docs/0N_*.md` stay the lab notebook. The report carries ONLY the

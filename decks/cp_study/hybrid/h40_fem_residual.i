@@ -68,10 +68,10 @@
   neurons         = 64
   activation      = tanh
   fourier_features = false
-  epochs_initial  = 40
-  epochs_per_step = 20
-  lr              = 2.0e-3
-  optimizer       = adam
+  epochs_initial  = 3
+  epochs_per_step = 2
+  lr              = 1.0
+  optimizer       = lbfgs
   residual_target = 0.0
   reset_each_step = false
   seed            = 0

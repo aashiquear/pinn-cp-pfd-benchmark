@@ -245,3 +245,14 @@ against central differences on every free degree of freedom
 column) and `h40_fem_solver.i` (corrector = auto, residual_target = 0.05:
 the verified PINN-as-solver column); `check_fem_h40.i` is the 8-step timing
 check. Results: docs/07 §10.8.
+
+**2026-10-12, option (a) measured on the plate (docs/07 §10.8, report §8).**
+Hybrid: no gain over the linear extrapolation (945 vs 948 Newton
+iterations, identical fields, +349 s). Verified solver: 132 of 256 steps
+solved to r <= 0.05 without Newton, curve within 0.85%, fields within
+0.6%, at 6-8x the FE cost. The global smooth network of (x, lambda) cannot
+represent the inter-granular redistribution of the increment; the next
+lever, if the author wants a competitive neural predictor, is option (b)
+in its cheap form: grain-aware inputs (per-node orientation or grain
+features) to the same predictor, which is a deck-selectable feature set,
+not a new ansatz.
