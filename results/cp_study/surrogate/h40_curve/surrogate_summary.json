@@ -1,0 +1,32 @@
+{
+ "sources": "data",
+ "target": "reduced",
+ "variable": "u",
+ "columns": [
+  "eng_stress"
+ ],
+ "parameters": [
+  "rho0",
+  "k1",
+  "y_c",
+  "tau_c0"
+ ],
+ "samples": 24,
+ "train": 18,
+ "holdout": 6,
+ "generation_time_s": 0.009868826949968934,
+ "train_time_s": 28.321534345974214,
+ "total_time_s": 30.45368148293346,
+ "epochs_adam": 4000,
+ "epochs_lbfgs": 50,
+ "final_loss": 7.125330863467641e-06,
+ "train_rel_l2_mean": 0.006617929980196067,
+ "holdout_rel_l2_mean": 0.032817514853791314,
+ "holdout_rel_l2_max": 0.0663463727152986,
+ "certified": 0,
+ "certify_tol": 0.05,
+ "certified_of": 0,
+ "device": "cuda",
+ "network_parameters": 8769,
+ "predictions_file": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/surrogate/h40_curve/surrogate_predictions.csv"
+}

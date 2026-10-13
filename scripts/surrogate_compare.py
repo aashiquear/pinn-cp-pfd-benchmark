@@ -128,11 +128,13 @@ def main(argv):
         # cost per query: routes (one run each) vs surrogate (amortised over N queries)
         fig, ax = plt.subplots(figsize=(6.0, 3.6), dpi=200)
         n = np.logspace(0, 4, 50)
-        for r in routes:
-            ax.axhline(float(r["total_solve_time_s"]), lw=1.0, ls=":", label=f"{r['label']} (one run)")
-        for rec in rows:
+        route_colors = ["#111111", "#1f4e9c", "#d1495b", "#00798c", "#edae49", "#6a4c93", "#2a9d8f"]
+        for i, r in enumerate(routes):
+            ax.axhline(float(r["total_solve_time_s"]), lw=1.0, ls=":", color=route_colors[i % len(route_colors)], label=f"{r['label']} (one run)")
+        sur_styles = ["-", "--", "-."]
+        for i, rec in enumerate(rows):
             if np.isfinite(rec["query_s"]):
-                ax.plot(n, (rec["data_cost_s"] + rec["train_time_s"]) / n + rec["query_s"], lw=1.4, label=rec["label"])
+                ax.plot(n, (rec["data_cost_s"] + rec["train_time_s"]) / n + rec["query_s"], lw=1.6, ls=sur_styles[i % 3], color="#d1495b" if i == 0 else "#edae49" if i == 1 else "#6a4c93", label=rec["label"])
         ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlabel("queries answered"); ax.set_ylabel("cost per query (s)"); ax.grid(False); ax.legend(frameon=False, fontsize=6.5)
         fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_cost_per_query.png"); plt.close(fig)
         print("wrote", out_dir / f"{prefix}_summary.csv")

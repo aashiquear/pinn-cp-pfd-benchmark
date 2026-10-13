@@ -117,6 +117,16 @@ NOT derivable from the code: measured facts, decisions, and traps.
   PLUS the carried-over correction, not the pure extrapolation; the pure
   extrapolation's ratio is on the `h40_linear`-style run (guard columns).
 
+- Surrogate route (PINNACLE ADR 0030, 2026-10-13): physics-only training works
+  on conduction (0.3%, certified) but NOT on the 2-D elastic plate (70-90%)
+  despite traction term, physical scales, 512 collocation points; open item.
+  CP surrogates are data-only by construction (history dependent).
+
+- Plate surrogate (2026-10-13): 24 LHS FE samples (623 s each); curve surrogate
+  held-out 2-3% (6.6% max, data-limited), field surrogate 1%; training 28-121 s;
+  0.2-0.4 ms per query (CPU faster than GPU at this network size); break-even
+  14 FE runs. Report §11.
+
 ## Technical report (docs/reports/)
 - `docs/reports/cp_fe_calibration_report.md` is the paper-style record; the
   numbered `docs/0N_*.md` stay the lab notebook. The report carries ONLY the

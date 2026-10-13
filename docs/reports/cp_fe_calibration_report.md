@@ -1026,7 +1026,62 @@ PINN-as-solver run of §8. Decks
 
 ### 11.2 Results
 
-@SURROGATE_RESULTS@
+The twenty-four samples cost 14,961 s of finite-element time (623 s each
+on average at two threads, four at a time); the eighteen training samples
+account for 11,270 s. Table 10 summarises the three surrogate runs.
+
+**Table 10.** Plate surrogates over $(\rho_0, k_1, y_c, \tau_{c0})$ at h40,
+eighteen training samples, six held out. The held-out error is the mean
+relative L2 difference from the finite-element result at parameters the
+network has not seen; the query time is for 1,000 random parameter rows
+after training. Break-even is the number of queries after which data
+plus training is cheaper than one solver run per query (cold FE 838 s;
+PINN+FEM 667 s; verified grain-aware solver 4,543 s).
+
+| surrogate | network | training device | held-out error, mean (max) | training time | time per query | break-even vs cold FE |
+|---|---|---|---|---|---|---|
+| stress-strain curve $\sigma(\mathbf{p}, \varepsilon)$ | 5 in, 1 out, 8,769 weights | GPU | 3.3% (6.6%) | 28 s | 0.38 ms | 14 runs |
+| stress-strain curve, same deck | same | CPU | 2.0% (5.2%) | 52 s | 0.18 ms | 14 runs |
+| displacement field $\mathbf{u}(\mathbf{p}, \mathbf{x})$ at 20% | 7 in, 3 out, 9,027 weights | GPU | 0.97% (1.04%) | 121 s | 0.18 ms | 14 runs |
+
+**Accuracy.** The field surrogate reproduces the 20% displacement field
+of every held-out sample to about 1%: the displacement of a plate in
+tension varies smoothly with the parameters and the network has little
+to learn beyond the amplitude. The curve surrogate is coarser, 2 to 3% on
+average and 5 to 7% at worst (Fig. 18): the elastic knee is smoothed, and
+the held-out sample with the lowest hardening (sample 21, saturating at
+420 MPa) is overshot at small strain and under-resolved afterwards, the
+signature of a four-dimensional log space sampled by eighteen points. The
+accuracy is limited by the data, not by the network; doubling the design
+costs another 15,000 s of finite-element time and is the lever if the
+curve surrogate is to be used quantitatively.
+
+**Cost.** The training is negligible next to the data: 28 to 121 s
+against 11,270 s of finite-element runs. The network is small, so a query
+costs 0.2 to 0.4 ms on either device and the GPU gives no advantage at
+this size (it is slower per query than the CPU because of the launch
+overhead); training on the GPU is faster for the field surrogate only.
+Against the finite-element run of §4 the surrogate pays for itself after
+14 queries, against the verified PINN-as-solver run after 3 (Fig. 19);
+beyond that every query is four to five orders of magnitude cheaper than
+a solve. The two neural solver routes of §8 never reach this regime
+because they are trained per trajectory; the surrogate does because it is
+trained once over the parameter space and verified on held-out
+finite-element runs, which is the only verification available for a
+history-dependent material (the certification by one assembly of §11.1's
+framework applies to steady physics only).
+
+**Figure 18.** Held-out stress-strain curves (solid, finite element)
+against the curve surrogate (dashed), GPU run.
+
+![surrogate holdout](../../figures/report/surrogate_h40_curve_holdout.png)
+
+**Figure 19.** Cost per query against the number of queries answered: the
+surrogates (data plus training amortised, plus the query) and the solver
+routes (one run per query).
+
+![surrogate cost](../../figures/report/surrogate_h40_cost_per_query.png)
+
 
 ## References
 
@@ -1057,4 +1112,5 @@ Both entries are in `bib/references.bib`.
 | run ledger rows | `cal-gn1`, `cal-gn2` in `docs/run_ledger.md` |
 | neural routes (§8): pipeline decks | `decks/cp_study/hybrid/h40_linear.i`, `h40_fem_residual.i`, `h40_fem_solver.i`; checks `check_fem_h40*.i` |
 | neural routes: histories, curves, field series | `results/cp_study/hybrid/{h40_linear,h40_fem_residual,h40_fem_solver}/` |
+| surrogate (§11): design, samples, decks, runs | `decks/cp_study/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_curve_cpu,plate_h40_surrogate_field}.i`; `results/cp_study/surrogate/h40_data/{design,samples}.csv`, `h40_{curve,curve_cpu,field}/`; `decks/report/surrogate_compare.i` + `scripts/surrogate_compare.py` |
 | neural routes: comparison decks and scripts | `decks/report/hybrid_compare.i` + `scripts/hybrid_compare.py`; `decks/report/neural_compare.i` + `scripts/field_compare.py`; `results/cp_study/hybrid/hybrid_h40_{summary,steps}.csv`, `neural_h40_field_errors.csv` |
