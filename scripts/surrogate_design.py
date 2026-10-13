@@ -100,6 +100,12 @@ def stage_run(cfg: dict, deck: Path) -> None:
     subprocess.run([sys.executable, str(STUDY_ROOT / "scripts/cp_parameter_study.py"), str(out_root / "study.i"), "all"], check=True)
 
 
+def _converged(v) -> bool:
+    """The history writes the flag as a float (``1.000e+00``) or a word."""
+    t = str(v).strip().lower()
+    return t == "true" or (t not in ("", "false") and float(t) == 1.0)
+
+
 def _cell_to_nodes(values: np.ndarray, cells: np.ndarray, n_nodes: int) -> np.ndarray:
     """Average a cell field onto the nodes (each node takes the mean of its cells)."""
     acc = np.zeros((n_nodes, *values.shape[1:]), dtype=float); cnt = np.zeros(n_nodes, dtype=float)
@@ -124,14 +130,14 @@ def stage_collect(cfg: dict, deck: Path) -> None:
             print("missing", case); continue
         data = list(csv.DictReader(res.open()))
         t = np.array([float(x[absc]) for x in data]); y = np.array([[float(x[c]) for c in cols] for x in data])
-        hist = [h for h in csv.DictReader((case / "solver" / "solver_history.csv").open()) if str(h.get("converged", "1")).strip() in ("1", "1.0", "true", "True")]
+        hist = [h for h in csv.DictReader((case / "solver" / "solver_history.csv").open()) if _converged(h.get("converged", "1"))]
         run_time = float(np.sum([float(h.get("newton_time_s", 0) or 0) for h in hist]))
         out = sdir / f"{i:04d}"; out.mkdir(exist_ok=True)
         np.savez(out / "target.npz", t=t, y=y, run_time_s=np.asarray(run_time))
         if fields:
             # One data set per field, in the executioner's layout (samples_<field>/<i>/target.npz,
             # y = the nodal field of the last frame), for field-target surrogate decks.
-            from plastic_strain_animation import read_vtk, series_files
+            from vtk_legacy import read_vtk, series_files
             files = series_files(case / "solver")
             if files:
                 v = read_vtk(files[-1][1])
