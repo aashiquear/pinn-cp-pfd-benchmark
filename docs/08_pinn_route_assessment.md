@@ -200,3 +200,22 @@ the reaction, meaningless stresses), although its own residual loss is
 small. Required before any benchmark of this route: hard Dirichlet
 enforcement in the ansatz and the residual evaluated on the accepted
 field. Deferred until the FE regeneration is complete.
+
+**2026-10-12, C2 on the plate: strong-form collocation is not viable on a
+30-grain polycrystal (docs/07 §10.7).** A network regressed to within 0.5%
+(L2) of the FE displacement has an FE residual of 0.73 of the reaction and
+a strong-form loss of 5.8 on the mu/L scale; the physics-trained predictor
+plateaus at 1.2 and every proposal is rejected. The displacement kinks at
+grain boundaries carry the equilibrium and a global smooth network cannot
+represent them. Options for the author:
+(a) **FE-residual training** (`mode = fem_residual`): train the network on
+the discrete weak-form residual of its own nodal values, assembled by the
+torch twin of the FE assembler at the frozen state -- the loss Newton
+minimises, so a converged network IS an FE solution; the network's value
+is then amortisation across the load factor (a better initial guess, or a
+solution when `corrector = auto` accepts it), not a new discretisation;
+(b) a per-grain (domain-decomposed) ansatz with interface conditions, the
+PINN literature's answer to heterogeneous media, considerably more work;
+(c) stop at the hybrid with linear extrapolation (-37% Newton iterations)
+as the measured benefit of a predictor on this problem, and report the
+strong-form PINN as a negative result with the diagnostic above.

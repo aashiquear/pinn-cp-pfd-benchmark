@@ -583,3 +583,25 @@ written at the end. PINNACLE fixes (commit after a2f95d6): proposal guard
 hybrid with `corrector = newton`, the solver route with `corrector = auto`
 (tol 0.05 of the reaction), so a step the network cannot solve is corrected
 instead of accumulating.
+
+**Relaunch with the guard (2026-10-12 18:08):** the physics-trained network
+never solves a plate step. From the first predicted step its scaled
+residual loss stays at 1.2-1.4, its proposal is worse than the previous
+field (relative error 1.3-3.3 of the increment), the guard rejects it
+(residual/reaction 0.999) and both routes fall back to Newton: cold cost
+plus 1.2 s of training per step. Diagnostic
+`scripts/tools/strong_form_floor.py` (4 FE steps on the torch GPU, 6 s;
+network regressed to the FE nodal field of the last step in 3,000 epochs,
+11 s): the regressed field reproduces the FE displacement to 0.55% in L2,
+yet its FE residual is 0.73 of the reaction (the FE field: 0.048 after the
+state advance) and its strong-form loss is 5.8 (median |r| 0.9, max 11.6 on
+the mu/L scale). **A smooth global network within 0.5% of the FE field in
+displacement is nowhere near equilibrium: the equilibrium of a 30-grain
+plate lives in the strain kinks at the grain boundaries, which the network
+cannot represent, so the strong-form collocation target is unreachable by
+this ansatz regardless of training.** The strong-form, single-network
+PINN is therefore not a viable solver or predictor on this problem class;
+what remains viable is a network trained on the DISCRETE weak-form (FE)
+residual of its nodal values -- the loss Newton itself minimises -- or a
+domain-decomposed (per-grain) ansatz. Both are design decisions for the
+author.
