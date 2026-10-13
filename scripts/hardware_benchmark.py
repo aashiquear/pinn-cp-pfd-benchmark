@@ -81,7 +81,10 @@ def rewrite(src: Path, dst: Path, case: dict, n_steps: int) -> None:
     text = src.read_text()
     def setkey(block: str, key: str, value: str) -> None:
         nonlocal text
-        i = text.index(f"[{block}]"); j = text.index("\n[]", i)
+        m = re.search(rf"^\[{block}\]", text, re.M)  # a block header at line start, not a mention in a comment
+        if not m:
+            raise SystemExit(f"{src}: no [{block}] block")
+        i = m.start(); j = text.index("\n[]", i)
         seg = text[i:j]
         pat = re.compile(rf"^(\s*{re.escape(key)}\s*=\s*)\S+", re.M)
         if pat.search(seg):
@@ -99,10 +102,10 @@ def rewrite(src: Path, dst: Path, case: dict, n_steps: int) -> None:
     setkey("Executioner", "t_end", f"{t_full * n_steps / n_full:.12g}")
     setkey("Executioner", "snapshots_every", "0")
     if str(case.get("predictor", "")).lower() == "none":
-        text = re.sub(r"\[Utilities\].*?\n\[\]\n", "", text, flags=re.S)
+        text = re.sub(r"^\[Utilities\].*?\n\[\]\n", "", text, flags=re.S | re.M)
         setkey("Executioner", "corrector", "newton")
     elif case.get("predictor_device"):
-        text = re.sub(r"(\[Utilities\].*?^\s*device\s*=\s*)\S+", rf"\g<1>{case['predictor_device']}", text, count=1, flags=re.S | re.M)
+        text = re.sub(r"(^\[Utilities\].*?^\s*device\s*=\s*)\S+", rf"\g<1>{case['predictor_device']}", text, count=1, flags=re.S | re.M)
     dst.write_text(text)
 
 

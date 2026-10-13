@@ -728,3 +728,26 @@ network a far better corrector at the same tolerance, but the training
 cost per step (10-20 s) still exceeds the Newton solve it replaces (1-3 s);
 the solver route is correct and accurate at 5-6x the FE cost, the hybrid
 route saves 2.5% of the iterations at a net wall-time loss.
+
+### 10.10 Parameter sensitivity of the neural routes carried forward
+
+Author's decision 2026-10-12: carry the linear-extrapolation hybrid and
+the verified grain-aware solver. Decks `decks/cp_study/sens_h40_linear.i`
+and `sens_h40_grain_solver.i` run the sixteen one-at-a-time cases of
+`sens_h40.i` (x0.5, x0.8, x1.25, x2 of each calibrated parameter) through
+`hybrid/h40_linear.i` and `hybrid/h40_fem_solver_grain.i`; analysis
+`scripts/neural_sensitivity.py decks/report/neural_sensitivity.i`
+(`results/cp_study/sens_neural/sens_neural_h40.csv`,
+`figures/report/sens_neural_h40_cases.png`).
+
+**PINN+FEM, linear extrapolation (16/16 done 2026-10-13 00:30, four
+concurrent at two threads):** every case reproduces its FE curve to the
+solver tolerance (largest stress difference 3e-6 MPa over the sixteen
+cases, whose FE effects at 20% range from -32% to +68%); the Newton
+iteration count is 941-974 per case against 1,468-1,536 for the FE cases,
+a saving of 37% (median) that does not depend on the parameter. The
+predictor's benefit is a property of the load path, not of the material
+constants.
+
+**PINN as solver, grain-aware (running, three concurrent):** results
+below when the campaign completes.
