@@ -110,7 +110,9 @@ NOT derivable from the code: measured facts, decisions, and traps.
   Full h40 runs (docs/07 §10.8, report §8): hybrid 945 iterations vs 948
   with the extrapolation alone (no gain, +349 s); verified solver 132/256
   steps without Newton, curve within 0.85%, fields within 0.6%, 6-8x the
-  FE cost. Next lever if wanted: grain-aware network inputs (docs/08).
+  FE cost. Grain-aware inputs (`node_features`, 9ae5ff3): residual 3-4x
+  lower per step, solver fields 15x closer (curve within 0.05%), same
+  acceptance (131/256), cost still 5-6x FE; hybrid 923 iterations.
 - Trap: `predictor_residual_ratio_initial` on later steps is the baseline
   PLUS the carried-over correction, not the pure extrapolation; the pure
   extrapolation's ratio is on the `h40_linear`-style run (guard columns).

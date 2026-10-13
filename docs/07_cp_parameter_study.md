@@ -698,3 +698,33 @@ lets it solve half the steps, but on a polycrystal a global smooth network
 of (x, lambda) adds nothing to the linear extrapolation as a predictor and
 costs 6-8x the FE run as a solver; a better predictor needs the grain
 structure as input (docs/08).
+
+### 10.9 Grain-aware network inputs (author's request, 2026-10-12)
+
+PINNACLE 9ae5ff3 (ADR 0029 amendment): `pinn/node_features.py` and
+`load_step_predictor node_features = 'orientation grain_boundary'` (per
+node: the nine crystal-to-sample rotation entries averaged over the node's
+elements, and one minus the largest fraction of the node's elements in
+one grain). Decks `check_fem_h40_lbfgs20_grain.i`, `h40_fem_residual_grain.i`,
+`h40_fem_solver_grain.i`: identical to the coordinate-only decks but for
+the one key.
+
+Capacity check (8 steps, L-BFGS 20 epochs): ratio after training at steps
+3-8 is 0.0004 / 0.0013 / 0.009 / 0.043 / 0.099 / 0.076 against 0.0008 /
+0.0029 / 0.034 / 0.108 / 0.287 / 0.198 for the coordinate-only network at
+the same budget (440-460 assemblies per plastic step): 3-4x lower, below
+the 0.05 tolerance at step 6. The representational limit of §10.8 is
+lifted by the inputs, as expected.
+
+Full runs (1.3 h each, two concurrent plus the check for the first 15
+min): hybrid 923 Newton iterations (945 coordinate-only, 948 linear),
+fields identical, 716 s of predictor time (2,696 assemblies); verified
+solver 131/256 accepted, 635 iterations, 4,279 s of training (13,865
+assemblies, 16 s per step median), curve within 0.33 MPa (0.05%) of FE
+against 5.1 MPa coordinate-only, fields within 0.3% / 0.5% (plastic
+strain / sigma_xx) at the worst strain and 0.01% / 0.02% at 20%. Report
+§8 (Tables 8-9, Figs. 14-16). Finding: grain-aware inputs make the
+network a far better corrector at the same tolerance, but the training
+cost per step (10-20 s) still exceeds the Newton solve it replaces (1-3 s);
+the solver route is correct and accurate at 5-6x the FE cost, the hybrid
+route saves 2.5% of the iterations at a net wall-time loss.

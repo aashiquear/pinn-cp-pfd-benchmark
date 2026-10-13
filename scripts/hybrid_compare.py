@@ -155,15 +155,15 @@ def main(argv):
 
     plt.rcParams.update({"font.size": 9, "axes.labelsize": 10, "legend.fontsize": 8,
                          "xtick.direction": "in", "ytick.direction": "in", "xtick.top": True, "ytick.right": True})
-    colors = ["#111111", "#1f4e9c", "#d1495b", "#00798c"]
+    colors = ["#111111", "#1f4e9c", "#d1495b", "#00798c", "#edae49", "#6a4c93", "#2a9d8f"]
     fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.4), dpi=200)
     for i, n in enumerate(names):
         h = hist[n]
         lam = 100.0 * 0.20 * np.array([r["load_factor"] for r in h])
         it = np.array([r.get("iterations", np.nan) for r in h])
         t = np.array([r.get("newton_time_s", np.nan) for r in h]) + np.nan_to_num(np.array([r.get("predictor_time_s", 0.0) for r in h]))
-        axes[0].plot(lam, it, lw=1.2, color=colors[i % 4], label=runs[n][1])
-        axes[1].plot(lam, t, lw=1.2, color=colors[i % 4], label=runs[n][1])
+        axes[0].plot(lam, it, lw=1.2, color=colors[i % len(colors)], label=runs[n][1])
+        axes[1].plot(lam, t, lw=1.2, color=colors[i % len(colors)], label=runs[n][1])
     axes[0].set_ylabel("Newton iterations per step"); axes[1].set_ylabel("solve + predictor time per step (s)")
     for ax in axes:
         ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)"); ax.set_xlim(0, 20.5); ax.grid(False); ax.legend(frameon=False)
@@ -174,7 +174,7 @@ def main(argv):
         h = hist[n]
         lam = 100.0 * 0.20 * np.array([r["load_factor"] for r in h])
         pe = np.array([r.get("predictor_rel_error", np.nan) for r in h])
-        ax.plot(lam, pe, lw=1.2, color=colors[i % 4], label=runs[n][1])
+        ax.plot(lam, pe, lw=1.2, color=colors[i % len(colors)], label=runs[n][1])
     ax.axhline(1.0, color="#777", lw=0.8)
     ax.set_yscale("log"); ax.set_xlim(0, 20.5)
     ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)"); ax.set_ylabel(r"$\|u_{pred}-u\| / \|u-u_{prev}\|$")
@@ -183,13 +183,13 @@ def main(argv):
     # Residual ratio before/after training, for the runs that report it.
     with_ratio = [n for n in names if any(np.isfinite(r.get("predictor_residual_ratio", np.nan)) for r in hist[n])]
     if with_ratio:
-        fig, ax = plt.subplots(figsize=(5.6, 3.4), dpi=200)
+        fig, ax = plt.subplots(figsize=(6.4, 4.6), dpi=200)
         for i, n in enumerate(with_ratio):
             h = hist[n]
             lam = 100.0 * 0.20 * np.array([r["load_factor"] for r in h])
             a0 = np.array([r.get("predictor_residual_ratio_initial", np.nan) for r in h])
             a1 = np.array([r.get("predictor_residual_ratio", np.nan) for r in h])
-            c = colors[(names.index(n)) % 4]
+            c = colors[names.index(n) % len(colors)]
             ax.plot(lam, a0, lw=1.0, ls="--", color=c, label=f"{runs[n][1]}: before training (baseline)")
             ax.plot(lam, a1, lw=1.4, color=c, label=f"{runs[n][1]}: after training")
         tol = float(comp.get("corrector_tol", 0.0))
@@ -197,8 +197,8 @@ def main(argv):
             ax.axhline(tol, color="#777", lw=0.8, ls=":")
         ax.set_yscale("log"); ax.set_xlim(0, 20.5)
         ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)"); ax.set_ylabel(r"$\|R\|_{free} / \|R\|_{Dirichlet}$")
-        ax.grid(False); ax.legend(frameon=False, fontsize=7)
-        fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_residual_ratio.png"); plt.close(fig)
+        ax.grid(False); ax.legend(frameon=False, fontsize=6.5, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2)
+        fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_residual_ratio.png", bbox_inches="tight"); plt.close(fig)
     print("wrote", out_dir / f"{prefix}_summary.csv", fig_dir / f"{prefix}_cost.png")
     return 0
 

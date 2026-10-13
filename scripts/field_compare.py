@@ -110,11 +110,11 @@ def main(argv):
     names = list(runs); ref = names[0]
     plt.rcParams.update({"font.size": 9, "axes.labelsize": 10, "legend.fontsize": 8, "mathtext.fontset": "dejavusans",
                          "xtick.direction": "in", "ytick.direction": "in", "xtick.top": True, "ytick.right": True})
-    colors = ["#1f4e9c", "#d1495b", "#00798c", "#edae49"]
+    colors = ["#1f4e9c", "#d1495b", "#00798c", "#edae49", "#6a4c93", "#2a9d8f", "#111111"]
     # curves
     fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=200)
     for i, n in enumerate(names):
-        e, s = read_curve(runs[n][0]); ax.plot(e, s, lw=1.6 if i else 2.0, color=colors[i % 4], label=runs[n][1])
+        e, s = read_curve(runs[n][0]); ax.plot(e, s, lw=1.6 if i else 2.0, color=colors[i % len(colors)], label=runs[n][1])
     mk = _resolve(str(comp.get("markers", "")), deck) if comp.get("markers") else None
     if mk and mk.exists():
         ex, ey = read_markers(mk); ax.plot(ex, ey, "o", ms=5.5, color="#111", mfc="white", mew=1.3, label="Experiment (Vaughan 2024, Fig. 3 of Rezwan 2025)", zorder=5)

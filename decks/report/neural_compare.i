@@ -26,4 +26,12 @@
     dir   = ../../results/cp_study/hybrid/h40_fem_solver
     label = 'PINN as solver (FE-residual-trained, verified)'
   []
+  [./hybrid_grain]
+    dir   = ../../results/cp_study/hybrid/h40_fem_residual_grain
+    label = 'PINN+FEM, grain-aware predictor + Newton'
+  []
+  [./pinn_grain]
+    dir   = ../../results/cp_study/hybrid/h40_fem_solver_grain
+    label = 'PINN as solver, grain-aware inputs (verified)'
+  []
 []

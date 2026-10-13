@@ -775,6 +775,17 @@ iterate seen is returned. The reference for both routes is the same
 executioner with the linear extrapolation alone as predictor, and the cold
 run of §4 with the previous field as initial guess.
 
+A second variant of each route gives the network **grain-aware inputs**:
+appended to the coordinates and the load factor at every node are the
+nine entries of the crystal-to-sample rotation matrix averaged over the
+elements that share the node and a grain-boundary indicator (one minus
+the largest fraction of the node's elements that belong to one grain:
+zero inside a grain, positive on a boundary), both derived once from the
+orientation field of §2. A network of the coordinates alone has no input
+that changes at a grain boundary and so cannot kink there; with these
+ten extra inputs it can. Architecture, loss, optimizer and budgets are
+otherwise identical to the coordinate-only runs.
+
 This weak-form training replaces the strong-form collocation of the
 balance of momentum, which was found unreachable on this problem: a
 network regressed to within 0.55% (L2) of the finite-element displacement
@@ -784,12 +795,13 @@ lives in the strain kinks at the grain boundaries that a smooth global
 network cannot represent. The weak-form loss is the quantity the corrector
 drives to zero, so an accepted network field is verifiable by
 construction. Decks: `decks/cp_study/hybrid/h40_linear.i`,
-`h40_fem_residual.i`, `h40_fem_solver.i`; the framework pieces are PINNACLE
-ADR 0028 and ADR 0029.
+`h40_fem_residual.i`, `h40_fem_solver.i`, `h40_fem_residual_grain.i`,
+`h40_fem_solver_grain.i`; the framework pieces are PINNACLE ADR 0028 and
+ADR 0029.
 
 ### 8.2 Results
 
-Table 8 summarises the four runs of the same deck family at h40, all to
+Table 8 summarises the six runs of the same deck family at h40, all to
 20% strain in 256 steps under the criterion of §3 with no cutback.
 
 **Table 8.** Cost and outcome of the neural routes against the FE
@@ -807,6 +819,8 @@ predicted steps.
 | PINN+FEM, linear extrapolation | 948 | 0 | 667 | 0.005 | 0 | -- | -- | 0.000 |
 | PINN+FEM, FE-residual-trained network | 945 | 0 | 409 | 349 | 1,574 | 0.0008 | 0.0008 | 0.000 |
 | PINN as solver, verified ($r_{\mathrm{tol}} = 0.05$) | 650 | 132 of 256 | 264 | 4,964 | 16,264 | 0.098 | 0.049 | 5.14 |
+| PINN+FEM, grain-aware network | 923 | 0 | 403 | 716 | 2,696 | 0.0005 | 0.0005 | 0.000 |
+| PINN as solver, verified, grain-aware network | 635 | 131 of 256 | 264 | 4,279 | 13,865 | 0.076 | 0.050 | 0.33 |
 
 **PINN+FEM.** The linear extrapolation alone is already a good predictor
 on this load path: beyond 1% strain its proposal is within 0.03% of the
@@ -842,35 +856,62 @@ worse starting point for the next extrapolation, which the network cannot
 bring below the tolerance within its budget, and the following Newton
 solve resets it.
 
-**Table 9.** Relative L2 difference of the fields of the verified
-PINN-as-solver run from the FE reference on the same mesh, element by
-element; the two PINN+FEM runs differ from the reference by zero at the
+**Grain-aware inputs.** The ten extra inputs lift the representational
+limit of the coordinate-only network. In the capacity check (8 steps
+through the yield onset, up to 450 assemblies per step) the grain-aware
+network reaches $r$ = 0.009, 0.043, 0.099 and 0.076 at the four plastic
+steps where the coordinate-only network stalls at 0.034, 0.108, 0.287 and
+0.198: three to four times lower, and below the tolerance at one of them.
+Over the full load path, at the same budgets as before, the effect is
+visible in quality more than in cost. As a predictor the grain-aware
+network removes a further 2.5% of the Newton iterations (923 against 945
+and 948) and keeps the fields identical, for twice the training time of
+the coordinate-only network (716 s). As a verified solver it accepts the
+same number of steps (131 of 256) with 14% less training (4,279 s, 13,865
+assemblies) and 15 fewer Newton iterations, and the accepted fields are
+much closer to the reference at the same $r \le 0.05$: the curve is within
+0.33 MPa (0.05%) instead of 5.1 MPa, and the plastic-strain and stress
+fields within 0.3% and 0.5% at the worst strain and within 0.01% and 0.04%
+at 20% (Table 9, Fig. 15). The network corrects the extrapolation in the
+right places, the grain boundaries, so a field accepted at the tolerance
+carries a smaller error in the quantities of interest. Its baseline before
+training is also better (median $r$ 0.076 against 0.098), the mark of
+weights that transfer from step to step. The remaining cost gap is the
+training itself: 16 s per step, against 1 to 3 s of Newton.
+
+**Table 9.** Relative L2 difference of the fields of the two verified
+PINN-as-solver runs from the FE reference on the same mesh, element by
+element; the three PINN+FEM runs differ from the reference by zero at the
 printed precision at every strain.
 
-| strain | displacement | $\bar\varepsilon^p$ | $\sigma_{xx}$ | max $\lvert\Delta\bar\varepsilon^p\rvert$ |
-|---|---|---|---|---|
-| 1.9% | 0.04% | 0.26% | 0.05% | 0.0001 |
-| 8.1% | 0.07% | 0.07% | 0.39% | 0.0001 |
-| 15.0% | 0.09% | 0.12% | 0.57% | 0.0004 |
-| 20.0% | 0.06% | 0.12% | 0.54% | 0.0006 |
+| strain | network inputs | displacement | $\bar\varepsilon^p$ | $\sigma_{xx}$ | max $\lvert\Delta\bar\varepsilon^p\rvert$ |
+|---|---|---|---|---|---|
+| 1.9% | coordinates | 0.04% | 0.26% | 0.05% | 0.0001 |
+| 8.1% | coordinates | 0.07% | 0.07% | 0.39% | 0.0001 |
+| 15.0% | coordinates | 0.09% | 0.12% | 0.57% | 0.0004 |
+| 20.0% | coordinates | 0.06% | 0.12% | 0.54% | 0.0006 |
+| 1.9% | grain-aware | 0.05% | 0.32% | 0.37% | 0.0002 |
+| 8.1% | grain-aware | 0.00% | 0.01% | 0.04% | 0.0000 |
+| 15.0% | grain-aware | 0.01% | 0.01% | 0.46% | 0.0001 |
+| 20.0% | grain-aware | 0.00% | 0.01% | 0.02% | 0.0001 |
 
 **Figure 14.** Engineering stress-strain response of the FE reference,
-the two PINN+FEM runs and the verified PINN-as-solver run at h40, with the
-experimental markers.
+the three PINN+FEM runs and the two verified PINN-as-solver runs at h40,
+with the experimental markers.
 
 ![neural curves](../../figures/report/neural_h40_curves.png)
 
 **Figure 15.** Equivalent plastic strain on the deformed plate at 20%
-strain: FE reference, the two PINN+FEM runs, the PINN-as-solver run, and
-the difference of the last from the reference (the same panels at 2, 8
+strain: FE reference, the PINN+FEM runs, the PINN-as-solver runs, and
+the difference of the grain-aware solver run from the reference (the same panels at 2, 8
 and 15% are `figures/report/neural_h40_fields_{2,8,15}pct.png`).
 
 ![neural fields 20](../../figures/report/neural_h40_fields_20pct.png)
 
-**Figure 16.** Left: Newton iterations per step of the four runs along the
-load path. Right: equilibrium error $r$ of the network's proposal before
-(dashed) and after training for the two network runs, with the tolerance
-of the solver route.
+**Figure 16.** Top: Newton iterations and solve-plus-predictor time per
+step of the six runs along the load path. Bottom: equilibrium error $r$
+of the network's proposal before (dashed) and after training for the
+four network runs, with the tolerance of the solver route.
 
 ![neural cost](../../figures/report/hybrid_h40_cost.png)
 
@@ -878,19 +919,24 @@ of the solver route.
 
 ### 8.3 What the two routes measure
 
-The network's value on this problem is bounded by what it can represent.
-A single smooth network of the coordinates and the load factor can carry
-the smooth part of the step-to-step increment, but that part is already
-delivered for free by the linear extrapolation; the remainder, the
-redistribution of plastic strain between grains as they yield, is as
-sharply structured at the grain boundaries as the field itself, and
-neither the strong-form nor the weak-form loss changes that. Trained on
-the assembled residual the network is at least verifiable, and it does
-solve half of the steps to the 0.05 tolerance at a cost of 6 to 8 times
-the FE run; trained on the strong form it solved none. A predictor that
-beats the linear extrapolation on a polycrystal will need to know the
-grain structure (per-grain or orientation-aware inputs, or a
-domain-decomposed ansatz), which is outside the scope of this report.
+The network's value on this problem is bounded first by what it can
+represent and then by what its training costs. A network of the
+coordinates and the load factor carries the smooth part of the
+step-to-step increment, which the linear extrapolation already delivers
+for free; the remainder, the redistribution of plastic strain between
+grains as they yield, is as sharply structured at the grain boundaries as
+the field itself, and neither the strong-form nor the weak-form loss
+changes that. Grain-aware inputs remove this representational limit: the
+same network then reaches three to four times lower equilibrium errors
+per step, and as a verified solver it returns fields fifteen times closer
+to the reference at the same tolerance. What they do not remove is the
+cost of training on the assembled residual, 10 to 20 s per step against 1
+to 3 s for the Newton solve it replaces, so on this problem the verified
+PINN-as-solver route is a correct and accurate solver at five to six
+times the cost of the finite-element one, and the PINN+FEM route is a
+predictor that improves on the linear extrapolation by a few percent of
+the Newton iterations at a net loss of wall time. Trained on the strong
+form the same network solved no step at all.
 
 ## References
 

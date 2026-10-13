@@ -256,3 +256,13 @@ lever, if the author wants a competitive neural predictor, is option (b)
 in its cheap form: grain-aware inputs (per-node orientation or grain
 features) to the same predictor, which is a deck-selectable feature set,
 not a new ansatz.
+
+**2026-10-12, grain-aware inputs measured (docs/07 §10.9, report §8).**
+`node_features = 'orientation grain_boundary'` lifts the representational
+limit (3-4x lower residual per step at equal budget; verified-solver fields
+15x closer to FE at the same tolerance, curve within 0.05%), but not the
+cost: training on the assembled residual is 10-20 s per step against 1-3 s
+of Newton, so the verified solver is 5-6x the FE cost and the hybrid saves
+2.5% of the iterations at a net wall-time loss. All six columns are in
+report §8; next stages (PINN parameter sensitivity, hardware/time
+benchmark) await the author's choice of which columns to carry.
