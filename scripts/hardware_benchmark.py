@@ -45,10 +45,14 @@ import sys
 import time
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
+
+try:  # plotting is optional: the host venv that runs the cases has no matplotlib
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except ImportError:  # pragma: no cover
+    plt = None
 
 sys.path.insert(0, "/mnt/extended/projects/pinnacle/src")
 STUDY = Path(__file__).resolve().parent.parent
@@ -109,6 +113,12 @@ def rewrite(src: Path, dst: Path, case: dict, n_steps: int) -> None:
     dst.write_text(text)
 
 
+def _converged(v) -> bool:
+    """The history writes the flag as a float (``1.000e+00``) or a word."""
+    t = str(v).strip().lower()
+    return t == "true" or (t not in ("", "false") and float(t) == 1.0)
+
+
 def gpu_peak_mb_poll(proc: subprocess.Popen, interval: float = 2.0) -> float:
     peak = 0.0
     while proc.poll() is None:
@@ -150,7 +160,7 @@ def run_case(name: str, case: dict, bench: dict, deck: Path, out_dir: Path) -> d
             proc.wait()
         wall = time.perf_counter() - tic
         rss = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / 1024.0
-        hist = [r for r in csv.DictReader((cdir / "solver" / "solver_history.csv").open()) if str(r.get("converged", "1")).strip() in ("1", "1.0", "true", "True")] if (cdir / "solver" / "solver_history.csv").exists() else []
+        hist = [r for r in csv.DictReader((cdir / "solver" / "solver_history.csv").open()) if _converged(r.get("converged", "1"))] if (cdir / "solver" / "solver_history.csv").exists() else []
         it = np.array([float(r.get("iterations", 0) or 0) for r in hist]); nt = np.array([float(r.get("newton_time_s", 0) or 0) for r in hist])
         pt = np.array([float(r.get("predictor_time_s", 0) or 0) if r.get("predictor_time_s") not in ("", None, "nan") else 0.0 for r in hist])
         asm = np.array([float(r.get("predictor_assemblies", 0) or 0) if r.get("predictor_assemblies") not in ("", None, "nan") else 0.0 for r in hist])
@@ -182,6 +192,9 @@ def main(argv):
     with path.open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0])); w.writeheader(); w.writerows(keep); w.writerows(rows)
     allrows = keep + rows
+    if plt is None:
+        print("wrote", path, "(no matplotlib: figure skipped; rerun the script where it is installed)")
+        return 0
     plt.rcParams.update({"font.size": 9, "axes.labelsize": 10, "xtick.direction": "in", "ytick.direction": "in", "xtick.top": True, "ytick.right": True})
     fig, ax = plt.subplots(figsize=(7.5, 3.6), dpi=200)
     names = [r["case"] for r in allrows]; x = np.arange(len(names))
