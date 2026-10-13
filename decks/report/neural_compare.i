@@ -14,12 +14,16 @@
     dir   = ../../results/cp_study/cal/gn2/base
     label = 'FE (cold Newton)'
   []
+  [./linear]
+    dir   = ../../results/cp_study/hybrid/h40_linear
+    label = 'PINN+FEM, linear-extrapolation predictor + Newton'
+  []
   [./hybrid]
     dir   = ../../results/cp_study/hybrid/h40_physics
-    label = 'PINN+FEM (physics-trained predictor, Newton corrector)'
+    label = 'PINN+FEM, physics-trained predictor + Newton'
   []
   [./pinn]
     dir   = ../../results/cp_study/hybrid/h40_pinn_solver
-    label = 'PINN as solver (no corrector)'
+    label = 'PINN as solver (verified, corrector = auto)'
   []
 []

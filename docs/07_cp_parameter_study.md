@@ -605,3 +605,17 @@ what remains viable is a network trained on the DISCRETE weak-form (FE)
 residual of its nodal values -- the loss Newton itself minimises -- or a
 domain-decomposed (per-grain) ansatz. Both are design decisions for the
 author.
+
+Both strong-form runs were stopped after 13-14 predicted steps (every
+proposal rejected, residual/reaction 0.999, physics loss 1.2-1.4,
+corrector always Newton; a profile put 0.2 s per epoch in the twelve
+autograd passes of the strong-form residual, i.e. about 2 min per step for
+a prediction that is discarded). Their partial live histories are kept
+(`results/cp_study/hybrid/h40_{physics,pinn_solver}/solver/solver_history.csv`).
+
+**Field comparison, FE vs the linear-predictor hybrid** (`decks/report/neural_compare.i`,
+`scripts/field_compare.py`): displacement, equivalent plastic strain and
+sigma_xx identical element by element at 2 / 8 / 15 / 20% (relative L2
+difference 0 to the printed precision), as the corrector guarantees;
+figures `figures/report/neural_h40_curves.png`,
+`neural_h40_fields_{2,8,15,20}pct.png`.
