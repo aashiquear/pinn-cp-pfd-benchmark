@@ -1042,7 +1042,7 @@ PINN+FEM 667 s; verified grain-aware solver 4,543 s).
 |---|---|---|---|---|---|---|
 | stress-strain curve $\sigma(\mathbf{p}, \varepsilon)$ | 5 in, 1 out, 8,769 weights | GPU | 3.3% (6.6%) | 28 s | 0.38 ms | 14 runs |
 | stress-strain curve, same deck | same | CPU | 2.0% (5.2%) | 52 s | 0.18 ms | 14 runs |
-| displacement field $\mathbf{u}(\mathbf{p}, \mathbf{x})$ at 20% | 7 in, 3 out, 9,027 weights | GPU | 0.97% (1.04%) | 121 s | 0.18 ms | 14 runs |
+| displacement field $\mathbf{u}(\mathbf{p}, \mathbf{x})$ at 20% | 7 in, 3 out, 9,027 weights | GPU | 0.97% (1.04%) | 121 s | 0.60 ms (1,722 nodes per query) | 14 runs |
 
 **Accuracy.** The field surrogate reproduces the 20% displacement field
 of every held-out sample to about 1%: the displacement of a plate in
@@ -1057,9 +1057,9 @@ costs another 15,000 s of finite-element time and is the lever if the
 curve surrogate is to be used quantitatively.
 
 **Cost.** The training is negligible next to the data: 28 to 121 s
-against 11,270 s of finite-element runs. The network is small, so a query
-costs 0.2 to 0.4 ms on either device and the GPU gives no advantage at
-this size (it is slower per query than the CPU because of the launch
+against 11,270 s of finite-element runs. The network is small, so a curve query
+costs 0.2 to 0.4 ms on either device and a field query (1,722 nodes) 0.6
+ms, and the GPU gives no advantage at this size (it is slower per query than the CPU because of the launch
 overhead); training on the GPU is faster for the field surrogate only.
 Against the finite-element run of §4 the surrogate pays for itself after
 14 queries, against the verified PINN-as-solver run after 3 (Fig. 19);

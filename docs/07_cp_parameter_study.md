@@ -764,8 +764,8 @@ nominal_strain; final displacement field). Surrogate decks
 split, 3x64 tanh, Adam 4000 + L-BFGS 50, `evaluate` = 1,000 random rows).
 Results (report §11, Table 10, Figs. 18-19): curve surrogate held-out
 3.3% mean / 6.6% max on the GPU (2.0 / 5.2% on the CPU, same seed), field
-surrogate 0.97% / 1.04%; training 28-121 s; 0.18-0.38 ms per query (the
-network is too small for the GPU to pay); break-even 14 FE runs (3
+surrogate 0.97% / 1.04%; training 28-121 s; 0.18-0.38 ms per curve query and 0.60 ms per
+field query (the network is too small for the GPU to pay); break-even 14 FE runs (3
 verified-solver runs). Accuracy is data-limited (sample 21, the lowest
 hardening, is the worst case). Comparison `decks/report/surrogate_compare.i`,
 `results/cp_study/surrogate/surrogate_h40_summary.csv`.
