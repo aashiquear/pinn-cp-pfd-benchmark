@@ -85,7 +85,7 @@ def main() -> int:
     # Boundary conditions of the last step (same construction as the executioner).
     fem_var = next(v for v in problem.variables.values() if v.family == "fem")
     element = _element_for_dim(dim, order=fem_var.order)
-    dirichlet_specs, neumann_specs = problem.normalized_bc_specs(fem_var.name)
+    dirichlet_specs, neumann_specs = problem.normalized_bc_specs(dim, fem_var.name)
     scaled = []
     for spec in dirichlet_specs:
         fn = problem.functions.get(str(spec.get("function", "") or ""))
