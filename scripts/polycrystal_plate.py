@@ -273,6 +273,8 @@ def _utilities_block(cfg: dict) -> str:
             v = "true" if v else "false"
         elif isinstance(v, float):
             v = f"{v:.12g}"
+        elif isinstance(v, (list, tuple)):
+            v = "'" + " ".join(str(x) for x in v) + "'"
         lines.append(f"    {k:<16s} = {v}")
     lines += ["  []", "[]", ""]
     return "\n".join(lines)
