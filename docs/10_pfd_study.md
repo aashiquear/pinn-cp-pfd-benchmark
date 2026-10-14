@@ -716,3 +716,59 @@ the FE step at this size; in the full run (§7.2) the retraining is
 cheaper per step (43.5 s over 222 steps, 0.2 s) and the route ends 25%
 faster than the FE. The network's device does not matter (the cost is the
 numpy assemblies of the FE residual, as in Part I).
+
+### 7.4 Plate surrogates (PINNACLE ADR 0030, data source) on the CP+PFD plate
+
+Decks `decks/pfd_study/cp/surrogate/plate_h40_surrogate_{curve,field}.i`
+(data source over the 24 samples of §7.1, 18/6 split, seed 0, 3x64 tanh,
+Adam 4000 + L-BFGS 50, CPU, `evaluate` = 1,000 random rows of the design
+box), comparison `decks/pfd_study/cp/surrogate/compare_h40.i` by
+`scripts/surrogate_compare.py` (now accepts a study summary as the routes'
+cost and draws held-out field maps when `mesh_vtk` is given); results
+`results/pfd_study/cp/surrogate/{h40_curve,h40_field,cp_surrogate_h40_summary.csv}`,
+figures `figures/pfd/cp_surrogate_h40_{curve_holdout,field_holdout_fields,cost_per_query}.png`.
+The curve deck first refused to run: with two declared variables (u, d)
+`parametric_surrogate` needs `variable` named even for a reduced target
+(it only sets the result layout); `variable = u` added. The sample cost
+in `samples.csv` is now the wall time of the coupled run (the collector
+summed the Newton time, 17-37% of a coupled step, §8).
+
+| surrogate | target | held-out rel. L2 mean / max | training (s) | query (ms) | data cost (s, 18 training samples) | break-even vs FE / linear / verified solver (runs) |
+|---|---|---|---|---|---|---|
+| curve | eng. stress and max damage vs nominal strain over (Gc, l0, rho0, tau_c0) | 14.7% / 69.8% (one sample; 1.6-4.9% on the other five) | 10.3 | 0.1 | 12,987 | 20 / 21 / 27 |
+| field | nodal damage at the end of the path | 5.8% / 7.1% | 198 | 0.4 | 12,987 | 21 / 22 / 27 |
+
+Held-out samples (1, 7, 16, 17, 21, 23), curve surrogate, per column
+(stress rel. L2, max-damage rel. L2, fracture strain FE -> surrogate at
+the first crossing of d = 0.8):
+
+| sample | Gc | l0 | end of path | stress | max d | fracture strain FE -> surrogate |
+|---|---|---|---|---|---|---|
+| 1 | 702 | 9.0 | 6.0% | 69.8% | 72.3% | 5.86% -> 5.31% |
+| 7 | 828 | 8.6 | 8.7% | 4.9% | 3.1% | 8.52% -> 8.44% |
+| 16 | 1205 | 8.1 | 12.9% | 4.9% | 4.8% | 12.66% -> 12.89% |
+| 17 | 872 | 8.0 | 10.5% | 2.5% | 2.3% | 10.31% -> 10.31% |
+| 21 | 947 | 6.0 | 10.9% | 4.7% | 6.6% | 10.78% -> none (predicted max d below 0.8; the stress drop is predicted at 10.9%) |
+| 23 | 1341 | 7.3 | 15.2% | 1.6% | 0.9% | 14.92% -> 14.84% |
+
+Findings. (i) The curve surrogate predicts the fracture strain within
+0.25% strain on four of the six held-out samples and the stress drop on
+five; its mean error is set by sample 1, the lowest Gc and highest l0 of
+the held-out set, where the drop comes 0.55% strain early and the whole
+rel. L2 of a curve that ends at 6% is paid by the shifted collapse
+(peak 478 against 474 MPa). As in Part I, accuracy is data-limited at
+the box's edge: the training set has three samples at l0 > 8 um. (ii)
+The damage-field surrogate is uniformly accurate (2.8-7.1%); the
+difference maps put the error in the band below the hole where the
+crack grows, with the surrogate over-predicting the band's damage on four
+samples and under-predicting it on the earliest-fracturing one; it does
+not learn the sample-to-sample state at the end of the path (some samples
+end at initiation, some at 20% without it), so it is a map of "damage at
+the end of the path", not at a fixed strain. (iii) Cost: data 3.6 h of
+host time (four samples side by side at two threads) against 10 s and
+198 s of training; a query costs 0.1-0.4 ms; the surrogate pays for
+itself after about 20 FE runs (27 verified-solver runs), the same
+ballpark as Part I (14). The query for the fracture strain of a new
+(Gc, l0, rho0, tau_c0) is the use the author asked for in the plan
+(docs/09 §5.1 step 8); its accuracy away from the box's edge is a few
+tenths of a percent strain.

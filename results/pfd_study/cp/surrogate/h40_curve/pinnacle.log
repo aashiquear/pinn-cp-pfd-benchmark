@@ -1,0 +1,51 @@
+2026-10-14 13:53:02 INFO    pinnacle: Logging to results/pfd_study/cp/surrogate/h40_curve/pinnacle.log (level=info, console=False)
+2026-10-14 13:53:02 INFO    pinnacle.cli.main: Starting run from deck 'decks/pfd_study/cp/surrogate/plate_h40_surrogate_curve.i'
+2026-10-14 13:53:03 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cpu' with precision 'float64' (composed path)
+2026-10-14 13:53:04 INFO    pinnacle.system.problem: [OrientationField] point_file 'results/cp_study/cal/gn2/base/orientations_points.csv' resolved on 860 elements: {'n_targets': 860, 'n_source_points': 21012, 'out_of_bounds': 0, 'coverage_fraction': 1.0, 'interpolation': 'nearest', 'fallback': 'uniform'}
+2026-10-14 13:53:05 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 100/4000 loss 3.069e-03 {'data': 0.003069101283566047}
+2026-10-14 13:53:05 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 200/4000 loss 2.087e-03 {'data': 0.002086960010017377}
+2026-10-14 13:53:05 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 300/4000 loss 1.646e-03 {'data': 0.0016462094793311985}
+2026-10-14 13:53:05 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 400/4000 loss 1.377e-03 {'data': 0.0013767297733639906}
+2026-10-14 13:53:05 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 500/4000 loss 1.209e-03 {'data': 0.0012093463308524126}
+2026-10-14 13:53:05 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 600/4000 loss 1.107e-03 {'data': 0.0011069386391470942}
+2026-10-14 13:53:05 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 700/4000 loss 1.036e-03 {'data': 0.0010355923356433544}
+2026-10-14 13:53:06 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 800/4000 loss 9.819e-04 {'data': 0.0009818585592458627}
+2026-10-14 13:53:06 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 900/4000 loss 9.399e-04 {'data': 0.0009398688103301596}
+2026-10-14 13:53:06 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1000/4000 loss 9.051e-04 {'data': 0.0009050921930778622}
+2026-10-14 13:53:06 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1100/4000 loss 8.814e-04 {'data': 0.0008814175572492011}
+2026-10-14 13:53:06 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1200/4000 loss 8.552e-04 {'data': 0.0008551828957940756}
+2026-10-14 13:53:06 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1300/4000 loss 1.397e-03 {'data': 0.0013969176249632733}
+2026-10-14 13:53:06 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1400/4000 loss 7.767e-04 {'data': 0.0007766661225489026}
+2026-10-14 13:53:07 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1500/4000 loss 1.238e-03 {'data': 0.0012378031869266519}
+2026-10-14 13:53:07 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1600/4000 loss 6.593e-04 {'data': 0.0006593339154675614}
+2026-10-14 13:53:07 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1700/4000 loss 8.327e-04 {'data': 0.000832674289473172}
+2026-10-14 13:53:07 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1800/4000 loss 5.897e-04 {'data': 0.0005897059120860571}
+2026-10-14 13:53:07 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 1900/4000 loss 5.655e-04 {'data': 0.0005655139931060751}
+2026-10-14 13:53:07 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2000/4000 loss 5.488e-04 {'data': 0.0005487535051932083}
+2026-10-14 13:53:07 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2100/4000 loss 5.135e-04 {'data': 0.0005135113906456322}
+2026-10-14 13:53:08 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2200/4000 loss 4.997e-04 {'data': 0.0004997355759517104}
+2026-10-14 13:53:08 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2300/4000 loss 4.752e-04 {'data': 0.00047516114311555433}
+2026-10-14 13:53:08 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2400/4000 loss 4.586e-04 {'data': 0.0004585581463607845}
+2026-10-14 13:53:08 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2500/4000 loss 4.547e-04 {'data': 0.0004547134786661007}
+2026-10-14 13:53:08 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2600/4000 loss 4.291e-04 {'data': 0.0004290635828674592}
+2026-10-14 13:53:08 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2700/4000 loss 8.556e-04 {'data': 0.0008556452413042511}
+2026-10-14 13:53:09 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2800/4000 loss 4.018e-04 {'data': 0.0004018169723762294}
+2026-10-14 13:53:09 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 2900/4000 loss 4.150e-04 {'data': 0.00041500529121539986}
+2026-10-14 13:53:09 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3000/4000 loss 3.743e-04 {'data': 0.00037433371338563184}
+2026-10-14 13:53:09 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3100/4000 loss 3.577e-04 {'data': 0.0003577048817712643}
+2026-10-14 13:53:09 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3200/4000 loss 3.503e-04 {'data': 0.0003502925782425392}
+2026-10-14 13:53:09 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3300/4000 loss 3.324e-04 {'data': 0.00033242577949582543}
+2026-10-14 13:53:09 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3400/4000 loss 3.191e-04 {'data': 0.0003191360220039509}
+2026-10-14 13:53:10 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3500/4000 loss 2.992e-04 {'data': 0.00029919755012064724}
+2026-10-14 13:53:10 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3600/4000 loss 2.936e-04 {'data': 0.00029358011073557885}
+2026-10-14 13:53:10 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3700/4000 loss 2.704e-04 {'data': 0.00027037313503074176}
+2026-10-14 13:53:10 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3800/4000 loss 2.494e-04 {'data': 0.0002493881384339088}
+2026-10-14 13:53:10 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 3900/4000 loss 2.352e-04 {'data': 0.00023524162511269318}
+2026-10-14 13:53:10 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: adam epoch 4000/4000 loss 2.138e-04 {'data': 0.00021376805547533662}
+2026-10-14 13:53:15 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: 1000 queries predicted in 0.108 s (0.11 ms each)
+2026-10-14 13:53:15 INFO    pinnacle.system.executioner.parametric_surrogate: parametric_surrogate: 24 samples (6 held out), holdout rel L2 1.473e-01, certified 0/0, generation 0 s, training 10 s
+2026-10-14 13:53:15 INFO    pinnacle.runner.runner: Wrote CSV output to results/pfd_study/cp/surrogate/h40_curve/stress_strain.csv
+2026-10-14 13:53:15 INFO    pinnacle.runner.runner: Wrote per-step solver history to results/pfd_study/cp/surrogate/h40_curve/solver_history.csv
+2026-10-14 13:53:15 INFO    pinnacle.runner.runner: Wrote VTK field output to results/pfd_study/cp/surrogate/h40_curve/fields.vtk
+2026-10-14 13:53:15 INFO    pinnacle.runner.runner: Wrote summary to results/pfd_study/cp/surrogate/h40_curve/summary.json
+2026-10-14 13:53:15 INFO    pinnacle.cli.main: Run complete; outputs in results/pfd_study/cp/surrogate/h40_curve

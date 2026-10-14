@@ -136,7 +136,9 @@ def stage_collect(cfg: dict, deck: Path) -> None:
         t = np.array([float(x[absc]) for x in data]); y = np.array([[float(x[c]) for c in cols] for x in data])
         hist = [h for h in csv.DictReader((case / "solver" / "solver_history.csv").open()) if _converged(h.get("converged", "1"))]
         run_time = float(np.sum([float(h.get("newton_time_s", 0) or 0) for h in hist]))
-        if run_time == 0.0:  # coupled runs: wall time of the run from the PINNACLE log stamps
+        if run_time == 0.0 or (hist and "mech_iterations" in hist[0]):
+            # coupled (staggered) runs: the Newton time is a fraction of the step (docs/10 §8);
+            # the sample's cost is the wall time of the run from the PINNACLE log stamps
             from pfd_study import _wall_seconds
             run_time = float(_wall_seconds(case / "solver" / "pinnacle.log"))
         out = sdir / f"{i:04d}"; out.mkdir(exist_ok=True)

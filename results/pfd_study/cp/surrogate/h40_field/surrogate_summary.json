@@ -1,0 +1,30 @@
+{
+ "sources": "data",
+ "target": "field",
+ "variable": "d",
+ "columns": [],
+ "parameters": [
+  "gc",
+  "l0",
+  "rho0",
+  "tau_c0"
+ ],
+ "samples": 24,
+ "train": 18,
+ "holdout": 6,
+ "generation_time_s": 0.0029465327970683575,
+ "train_time_s": 198.26751229004003,
+ "total_time_s": 199.27564991195686,
+ "epochs_adam": 4000,
+ "epochs_lbfgs": 50,
+ "final_loss": 9.467198668434205e-05,
+ "train_rel_l2_mean": 0.020218059143043754,
+ "holdout_rel_l2_mean": 0.05800299286031498,
+ "holdout_rel_l2_max": 0.07054781901882674,
+ "certified": 0,
+ "certify_tol": 0.05,
+ "certified_of": 0,
+ "device": "cpu",
+ "network_parameters": 8897,
+ "predictions_file": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/cp/surrogate/h40_field/surrogate_predictions.csv"
+}

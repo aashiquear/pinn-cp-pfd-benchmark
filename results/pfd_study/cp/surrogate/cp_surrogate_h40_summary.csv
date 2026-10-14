@@ -1,0 +1,3 @@
+surrogate,label,target,train,holdout,holdout_rel_l2_mean,holdout_rel_l2_max,data_cost_s,train_time_s,query_s,device,network_parameters,break_even_vs_base,break_even_vs_linear,break_even_vs_solver_grain
+curve,"curve surrogate (stress and max damage vs strain), CPU",reduced,18,6,0.14731144835447224,0.6976893092548684,12987.0,10.322739969938993,0.000108,cpu,8834,20.245054402547996,21.34207724944874,27.02146706504861
+field,"damage-field surrogate at the end of the path, CPU",field,18,6,0.05800299286031498,0.07054781901882674,12987.0,198.26751229004003,0.000376,cpu,8897,20.537811891755936,21.65069893752519,27.412219998513013

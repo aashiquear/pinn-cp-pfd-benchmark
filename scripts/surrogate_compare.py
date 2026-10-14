@@ -9,7 +9,8 @@ Deck-driven (PINNACLE ``.i`` syntax):
     prefix    = surrogate_h40
     design    = ../../results/cp_study/surrogate/h40_data        # samples.csv (FE time per sample)
     markers   = ../../data/digitized/al2219_fig3_experiment_markers.csv
-    routes    = ../../results/cp_study/hybrid/hybrid_h40_summary.csv  # cost of the solver routes (hybrid_compare.py)
+    routes    = ../../results/cp_study/hybrid/hybrid_h40_summary.csv  # cost of the solver routes (hybrid_compare.py), or a study summary (case, wall_s)
+    mesh_vtk  = ../../results/pfd_study/cp/surrogate/h40_field/fields.vtk  # optional: nodes and cells for the held-out field maps
   [Surrogates]
     [./curve]  dir = ../../results/cp_study/surrogate/h40_curve  label = 'curve surrogate (GPU)' []
     [./field]  dir = ../../results/cp_study/surrogate/h40_field  label = 'field surrogate (GPU)' []
@@ -84,6 +85,9 @@ def main(argv):
     samples = list(csv.DictReader((design / "samples.csv").open()))
     fe_time = {int(r["sample"]): float(r["run_time_s"]) for r in samples}
     routes = list(csv.DictReader(_resolve(str(comp["routes"]), deck).open())) if comp.get("routes") else []
+    for r in routes:  # a study summary (pfd_study.py collect) names the run `case` and its cost `wall_s`
+        r.setdefault("run", r.get("case", "")); r.setdefault("label", r["run"]); r.setdefault("total_solve_time_s", r.get("wall_s", "nan"))
+    mesh_vtk = _resolve(str(comp["mesh_vtk"]), deck) if comp.get("mesh_vtk") else None
     rows = []
     for name, sp in cfg["surrogates"].items():
         d = _resolve(str(sp["dir"]), deck); label = _str(sp.get("label", name))
@@ -121,6 +125,27 @@ def main(argv):
             ax.set_xlim(0, 20.5); ax.set_ylim(0, max(700.0, top)); ax.grid(False)
             ax.set_xlabel(r"Engineering strain $\varepsilon$ (%)"); ax.set_ylabel(r"Engineering stress $\sigma$ (MPa)"); ax.legend(loc="lower right", frameon=False)
             fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_{name}_holdout.png"); plt.close(fig)
+        # held-out field maps (field target): truth, prediction and their difference on the mesh
+        if s["target"] == "field" and (d / "holdout").exists() and mesh_vtk is not None:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from vtk_legacy import read_vtk
+            from matplotlib.collections import PolyCollection
+            v = read_vtk(mesh_vtk); pts = np.asarray(v["nodes"], dtype=float); cells = np.asarray(v["cells"], dtype=int)
+            quads = pts[cells[:, :4], :2]
+            files = sorted((d / "holdout").glob("*.csv"))
+            fig, axes = plt.subplots(len(files), 3, figsize=(9.6, 1.75 * len(files) + 0.4), dpi=200, squeeze=False)
+            for k, f in enumerate(files):
+                rr = list(csv.DictReader(f.open()))
+                yt = np.array([float(x["c0_true"]) for x in rr]); yp = np.array([float(x["c0_pred"]) for x in rr])
+                err = float(np.linalg.norm(yp - yt) / max(np.linalg.norm(yt), 1e-12))
+                for j, (arr, cm, lim, ttl) in enumerate(((yt, "inferno", (0, 1), f"FE, held-out sample {f.stem}: max d {yt.max():.2f}"),
+                                                         (yp, "inferno", (0, 1), f"surrogate: max d {yp.max():.2f}, rel. L2 {100 * err:.1f}%"),
+                                                         (yp - yt, "coolwarm", (-0.2, 0.2), f"difference (max |.| {np.abs(yp - yt).max():.2f})"))):
+                    ax = axes[k, j]
+                    ax.add_collection(PolyCollection(quads, array=arr[cells[:, :4]].mean(axis=1), cmap=cm, edgecolors="none", clim=lim))
+                    ax.set_aspect("equal"); ax.set_xlim(quads[:, :, 0].min(), quads[:, :, 0].max()); ax.set_ylim(quads[:, :, 1].min(), quads[:, :, 1].max())
+                    ax.set_xticks([]); ax.set_yticks([]); ax.set_title(ttl, fontsize=7)
+            fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_{name}_holdout_fields.png"); plt.close(fig)
     if rows:
         with (out_dir / f"{prefix}_summary.csv").open("w", newline="") as fh:
             keys = sorted({k for r in rows for k in r}, key=lambda k: (k not in rows[0], k))
