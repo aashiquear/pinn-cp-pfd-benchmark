@@ -8,6 +8,8 @@ is the bridge. Deck-driven (PINNACLE ``.i`` syntax):
 
   [Design]
     base       = ../cal_center2.i                 # pipeline deck of the calibrated plate
+    driver     = cp                               # cp: cp_parameter_study.py ([Mechanics] keys);
+                                                  # pfd: pfd_study.py ([Plate] keys, Part II)
     out_root   = ../../../results/cp_study/surrogate/h40_data
     samples    = 24
     sampler    = lhs
@@ -80,9 +82,10 @@ def stage_design(cfg: dict, deck: Path) -> Path:
     import os
     base = _resolve(str(d["base"]), deck)
     rel = lambda q: os.path.relpath(q, out_root)  # noqa: E731  # paths relative to study.i: host-independent
+    driver = str(d.get("driver", "cp")).lower()
     lines = [f"# Surrogate design of {deck.name}: {len(rows)} {d.get('sampler', 'lhs')} samples, seed {d.get('seed', 0)}.",
              "[Study]", f"  base       = {rel(base)}", "  out_root   = cases",
-             f"  markers    = {rel(STUDY_ROOT / 'data/digitized/al2219_fig3_experiment_markers.csv')}",
+             *([f"  markers    = {rel(STUDY_ROOT / 'data/digitized/al2219_fig3_experiment_markers.csv')}"] if driver == "cp" else []),
              f"  concurrent = {int(d.get('concurrent', 4))}", "[]", "[Cases]"]
     for i, r in enumerate(rows):
         lines.append(f"  [./s{i:04d}]")
@@ -97,7 +100,8 @@ def stage_design(cfg: dict, deck: Path) -> Path:
 
 def stage_run(cfg: dict, deck: Path) -> None:
     out_root = _resolve(str(cfg["design"]["out_root"]), deck)
-    subprocess.run([sys.executable, str(STUDY_ROOT / "scripts/cp_parameter_study.py"), str(out_root / "study.i"), "all"], check=True)
+    driver = "pfd_study.py" if str(cfg["design"].get("driver", "cp")).lower() == "pfd" else "cp_parameter_study.py"
+    subprocess.run([sys.executable, str(STUDY_ROOT / "scripts" / driver), str(out_root / "study.i"), "all"], check=True)
 
 
 def _converged(v) -> bool:
@@ -132,6 +136,9 @@ def stage_collect(cfg: dict, deck: Path) -> None:
         t = np.array([float(x[absc]) for x in data]); y = np.array([[float(x[c]) for c in cols] for x in data])
         hist = [h for h in csv.DictReader((case / "solver" / "solver_history.csv").open()) if _converged(h.get("converged", "1"))]
         run_time = float(np.sum([float(h.get("newton_time_s", 0) or 0) for h in hist]))
+        if run_time == 0.0:  # coupled runs: wall time of the run from the PINNACLE log stamps
+            from pfd_study import _wall_seconds
+            run_time = float(_wall_seconds(case / "solver" / "pinnacle.log"))
         out = sdir / f"{i:04d}"; out.mkdir(exist_ok=True)
         np.savez(out / "target.npz", t=t, y=y, run_time_s=np.asarray(run_time))
         if fields:
