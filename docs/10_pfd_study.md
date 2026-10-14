@@ -433,3 +433,33 @@ threshold of 20 MPa removes a larger share of it. Five alternations
 against three change the fracture strain by one load step (17.11 against
 17.19%) and the final damage by 0.01: the 1e-3 alternation test is met
 within three. The CP configuration therefore keeps W_c = 0 (§4.5).
+
+## 6. Fields of the calibrated plates (J2 at W_c 0, CP)
+
+`scripts/pfd_fields.py decks/pfd_study/report/fields_cal_h40.i` →
+`figures/pfd/cal_h40_damage.png` (nodal damage on the deformed plate at 5,
+10, 15, 17.2 and the last snapshot), `cal_h40_crack.png` (elements with
+mean d >= 0.8 at the end), `results/pfd_study/cal_h40_fields.csv`.
+
+| strain | CP max / mean d | J2 max / mean d |
+|---|---|---|
+| 5% | 0.22 / 0.14 | 0.17 / 0.09 |
+| 10% | 0.42 / 0.27 | 0.44 / 0.18 |
+| 15% | 0.61 / 0.39 | 0.66 / 0.23 |
+| 17.2% (initiation) | 0.81 / 0.44 | 0.78 / 0.25 |
+
+The two couplings localise differently. J2 forms a transverse band
+through the hole from 10% on (the classic crack path across the
+ligament) with the far field at d < 0.2. CP damages the whole plate
+(mean 0.44 at initiation, 0.6 in the grains adjacent to the hole) and
+initiates in the element row at the hole's equator; the band after
+initiation runs along the grain structure rather than straight across.
+**For the author:** the CP plate's diffuse damage is the plastic-work
+driving force acting in every grain from the first plastic step (as the
+J2 softening of §3.2 was); the CP sensitivity (§5.5) showed a threshold
+W_c = 20 MPa moves the CP initiation strain by +2%, so a recalibration
+with W_c > 0 would localise the CP damage at the price of a new Gc.
+The equivalent plastic strain is not in the coupled runs' snapshots
+(the staggered writer carries displacement, damage, stress, strain and
+the driving force); the plastic-strain row of the figure is empty until
+the exporter carries it.
