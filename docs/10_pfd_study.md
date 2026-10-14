@@ -302,3 +302,26 @@ a conversion of the whole list per point and key (261,632 `np.asarray`
 calls). With arrays in the snapshot and one conversion per key (PINNACLE
 50fd7ed, ADR 0031 item 12) the same two steps take 45 s, of which the
 mechanics solves are 43 s. The calibration was restarted with the fix.
+
+### 5.2 Calibrated Gc(l0) at h40 (CP)
+
+`decks/pfd_study/cp/cal_h40.i`, same bisection as the J2 one (log Gc in
+[10, 20000], accepted within one load step of 17.2%), 6-7 trials per l0,
+4-13 min each with the state-restore fix (3 trials side by side, torch
+CPU 2 threads), every step converged:
+
+| l0 (um) | l0/h | Gc (MPa um) | Gc l0 (MPa um^2) | fracture strain | J2 Gc for the same l0 |
+|---|---|---|---|---|---|
+| 5 | 2 | 519 | 2,590 | 17.27% | 2063 |
+| 10 | 4 | 847 | 8,470 | 17.19% | 2696 |
+| 20 | 8 | 1302 | 26,000 | 17.11% | 2818 |
+
+The crystal-plasticity plate needs a quarter to a half of the J2 Gc to
+initiate at the same strain: the plastic work that drives the damage
+concentrates in the favourably oriented grains at the hole (the hole sits
+on a four-grain junction, docs/09 §3), so the local driving force at the
+initiation site is larger than the J2 continuum's. Gc rises faster with
+l0 than for J2 (x2.5 for x4 in l0 against x1.37): a wider band averages
+over more grains and loses the intragranular peak. Figures
+`figures/pfd/cp_cal_h40_{curves,bisection,gc_l0}.png`, table
+`results/pfd_study/cp/cal_h40/cp_cal_h40_table.csv`.
