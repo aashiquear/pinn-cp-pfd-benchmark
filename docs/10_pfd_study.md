@@ -365,3 +365,15 @@ when the band is narrow enough to see one grain, and the difference
 vanishes once the band averages over the four grains at the junction.
 Figures `figures/pfd/cp_cal_h40_{curves,bisection,gc_l0}.png` (replacing
 the void ones), table `results/pfd_study/cp/cal_h40/cp_cal_h40_table.csv`.
+
+Observation on the corrected CP curves (`cp_cal_h40_curves.png`): the
+perforated CP plate's gross-section engineering stress follows the plain
+specimen's experiment markers within 1 to 2% from 0.6% to 17% (peak 596
+MPa at 16.6% for l0 = 5, against 593 at 17% in the experiment) and drops
+at initiation; the J2 plate with the same hole peaks at 415 MPa at 6%
+(W_c = 0). The agreement with the plain-specimen markers is not a
+validation: the perforated plate's gross section is 10% smaller and the
+Part I plain CP plate matched the same markers, so the two effects (net
+section against strain concentration and the different hardening of the
+CP polycrystal under the hole's stress state) happen to cancel on this
+geometry; it is recorded as a tier-4 agreement of a different specimen.
