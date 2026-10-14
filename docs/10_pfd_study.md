@@ -246,3 +246,31 @@ l0 = h to 12.3% at l0 = 8h and then rises again at l0 = 16h, where the band
 at the hole. At l0 = h (the brittle rule violated) the damage cannot
 localise on the mesh at all. The study therefore uses l0 >= 2h and the
 mesh sweep (4.2) decides between 2h and 4h.
+
+### 4.2 Parameter sensitivity at h40, l0 = 5 um (one at a time)
+
+`decks/pfd_study/j2/sens_h40.i`, 9 cases plus the base, 7 side by side at 2
+threads (12-23 min each); figures `figures/pfd/j2_sens_h40_{curves,panels}.png`,
+summary `results/pfd_study/j2/sens_h40/sens_h40_summary.csv`.
+
+| case | fracture strain | peak stress (MPa) at strain | energy to 20% (MPa) | note |
+|---|---|---|---|---|
+| base (Gc 2063, l0 5, eta 0, W_c 0, 3 alternations) | 17.34% | 415 at 6.1% | 74.6 | |
+| Gc x 0.5 (1032) | 7.58% | 368 at 1.8% | 28.6 (to 7.6%) | stopped at d 0.95 |
+| Gc x 2 (4127) | none by 20% (max d 0.45) | 490 at 10.9% | 90.8 | |
+| l0 2.5 (= h) | none by 20% (max d 0.57) | 485 at 10.8% | 90.1 | band unresolved |
+| l0 10 (= 4h) | 12.66% | 373 at 2.0% | 49.0 | |
+| eta 1 MPa s | 17.34% | 416 | 74.7 | identical to the base |
+| eta 10 MPa s | 17.66% | 418 | 75.3 | +0.3% |
+| W_c 5 MPa | 17.27% | 432 at 5.9% | 76.7 | less early softening |
+| W_c 20 MPa | 17.66% | 486 at 6.2% | 82.9 | peak +17%, initiation +0.3% |
+| 5 alternations | 17.34% | 415 | 74.6 | identical to 3 (tolerance met within 3) |
+
+Fracture initiation is governed by Gc and l0 (half Gc halves the fracture
+strain; l0 = 4h moves it from 17.3 to 12.7%); the fixed viscosity is
+immaterial at the quasi-static rate (eta = 1 MPa s changes nothing, eta =
+10 by one load step); the plastic-work threshold W_c moves the initiation
+strain by at most 0.3% while it removes most of the early diffuse softening
+(peak 486 against 415 MPa at W_c = 20 MPa): it is the lever for the author's
+decision on the softening noted in §3.2. The alternation count does not
+matter: the 1e-3 test is met within 3 alternations at every step.
