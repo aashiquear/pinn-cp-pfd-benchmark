@@ -7,7 +7,8 @@ Deck-driven (PINNACLE ``.i`` syntax):
     study     = ../j2/mesh_l_h40.i            # the study deck (cases and out_root)
     figures   = ../../../figures/pfd
     prefix    = j2_mesh_l_h40
-    param     = l0                            # the swept key (x axis of the summary panels)
+    param     = l0                            # the swept key (x axis of the summary panels);
+                                              # 'mesh' = cell size from the mesh name hNN; 'case' = categorical
     xlabel    = '$\\ell_0$ (µm)'
     logx      = true
     markers   = ../../../data/digitized/al2219_fig3_experiment_markers.csv
@@ -99,9 +100,20 @@ def main(argv):
         rr = list(csv.DictReader((d / "results.csv").open()))
         e = np.array([float(r["nominal_strain"]) for r in rr])
         s = np.array([float(r["eng_stress"]) if r["eng_stress"] not in ("", "nan") else np.nan for r in rr])
-        val = float(kv[key]) if key in kv else base_val
-        rows.append({"case": name, "value": val, "e": e, "s": s, "frac": frac})
-    rows.sort(key=lambda r: (r["value"] is None, r["value"]))
+        if key == "mesh":
+            # the mesh sweep: x = background cell size h (um) read from the mesh name hNN (100/NN)
+            import re as _re
+
+            src = str(kv.get("mesh", "")) or str(_resolve(str(cfg["study"]["base"]), study).read_text())
+            m = _re.search(r"h(\d+)_hole", src)
+            val = 100.0 / float(m.group(1)) if m else None
+        elif key == "case":
+            val = None  # categorical: one point per case, in deck order
+        else:
+            val = float(kv[key]) if key in kv else base_val
+        rows.append({"case": name, "value": val, "params": kv, "e": e, "s": s, "frac": frac})
+    if key != "case":
+        rows.sort(key=lambda r: (r["value"] is None, r["value"]))
     # (a) curves
     fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=200)
     vals = [r["value"] for r in rows if r["value"] is not None]
@@ -110,7 +122,11 @@ def main(argv):
         t = 0.5 if r["value"] is None or hi == lo else (np.log(r["value"] / lo) / np.log(hi / lo) if f.get("logx", True) in (True, "true") and lo > 0 else (r["value"] - lo) / (hi - lo))
         c = cmap(0.1 + 0.8 * t)
         ok = np.isfinite(r["s"])
-        label = f"{key} = {r['value']:g}" if r["value"] is not None else r["case"]
+        label = (
+            f"h = {r['value']:g} µm" if key == "mesh" and r["value"] is not None
+            else f"{key} = {r['value']:g}" if key not in ("mesh", "case") and r["value"] is not None
+            else (", ".join(f"{k} = {v}" for k, v in r["params"].items()) or "base")
+        )
         ax.plot(np.concatenate([[0], 100 * r["e"][ok]]), np.concatenate([[0], r["s"][ok]]), color=c, lw=1.4, label=label)
         fs = r["frac"].get("fracture_strain_node")
         if fs is not None:
@@ -125,7 +141,8 @@ def main(argv):
     fig.tight_layout(); fig.savefig(figs / f"{prefix}_curves.png"); plt.close(fig)
     # (b) panels
     fig, axes = plt.subplots(1, 3, figsize=(9.6, 3.2), dpi=200)
-    x = np.array([r["value"] if r["value"] is not None else np.nan for r in rows])
+    categorical = key == "case"
+    x = np.arange(len(rows), dtype=float) if categorical else np.array([r["value"] if r["value"] is not None else np.nan for r in rows])
     for ax, keyf, lab in zip(axes, ("peak_eng_stress", "fracture_strain_node", "fracture_energy_MPa"),
                              (r"peak $\sigma$ (MPa)", r"fracture strain $\varepsilon_f$", r"$\int \sigma\,d\varepsilon$ (MPa)"), strict=True):
         y = np.array([r["frac"].get(keyf) if r["frac"].get(keyf) is not None else np.nan for r in rows], dtype=float)
@@ -135,9 +152,12 @@ def main(argv):
             none = np.isnan(y)
             if none.any():
                 ax.plot(x[none], np.full(none.sum(), 0.2), "^", color="#1f4e9c", ms=5, mfc="white")
-        if f.get("logx", True) in (True, "true"):
+        if categorical:
+            ax.set_xticks(x)
+            ax.set_xticklabels([(", ".join(f"{k} {v}" for k, v in r["params"].items()) or "base") for r in rows], rotation=60, ha="right", fontsize=6.5)
+        elif f.get("logx", True) in (True, "true"):
             ax.set_xscale("log")
-        ax.set_xlabel(str(f.get("xlabel", key))); ax.set_ylabel(lab); ax.grid(False)
+        ax.set_xlabel("" if categorical else str(f.get("xlabel", key))); ax.set_ylabel(lab); ax.grid(False)
     fig.tight_layout(); fig.savefig(figs / f"{prefix}_panels.png"); plt.close(fig)
     for r in rows:
         print(r["case"], r["value"], {k: (round(v, 4) if isinstance(v, float) else v) for k, v in r["frac"].items() if k in ("fracture_strain_node", "peak_eng_stress", "fracture_energy_MPa", "steps_converged", "newton_iterations")})

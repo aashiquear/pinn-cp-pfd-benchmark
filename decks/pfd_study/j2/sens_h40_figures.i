@@ -3,7 +3,7 @@
   study         = sens_h40.i
   figures       = ../../../figures/pfd
   prefix        = j2_sens_h40
-  param         = Gc
+  param         = case
   xlabel        = '\$G_c\$ (MPa µm)'
   logx          = true
   markers       = ../../../data/digitized/al2219_fig3_experiment_markers.csv
