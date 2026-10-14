@@ -9,7 +9,7 @@
   out_root      = ../../../results/pfd_study/j2/cal_h40
   l0            = '5 10 20'
   Gc_lo         = 10
-  Gc_hi         = 4000
+  Gc_hi         = 20000
   target_strain = 0.172
   criterion     = node
   tolerance     = 0.0008

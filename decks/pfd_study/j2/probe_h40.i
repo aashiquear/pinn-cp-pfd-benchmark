@@ -19,7 +19,7 @@
   n_steps          = 16
   substeps         = 1
   max_iterations   = 3
-  tolerance        = 1.0e-4
+  tolerance        = 1.0e-3
   snapshots_every  = 0
   backend          = torch
   use_gpu          = false

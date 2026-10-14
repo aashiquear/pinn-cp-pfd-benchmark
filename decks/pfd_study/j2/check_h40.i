@@ -1,4 +1,4 @@
-# J2+PFD pipeline CHECK on the h40 perforated plate: 8 staggered steps to 1%
+# J2+PFD pipeline CHECK on the h40 perforated plate: 8 staggered steps to 1% (brittle Gc)
 # strain, local machine, to validate the template, the reaction output and the
 # damage bookkeeping before any campaign (docs/09 §5.1 step 2 prerequisite).
 [Plate]
@@ -13,7 +13,7 @@
   n_steps         = 8
   substeps        = 1
   max_iterations  = 3
-  tolerance       = 1.0e-4
+  tolerance       = 1.0e-3
   snapshots_every = 4
   backend         = numpy
   use_gpu         = false
@@ -30,7 +30,7 @@
   j2_fit          = ../../../results/pfd_study/j2_fit/j2_fit.json
   j2_law          = piecewise
   finite_strain   = true
-  Gc   = 20.0
+  Gc   = 20.0        # brittle on purpose: the check exercises initiation and the post-fracture solve
   l0   = 5.0
   eta  = 0.0
   zeta = 1.0

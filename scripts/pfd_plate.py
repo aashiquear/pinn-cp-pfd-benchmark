@@ -20,6 +20,7 @@ templates/``, runs it and reduces the history to a results file.
     max_iterations = 3                       # staggered alternations per step ...
     tolerance = 1.0e-4                       # ... and their test
     snapshots_every = 4
+    stop_damage = 0.95                       # end the path once a node reaches this damage (0 = full path)
     backend = torch
     use_gpu = false
     threads = 2
@@ -133,6 +134,7 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
         "MAXALT": str(int(pl.get("max_iterations", 3))),
         "ALTTOL": _num(pl.get("tolerance", 1.0e-4)),
         "SNAPSHOTS": str(int(pl.get("snapshots_every", 0))),
+        "STOPDAMAGE": _num(pl.get("stop_damage", 0.0)),
         "MAXITER": str(int(pl.get("max_iter", 50))),
         "NEWTONTOL": _num(pl.get("newton_tol", 1.0e-3)),
         "NEWTONRELTOL": _num(pl.get("newton_rel_tol", 0.0)),

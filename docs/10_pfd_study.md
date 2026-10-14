@@ -125,3 +125,22 @@ the piecewise table (PINNACLE `hardening_mode = piecewise`) is the J2 law
 of the study. The marker at 0.14% strain (137 MPa) sits on the digitized
 elastic branch above E x strain for either law (as in Part I: that marker
 reflects the test record's elastic slope, not the material's modulus).
+
+## 3. J2+PFD on the h40 perforated plate: probe and Gc(l0) calibration
+
+Host timing probe (`decks/pfd_study/j2/probe_h40.i`, first 16 of 256 steps,
+torch CPU, 2 threads): 6.2 s per staggered step with 3 alternations
+(Newton 3 to 22 iterations per mechanics solve as damage grows), so a full
+256-step run is about 27 minutes and three bisections side by side fit the
+host with room for four more cases. At Gc = 300 MPa um, l0 = 5 um, zeta = 1
+the maximum damage is already 0.46 at 1.25% strain and the driving force at
+the hole edge 106 MPa (plastic work dominated: the strain concentration at
+the hole puts the local plastic strain far above the nominal), so the
+calibrated Gc sits in the thousands of MPa um; the bisection bracket was
+widened to [10, 20000].
+
+Alternation tolerance: the staggered test (max |d_k - d_{k-1}| < tolerance
+between alternations) is not met at 1e-4 within 3 alternations once damage
+grows (the per-step damage increment is 0.04); the study runs 3
+alternations with tolerance 1e-3 and records `converged` per step, and the
+sensitivity stage checks 5 alternations against 3 on one case.

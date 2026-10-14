@@ -18,8 +18,9 @@
   n_steps          = 256
   substeps         = 1
   max_iterations   = 3
-  tolerance        = 1.0e-4
+  tolerance        = 1.0e-3
   snapshots_every  = 4
+  stop_damage      = 0.95
   backend          = torch
   use_gpu          = false
   threads          = 2

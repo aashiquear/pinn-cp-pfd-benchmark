@@ -120,6 +120,8 @@
   max_iterations  = @MAXALT@
   tolerance       = @ALTTOL@
   snapshots_every = @SNAPSHOTS@
+  stop_damage     = @STOPDAMAGE@    # end the path once max d reaches this (0 = full path)
+  stop_on_mechanics_failure = true
   [./mechanics]
     variable          = u
     type              = fem_quasi_static
