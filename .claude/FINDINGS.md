@@ -157,12 +157,24 @@ NOT derivable from the code: measured facts, decisions, and traps.
   0.067 s per iteration at 1 / 2 / 4 / 8 threads, 1.2 GB each; campaigns run
   seven cases at two threads side by side. The direct linear solver
   (2026-10-09) is unrelated to this gain (it removed the CG wall on all arms).
-- PINNACLE PFD survey (2026-10-13, docs/09 §7): staggered J2+PFD and CP+PFD
-  exist in 3-D, but the damage solve is DENSE (n x n), `pfd_steady` pins
-  d = 0 on ALL nodes when its boundary set is empty and its default set
-  includes the hole surface, there is no reaction-force output, no eta, no
-  plastic-work threshold, and the Exodus reader merges hex blocks. Build
-  these before the first PFD run.
+- PINNACLE PFD readiness (ADR 0031, 2026-10-13, docs/10 §1): sparse damage
+  solve (identical to dense to 4e-15; h80 0.05 s / 24 MB vs 4.3 s / 1.8 GB),
+  `boundary_node_set = none` and strict named sets, `pfd_fracture viscosity`,
+  `pfd_driving_force plastic_work_threshold`, `reaction_node_set` on both
+  quasi-static executioners, per-step staggered rows with `max_damage` /
+  `nodes_above_threshold` / `initiated`, netCDF Exodus reader (meshio had
+  misaligned the hexaform node sets), analytic J2 split tangent (the FD one
+  doubled the diagonal columns), einsum contraction path, `line_search =
+  backtracking` (a full Newton step diverges on a degraded state) and
+  `fem_quasi_static max_cutbacks`.
+- Newton tolerances on the plate: use Part I's criterion (newton_tol 1e-3
+  absolute, rel 0). An absolute tolerance of 1e-6 or PINNACLE's 1e-10 default
+  sits below the force-scale noise floor (forces ~1e4 MPa um^2) and reports a
+  false "did not converge"; this cost an hour of diagnosis.
+- Variables default to `order = 1`; set `order = 2` on u and d in every plate
+  deck (the templates do).
+- J2 law for Part II: the piecewise table of `results/pfd_study/j2_fit/j2_fit.json`
+  (within 0.3% of the markers to 17%); the power law misses by 6% at 17%.
 
 ## Technical report (docs/reports/)
 - `docs/reports/cp_pfd_pinnacle_benchmark_report.md` is the paper-style record; the
