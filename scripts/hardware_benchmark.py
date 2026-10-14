@@ -20,8 +20,9 @@ Deck-driven (PINNACLE ``.i`` syntax):
   []
 
 Every case takes a PIPELINE deck of the study (already staged: its case
-directory must hold ``cpfe.i``), rewrites the generated PINNACLE deck into
-``<out_dir>/<case>/cpfe.i`` with the requested backend / device / thread
+directory must hold ``cpfe.i``, or ``pfd.i`` for a Part II coupled deck,
+``deck_file`` in [Benchmark]), rewrites the generated PINNACLE deck into
+``<out_dir>/<case>/<deck_file>`` with the requested backend / device / thread
 count / predictor device and ``n_steps`` (the load program is rescaled so
 the strain per step is unchanged), runs it with ``OMP_NUM_THREADS`` set,
 and records from ``solver_history.csv``: wall time per step, Newton time
@@ -83,6 +84,7 @@ def _pipeline_out_dir(pipe: Path) -> Path:
 
 def rewrite(src: Path, dst: Path, case: dict, n_steps: int) -> None:
     text = src.read_text()
+    coupled = bool(re.search(r"^\s*type\s*=\s*(staggered|monolithic)", text, re.M))
     def setkey(block: str, key: str, value: str) -> None:
         nonlocal text
         m = re.search(rf"^\[{block}\]", text, re.M)  # a block header at line start, not a mention in a comment
@@ -103,7 +105,18 @@ def rewrite(src: Path, dst: Path, case: dict, n_steps: int) -> None:
     m_n = re.search(r"^\s*n_steps\s*=\s*(\S+)", text, re.M); m_t = re.search(r"^\s*t_end\s*=\s*(\S+)", text, re.M)
     n_full, t_full = int(float(m_n.group(1))), float(m_t.group(1))
     setkey("Executioner", "n_steps", str(n_steps))
-    setkey("Executioner", "t_end", f"{t_full * n_steps / n_full:.12g}")
+    if coupled:
+        # staggered deck: the outer n_steps is the load loop; t_end sits in the
+        # mechanics sub-block and the pulled displacement in [BCs]; both scale
+        # with the shortened path so the strain per step is unchanged.
+        text = re.sub(r"^(\s*t_end\s*=\s*)\S+", rf"\g<1>{t_full * n_steps / n_full:.12g}", text, count=1, flags=re.M)
+        text = re.sub(r"^(\s*stop_damage\s*=\s*)\S+", r"\g<1>0", text, count=1, flags=re.M)
+        m_pull = re.search(r"^(\s*values\s*=\s*\[)([0-9.eE+-]+)(\]\s*#[^\n]*strain x width[^\n]*)$", text, re.M)
+        if m_pull:
+            text = text[: m_pull.start(2)] + f"{float(m_pull.group(2)) * n_steps / n_full:.12g}" + text[m_pull.end(2):]
+        text = re.sub(r"^(\s*expression\s*=\s*)([0-9.eE+-]+)(\*100\.0\*t/)([0-9.eE+-]+)", lambda m: f"{m.group(1)}{float(m.group(2)) * n_steps / n_full:.12g}{m.group(3)}{t_full * n_steps / n_full:.12g}", text, count=1, flags=re.M)
+    else:
+        setkey("Executioner", "t_end", f"{t_full * n_steps / n_full:.12g}")
     setkey("Executioner", "snapshots_every", "0")
     if str(case.get("predictor", "")).lower() == "none":
         text = re.sub(r"^\[Utilities\].*?\n\[\]\n", "", text, flags=re.S | re.M)
@@ -138,11 +151,11 @@ def gpu_peak_mb_poll(proc: subprocess.Popen, interval: float = 2.0) -> float:
 
 def run_case(name: str, case: dict, bench: dict, deck: Path, out_dir: Path) -> dict:
     pipe = _resolve(str(case["deck"]), deck)
-    src = _pipeline_out_dir(pipe) / "cpfe.i"
+    src = _pipeline_out_dir(pipe) / str(bench.get("deck_file", "cpfe.i"))
     if not src.exists():
         raise SystemExit(f"{name}: {src} not found (stage the pipeline deck first)")
     cdir = out_dir / name; cdir.mkdir(parents=True, exist_ok=True)
-    dst = cdir / "cpfe.i"
+    dst = cdir / str(bench.get("deck_file", "cpfe.i"))
     n_steps = int(bench.get("n_steps", 16))
     rewrite(src, dst, case, n_steps)
     # Point files and orientation inputs are referenced relative to the source directory.
@@ -155,13 +168,13 @@ def run_case(name: str, case: dict, bench: dict, deck: Path, out_dir: Path) -> d
         tic = time.perf_counter()
         before = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
         with (cdir / "run.log").open("w") as log:
-            proc = subprocess.Popen([PINNACLE, "run", "cpfe.i"], cwd=cdir, stdout=log, stderr=subprocess.STDOUT, env=env)
+            proc = subprocess.Popen([PINNACLE, "run", str(bench.get("deck_file", "cpfe.i"))], cwd=cdir, stdout=log, stderr=subprocess.STDOUT, env=env)
             gpu_peak = gpu_peak_mb_poll(proc) if bool(case.get("use_gpu", False)) or case.get("predictor_device") not in (None, "", "cpu") else 0.0
             proc.wait()
         wall = time.perf_counter() - tic
         rss = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / 1024.0
         hist = [r for r in csv.DictReader((cdir / "solver" / "solver_history.csv").open()) if _converged(r.get("converged", "1"))] if (cdir / "solver" / "solver_history.csv").exists() else []
-        it = np.array([float(r.get("iterations", 0) or 0) for r in hist]); nt = np.array([float(r.get("newton_time_s", 0) or 0) for r in hist])
+        it = np.array([float(r.get("mech_iterations", r.get("iterations", 0)) or 0) for r in hist]); nt = np.array([float(r.get("newton_time_s", 0) or 0) for r in hist])
         pt = np.array([float(r.get("predictor_time_s", 0) or 0) if r.get("predictor_time_s") not in ("", None, "nan") else 0.0 for r in hist])
         asm = np.array([float(r.get("predictor_assemblies", 0) or 0) if r.get("predictor_assemblies") not in ("", None, "nan") else 0.0 for r in hist])
         results.append({"case": name, "repeat": rep, "exit": proc.returncode, "backend": case.get("backend", "numpy"), "use_gpu": bool(case.get("use_gpu", False)),
