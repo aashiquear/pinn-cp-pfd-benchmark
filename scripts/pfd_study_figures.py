@@ -57,6 +57,13 @@ def read_deck(path: Path) -> dict:
     return cfg["figures"]
 
 
+def _label(v, default: str) -> str:
+    """A deck string that the translator may have split on spaces."""
+    if v is None:
+        return default
+    return " ".join(str(x) for x in v) if isinstance(v, (list, tuple)) else str(v)
+
+
 def _base_value(study_cfg: dict, study: Path, key: str) -> float | None:
     base = _resolve(str(study_cfg["study"]["base"]), study)
     for line in base.read_text().splitlines():
@@ -157,7 +164,7 @@ def main(argv):
             ax.set_xticklabels([(", ".join(f"{k} {v}" for k, v in r["params"].items()) or "base") for r in rows], rotation=60, ha="right", fontsize=6.5)
         elif f.get("logx", True) in (True, "true"):
             ax.set_xscale("log")
-        ax.set_xlabel("" if categorical else str(f.get("xlabel", key))); ax.set_ylabel(lab); ax.grid(False)
+        ax.set_xlabel("" if categorical else _label(f.get("xlabel"), key)); ax.set_ylabel(lab); ax.grid(False)
     fig.tight_layout(); fig.savefig(figs / f"{prefix}_panels.png"); plt.close(fig)
     for r in rows:
         print(r["case"], r["value"], {k: (round(v, 4) if isinstance(v, float) else v) for k, v in r["frac"].items() if k in ("fracture_strain_node", "peak_eng_stress", "fracture_energy_MPa", "steps_converged", "newton_iterations")})

@@ -219,3 +219,30 @@ sensitivity cases are queued to quantify it: `damage_model = at1` (an
 elastic threshold before damage starts) and `zeta = 0.5`, besides the
 W_c threshold cases of `sens_h40.i`. The experiment markers in the figure
 are the plain specimen's and are not a target for the perforated plate.
+
+## 4. J2+PFD sweeps at h40 (docs/09 §5.1 steps 3-4)
+
+### 4.1 Length scale at fixed Gc (the Fig. 8 analogue)
+
+`decks/pfd_study/j2/sweep_l_h40.i`: Gc = 2063 MPa um (calibrated at l0 = 5),
+l0 = 2.5, 5, 10, 20, 40 um on the h40 mesh (l0/h = 1 to 16), 256 steps to
+20%, torch CPU 2 threads, 13-20 min per case. Figures
+`figures/pfd/j2_sweep_l_h40_{curves,panels}.png`; summary
+`results/pfd_study/j2/sweep_l_h40/sweep_l_h40_summary.csv`.
+
+| l0 (um) | l0/h | peak stress (MPa) at strain | fracture strain (d >= 0.8) | energy to 20% (MPa) | steps / Newton |
+|---|---|---|---|---|---|
+| 2.5 | 1 | 485 at 10.8% | none by 20% (max d 0.57) | 90.1 | 256 / 754 |
+| 5 | 2 | 415 at 6.1% | 17.3% | 74.6 | 256 / 872 |
+| 10 | 4 | 373 at 2.0% | 12.7% | 49.0 | 212 (stopped at d 0.95) / 844 |
+| 20 | 8 | 356 at 1.2% | 12.3% | 41.0 | 231 (stopped) / 988 |
+| 40 | 16 | 353 at 1.2% | 14.8% | 42.7 | 256 / 1149 |
+
+As in (chakraborty 2016 multiscale) Fig. 8 the peak stress and the fracture
+energy fall monotonically with l0 and saturate (356 to 353 MPa, 41 to 43
+MPa between l0 = 20 and 40); the fracture strain falls from "none" at
+l0 = h to 12.3% at l0 = 8h and then rises again at l0 = 16h, where the band
+(2 l0 = 80 um) exceeds the ligament and the damage is no longer localised
+at the hole. At l0 = h (the brittle rule violated) the damage cannot
+localise on the mesh at all. The study therefore uses l0 >= 2h and the
+mesh sweep (4.2) decides between 2h and 4h.
