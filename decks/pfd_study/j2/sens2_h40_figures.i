@@ -4,7 +4,7 @@
   figures       = ../../../figures/pfd
   prefix        = j2_sens2_h40
   param         = case
-  xlabel        = '\$G_c\$ (MPa µm)'
+  xlabel        = ''
   logx          = true
   markers       = ../../../data/digitized/al2219_fig3_experiment_markers.csv
   target_strain = 0.172

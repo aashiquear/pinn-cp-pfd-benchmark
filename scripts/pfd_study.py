@@ -105,7 +105,9 @@ def stage_prepare(cfg: dict, study: Path) -> list[Path]:
         case_text = text
         for m in re.finditer(r"^(\s*(\w+)\s*=\s*)(\.\.?/[^\s#]+)", text, re.M):
             case_text = case_text.replace(m.group(0), m.group(1) + os.path.relpath(_resolve(m.group(3), base), cdir), 1)
-        case_text = _set_keys(case_text, {"out_dir": ".", **kv})
+        # override values that are relative paths are relative to the STUDY deck
+        kv_cased = {k: (os.path.relpath(_resolve(v, study), cdir) if str(v).startswith(("./", "../")) else v) for k, v in kv.items()}
+        case_text = _set_keys(case_text, {"out_dir": ".", **kv_cased})
         pipe = cdir / "pipeline.i"
         pipe.write_text(case_text)
         (cdir / "case.json").write_text(json.dumps({"name": name, "params": kv, "base": str(base)}, indent=1))

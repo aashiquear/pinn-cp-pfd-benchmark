@@ -4,7 +4,7 @@
   figures       = ../../../figures/pfd
   prefix        = j2_sweep_l_h40
   param         = l0
-  xlabel        = '\$\\ell_0\$ (µm)'
+  xlabel        = '$\ell_0$ (µm)'
   logx          = true
   markers       = ../../../data/digitized/al2219_fig3_experiment_markers.csv
   target_strain = 0.172
