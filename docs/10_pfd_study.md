@@ -287,3 +287,18 @@ both remove the early diffuse softening of the AT2 base (§3.2). Figures
 `figures/pfd/j2_sens2_h40_{curves,panels}.png`. The choice between AT2
 with a plastic-work threshold (§4.2: W_c = 20 MPa keeps the initiation
 strain and restores the peak) and AT1 is the author's.
+
+## 5. CP+PFD on the h40 perforated polycrystal plate
+
+### 5.1 Cost of the coupled CP solve, and a fix
+
+The first CP+PFD calibration trials ran at 28 s per staggered step on the
+host (torch CPU, 2 threads), against 0.07 s per Newton iteration for the
+CP arm alone (report §10). A local profile of two steps (numpy, 3 threads,
+206 s) put 160 s in `load_state_dict`: the coupled driver restores the
+step-start quadrature-point state before every alternation, and the CP
+callback's snapshot was a nested Python list rebuilt point by point with
+a conversion of the whole list per point and key (261,632 `np.asarray`
+calls). With arrays in the snapshot and one conversion per key (PINNACLE
+50fd7ed, ADR 0031 item 12) the same two steps take 45 s, of which the
+mechanics solves are 43 s. The calibration was restarted with the fix.
