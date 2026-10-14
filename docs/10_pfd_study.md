@@ -463,3 +463,21 @@ The equivalent plastic strain is not in the coupled runs' snapshots
 (the staggered writer carries displacement, damage, stress, strain and
 the driving force); the plastic-strain row of the figure is empty until
 the exporter carries it.
+
+### 4.6 J2 calibration with W_c = 20 MPa (the carried J2 configuration)
+
+`decks/pfd_study/j2/cal_h40.i` (second pass, results
+`results/pfd_study/j2/cal_h40_wc20/`), same bisection and acceptance:
+
+| l0 (um) | Gc, W_c = 20 (MPa um) | fracture strain | Gc, W_c = 0 |
+|---|---|---|---|
+| 5 | 2003 | 17.11% | 2063 |
+| 10 | 2466 | 17.27% | 2696 |
+| 20 | 2394 | 17.19% | 2818 |
+
+The threshold lowers the calibrated Gc by 3% at l0 = 5 and by 9-15% at
+the wider bands, and flattens Gc(l0): with the first 20 MPa of plastic
+work withheld, the wide band's driving force loses its early diffuse
+part and needs less toughness to reach the same initiation strain. The
+W_c = 20 sweeps and sensitivity (`*_wc20`) run from Gc = 2003, l0 = 5.
+Figures `figures/pfd/j2_cal_h40_wc20_{curves,bisection,gc_l0}.png`.
