@@ -303,7 +303,19 @@ calls). With arrays in the snapshot and one conversion per key (PINNACLE
 50fd7ed, ADR 0031 item 12) the same two steps take 45 s, of which the
 mechanics solves are 43 s. The calibration was restarted with the fix.
 
-### 5.2 Calibrated Gc(l0) at h40 (CP)
+### 5.2 Calibrated Gc(l0) at h40 (CP): FIRST RESULT, VOID
+
+**Retracted (2026-10-14 08:00).** The CP+PFD plate carried only 150 MPa at
+0.3% strain and 308 MPa at 17%, half the J2 plate and half the Part I CP
+plate's yield: inside a coupled load window `cp_quasi_static` built its
+load program with the path's full t_end (200 s) over the window's single
+sub-step, so the rate-dependent slip law saw a 200 s increment for a
+0.78 s step (strain rate 256 times too low; flow stress halved, n = 8.33).
+Fixed in PINNACLE (ADR 0031 item 13: the window's duration is
+t_end (target - initial); history rows carry dt; test). The numbers below
+are kept only as the record of the wrong-rate run (`results/pfd_study/cp/
+cal_h40_wrong_dt` on the host); the calibration was rerun (§5.3).
+
 
 `decks/pfd_study/cp/cal_h40.i`, same bisection as the J2 one (log Gc in
 [10, 20000], accepted within one load step of 17.2%), 6-7 trials per l0,
