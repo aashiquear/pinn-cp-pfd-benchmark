@@ -91,8 +91,10 @@ def bisect(l0: float, cal: dict, base: Path, out_root: Path, log: list[dict]) ->
         rec = {"l0": l0, "iteration": it, "Gc": gc, "fracture_strain": fs, "failed": bool(frac.get("failed")),
                "mechanics_failed": int(frac.get("mechanics_failed") or 0), "final_max_damage": frac.get("final_max_damage"),
                "steps_converged": frac.get("steps_converged"), "wall_s": time.time() - t0, "dir": str(cdir)}
-        print(time.strftime("%H:%M:%S"), {k: (round(v, 5) if isinstance(v, float) else v) for k, v in rec.items() if k != "dir"}, flush=True)
         if frac.get("failed"):
+            rec["note"] = "run failed"
+            log.append(rec)
+            print(time.strftime("%H:%M:%S"), {k: (round(v, 5) if isinstance(v, float) else v) for k, v in rec.items() if k != "dir"}, flush=True)
             lo = math.log(gc)  # a failed run is treated as too brittle: raise Gc
             continue
         if fs is None and frac.get("mechanics_failed") and float(frac.get("final_max_damage") or 0.0) >= float(cal.get("failure_damage", 0.5)):
