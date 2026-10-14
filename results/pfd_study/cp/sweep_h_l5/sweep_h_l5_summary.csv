@@ -1,0 +1,3 @@
+case,param_mesh,alternations,damage_threshold,final_eng_stress,final_max_damage,final_strain,fracture_energy_MPa,fracture_strain_element,fracture_strain_node,mechanics_failed,newton_iterations,peak_eng_stress,steps,steps_converged,stopped_early,strain_at_peak,wall_s
+base,,473,0.8,522.389652957715,0.9846839804446541,0.17500000000000002,84.99214293673182,0.171875,0.171875,0,1008,595.7557729116344,224,208,True,0.16640625,755.0
+h80,../../../results/pfd_study/mesh/h80_hole5/mesh.e,486,0.8,527.0370686900436,0.9906926871598277,0.1796875,86.2601402260802,0.17578125,0.17578125,0,1068,587.4528150087067,230,214,True,0.171875,2884.0

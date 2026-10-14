@@ -484,3 +484,40 @@ The peak gross-section stress of the calibrated l0 = 5 plate rises from
 415 MPa (W_c 0) to 485 MPa, as the sensitivity case predicted, and the
 energy to 20% from 74.6 to 81.6 MPa. Figures
 `figures/pfd/j2_cal_h40_wc20_{curves,bisection,gc_l0}.png`.
+
+### 4.3 J2 mesh sensitivity at fixed l0 = 5 um (W_c 0 pass)
+
+`decks/pfd_study/j2/sweep_h_l5.i` (first pass; results
+`results/pfd_study/j2/sweep_h_l5/`): the calibrated h40 case (Gc 2063)
+against the h80 hole mesh (l0/h = 4), same deck. h160 (26,128 nodes) was
+started and killed after 5.5 h without a completed load step (sparse LU of
+78k DOFs per Newton iteration, three alternations per step: days per
+path); it is left to a scaling study.
+
+| mesh | h (um) | l0/h | fracture strain | peak stress (MPa) | energy to 20% (MPa) |
+|---|---|---|---|---|---|
+| h40 | 2.5 | 2 | 17.34% | 415 | 74.6 |
+| h80 | 1.25 | 4 | 17.42% | 412 | 72.5 |
+
+One load step (0.08%) in the initiation strain, 0.7% in the peak and 3%
+in the energy between l0 = 2h and l0 = 4h: the l0 >= 2h rule of brittle
+phase-field fracture holds for the J2 coupling on this plate, and h40 is
+the production mesh of Part II as it was of Part I. The W_c = 20 pass
+repeats the comparison (§4.7).
+
+## 5.6 CP mesh sensitivity at fixed l0 = 5 um
+
+`decks/pfd_study/cp/sweep_h_l5.i`, Gc 1106 (results
+`results/pfd_study/cp/sweep_h_l5/`, figures
+`figures/pfd/cp_sweep_h_l5_{curves,panels}.png`):
+
+| mesh | h (um) | l0/h | fracture strain | peak stress (MPa) | energy (MPa) |
+|---|---|---|---|---|---|
+| h40 | 2.5 | 2 | 17.19% | 596 | 85.0 |
+| h80 | 1.25 | 4 | 17.58% | 587 | 86.3 |
+
+Five load steps (0.4%) in the initiation strain and 1.4% in the peak:
+larger than for J2 (the intragranular driving force is sharper at the
+hole, and the finer mesh resolves the hot spot at the grain junction
+better) but within the 2% the Part I grain-instance check accepted. The
+production mesh stays h40 with l0 = 5 um (l0 = 2h) for both couplings.
