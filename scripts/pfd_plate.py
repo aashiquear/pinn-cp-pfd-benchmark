@@ -221,7 +221,7 @@ def stage_curve(pl: dict, pipe: Path) -> dict:
             "nominal_strain": lf * strain,
             "time": _f(r, "time", lf * float(pl.get("t_end", 200.0))),
             "eng_stress": _f(r, "reaction_x") / area,
-            "mean_stress_xx": _f(r, "mean_stress_xx"),
+            "mean_stress_xx": _f(r, "mean_stress_00"),   # PINNACLE indexes tensor entries 00, 01, ..., 22
             "max_damage": _f(r, "max_damage"),
             "max_element_damage": _f(r, "max_element_damage"),
             "nodes_above": int(_f(r, "nodes_above_threshold", 0)),

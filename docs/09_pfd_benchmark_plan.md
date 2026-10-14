@@ -127,6 +127,7 @@ centroid, exactly PINNACLE's `point_file` rule) and the figure.
 |---|---|---|---|---|---|---|---|
 | h40_hole5 | 2.5 | 860 | 1,864 | 4 x 24 | 0.65 | 0.71 | 3.3 |
 | h80_hole5 | 1.25 | 3,232 | 6,736 | 3 x 32 | 0.49 | 0.71 | 2.9 |
+| h160_hole5 | 0.625 | 12,800 | 26,128 | 3 x 48 | 0.33 | 0.71 | -- |
 
 Both pass hexaform's validation (conforming, no inverted element). The
 0.71 Jacobian is the 45-degree skew of the ring elements at the rectangle
