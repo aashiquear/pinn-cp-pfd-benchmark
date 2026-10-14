@@ -37,6 +37,7 @@ templates/``, runs it and reduces the history to a results file.
     j2_fit       = ../../results/pfd_study/j2_fit/j2_fit.json
     j2_law       = piecewise                 # power | piecewise (law of j2_fit.json)
     finite_strain = true
+    split_smoothing = 1.0                    # MPa, smoothing of the stress split's positive part (0 = sharp)
     # CP (mechanics = cp): the Part I constants, as in decks/cp_study/cal_center2.i
     C11 = 108.0e3 ... y_c = 0.00343758        # one key per line: C11 C12 C44 mu gamma0 nexp tau_c0 q_lat alpha0 burgers rho0 k1 y_c
     # PFD
@@ -152,6 +153,7 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
         "WC": _num(pl.get("W_c", 0.0)),
         "DAMAGEMODEL": str(pl.get("damage_model", "at2")),
         "FINITESTRAIN": _bool(pl.get("finite_strain", True)),
+        "SPLITSMOOTHING": _num(pl.get("split_smoothing", 0.0)),
     }
     if mech == "j2":
         fit = json.loads(_resolve(str(pl["j2_fit"]), pipe).read_text())

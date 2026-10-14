@@ -47,6 +47,7 @@
     plastic_strain_points = @ALPHAPOINTS@
     yield_stress_points   = @SIGMAPOINTS@
     finite_strain  = @FINITESTRAIN@
+    split_smoothing = @SPLITSMOOTHING@   # MPa: rounds the tension-compression split (Newton robustness)
   []
   [./frac]
     kind         = pfd_fracture

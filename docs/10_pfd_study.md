@@ -160,3 +160,19 @@ Calibration, first bisection trial (Gc = 447 MPa um, the log midpoint of
 the mechanics stopped converging at max d = 0.78, counted as fracture at
 the stop strain; l0 = 5 reached d = 0.99 with the mechanics converging).
 So Gc for a 17% fracture strain lies well above 447.
+
+### 3.1 Why the first calibration trials failed, and the fix
+
+Every trial of the first calibration ended in a mechanics failure at
+moderate damage (max d 0.5 to 0.6, at 10.8%, 10.7% and 19.2% strain for
+l0 = 20, 10 and 5 at Gc = 2990 MPa um), and the per-alternation Newton
+count had climbed to 20 to 40 by 5% strain while the damage was still
+below 0.1. Diagnostics (local, numpy, h40 hole mesh): the plate without
+damage converges in 4 iterations per step to 10% strain (finite or small
+strain alike); the hardening law (power, table, smoothed split) changes
+nothing; the J2 tangent, degraded or not, matches a finite difference of
+the stress at 30% strain. The cause was in the driver: the mechanics
+sub-executioner started every alternation from zero displacement, so each
+was a cold solve of the whole plastic problem at full load. The executioners
+now take the last converged field from the coupled driver (PINNACLE ADR
+0031 item 11); the calibration was restarted with it.
