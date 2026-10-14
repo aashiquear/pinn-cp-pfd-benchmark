@@ -665,3 +665,49 @@ increment) would be the next step and is out of this study's scope. The
 solver run ended one step after initiation on a mechanics failure at
 max d = 0.99 (the last row carries the cut-back window and no reaction),
 where the FE and linear runs ended on the d >= 0.95 early stop.
+
+## 8. Hardware and time benchmark of the CP+PFD routes (h40)
+
+`decks/benchmark/hardware_pfd_h40.i`, `scripts/hardware_benchmark.py`
+(`deck_file = pfd.i`), results `results/pfd_study/cp/hardware/
+hardware_pfd_h40.csv`, figure `figures/pfd/hardware_pfd_h40_time_per_step.png`.
+Seven cases, each the first 16 staggered steps of the calibrated CP+PFD
+plate (strain per step unchanged, early stop off, max d 0.05 at the end),
+one case at a time on the host, 2026-10-14 13:38-13:52. The first attempt
+stopped before any run: the FE cases pointed at `cp/base_h40.i`, whose
+output directory was never staged (the neural study staged its own base);
+they now read the staged `neural_h40/base/pipeline.i`. The per-step
+counters of ADR 0031 (item 12) separate the first alternation of every
+step, which the predictor serves, from the re-solves against the updated
+damage.
+
+| case | backend / threads | wall per step (s) | Newton s per iteration | Newton iterations: first alternations / all (16 steps) | predictor s per step | peak memory (MB) |
+|---|---|---|---|---|---|---|
+| FE, numpy | numpy / 8 | 2.68 | 0.450 | 49 / 80 | -- | 264 |
+| FE, torch CPU | torch / 2 | 1.64 | 0.150 | 49 / 80 | -- | 1,328 |
+| FE, torch CPU | torch / 8 | 1.47 | 0.117 | 49 / 80 | -- | 1,328 |
+| FE, torch GPU | torch GPU / 8 | 2.50 | 0.141 | 49 / 80 | -- | 1,718 |
+| PINN+FEM, linear extrapolation | torch / 8 | 1.46 | 0.117 | 43 / 74 | 0.000 | 1,718 |
+| PINN as solver, grain-aware, verified, network on GPU | torch / 8 | 2.75 | 0.116 | 16 / 51 | 1.22 (training 18.3 s in all, 422 assemblies) | 2,124 |
+| same, network on CPU | torch / 8 | 2.60 | 0.116 | 16 / 51 | 1.17 (17.7 s, 396 assemblies) | 2,124 |
+
+Findings. (i) The backend ranking of Part I holds for the coupled problem:
+torch CPU is 3.0x (2 threads) to 3.9x (8 threads) faster per Newton
+iteration than numpy, the GPU no faster than the CPU at this size (860
+elements) and 2.5 s per step against 1.5 s because the damage solve and
+the staggered bookkeeping run on the CPU either way; the production arm
+(torch CPU, 2 threads, seven runs side by side) stays the right choice.
+(ii) The coupled step costs 5 Newton iterations in all (3 in the first
+alternation, 2 in the re-solves, 1.9 alternations per step at this early
+stage); the mechanics is 30-40% of the wall time of a step on torch, the
+rest is the damage assembly and solve (sparse, 1,864 nodes) and the CP
+state handling. (iii) The linear extrapolation saves 6 of the 49
+first-alternation iterations (12%) at no cost, less than Part I's 20%
+because the coupled step is already warm-started by the re-solves. (iv)
+The verified solver removes the first-alternation Newton entirely (16
+iterations are the two verifications that failed the 5% residual test;
+no proposal rejected) but trains for 1.2 s per step, so its step is 1.8x
+the FE step at this size; in the full run (§7.2) the retraining is
+cheaper per step (43.5 s over 222 steps, 0.2 s) and the route ends 25%
+faster than the FE. The network's device does not matter (the cost is the
+numpy assemblies of the FE residual, as in Part I).

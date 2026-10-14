@@ -1,0 +1,39 @@
+2026-10-14 13:41:31 INFO    pinnacle: Logging to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/cp/hardware/fe_torch_gpu/solver/pinnacle.log (level=info, console=False)
+2026-10-14 13:41:31 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
+2026-10-14 13:41:31 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cuda (AMD ROCm/HIP)' with precision 'float64' (composed path)
+2026-10-14 13:41:32 INFO    pinnacle.system.problem: [OrientationField] point_file '../../../../cp_study/cal/gn2/base/orientations_points.csv' resolved on 860 elements: {'n_targets': 860, 'n_source_points': 21012, 'out_of_bounds': 0, 'coverage_fraction': 1.0, 'interpolation': 'nearest', 'fallback': 'uniform'}
+2026-10-14 13:41:33 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.06250, newton, 2 Newton iterations, 0.4 s)
+2026-10-14 13:41:34 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.12500, newton, 2 Newton iterations, 0.2 s)
+2026-10-14 13:41:35 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.18750, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:36 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.18750, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:37 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.25000, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:39 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.25000, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:40 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.31250, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:41 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.31250, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:42 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.37500, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:44 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.37500, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:45 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.43750, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:46 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.43750, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:47 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.50000, newton, 3 Newton iterations, 0.4 s)
+2026-10-14 13:41:49 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.50000, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:50 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.56250, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:51 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.56250, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:52 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.62500, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:54 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.62500, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:55 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.68750, newton, 3 Newton iterations, 0.4 s)
+2026-10-14 13:41:56 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.68750, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:41:57 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.75000, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:41:59 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.75000, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:42:00 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.81250, newton, 3 Newton iterations, 0.3 s)
+2026-10-14 13:42:01 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.81250, newton, 2 Newton iterations, 0.3 s)
+2026-10-14 13:42:02 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.87500, newton, 4 Newton iterations, 0.4 s)
+2026-10-14 13:42:04 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.87500, newton, 3 Newton iterations, 0.4 s)
+2026-10-14 13:42:05 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.93750, newton, 4 Newton iterations, 0.4 s)
+2026-10-14 13:42:07 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.93750, newton, 3 Newton iterations, 0.4 s)
+2026-10-14 13:42:07 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 1.00000, newton, 4 Newton iterations, 0.4 s)
+2026-10-14 13:42:09 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 1.00000, newton, 3 Newton iterations, 0.4 s)
+2026-10-14 13:42:09 INFO    pinnacle.runner.runner: Wrote CSV output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/cp/hardware/fe_torch_gpu/solver/stress_strain.csv
+2026-10-14 13:42:09 INFO    pinnacle.runner.runner: Wrote per-step solver history to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/cp/hardware/fe_torch_gpu/solver/solver_history.csv
+2026-10-14 13:42:10 INFO    pinnacle.runner.runner: Wrote VTK field output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/cp/hardware/fe_torch_gpu/solver/fields.vtk
+2026-10-14 13:42:10 INFO    pinnacle.runner.runner: Wrote summary to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/cp/hardware/fe_torch_gpu/solver/summary.json
+2026-10-14 13:42:10 INFO    pinnacle.cli.main: Run complete; outputs in /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/cp/hardware/fe_torch_gpu/solver
