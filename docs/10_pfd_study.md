@@ -653,8 +653,10 @@ last alternations) with a median proposal error of 0.6% of the step
 increment; its saving (5% of the wall time) comes from the first
 alternation, which the hardware benchmark (§8) resolves with the per-step
 counters on the same code. The verified solver accepts its proposal at
-220 of 222 first alternations (16 Newton iterations in all first
-alternations, median residual 0.4% of the step) and reproduces the curve
+216 of 222 first alternations (the first two steps have no history to
+extrapolate from and steps 5-8 were corrected by Newton after a failed
+verification: 16 Newton iterations in all first alternations, median
+residual of the accepted proposals 0.4% of the step) and reproduces the curve
 within one load step of initiation; the staggered scheme then re-solves
 the mechanics once or twice per step against the updated damage with
 ordinary warm-started Newton (1068 iterations over all alternations, of
@@ -699,14 +701,17 @@ the staggered bookkeeping run on the CPU either way; the production arm
 (torch CPU, 2 threads, seven runs side by side) stays the right choice.
 (ii) The coupled step costs 5 Newton iterations in all (3 in the first
 alternation, 2 in the re-solves, 1.9 alternations per step at this early
-stage); the mechanics is 30-40% of the wall time of a step on torch, the
-rest is the damage assembly and solve (sparse, 1,864 nodes) and the CP
-state handling. (iii) The linear extrapolation saves 6 of the 49
+stage); the mechanics Newton is 17% of the wall time of a step on torch (37%
+on numpy); the rest is the damage assembly and solve (sparse, 1,864
+nodes), the CP state handling and the reaction and field evaluations of
+the coupled loop, which the backend does not speed up. (iii) The linear extrapolation saves 6 of the 49
 first-alternation iterations (12%) at no cost, less than Part I's 20%
 because the coupled step is already warm-started by the re-solves. (iv)
-The verified solver removes the first-alternation Newton entirely (16
-iterations are the two verifications that failed the 5% residual test;
-no proposal rejected) but trains for 1.2 s per step, so its step is 1.8x
+The verified solver removes the first-alternation Newton on 10 of the
+16 steps (the 16 iterations are the two cold-start steps without history
+and four steps whose proposal failed the 5% residual test and were
+corrected by Newton; the same six steps as in the full run, after which
+every proposal is accepted) but trains for 1.2 s per step, so its step is 1.8x
 the FE step at this size; in the full run (§7.2) the retraining is
 cheaper per step (43.5 s over 222 steps, 0.2 s) and the route ends 25%
 faster than the FE. The network's device does not matter (the cost is the
