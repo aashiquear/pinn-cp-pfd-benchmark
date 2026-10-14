@@ -377,3 +377,28 @@ Part I plain CP plate matched the same markers, so the two effects (net
 section against strain concentration and the different hardening of the
 CP polycrystal under the hole's stress state) happen to cancel on this
 geometry; it is recorded as a tier-4 agreement of a different specimen.
+
+### 5.4 CP length scale at fixed Gc (the Fig. 8 analogue)
+
+`decks/pfd_study/cp/sweep_l_h40.i`: Gc = 1106 MPa um (calibrated at
+l0 = 5), l0 = 2.5 to 40 um on the h40 mesh, 3 cases side by side.
+Figures `figures/pfd/cp_sweep_l_h40_{curves,panels}.png`; summary
+`results/pfd_study/cp/sweep_l_h40/sweep_l_h40_summary.csv`.
+
+| l0 (um) | l0/h | peak stress (MPa) | fracture strain | energy to the end (MPa) |
+|---|---|---|---|---|
+| 2.5 | 1 | 658 | none by 20% | 103 |
+| 5 | 2 | 596 | 17.2% | 85.0 |
+| 10 | 4 | 486 | 10.5% | 43.7 |
+| 20 | 8 | 418 | 7.1% | 26.7 |
+| 40 | 16 | 407 | 6.9% | 25.4 |
+
+The crystal-plasticity plate gives the clean form of the reference's
+Fig. 8: peak stress, fracture strain and fracture energy all fall
+monotonically with l0 and saturate between 8h and 16h (418 to 407 MPa,
+7.1 to 6.9%). The J2 plate's rise of the fracture strain at l0 = 16h
+(§4.1) does not occur here: with the intragranular driving force the
+widest band still localises at the hole. At l0 = h no initiation on either
+material: the brittle rule l0 >= 2h holds for both couplings, and the
+mesh sweep at fixed l0 (J2 §4.3; CP to follow on the h80 mesh) decides
+between 2h and 4h.
