@@ -1,0 +1,4 @@
+case,param_corrector,param_predictor,param_predictor_device,param_predictor_gpu,alternations,damage_threshold,final_eng_stress,final_max_damage,final_strain,fracture_energy_MPa,fracture_strain_element,fracture_strain_node,mechanics_failed,newton_iterations,peak_eng_stress,steps,steps_converged,stopped_early,strain_at_peak,wall_s
+base,,,,,473,0.8,522.389652957715,0.9846839804446541,0.17500000000000002,84.99214293673182,0.171875,0.171875,0,1008,595.7557729116344,224,208,True,0.16640625,642.0
+linear,,linear,,,473,0.8,522.389650938406,0.9846839817208254,0.17500000000000002,84.99214293427227,0.171875,0.171875,0,1008,595.7557728139609,224,208,True,0.16640625,609.0
+solver_grain,auto,fem_solver_grain,cuda,True,452,0.8,nan,0.9907355285930828,0.0013549804687500002,83.64551097054152,0.17109375000000002,0.17109375000000002,1,955,595.5547122974409,222,216,True,0.16640625,481.0

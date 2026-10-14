@@ -627,3 +627,37 @@ along the path (`samples/<i>/target.npz`) and the nodal damage field at
 the end (`samples_damage/<i>/target.npz`). The surrogate decks
 `decks/pfd_study/cp/surrogate/plate_h40_surrogate_{curve,field}.i` train on
 them (held-out 25%, 1000 queries) after the hardware benchmark.
+
+### 7.2 Neural routes inside the staggered loop
+
+`decks/pfd_study/cp/neural_h40.i` (results `results/pfd_study/cp/neural_h40/`,
+figures `figures/pfd/cp_neural_h40_{curves,panels}.png`): the calibrated
+CP+PFD plate with the mechanics sub-solve of every staggered step served by
+(a) the linear extrapolation predictor (PINN+FEM) and (b) the grain-aware
+FE-residual-trained network as the verified solver (`corrector = auto`,
+network on the GPU), against the plain FE route. What PINNACLE needed for
+this (ADR 0031 items 11, 14, 15): the warm start of alternations, a
+predictor history that survives the re-solved windows, and an unshared
+backend instance for the network's device.
+
+| route | fracture strain | peak stress (MPa) | first alternations without Newton | Newton iterations (all alternations) | training time |
+|---|---|---|---|---|---|
+| FE (cold Newton) | 17.19% | 595.8 | 0 of 224 | 1008 (last-alternation sum; the run predates the per-step counters) | -- |
+| PINN+FEM, linear extrapolation | 17.19% | 595.8 | 0 of 224 (the extrapolation is the Newton start) | 1008 (same) | -- |
+| PINN as solver, grain-aware, verified | 17.11% | 595.6 | 220 of 222 | 1068 | 43.5 s |
+
+The linear extrapolation reproduces the FE run to the printed digits
+(fracture strain, peak, every curve point) with a median proposal error
+of 0.6% of the step increment; its saving is in the first alternation's
+Newton count, which the hardware benchmark (§8) measures on the same
+code. The verified solver accepts its proposal at 220 of 222 first
+alternations (median residual 0.4% of the step) and reproduces the curve
+within one load step of initiation, but the staggered scheme then
+re-solves the mechanics once or twice per step against the updated
+damage, and those re-solves are ordinary Newton solves: the route's total
+Newton count (1068) is not below the FE route's, and it pays 43.5 s of
+training on top. In a coupled problem the predictor replaces only the
+first of the alternations; a predictor for the re-solves (a network of the
+damage increment) would be the next step and is out of this study's scope.
+The last step of the solver run stopped on a mechanics failure at
+max d = 0.99, one step after initiation, as the early stop prescribes.
