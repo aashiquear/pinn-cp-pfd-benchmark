@@ -182,3 +182,23 @@ damage and reaction histories unchanged to the printed digits. The
 calibration (`decks/pfd_study/j2/cal_h40.i`) was relaunched on the host at
 02:40 on 2026-10-14; the first attempt's log is kept as
 `results/pfd_study/j2/cal_h40_attempt1.log` on the host.
+
+### 3.2 Calibrated Gc(l0) at h40 (J2)
+
+`results/pfd_study/j2/cal_h40/` (calibration.csv: every trial; calibrated.json;
+one directory per trial with its pipeline deck, PINNACLE deck, history,
+results.csv, fracture.json and field series). Bisection in log Gc between
+10 and 20,000 MPa um, accepted when the fracture strain (first step with a
+node at d >= 0.8) is within one load step (0.08%) of 17.2%:
+
+| l0 (um) | l0/h | Gc (MPa um) | Gc l0 (MPa um^2) | fracture strain | trials |
+|---|---|---|---|---|---|
+| 5 | 2 | 2063 | 10,300 | 17.34% | 6 |
+| 10 | 4 | 2696 | 27,000 | 17.27% | 5 |
+| 20 | 8 | 2818 | 56,400 | 17.19% | 4 |
+
+Gc grows only weakly with l0 (x1.37 for x4 in l0), so Gc l0 is far from
+constant: the driving force is the plastic work at the hole edge, and the
+damage band width set by l0 changes the initiation strain less than it
+would for an elastic driving force. The base case of the sweeps is l0 = 5
+um (2h, the brittle rule's lower bound) with Gc = 2063.

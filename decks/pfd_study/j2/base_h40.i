@@ -36,8 +36,8 @@
   j2_fit           = ../../../results/pfd_study/j2_fit/j2_fit.json
   j2_law           = piecewise
   finite_strain    = true
-  Gc               = 200.0
-  l0               = 5.0
+  Gc               = 2063.43        
+  l0               = 5            
   eta              = 0.0
   zeta             = 1.0
   W_c              = 0.0
