@@ -545,3 +545,24 @@ Gc calibrated on one instance is therefore an instance-specific number;
 the report carries the three instances side by side and the calibration
 as the reference instance's, and the author may prefer to calibrate
 against the mean of several instances (three runs of 13 min per trial).
+
+### 4.7 J2 length scale at fixed Gc, W_c = 20 (the carried configuration)
+
+`decks/pfd_study/j2/sweep_l_h40.i` second pass (Gc 2003, results
+`results/pfd_study/j2/sweep_l_h40_wc20/`, figures
+`figures/pfd/j2_sweep_l_h40_wc20_{curves,panels}.png`):
+
+| l0 (um) | l0/h | peak stress (MPa) | fracture strain | energy to the end (MPa) | W_c 0 fracture strain |
+|---|---|---|---|---|---|
+| 2.5 | 1 | 521 | none by 20% | 95.3 | none |
+| 5 | 2 | 485 | 17.1% | 81.6 | 17.3% |
+| 10 | 4 | 467 | 14.4% | 62.8 | 12.7% |
+| 20 | 8 | 455 | 14.8% | 57.2 | 12.3% |
+| 40 | 16 | 453 | 17.6% | 56.7 | 14.8% |
+
+Same form as the W_c = 0 pass (§4.1): no initiation at l0 = h, peak
+stress and energy falling and saturating with l0, the fracture strain
+minimal at l0 = 4h to 8h and rising again at 16h where the band no longer
+localises at the hole. The threshold raises every fracture strain beyond
+l0 = 2h by 1.7 to 2.8% and the peak stresses by 70 to 100 MPa; the
+saturation of the peak (455 to 453 MPa) and of the energy is unchanged.
