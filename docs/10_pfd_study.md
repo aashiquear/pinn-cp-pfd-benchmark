@@ -521,3 +521,27 @@ larger than for J2 (the intragranular driving force is sharper at the
 hole, and the finer mesh resolves the hot spot at the grain junction
 better) but within the 2% the Part I grain-instance check accepted. The
 production mesh stays h40 with l0 = 5 um (l0 = 2h) for both couplings.
+
+## 5.7 CP grain-instance check (Part II analogue of Part I §7)
+
+`decks/pfd_study/cp/grains_h40.i`: the calibrated case (Gc 1106, l0 5,
+h40) on the two other Part I grain structures (instances sB and sC: new
+Voronoi seedings grown the same way, new orientation draws), everything
+else unchanged. Figures `figures/pfd/cp_grains_h40_{curves,panels}.png`.
+
+| instance | fracture strain | peak stress (MPa) | energy (MPa) | max d at the end |
+|---|---|---|---|---|
+| A (calibration) | 17.19% | 596 | 85.0 | 0.98 |
+| sB | none by 20% | 613 | 99.8 | see csv |
+| sC | 16.09% | 612 | 83.4 | 0.98 |
+
+The grain configuration at the hole governs the initiation strain: with
+the same Gc and l0, instance sC initiates 1.1% earlier and instance sB
+not at all within the 20% path, while the gross-section curves of the
+three instances agree within 3% up to 15% (as the Part I plain plates
+did, within 2%). This is the orientation control the plan anticipated
+(docs/09 §3: the plastic zone of the hole is smaller than a grain). A
+Gc calibrated on one instance is therefore an instance-specific number;
+the report carries the three instances side by side and the calibration
+as the reference instance's, and the author may prefer to calibrate
+against the mean of several instances (three runs of 13 min per trial).

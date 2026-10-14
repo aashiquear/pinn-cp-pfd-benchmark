@@ -1,0 +1,4 @@
+case,param_points,alternations,damage_threshold,final_eng_stress,final_max_damage,final_strain,fracture_energy_MPa,fracture_strain_element,fracture_strain_node,mechanics_failed,newton_iterations,peak_eng_stress,steps,steps_converged,stopped_early,strain_at_peak,wall_s
+base,,473,0.8,522.389652957715,0.9846839804446541,0.17500000000000002,84.99214293673182,0.171875,0.171875,0,1008,595.7557729116344,224,208,True,0.16640625,700.0
+sb,../../../results/cp_study/grain_instance/sB/orientations_points.csv,526,0.8,610.3674369448645,0.7250836265177891,0.2,99.80605538664389,,,0,1113,613.3917893397235,256,249,False,0.19453125000000002,768.0
+sc,../../../results/cp_study/grain_instance/sC/orientations_points.csv,453,0.8,563.3190800280518,0.971350153572138,0.16562500000000002,83.36587145243124,0.16171875000000002,0.1609375,0,871,612.0612831219565,212,195,True,0.15625,594.0
