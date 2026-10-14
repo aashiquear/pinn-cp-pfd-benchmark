@@ -1,0 +1,20 @@
+[
+ {
+  "l0": 5.0,
+  "Gc": 2063.428342184234,
+  "fracture_strain": 0.17343750000000002,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40/l5/gc2063.43"
+ },
+ {
+  "l0": 10.0,
+  "Gc": 2695.511737431597,
+  "fracture_strain": 0.17265625,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40/l10/gc2695.51"
+ },
+ {
+  "l0": 20.0,
+  "Gc": 2818.2739080511383,
+  "fracture_strain": 0.171875,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40/l20/gc2818.27"
+ }
+]

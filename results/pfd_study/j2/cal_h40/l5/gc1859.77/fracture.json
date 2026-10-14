@@ -1,0 +1,17 @@
+{
+ "fracture_strain_node": 0.15234375,
+ "fracture_strain_element": 0.15546875000000002,
+ "damage_threshold": 0.8,
+ "peak_eng_stress": 406.01527556456705,
+ "strain_at_peak": 0.05390625,
+ "fracture_energy_MPa": 66.69513268124675,
+ "final_strain": 0.1875,
+ "final_eng_stress": 213.58014100745248,
+ "final_max_damage": 0.9508098501526184,
+ "stopped_early": true,
+ "mechanics_failed": 0,
+ "steps": 240,
+ "steps_converged": 232,
+ "newton_iterations": 844,
+ "alternations": 659
+}
