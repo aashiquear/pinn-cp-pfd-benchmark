@@ -245,6 +245,8 @@ def stage_curve(pl: dict, pipe: Path) -> dict:
         "strain_at_peak": float(e[np.nanargmax(s)]) if ok.any() else None,
         "fracture_energy_MPa": float(np.trapezoid(s[ok], e[ok])) if ok.sum() > 1 else None,
         "final_strain": float(e[-1]), "final_eng_stress": float(s[-1]), "final_max_damage": res[-1]["max_damage"],
+        "stopped_early": len(res) < int(pl.get("n_steps", 256)),
+        "mechanics_failed": int(any(not x["mech_converged"] for x in res)),
         "steps": len(res), "steps_converged": int(sum(x["converged"] for x in res)),
         "newton_iterations": int(sum(x["newton_iterations"] for x in res)),
         "alternations": int(sum(x["alternations"] for x in res)),

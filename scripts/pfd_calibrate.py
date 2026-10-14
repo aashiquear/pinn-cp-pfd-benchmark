@@ -12,6 +12,7 @@ Deck-driven (PINNACLE .i syntax):
     target_strain = 0.172                      # fracture strain: last Vaughan point
     criterion     = node                       # node | element (d >= damage_threshold)
     tolerance     = 0.0008                     # accept when |strain - target| <= one load step
+    failure_damage = 0.5                       # a mechanics-failure stop at max d >= this counts as fracture there
     max_iter      = 9
     concurrent    = 7                          # bisections run in parallel over l0, one run each
     threads       = 2
@@ -88,12 +89,24 @@ def bisect(l0: float, cal: dict, base: Path, out_root: Path, log: list[dict]) ->
         frac = run_case(base, cdir, {"l0": f"{l0:g}", "Gc": f"{gc:.6g}"}, int(cal.get("threads", 2)))
         fs = frac.get(key)
         rec = {"l0": l0, "iteration": it, "Gc": gc, "fracture_strain": fs, "failed": bool(frac.get("failed")),
+               "mechanics_failed": int(frac.get("mechanics_failed") or 0), "final_max_damage": frac.get("final_max_damage"),
                "steps_converged": frac.get("steps_converged"), "wall_s": time.time() - t0, "dir": str(cdir)}
-        log.append(rec)
         print(time.strftime("%H:%M:%S"), {k: (round(v, 5) if isinstance(v, float) else v) for k, v in rec.items() if k != "dir"}, flush=True)
         if frac.get("failed"):
             lo = math.log(gc)  # a failed run is treated as too brittle: raise Gc
             continue
+        if fs is None and frac.get("mechanics_failed") and float(frac.get("final_max_damage") or 0.0) >= float(cal.get("failure_damage", 0.5)):
+            # The mechanics stopped converging on a heavily damaged plate before a
+            # node reached the criterion: fracture was imminent at the stop strain,
+            # so the run counts as initiated there (a lower bound on Gc).
+            fs = float(frac["final_strain"])
+            rec_note = "mechanics failed at max damage %.2f: counted as fracture at the stop strain" % float(frac["final_max_damage"])
+        else:
+            rec_note = ""
+        rec["fracture_strain"] = fs
+        rec["note"] = rec_note
+        log.append(rec)
+        print(time.strftime("%H:%M:%S"), {k: (round(v, 5) if isinstance(v, float) else v) for k, v in rec.items() if k != "dir"}, flush=True)
         if fs is None:
             hi = math.log(gc)  # never initiated: Gc too high
             continue

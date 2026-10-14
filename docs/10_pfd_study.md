@@ -144,3 +144,19 @@ between alternations) is not met at 1e-4 within 3 alternations once damage
 grows (the per-step damage increment is 0.04); the study runs 3
 alternations with tolerance 1e-3 and records `converged` per step, and the
 sensitivity stage checks 5 alternations against 3 on one case.
+
+Finite-strain against small-strain J2 on the plate (local, the 16-step
+probe at Gc = 300, l0 = 5, numpy): identical damage (0.463 against 0.483
+maximum at 1.25%), reactions within 0.7%, Newton 2 to 17 iterations per
+sub-step for both, growing with the damage. The finite-strain tangent had
+lacked the Hencky chain term (fixed, ADR 0031 item 10); after the fix the
+growth of the iteration count with damage is the same in both kinematics,
+so it is a property of the degraded, softening state (the line search
+handles it), not of the strain measure. The study keeps finite strain, as
+Part I did for crystal plasticity.
+
+Calibration, first bisection trial (Gc = 447 MPa um, the log midpoint of
+[10, 20000]): fracture at 2.7% nominal strain for l0 = 5 and 10 (l0 = 10:
+the mechanics stopped converging at max d = 0.78, counted as fracture at
+the stop strain; l0 = 5 reached d = 0.99 with the mechanics converging).
+So Gc for a 17% fracture strain lies well above 447.

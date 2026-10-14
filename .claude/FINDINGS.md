@@ -90,6 +90,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
   failed step; scripts/polycrystal_plate.py truncates them.
 
 ## Traps found
+- Killing by pattern (`pkill -f`, `pgrep -f`) matches the shell that runs the
+  kill when the SAME command line also contains the pattern text (an ssh
+  remote string, or a launch of the same program later in the command): the
+  job kills itself (exit 144/255). Kill by PID from a separate command, and
+  never combine a pattern kill with a launch of the same program.
 - PINNACLE before a311a8b: on an ORIENTATION-FIELD deck the batched CP
   sub-stepper passed the per-point slip tensors but not the per-point
   rotated stiffness C, so the state evolved under the material-global
