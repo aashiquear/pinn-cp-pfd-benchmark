@@ -611,3 +611,19 @@ W_c = 0 pass was (§4.3). Together with the CP result (§5.6: five steps,
 1.4%) this is the Part II answer to the l0/h question: for both couplings
 the brittle rule l0 >= 2h is sufficient on this plate, with the CP plate
 the more mesh-sensitive of the two.
+
+## 7. Neural routes and surrogate on the calibrated CP+PFD plate
+
+### 7.1 Surrogate design (data source, PINNACLE ADR 0030)
+
+`decks/pfd_study/cp/surrogate/design_h40.i`, 24 LHS samples of (Gc 553 to
+2212 MPa um, l0 4 to 10 um, rho0 24 to 96, tau_c0 2.6 to 10.6 MPa; all log
+scale) on the calibrated base deck, each a coupled run with the early stop
+at d = 0.95 (`scripts/surrogate_design.py design run collect`, 4 side by
+side): 17 of 24 initiate (fracture strain 5.9 to 17.9%), 7 do not by 20%;
+5 to 17 min per sample (median 11), 4.5 h of host time at 4 side by side.
+Targets stored per sample: the engineering stress and the maximum damage
+along the path (`samples/<i>/target.npz`) and the nodal damage field at
+the end (`samples_damage/<i>/target.npz`). The surrogate decks
+`decks/pfd_study/cp/surrogate/plate_h40_surrogate_{curve,field}.i` train on
+them (held-out 25%, 1000 queries) after the hardware benchmark.
