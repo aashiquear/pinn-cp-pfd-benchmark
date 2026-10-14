@@ -11,7 +11,7 @@
   concurrent = 7
 []
 [Sweep]
-  Gc  = '@GC_HALF@ @GC_DOUBLE@'
+  Gc  = '1001.53 4006.13'
   l0  = '2.5 10'
   eta = '1.0 10.0'
   W_c = '0.0 5.0'
