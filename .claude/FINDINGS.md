@@ -215,3 +215,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Earlier campaign (Sept 2026) is in `archive/`; its reports still hold
   valid findings (G20 strain-increment limit 8e-4 per step, G25 cutback
   behaviour, the stress-concentrator sub-step wall).
+
+- 2026-10-14: `hardware_benchmark.py` stages each case from the `out_dir` of the
+  pipeline deck it names; a `[Plate]` deck that was never run by itself has no
+  staged `pfd.i` there (the study decks stage their own copies under
+  `results/pfd_study/<study>/<case>/`). Point hardware cases at a staged
+  `pipeline.i` (`neural_h40/base/pipeline.i`), not at the calibration deck.
+  The coupled routes' Newton counts to compare are `first_mech_iterations`
+  (what a predictor replaces) and `mech_iterations_total`; the plain
+  `mech_iterations` column is the last alternation only.
