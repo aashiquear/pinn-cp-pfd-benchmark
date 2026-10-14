@@ -54,3 +54,16 @@ executioner over the mechanics sub-solve (`fem_quasi_static` for J2,
 Dirichlet d = 0 on `x-` and `x+` only (the loaded faces); the engineering
 stress is the reaction on `x+` over the gross section. The deck template
 and its pipeline script are written with the first J2+PFD case.
+
+## Surrogate comparison (Part II)
+
+After the surrogate decks have run on the host, pull `h40_curve/`, `h40_field/`
+(with `fields.vtk` for the field maps) and the recollected `h40_data/samples.csv`,
+then from the study root:
+
+```
+python3 scripts/surrogate_compare.py decks/pfd_study/cp/surrogate/compare_h40.i
+```
+
+It writes `results/pfd_study/cp/surrogate/cp_surrogate_h40_summary.csv` and the
+held-out curve, held-out field-map and cost-per-query figures under `figures/pfd/`.
