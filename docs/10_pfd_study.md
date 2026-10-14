@@ -566,3 +566,30 @@ minimal at l0 = 4h to 8h and rising again at 16h where the band no longer
 localises at the hole. The threshold raises every fracture strain beyond
 l0 = 2h by 1.7 to 2.8% and the peak stresses by 70 to 100 MPa; the
 saturation of the peak (455 to 453 MPa) and of the energy is unchanged.
+
+### 4.8 J2 parameter sensitivity at W_c = 20 (the carried configuration)
+
+`decks/pfd_study/j2/sens_h40.i` second pass (results
+`results/pfd_study/j2/sens_h40_wc20/`, figures
+`figures/pfd/j2_sens_h40_wc20_{curves,panels}.png`):
+
+| case | fracture strain | peak stress (MPa) at strain | energy (MPa) |
+|---|---|---|---|
+| base (Gc 2003, l0 5, W_c 20, eta 0) | 17.11% | 485 at 6.1% | 81.6 |
+| Gc x 0.5 (1002) | 9.22% | 460 at 4.6% | 39.7 |
+| Gc x 2 (4006) | none by 20% | 527 at 10.6% | 96.2 |
+| l0 2.5 (= h) | none by 20% | 521 at 10.1% | 95.3 |
+| l0 10 (= 4h) | 14.38% | 467 at 4.9% | 62.8 |
+| eta 1 MPa s | 17.11% | 486 at 6.1% | 81.7 |
+| eta 10 MPa s | 17.50% | 489 at 6.2% | 82.5 |
+| W_c 0 | 16.72% | 413 at 5.9% | 73.1 |
+| W_c 5 MPa | 16.72% | 429 at 5.7% | 75.3 |
+| 5 alternations | 17.11% | 485 at 6.1% | 81.6 |
+
+The same picture as at W_c = 0 (§4.2): Gc and l0 govern the initiation
+strain, the viscosity is immaterial (eta = 1 identical; eta = 10 one
+load step later), the threshold moves initiation by at most 0.4% between
+W_c = 0 and 20 while setting the peak stress, and five alternations equal
+three. The carried J2 configuration (Gc 2003, l0 5 um, W_c 20 MPa,
+eta 0, AT2, 3 alternations at 1e-3) is therefore robust in every
+parameter except the two calibration targets themselves.
