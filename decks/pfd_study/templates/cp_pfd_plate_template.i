@@ -160,6 +160,9 @@
     sparse_threshold  = 0
     line_search       = @LINESEARCH@
     reaction_node_set = @REACTIONSET@
+    corrector         = @CORRECTOR@       # newton; with a predictor: auto (verified PINN-as-solver route)
+    corrector_tol     = @CORRECTORTOL@
+    predictor_reject_ratio = 10
   []
   [./damage]
     variable          = d
@@ -173,6 +176,7 @@
     dt                = @DT@
   []
 []
+@UTILITIES@
 [Output]
   formats         = 'vtk csv json'
   save_checkpoint = false

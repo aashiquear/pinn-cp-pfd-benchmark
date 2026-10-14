@@ -40,6 +40,8 @@ templates/``, runs it and reduces the history to a results file.
     split_smoothing = 1.0                    # MPa, smoothing of the stress split's positive part (0 = sharp)
     # CP (mechanics = cp): the Part I constants, as in decks/cp_study/cal_center2.i
     C11 = 108.0e3 ... y_c = 0.00343758        # one key per line: C11 C12 C44 mu gamma0 nexp tau_c0 q_lat alpha0 burgers rho0 k1 y_c
+    predictor = none                         # none | linear (PINN+FEM) | fem_solver_grain (PINN as solver); CP only
+    corrector = newton                       # with a predictor: newton | auto (verified solver route)
     # PFD
     Gc = 10.0
     l0 = 5.0
@@ -155,6 +157,27 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
         "FINITESTRAIN": _bool(pl.get("finite_strain", True)),
         "SPLITSMOOTHING": _num(pl.get("split_smoothing", 0.0)),
     }
+    # Neural routes on the mechanics sub-solve (Part I ADR 0028/0029): the
+    # [Utilities] block of the CP template; none for the plain FE route. The
+    # solver-route block is the Part I deck's (h40_fem_solver_grain) verbatim.
+    pred = str(pl.get("predictor", "none")).lower()
+    sub["CORRECTOR"] = str(pl.get("corrector", "newton"))
+    sub["CORRECTORTOL"] = _num(pl.get("corrector_tol", 0.05))
+    if pred == "none":
+        sub["UTILITIES"] = ""
+    elif pred == "linear":
+        sub["UTILITIES"] = "[Utilities]\n  [./predictor]\n    kind         = load_step_predictor\n    mode         = linear\n    warmup_steps = 2\n  []\n[]\n"
+    elif pred == "fem_solver_grain":
+        sub["UTILITIES"] = "\n".join([
+            "[Utilities]", "  [./predictor]", "    kind             = load_step_predictor", "    mode             = fem_residual",
+            "    baseline         = linear", "    warmup_steps     = 2", "    backend          = torch",
+            f"    device           = {pl.get('predictor_device', 'auto')}", f"    use_gpu          = {_bool(pl.get('predictor_gpu', True))}",
+            "    precision        = float64", "    hidden_layers    = 3", "    neurons          = 64", "    activation       = tanh",
+            "    fourier_features = false", "    epochs_initial   = 5", "    epochs_per_step  = 4", "    lr               = 1",
+            "    optimizer        = lbfgs", f"    residual_target  = {_num(pl.get('predictor_target', 0.05))}", "    reset_each_step  = false",
+            "    seed             = 0", "    node_features    = 'orientation grain_boundary'", "  []", "[]", ""])
+    else:
+        raise SystemExit(f"predictor = {pred}: use none, linear or fem_solver_grain")
     if mech == "j2":
         fit = json.loads(_resolve(str(pl["j2_fit"]), pipe).read_text())
         law = str(pl.get("j2_law", "piecewise"))
