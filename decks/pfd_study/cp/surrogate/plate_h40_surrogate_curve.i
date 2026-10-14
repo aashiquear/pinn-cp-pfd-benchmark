@@ -172,6 +172,7 @@
   type          = parametric_surrogate
   sources       = data
   target        = reduced
+  variable      = u                 # result layout only; the reduced target learns the columns
   columns       = 'eng_stress max_damage'
   abscissa      = nominal_strain
   data_dir      = results/pfd_study/cp/surrogate/h40_data/samples
