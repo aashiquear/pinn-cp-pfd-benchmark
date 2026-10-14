@@ -274,3 +274,16 @@ strain by at most 0.3% while it removes most of the early diffuse softening
 (peak 486 against 415 MPa at W_c = 20 MPa): it is the lever for the author's
 decision on the softening noted in §3.2. The alternation count does not
 matter: the 1e-3 test is met within 3 alternations at every step.
+
+### 4.4 Second sensitivity set: AT1 and the plastic-work prefactor
+
+`decks/pfd_study/j2/sens2_h40.i`, at the calibrated Gc = 2063 and l0 = 5:
+`damage_model = at1` never damages by 20% (max d = 0.0; the gross-section
+curve hardens to 681 MPa like a plain plate, since AT1's elastic threshold
+Gc/(l0) sits above the driving force everywhere at this Gc); `zeta = 0.5`
+reaches max d = 0.48 by 20% with no initiation and a peak of 485 MPa at
+10.8%. Either variant would need its own, lower, Gc to initiate at 17.2%;
+both remove the early diffuse softening of the AT2 base (§3.2). Figures
+`figures/pfd/j2_sens2_h40_{curves,panels}.png`. The choice between AT2
+with a plastic-work threshold (§4.2: W_c = 20 MPa keeps the initiation
+strain and restores the peak) and AT1 is the author's.
