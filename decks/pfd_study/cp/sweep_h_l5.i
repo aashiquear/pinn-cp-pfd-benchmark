@@ -10,7 +10,4 @@
   [./h80]
     mesh = ../../../results/pfd_study/mesh/h80_hole5/mesh.e
   []
-  [./h160]
-    mesh = ../../../results/pfd_study/mesh/h160_hole5/mesh.e
-  []
 []
