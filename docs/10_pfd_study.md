@@ -176,3 +176,9 @@ sub-executioner started every alternation from zero displacement, so each
 was a cold solve of the whole plastic problem at full load. The executioners
 now take the last converged field from the coupled driver (PINNACLE ADR
 0031 item 11); the calibration was restarted with it.
+With the warm start the 16-step probe (Gc = 300, l0 = 5, local numpy) takes
+1 to 5 Newton iterations per alternation instead of 2 to 17, with the
+damage and reaction histories unchanged to the printed digits. The
+calibration (`decks/pfd_study/j2/cal_h40.i`) was relaunched on the host at
+02:40 on 2026-10-14; the first attempt's log is kept as
+`results/pfd_study/j2/cal_h40_attempt1.log` on the host.
