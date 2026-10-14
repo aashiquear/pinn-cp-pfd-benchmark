@@ -593,3 +593,21 @@ W_c = 0 and 20 while setting the peak stress, and five alternations equal
 three. The carried J2 configuration (Gc 2003, l0 5 um, W_c 20 MPa,
 eta 0, AT2, 3 alternations at 1e-3) is therefore robust in every
 parameter except the two calibration targets themselves.
+
+### 4.9 J2 mesh sensitivity at W_c = 20 (the carried configuration)
+
+`decks/pfd_study/j2/sweep_h_l5.i` second pass (Gc 2003, l0 5; results
+`results/pfd_study/j2/sweep_h_l5_wc20/`, figures
+`figures/pfd/j2_sweep_h_l5_wc20_{curves,panels}.png`):
+
+| mesh | h (um) | l0/h | fracture strain | peak stress (MPa) | energy to 20% (MPa) |
+|---|---|---|---|---|---|
+| h40 | 2.5 | 2 | 17.11% | 485 | 81.6 |
+| h80 | 1.25 | 4 | 17.27% | 483 | 79.9 |
+
+Two load steps in the initiation strain, 0.4% in the peak, 2% in the
+energy: the carried J2 configuration is mesh-converged at l0 = 2h, as the
+W_c = 0 pass was (§4.3). Together with the CP result (§5.6: five steps,
+1.4%) this is the Part II answer to the l0/h question: for both couplings
+the brittle rule l0 >= 2h is sufficient on this plate, with the CP plate
+the more mesh-sensitive of the two.
