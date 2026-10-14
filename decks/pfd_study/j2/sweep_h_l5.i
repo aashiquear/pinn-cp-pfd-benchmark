@@ -4,7 +4,7 @@
 # coarsest point. Three cases, 2 threads each.
 [Study]
   base       = base_h40.i
-  out_root   = ../../../results/pfd_study/j2/sweep_h_l5
+  out_root   = ../../../results/pfd_study/j2/sweep_h_l5_wc20
   concurrent = 3
 []
 [Cases]
