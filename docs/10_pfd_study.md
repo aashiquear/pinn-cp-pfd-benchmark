@@ -635,29 +635,33 @@ figures `figures/pfd/cp_neural_h40_{curves,panels}.png`): the calibrated
 CP+PFD plate with the mechanics sub-solve of every staggered step served by
 (a) the linear extrapolation predictor (PINN+FEM) and (b) the grain-aware
 FE-residual-trained network as the verified solver (`corrector = auto`,
-network on the GPU), against the plain FE route. What PINNACLE needed for
-this (ADR 0031 items 11, 14, 15): the warm start of alternations, a
-predictor history that survives the re-solved windows, and an unshared
-backend instance for the network's device.
+network on the GPU), against the plain FE route, all three on torch CPU
+with 2 threads. What PINNACLE needed for this (ADR 0031 items 11, 14, 15):
+the warm start of alternations, a predictor history that survives the
+re-solved windows, and an unshared backend instance for the network's
+device.
 
-| route | fracture strain | peak stress (MPa) | first alternations without Newton | Newton iterations (all alternations) | training time |
-|---|---|---|---|---|---|
-| FE (cold Newton) | 17.19% | 595.8 | 0 of 224 | 1008 (last-alternation sum; the run predates the per-step counters) | -- |
-| PINN+FEM, linear extrapolation | 17.19% | 595.8 | 0 of 224 (the extrapolation is the Newton start) | 1008 (same) | -- |
-| PINN as solver, grain-aware, verified | 17.11% | 595.6 | 220 of 222 | 1068 | 43.5 s |
+| route | fracture strain | peak stress (MPa) | fracture energy (MPa) | steps | Newton iterations, last alternation of each step | Newton time (s) | predictor time (s) | wall (s) |
+|---|---|---|---|---|---|---|---|---|
+| FE (cold Newton start) | 17.19% | 595.8 | 85.0 | 224 | 1008 | 147 | -- | 642 |
+| PINN+FEM, linear extrapolation | 17.19% | 595.8 | 85.0 | 224 | 1008 | 145 | 0.0 | 609 |
+| PINN as solver, grain-aware, verified | 17.11% | 595.6 | 83.6 | 222 | 955 | 122 | 43.5 (training 2 epochs per retrain) | 481 |
 
 The linear extrapolation reproduces the FE run to the printed digits
-(fracture strain, peak, every curve point) with a median proposal error
-of 0.6% of the step increment; its saving is in the first alternation's
-Newton count, which the hardware benchmark (§8) measures on the same
-code. The verified solver accepts its proposal at 220 of 222 first
-alternations (median residual 0.4% of the step) and reproduces the curve
-within one load step of initiation, but the staggered scheme then
-re-solves the mechanics once or twice per step against the updated
-damage, and those re-solves are ordinary Newton solves: the route's total
-Newton count (1068) is not below the FE route's, and it pays 43.5 s of
-training on top. In a coupled problem the predictor replaces only the
-first of the alternations; a predictor for the re-solves (a network of the
-damage increment) would be the next step and is out of this study's scope.
-The last step of the solver run stopped on a mechanics failure at
-max d = 0.99, one step after initiation, as the early stop prescribes.
+(fracture strain, peak, every curve point and the Newton count of the
+last alternations) with a median proposal error of 0.6% of the step
+increment; its saving (5% of the wall time) comes from the first
+alternation, which the hardware benchmark (§8) resolves with the per-step
+counters on the same code. The verified solver accepts its proposal at
+220 of 222 first alternations (16 Newton iterations in all first
+alternations, median residual 0.4% of the step) and reproduces the curve
+within one load step of initiation; the staggered scheme then re-solves
+the mechanics once or twice per step against the updated damage with
+ordinary warm-started Newton (1068 iterations over all alternations, of
+which 1052 in the re-solves), so the route's saving is the first
+alternation only: wall time 481 s against 642 s (25% less, the predictor's
+43.5 s included). A predictor of the re-solves (a network of the damage
+increment) would be the next step and is out of this study's scope. The
+solver run ended one step after initiation on a mechanics failure at
+max d = 0.99 (the last row carries the cut-back window and no reaction),
+where the FE and linear runs ended on the d >= 0.95 early stop.

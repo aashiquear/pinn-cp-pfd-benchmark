@@ -15,27 +15,27 @@
 []
 [Cases]
   [./fe_numpy_t8]
-    deck      = ../pfd_study/cp/base_h40.i
+    deck      = ../../results/pfd_study/cp/neural_h40/base/pipeline.i
     backend   = numpy
     threads   = 8
     predictor = none
   []
   [./fe_torch_cpu_t2]
-    deck      = ../pfd_study/cp/base_h40.i
+    deck      = ../../results/pfd_study/cp/neural_h40/base/pipeline.i
     backend   = torch
     use_gpu   = false
     threads   = 2
     predictor = none
   []
   [./fe_torch_cpu_t8]
-    deck      = ../pfd_study/cp/base_h40.i
+    deck      = ../../results/pfd_study/cp/neural_h40/base/pipeline.i
     backend   = torch
     use_gpu   = false
     threads   = 8
     predictor = none
   []
   [./fe_torch_gpu]
-    deck      = ../pfd_study/cp/base_h40.i
+    deck      = ../../results/pfd_study/cp/neural_h40/base/pipeline.i
     backend   = torch
     use_gpu   = true
     threads   = 8
