@@ -208,10 +208,10 @@
     "fem_iterations": 256.0
   },
   "stress_strain": {
-    "strain_min": -0.3248233858882017,
-    "strain_max": 0.5254438163017511,
-    "stress_min": -42.117454623892485,
-    "stress_max": 766.1269236975533,
-    "final_stress": 248.85985979139357
+    "strain_min": -0.355777195507607,
+    "strain_max": 0.6114837705356688,
+    "stress_min": -60.85525972725051,
+    "stress_max": 1403.9678290440218,
+    "final_stress": 488.26097556820497
   }
 }

@@ -346,3 +346,22 @@ threshold moves the initiation strain, the J2 Gc(l0) calibration, the
 length-scale sweep, the mesh sweep and the sensitivity set are repeated
 with it (`results/pfd_study/j2/*_wc20`); the W_c = 0 pass above is the
 comparison. CP+PFD keeps W_c = 0: its curves harden to initiation.
+
+### 5.3 Calibrated Gc(l0) at h40 (CP), corrected time increment
+
+`decks/pfd_study/cp/cal_h40.i` rerun with PINNACLE f3eeae7 (results
+`results/pfd_study/cp/cal_h40/`, 6-9 trials per l0, 4-13 min each):
+
+| l0 (um) | l0/h | Gc (MPa um) | fracture strain | J2 Gc (W_c = 0) |
+|---|---|---|---|---|
+| 5 | 2 | 1106 | 17.19% | 2063 |
+| 10 | 4 | 1832 | 17.11% | 2696 |
+| 20 | 8 | 2818 | 17.27% | 2818 |
+
+With the right strain rate the crystal-plasticity plate needs about half
+the J2 Gc at l0 = 5, two thirds at l0 = 10 and the same at l0 = 20: the
+intragranular plastic work at the hole edge is the stronger driving force
+when the band is narrow enough to see one grain, and the difference
+vanishes once the band averages over the four grains at the junction.
+Figures `figures/pfd/cp_cal_h40_{curves,bisection,gc_l0}.png` (replacing
+the void ones), table `results/pfd_study/cp/cal_h40/cp_cal_h40_table.csv`.

@@ -8,10 +8,10 @@
 [Study]
   base       = base_h40.i
   out_root   = ../../../results/pfd_study/cp/sens_h40
-  concurrent = 6
+  concurrent = 3
 []
 [Sweep]
-  Gc  = '259.393 1037.57'
+  Gc  = '553.059 2212.24'
   l0  = '2.5 10'
   eta = '1.0 10.0'
   W_c = '5.0 20.0'

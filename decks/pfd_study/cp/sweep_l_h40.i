@@ -8,7 +8,7 @@
 [Study]
   base       = base_h40.i
   out_root   = ../../../results/pfd_study/cp/sweep_l_h40
-  concurrent = 4
+  concurrent = 3
 []
 [Sweep]
   l0 = '2.5 10 20 40'

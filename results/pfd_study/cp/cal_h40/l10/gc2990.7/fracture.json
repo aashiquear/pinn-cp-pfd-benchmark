@@ -2,16 +2,16 @@
  "fracture_strain_node": null,
  "fracture_strain_element": null,
  "damage_threshold": 0.8,
- "peak_eng_stress": 333.958711159841,
+ "peak_eng_stress": 646.2615036142602,
  "strain_at_peak": 0.2,
- "fracture_energy_MPa": 52.19921176832364,
+ "fracture_energy_MPa": 102.18430606174084,
  "final_strain": 0.2,
- "final_eng_stress": 333.958711159841,
- "final_max_damage": 0.3250750271581223,
+ "final_eng_stress": 646.2615036142602,
+ "final_max_damage": 0.515843360665327,
  "stopped_early": false,
  "mechanics_failed": 0,
  "steps": 256,
  "steps_converged": 256,
- "newton_iterations": 941,
- "alternations": 509
+ "newton_iterations": 1085,
+ "alternations": 508
 }
