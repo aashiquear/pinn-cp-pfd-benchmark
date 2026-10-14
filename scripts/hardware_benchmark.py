@@ -177,23 +177,34 @@ def main(argv):
     if len(argv) < 2:
         print(__doc__); return 2
     deck = Path(argv[1]).resolve(); only = set(argv[2:])
+    plot_only = "--plot" in only; only.discard("--plot")   # redraw the figure from the existing CSV (no runs)
     cfg = read_deck(deck); bench = cfg["benchmark"]
     out_dir = _resolve(str(bench["out_dir"]), deck); out_dir.mkdir(parents=True, exist_ok=True)
     fig_dir = _resolve(str(bench.get("figures", bench["out_dir"])), deck); fig_dir.mkdir(parents=True, exist_ok=True)
     prefix = str(bench.get("prefix", "hardware"))
     rows = []
+    path = out_dir / f"{prefix}.csv"
+    if plot_only:
+        existing = list(csv.DictReader(path.open()))
+        order = [n for n in cfg["cases"] if n in {r["case"] for r in existing}]
+        allrows = sorted(existing, key=lambda r: order.index(r["case"]) if r["case"] in order else 99)
+        return _figure(allrows, fig_dir, prefix)
     for name, case in cfg["cases"].items():
         if only and name not in only:
             continue
         rows += run_case(name, case, bench, deck, out_dir)
-    path = out_dir / f"{prefix}.csv"
     existing = list(csv.DictReader(path.open())) if path.exists() and only else []
     keep = [r for r in existing if r["case"] not in {x["case"] for x in rows}]
     with path.open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0])); w.writeheader(); w.writerows(keep); w.writerows(rows)
     allrows = keep + rows
+    print("wrote", path)
+    return _figure(allrows, fig_dir, prefix)
+
+
+def _figure(allrows: list[dict], fig_dir: Path, prefix: str) -> int:
     if plt is None:
-        print("wrote", path, "(no matplotlib: figure skipped; rerun the script where it is installed)")
+        print("(no matplotlib: figure skipped; rerun with --plot where it is installed)")
         return 0
     plt.rcParams.update({"font.size": 9, "axes.labelsize": 10, "xtick.direction": "in", "ytick.direction": "in", "xtick.top": True, "ytick.right": True})
     fig, ax = plt.subplots(figsize=(7.5, 3.6), dpi=200)
@@ -201,8 +212,9 @@ def main(argv):
     ax.bar(x, [float(r["newton_s"]) / max(int(r["steps"]), 1) for r in allrows], 0.6, color="#1f4e9c", label="Newton per step")
     ax.bar(x, [float(r["predictor_s_per_step"]) for r in allrows], 0.6, bottom=[float(r["newton_s"]) / max(int(r["steps"]), 1) for r in allrows], color="#d1495b", label="predictor per step")
     ax.set_xticks(x); ax.set_xticklabels(names, rotation=45, ha="right", fontsize=7); ax.set_ylabel("time per load step (s)"); ax.grid(False); ax.legend(frameon=False)
+    ax.set_yscale("log"); ax.set_ylim(bottom=0.02)   # log axis with a floor so the fast torch cases stay visible
     fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_time_per_step.png"); plt.close(fig)
-    print("wrote", path)
+    print("wrote", fig_dir / f"{prefix}_time_per_step.png")
     return 0
 
 

@@ -41,7 +41,9 @@ project.
 | `docs/06_polycrystal_plate_results.md` | Phase-field grain growth verified; the 30-grain plate and its first CPFE run |
 | `docs/07_cp_parameter_study.md` | Lab notebook of the CP parameter study: base case, solver diagnosis, calibration, mesh sensitivity |
 | `docs/08_pinn_route_assessment.md` | What PINNACLE has for CP on a PINN / PINN+FEM, what is missing, and the development plan |
-| `docs/reports/cp_fe_calibration_report.md` | Technical report (draft): CP FE methodology, numerical method, calibration results; figures from `scripts/report_figures.py` + `decks/report/` |
+| `docs/09_pfd_benchmark_plan.md` | Part II plan (PFD on J2, CP-PFD): guidelines, hardware decision, Irwin plastic zone, mesh, study design, shape-study proposal, PINNACLE gap list |
+| `docs/workflow_pfd_plate.md` | Mesh workflow for the perforated plate (hexaform `plate`, `scripts/plate_hole_mesh.py`) |
+| `docs/reports/cp_pfd_pinnacle_benchmark_report.md` | Technical report (draft): CP FE methodology, numerical method, calibration results; figures from `scripts/report_figures.py` + `decks/report/` |
 | `docs/workflow_polycrystal_plate.md` | How the plate pipeline works and why each setting |
 | `docs/reproduce_polycrystal_plate.md` | Exact commands and environment on the ROCm host |
 | `docs/reconciliation.md`, `docs/digitization_uncertainty.md` | Source extraction and its error |

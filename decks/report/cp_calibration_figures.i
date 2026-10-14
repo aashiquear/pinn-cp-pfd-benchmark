@@ -1,4 +1,4 @@
-# Report figures for the CP FE calibration (docs/reports/cp_fe_calibration_report.md).
+# Report figures for the CP FE calibration (docs/reports/cp_pfd_pinnacle_benchmark_report.md).
 # Read by scripts/report_figures.py; every curve, marker file and axis limit the
 # figures use is declared here, nothing is hard-wired in the script.
 #

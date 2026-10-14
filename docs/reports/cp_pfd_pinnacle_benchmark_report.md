@@ -1,8 +1,9 @@
-# Crystal-plasticity finite-element calibration of Al2219 on a phase-field-grown polycrystal plate with PINNACLE
+# Crystal plasticity and phase-field ductile fracture of Al2219 polycrystal plates with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, draft of 2026-10-12. Status: methodology, numerical method,
-calibration and mesh sensitivity; abstract, introduction and the later
-stages are held until the author decides what enters the report. Every number here traces to a run in
+Technical report, draft of 2026-10-13. Status: Part I (crystal plasticity,
+§2-§11) complete; Part II (phase-field ductile fracture on J2 plasticity and
+coupled with crystal plasticity) to follow; abstract and introduction are held
+until the full study is complete. Every number here traces to a run in
 `docs/run_ledger.md` and to a deck under `decks/`. Figures are produced by
 `scripts/report_figures.py` from `decks/report/cp_calibration_figures.i`.
 
@@ -1020,7 +1021,7 @@ strain per step of §3 unchanged, so the steps are those of the cold
 start, the elastic rise and the first yield), run alone on the host (8
 CPU cores, one GPU), with the thread count pinned. Nine cases: the cold
 finite-element arm on numpy at 1, 2, 4 and 8 threads, on torch CPU at 8
-threads and on the torch GPU; the PINN+FEM route with the linear
+threads, on torch CPU at 1, 2, 4 and 8 threads and on the torch GPU; the PINN+FEM route with the linear
 extrapolation; and the verified grain-aware PINN-as-solver route with its
 network on the GPU and on the CPU. For each case: wall time per load
 step, Newton time per iteration, predictor time per step, the number of
@@ -1030,13 +1031,15 @@ memory. Deck `decks/benchmark/hardware_h40.i`; script
 
 ### 10.2 Results
 
-All nine cases converged in the same 16 steps; the three cold
+All twelve cases converged in the same 16 steps; the three cold
 finite-element cases on numpy, torch CPU and torch GPU took the same 46
 Newton iterations, so they are timed on identical work. Table 12 gives
 the measurements; Fig. 20 the time per step.
 
 **Table 12.** Hardware and time benchmark, first 16 load steps of the
-calibrated h40 deck, one case at a time on the host (8 cores, one GPU).
+calibrated h40 deck, one case at a time on the host (8 cores, one GPU);
+the three torch CPU rows at 1, 2 and 4 threads were added on 2026-10-13 to
+size the concurrency of the following campaigns.
 The peak resident memory is that of the process; the GPU memory poll did
 not capture a value on this host (its tool prints no per-process figure)
 and is omitted.
@@ -1047,6 +1050,9 @@ and is omitted.
 | cold FE | numpy | 2 | -- | 46 | 0.47 s | -- | 0 | 1.41 s | 174 MB |
 | cold FE | numpy | 4 | -- | 46 | 0.45 s | -- | 0 | 1.34 s | 175 MB |
 | cold FE | numpy | 8 | -- | 46 | 0.45 s | -- | 0 | 1.35 s | 175 MB |
+| cold FE | torch CPU | 1 | -- | 46 | 0.142 s | -- | 0 | 0.63 s | 1,179 MB |
+| cold FE | torch CPU | 2 | -- | 46 | 0.092 s | -- | 0 | 0.42 s | 1,186 MB |
+| cold FE | torch CPU | 4 | -- | 46 | 0.076 s | -- | 0 | 0.38 s | 1,201 MB |
 | cold FE | torch CPU | 8 | -- | 46 | 0.067 s | -- | 0 | 0.36 s | 1,203 MB |
 | cold FE | torch GPU | 8 | -- | 46 | 0.079 s | -- | 0 | 0.50 s | 1,610 MB |
 | PINN+FEM, linear extrapolation | numpy | 8 | -- | 37 | 0.48 s | 0.00 s | 0 | 1.19 s | 1,610 MB (shared poll) |
@@ -1057,9 +1063,13 @@ and is omitted.
 the crystal-plasticity assembly is a sequence of small vectorised
 operations that do not use the threaded BLAS, so one core does the work
 of eight (0.45 s per Newton iteration in every case). On torch the same
-batched path runs 6.7 times faster on the CPU (0.067 s per iteration, the
-eight threads used by the tensor library) and 5.7 times faster on the
-GPU (0.079 s): at 800 elements the GPU is slightly slower than the CPU,
+batched path is 3.2 times faster on a single thread (0.142 s per
+iteration), 4.9 times at two threads (0.092 s), 5.9 times at four
+(0.076 s) and 6.7 times at eight (0.067 s): the gain is mostly the
+batched kernel itself, the threads add a further factor of two with
+diminishing returns, so the host's 16 cores are best used as several
+two-thread runs side by side. The GPU is 5.7 times faster than numpy
+(0.079 s): at 800 elements the GPU is slightly slower than the CPU,
 as the first measurement of the batched kernel also found, and both
 torch arms cost 7 to 9 times the memory of numpy. The absolute times of
 §8 and §9, which were measured with the numpy arm, therefore overstate
@@ -1078,7 +1088,7 @@ is small, and the cost of the route is the finite-element assemblies of
 its training loss, not the network. The same conclusion as §8, now under
 controlled timing.
 
-**Figure 20.** Time per load step of the nine cases, split into the
+**Figure 20.** Time per load step of the twelve cases, split into the
 Newton solve and the predictor (log scale).
 
 ![hardware](../../figures/report/hardware_h40_time_per_step.png)

@@ -2,7 +2,7 @@
 """Report figures for the CP FE calibration, driven by one figure deck.
 
 Reads ``decks/report/cp_calibration_figures.i`` (PINNACLE ``.i`` syntax) and
-writes the figures of ``docs/reports/cp_fe_calibration_report.md``. Nothing
+writes the figures of ``docs/reports/cp_pfd_pinnacle_benchmark_report.md``. Nothing
 about which run, which markers or which axis limits is hard-wired here; the
 deck records all of it so a figure can be rebuilt from versioned inputs.
 

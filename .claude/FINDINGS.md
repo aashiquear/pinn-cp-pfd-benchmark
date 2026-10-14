@@ -37,6 +37,27 @@ NOT derivable from the code: measured facts, decisions, and traps.
   deck. Workflow, reproduction steps and results are separate documents.
   Each run is logged in `docs/run_ledger.md`.
 
+## Part II (PFD, CP-PFD) decisions by the author (2026-10-13)
+- Order: PFD on J2 first, then CP-PFD; same strategy as Part I (calibration,
+  mesh sensitivity, parameter sensitivity, PINN+FEM, PINN, surrogate,
+  hardware). Same plate and mesh resolution, central hole of diameter 5 um
+  (Irwin plastic zone clear of the boundaries). Polycrystal again (Part I
+  grains and point file unchanged).
+- Meshes from hexaform, hexahedral only, shown to the author before any run.
+  hexaform `plate` (branch feat/plate-hole) is the generator;
+  `scripts/plate_hole_mesh.py` + `decks/pfd_study/mesh/*.i`.
+- Calibrate G_c and l, eta fixed. Fracture initiation = d >= 0.8 at any node
+  or element average; fracture strain target = last point of the Vaughan
+  curve (17.2% nominal). Mesh sensitivity reproduces (chakraborty 2016
+  multiscale) Fig. 8 (curve, peak stress, fracture energy vs l); the brittle
+  l > 2h rule is untested for J2/CP coupling and is what the study measures.
+- Shape study after calibration and mesh sensitivity (plan in docs/09 §6).
+- One report for Part I and II: `docs/reports/cp_pfd_pinnacle_benchmark_report.md`
+  (renamed 2026-10-13); final results only; abstract and introduction empty.
+- Hardware: best available for every run except the hardware comparison =
+  torch CPU arm (see Measured facts); GPU for network training.
+- Plan and PINNACLE gap list: `docs/09_pfd_benchmark_plan.md`.
+
 ## Measured facts
 - Phase-field grain growth: use `scheme = bdf1`. `convex_splitting` is
   lag-dominated for multi-order-parameter energies (stabiliser 147.5 mu for
@@ -132,9 +153,19 @@ NOT derivable from the code: measured facts, decisions, and traps.
   (0.067 s) and torch GPU 5.7x (0.079 s) at 7-9x memory. Use the torch CPU arm
   for future absolute timings; route ratios are unaffected. The solver route's
   cost is its training assemblies (42/step), not the network's device.
+  Thread scaling of the torch CPU arm (2026-10-13): 0.142 / 0.092 / 0.076 /
+  0.067 s per iteration at 1 / 2 / 4 / 8 threads, 1.2 GB each; campaigns run
+  seven cases at two threads side by side. The direct linear solver
+  (2026-10-09) is unrelated to this gain (it removed the CG wall on all arms).
+- PINNACLE PFD survey (2026-10-13, docs/09 §7): staggered J2+PFD and CP+PFD
+  exist in 3-D, but the damage solve is DENSE (n x n), `pfd_steady` pins
+  d = 0 on ALL nodes when its boundary set is empty and its default set
+  includes the hole surface, there is no reaction-force output, no eta, no
+  plastic-work threshold, and the Exodus reader merges hex blocks. Build
+  these before the first PFD run.
 
 ## Technical report (docs/reports/)
-- `docs/reports/cp_fe_calibration_report.md` is the paper-style record; the
+- `docs/reports/cp_pfd_pinnacle_benchmark_report.md` is the paper-style record; the
   numbered `docs/0N_*.md` stay the lab notebook. The report carries ONLY the
   final condition: no tests, no verification, no solver diagnosis, unless the
   author decides otherwise. Abstract and introduction stay blank until all

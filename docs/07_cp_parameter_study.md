@@ -769,6 +769,11 @@ training per step whether the network is on the GPU or the CPU (the cost
 is the 42 numpy assemblies per step). GPU memory not captured on this
 host. Implication: all absolute route times of §10.7-10.10 (numpy arm)
 are about 6x what the torch CPU arm would give; ratios unchanged.
+Addendum (2026-10-13, cases fe_torch_cpu_t1/t2/t4): torch CPU 0.142 /
+0.092 / 0.076 s per iteration at 1 / 2 / 4 threads, 1.2 GB each. The
+batched kernel, not the threads, is most of the gain over numpy (3.2x on
+one thread); two threads per run and seven runs side by side is the
+best use of the 16-core host for a campaign.
 
 ### 10.12 Plate surrogate (PINNACLE ADR 0030) on h40
 

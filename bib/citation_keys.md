@@ -1,6 +1,6 @@
 # Citation key map -- PINNACLE benchmark study
 
-Central bibliography: `references.bib` (184 entries, 183 carrying a DOI).
+Central bibliography: `references.bib` (186 entries, 185 carrying a DOI).
 
 **Prose citation form used throughout this project:** `(author year significant_word)`, e.g.
 (rezwan 2025 intragranular). The BibTeX key is the same three fields joined by hyphens, all
@@ -299,3 +299,5 @@ DeepONet, Fourier neural operator and related operator-learning surrogates.
 | `bamdad-2026-physicsenergynumericsconsistent` | (bamdad 2026 physicsenergynumericsconsistent) | M. Bamdad, M. Eshaghi, C. Anitescu, N. Valizadeh, T. Rabczuk, "PENCO: A Physics–Energy–Numerics–Consistent Operator for 3D phase field modeling", Computer Methods in Applied Mechanics and Engineering, 454 (2026) 118862. doi:10.1016/j.cma.2026.118862 |
 | `wang-2024-mionet` | (wang 2024 mionet) | X. Wang, P. Li, K. Jia, S. Zhang, C. Li, B. Wu et al., "SPI-MIONet for surrogate modeling in phase-field hydraulic fracturing", Computer Methods in Applied Mechanics and Engineering, 427 (2024) 117054. doi:10.1016/j.cma.2024.117054 |
 | `wang-2025-deeponet` | (wang 2025 deeponet) | X. Wang, P. Li, D. Lu, "Phase-field hydraulic fracturing operator network based on En-DeepONet with integrated physics-informed mechanisms", Computer Methods in Applied Mechanics and Engineering, 437 (2025) 117750. doi:10.1016/j.cma.2025.117750 |
+| `chakraborty-2016-multiscale` | (chakraborty 2016 multiscale) | P. Chakraborty, Y. Zhang, M. R. Tonks, "Multi-scale modeling of microstructure dependent intergranular brittle fracture using a quantitative phase-field based method", Computational Materials Science, 113 (2016) 38-52. doi:10.1016/j.commatsci.2015.11.010 (added 2026-10-13, Crossref verified) |
+| `creager-1967-blunt` | (creager 1967 blunt) | M. Creager, P. C. Paris, "Elastic field equations for blunt cracks with reference to stress corrosion cracking", International Journal of Fracture Mechanics, 3 (1967) 247-252. doi:10.1007/BF00182890 (added 2026-10-13, Crossref verified) |
