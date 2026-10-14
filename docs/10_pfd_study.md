@@ -337,3 +337,12 @@ l0 than for J2 (x2.5 for x4 in l0 against x1.37): a wider band averages
 over more grains and loses the intragranular peak. Figures
 `figures/pfd/cp_cal_h40_{curves,bisection,gc_l0}.png`, table
 `results/pfd_study/cp/cal_h40/cp_cal_h40_table.csv`.
+
+### 4.5 Author's decision on the J2 configuration (2026-10-14)
+
+The J2+PFD plate carries AT2 with the plastic-work threshold W_c = 20 MPa
+(§4.2: peak restored, initiation strain moved by 0.3%). Because the
+threshold moves the initiation strain, the J2 Gc(l0) calibration, the
+length-scale sweep, the mesh sweep and the sensitivity set are repeated
+with it (`results/pfd_study/j2/*_wc20`); the W_c = 0 pass above is the
+comparison. CP+PFD keeps W_c = 0: its curves harden to initiation.

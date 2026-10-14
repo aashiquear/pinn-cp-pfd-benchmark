@@ -57,6 +57,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Hardware: best available for every run except the hardware comparison =
   torch CPU arm (see Measured facts); GPU for network training.
 - Plan and PINNACLE gap list: `docs/09_pfd_benchmark_plan.md`.
+- J2+PFD configuration (author, 2026-10-14): AT2 with the plastic-work
+  threshold W_c = 20 MPa (restores the peak stress without moving the
+  initiation strain); the W_c = 0 pass stays in docs/10 as the comparison.
+  CP+PFD keeps W_c = 0 (no early softening there) unless the author says
+  otherwise. The first CP calibration (Gc 519/847/1302) is VOID (coupled
+  window dt bug, PINNACLE f3eeae7); the corrected one gives Gc of the J2 order.
 
 ## Measured facts
 - Phase-field grain growth: use `scheme = bdf1`. `convex_splitting` is
