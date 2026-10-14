@@ -202,3 +202,20 @@ constant: the driving force is the plastic work at the hole edge, and the
 damage band width set by l0 changes the initiation strain less than it
 would for an elastic driving force. The base case of the sweeps is l0 = 5
 um (2h, the brittle rule's lower bound) with Gc = 2063.
+
+Figures: `figures/pfd/j2_cal_h40_curves.png` (calibrated curves with the
+initiation point and the experiment markers), `j2_cal_h40_bisection.png`,
+`j2_cal_h40_gc_l0.png`; table `results/pfd_study/j2/cal_h40/j2_cal_h40_table.csv`.
+
+**For the author.** The gross-section engineering stress of the perforated
+plate peaks early (415 MPa at 6.1% for l0 = 5, 388 at 3.6% for l0 = 10,
+368 at 1.8% for l0 = 20) and softens from there to the initiation point:
+with AT2 (no elastic threshold) and the plastic-work driving force, the
+damage is diffuse long before any node reaches 0.8 (maximum d grows from
+the first plastic step; the mean damage is 0.1 to 0.2 at 10%), and the
+larger l0 spreads it wider. The calibration target was the initiation
+strain only, so this is the model's behaviour, not a fit error. Two
+sensitivity cases are queued to quantify it: `damage_model = at1` (an
+elastic threshold before damage starts) and `zeta = 0.5`, besides the
+W_c threshold cases of `sens_h40.i`. The experiment markers in the figure
+are the plain specimen's and are not a target for the perforated plate.
