@@ -480,4 +480,7 @@ the wider bands, and flattens Gc(l0): with the first 20 MPa of plastic
 work withheld, the wide band's driving force loses its early diffuse
 part and needs less toughness to reach the same initiation strain. The
 W_c = 20 sweeps and sensitivity (`*_wc20`) run from Gc = 2003, l0 = 5.
-Figures `figures/pfd/j2_cal_h40_wc20_{curves,bisection,gc_l0}.png`.
+The peak gross-section stress of the calibrated l0 = 5 plate rises from
+415 MPa (W_c 0) to 485 MPa, as the sensitivity case predicted, and the
+energy to 20% from 74.6 to 81.6 MPa. Figures
+`figures/pfd/j2_cal_h40_wc20_{curves,bisection,gc_l0}.png`.
