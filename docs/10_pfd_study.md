@@ -532,7 +532,7 @@ else unchanged. Figures `figures/pfd/cp_grains_h40_{curves,panels}.png`.
 | instance | fracture strain | peak stress (MPa) | energy (MPa) | max d at the end |
 |---|---|---|---|---|
 | A (calibration) | 17.19% | 596 | 85.0 | 0.98 |
-| sB | none by 20% | 613 | 99.8 | see csv |
+| sB | none by 20% | 613 | 99.8 | 0.73 |
 | sC | 16.09% | 612 | 83.4 | 0.98 |
 
 The grain configuration at the hole governs the initiation strain: with
