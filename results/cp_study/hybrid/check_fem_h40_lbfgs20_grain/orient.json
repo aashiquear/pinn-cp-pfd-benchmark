@@ -1,5 +1,0 @@
-{
- "n_grains": 30,
- "orientation_seed": 20261009,
- "point_file": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/hybrid/check_fem_h40_lbfgs20_grain/orientations_points.csv"
-}

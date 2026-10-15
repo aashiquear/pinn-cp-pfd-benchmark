@@ -1,2 +1,0 @@
-case,alternations,damage_threshold,final_eng_stress,final_max_damage,final_strain,fracture_energy_MPa,fracture_strain_element,fracture_strain_node,mechanics_failed,newton_iterations,peak_eng_stress,steps,steps_converged,stopped_early,strain_at_peak,wall_s
-base,679,0.8,250.61673992784355,0.9273792041477553,0.2,74.58221129988623,0.17578125,0.17343750000000002,0,872,415.48309557162946,256,255,False,0.060937500000000006,1183.0

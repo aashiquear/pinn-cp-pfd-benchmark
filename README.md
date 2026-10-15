@@ -17,45 +17,47 @@ project.
 | Path | Contents |
 |---|---|
 | `bib/references.bib` | The single central bibliography, keys `author-year-significantword` |
-| `data/extracted/` | `benchmark_dataset.csv` (provenance-tagged rows), `gap_register.csv` (C.1–C.16) |
-| `data/digitized/` | Per-figure extracted data |
-| `data/reference/` | `moose_cpfe_plain_plate_stress_strain.csv`, the MOOSE test deck's curve |
-| `moose/` | The MOOSE reference decks (CP-only plate, coupled CP-PFD test); their Exodus outputs stay on disk, ignored by git |
-| `decks/graingrowth/` | Phase-field grain-growth decks: scheme verification set and the 32-grain pilots |
-| `decks/polycrystal_plate/` | The CP plate template and the pipeline decks that drive `scripts/polycrystal_plate.py` |
-| `scripts/` | `polycrystal_plate.py` (label → orient → deck → curve), `grain_morphology.py`, plotting, `tools/exodus_summary.py`, the material-point and backend-envelope harnesses |
-| `meshes/plate/poly_d3_n32.npz` | The 32 Voronoi seeds of the pilot |
-| `results/`, `figures/` | Outputs of the current pipeline only (field files are not committed) |
-| `env/` | `pinnacle_syntax_dump.json` — the registry snapshot audited |
-| `archive/` | The first campaign (Sept 2026): its scripts, decks, results, figures and two reports; see `archive/README.md` |
+| `data/extracted/`, `data/digitized/`, `data/reference/` | Provenance-tagged dataset, per-figure digitized data, the MOOSE reference curve |
+| `moose/` | The MOOSE reference decks; their Exodus outputs stay on disk, ignored by git |
+| `decks/graingrowth/`, `decks/polycrystal_plate/`, `decks/cp_study/` | Part I: grain growth, the CP plate pipeline, the CP calibration / mesh / sensitivity / neural / surrogate studies |
+| `decks/pfd_study/` | Part II: meshes (`mesh/`), the J2 fit, J2+PFD (`j2/`) and CP+PFD (`cp/`) studies, the surrogate (`cp/surrogate/`), the report field decks (`report/`), templates |
+| `decks/benchmark/`, `decks/report/` | Hardware benchmarks; report figure, comparison and shipping decks |
+| `scripts/` | Deck-driven drivers: `polycrystal_plate.py`, `cp_parameter_study.py` (Part I); `plate_hole_mesh.py`, `pfd_plate.py`, `pfd_study.py`, `pfd_calibrate.py`, `pfd_*_figures.py`, `pfd_fields.py` (Part II); `hardware_benchmark.py`, `surrogate_design.py`, `surrogate_compare.py`, `ship_results.py` |
+| `results/` | Every run's deck, history, curve and summary; the field series, meshes and networks the report presents (`results/SHIPPED.md`, 239 MB); other field files are not committed |
+| `figures/report/`, `figures/pfd/` | Part I and Part II figures (the animations `figures/pfd/*_evolution.gif`) |
+| `archive/` | The first campaign (Sept 2026); see `archive/README.md` |
 
-## Reports
+## Reports and notebooks
 
 | Document | Contents |
 |---|---|
+| `docs/reports/cp_pfd_pinnacle_benchmark_report.md` | The technical report: Part I (CP, §2-§11) and Part II (PFD on J2 and CP, §12-§20); abstract and introduction pending |
 | `docs/PROJECT_GUIDELINES.md` | Project-wide rules |
-| `docs/00_capability_audit.md` | Solver routes available; gap register G1–G27 |
-| `docs/02_backend_envelope.md` | Measured backend/device policy |
-| `docs/03_material_point_verification.md` | Constitutive law verified at one quadrature point; gap C.15 |
-| `docs/05_orientation_notation.md` | Miller-direction and Euler conventions |
-| `docs/06_polycrystal_plate_results.md` | Phase-field grain growth verified; the 30-grain plate and its first CPFE run |
-| `docs/07_cp_parameter_study.md` | Lab notebook of the CP parameter study: base case, solver diagnosis, calibration, mesh sensitivity |
-| `docs/08_pinn_route_assessment.md` | What PINNACLE has for CP on a PINN / PINN+FEM, what is missing, and the development plan |
-| `docs/09_pfd_benchmark_plan.md` | Part II plan (PFD on J2, CP-PFD): guidelines, hardware decision, Irwin plastic zone, mesh, study design, shape-study proposal, PINNACLE gap list |
-| `docs/workflow_pfd_plate.md` | Mesh workflow for the perforated plate (hexaform `plate`, `scripts/plate_hole_mesh.py`) |
-| `docs/reports/cp_pfd_pinnacle_benchmark_report.md` | Technical report (draft): CP FE methodology, numerical method, calibration results; figures from `scripts/report_figures.py` + `decks/report/` |
-| `docs/workflow_polycrystal_plate.md` | How the plate pipeline works and why each setting |
-| `docs/reproduce_polycrystal_plate.md` | Exact commands and environment on the ROCm host |
+| `docs/run_ledger.md` | One row per run: deck, scripts, revision, host, outcome |
+| `docs/07_cp_parameter_study.md` | Part I lab notebook (CP calibration, mesh, sensitivity, neural routes, hardware, surrogate) |
+| `docs/09_pfd_benchmark_plan.md`, `docs/10_pfd_study.md` | Part II plan and lab notebook (PINNACLE readiness, J2 fit, W_c scan, calibrations, sweeps, fields, neural routes, hardware, surrogate, shape study) |
+| `docs/08_pinn_route_assessment.md` | What PINNACLE has for CP on a PINN / PINN+FEM and the development plan |
+| `docs/00_capability_audit.md`, `docs/02_backend_envelope.md`, `docs/03_material_point_verification.md`, `docs/05_orientation_notation.md`, `docs/06_polycrystal_plate_results.md` | Phase 0 and the plate's first runs |
+| `docs/workflow_polycrystal_plate.md`, `docs/workflow_pfd_plate.md`, `docs/reproduce_polycrystal_plate.md` | How the pipelines work and the exact commands on the ROCm host |
 | `docs/reconciliation.md`, `docs/digitization_uncertainty.md` | Source extraction and its error |
 
-## Status (2026-10-09)
+## Status (2026-10-15)
 
-The phase-field grain-growth route works under the fully implicit scheme, a
-30-grain pseudo-3D plate exists, and a full crystal-plasticity run on it
-completes from a PINNACLE deck plus two CSV companions. The reference CP set
-overshoots the experiment by about 2x, so the next stage is calibration on
-the x-loaded 100 x 50 x 1 um plate with 30 grains, the paper as ground truth.
+Part I (crystal plasticity on the 100 x 50 x 1 um, 30-grain Al2219 plate):
+calibrated CP set at mesh h40, mesh and parameter sensitivity, grain
+instances, the PINN+FEM and verified PINN-as-solver routes, the hardware
+benchmark and the parametric surrogate (report §2-§11).
 
-Carried limits from Phase 0 (unchanged): 46 of 93 Al2219 orientations
-recoverable, loading-axis only; Ni failure stress not recovered; gaps C.15
-(Taylor-term density convention) and C.16 (Gc transferability) open.
+Part II (phase-field ductile fracture on the same plate with a 5 um hole):
+J2+PFD carried at W_c = 200 MPa, Gc = 385.5 MPa um, l0 = 5 um (W_c scan);
+CP+PFD at Gc = 1106 MPa um, l0 = 5 um, W_c = 0; both with length-scale,
+four-value parameter and h20/h40/h80 mesh sensitivities, the J2 against
+CP field comparison and animation, the stress-concentrator shape study,
+the neural routes inside the staggered loop, the coupled hardware
+benchmark and the surrogates (report §12-§20). PINNACLE changes for Part
+II are ADR 0031 on `feat/pinn_benchmark`.
+
+Carried limits: 46 of 93 Al2219 orientations recoverable, loading-axis
+only; Ni failure stress not recovered; gaps C.15 and C.16 open; the J2
+initiation strain with the threshold is not mesh-converged at h40
+(report §13.5), kept at h40 for the side-by-side comparison.

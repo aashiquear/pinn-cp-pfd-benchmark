@@ -7,9 +7,11 @@ runs/
 out/
 .jf/
 
-# Large or binary simulation artifacts never enter git. Shipped outputs are a
-# later decision; until then every field file, mesh binary, checkpoint and
-# archive bundle stays local.
+# Large or binary simulation artifacts stay out of git by default. The ones the
+# report presents (field series behind its figures and animations, meshes,
+# trained networks) are force-added by `scripts/ship_results.py
+# decks/report/ship_results.i` and listed in results/SHIPPED.md (author's
+# decision 2026-10-15).
 *.e
 *.exo
 *.g

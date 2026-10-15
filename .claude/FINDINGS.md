@@ -244,3 +244,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
   takes precedence); reported as a limitation in report §13.5. The study is pushed to
   `origin/main` (github.com/aashiquear/pinn-cp-pfd-benchmark, public); local branch
   `master` tracks `origin/main`; git uses `gh` as the credential helper.
+- 2026-10-15: shipping policy reverted by the author: the result files the report
+  presents ARE in git (field series behind the figures and the GIFs, meshes, networks;
+  `scripts/ship_results.py decks/report/ship_results.i`, manifest `results/SHIPPED.md`,
+  239 MB). Everything else under results/ stays summaries only (csv/json/logs); the
+  superseded J2 W_c 0/20 sweep and sensitivity outputs, the check/probe runs and the
+  hybrid check_fem diagnostics were removed from git and disk. When a new result enters
+  the report, add its series to the ship deck and rerun the script before pushing.

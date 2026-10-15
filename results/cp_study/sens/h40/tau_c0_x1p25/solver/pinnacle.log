@@ -1,0 +1,10 @@
+2026-10-12 10:12:05 INFO    pinnacle: Logging to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens/h40/tau_c0_x1p25/solver/pinnacle.log (level=info, console=False)
+2026-10-12 10:12:05 INFO    pinnacle.cli.main: Starting run from deck 'cpfe.i'
+2026-10-12 10:12:05 INFO    pinnacle.runner.builder: Built backend 'numpy' on device 'cpu' with precision 'float64' (composed path)
+2026-10-12 10:12:05 INFO    pinnacle.system.problem: [OrientationField] point_file 'orientations_points.csv' resolved on 800 elements: {'n_targets': 800, 'n_source_points': 21012, 'out_of_bounds': 0, 'coverage_fraction': 1.0, 'interpolation': 'nearest', 'fallback': 'uniform'}
+2026-10-12 10:26:38 INFO    pinnacle.runner.runner: Wrote CSV output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens/h40/tau_c0_x1p25/solver/stress_strain.csv
+2026-10-12 10:26:38 INFO    pinnacle.runner.runner: Wrote per-step solver history to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens/h40/tau_c0_x1p25/solver/solver_history.csv
+2026-10-12 10:26:38 INFO    pinnacle.runner.runner: Wrote VTK field output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens/h40/tau_c0_x1p25/solver/fields.vtk
+2026-10-12 10:26:39 INFO    pinnacle.runner.runner: Wrote VTK time series (64 steps) to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens/h40/tau_c0_x1p25/solver/fields.pvd
+2026-10-12 10:26:39 INFO    pinnacle.runner.runner: Wrote summary to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens/h40/tau_c0_x1p25/solver/summary.json
+2026-10-12 10:26:39 INFO    pinnacle.cli.main: Run complete; outputs in /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/cp_study/sens/h40/tau_c0_x1p25/solver
