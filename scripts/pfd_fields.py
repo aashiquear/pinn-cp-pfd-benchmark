@@ -13,6 +13,7 @@ Deck-driven (PINNACLE ``.i`` syntax):
     vmax       = 0.6
     gif        = true                        # animation of the second field with the cracked elements (d >= threshold) solid
     gif_every  = 1                           # every k-th snapshot
+    columns    = 4                           # crack figure and GIF: runs per row
   [Runs]
     [./cp]  dir = ../../../results/pfd_study/cp/cal_h40/l5/gc1106.12  label = 'CP+PFD, l0 5' []
     [./j2]  dir = ../../../results/pfd_study/j2/cal_h40/l5/gc2063.43  label = 'J2+PFD, l0 5' []
@@ -152,13 +153,18 @@ def main(argv):
     deform = float(f.get("deform", 1.0))
     gif = str(f.get("gif", "false")).lower() in ("true", "1", "yes")
     gif_every = int(f.get("gif_every", 1))
+    ncol = max(1, min(int(f.get("columns", 4)), len(cfg["runs"])))
+    nrow = -(-len(cfg["runs"]) // ncol)
     runs = [(n, _resolve(str(r["dir"]), deck), _str(r.get("label", n))) for n, r in cfg["runs"].items()]
     plt.rcParams.update(STYLE)
     records = []
     n_r, n_c = len(runs), len(strains)
     fig_d, axes_d = plt.subplots(n_r, n_c, figsize=(3.2 * n_c + 0.6, 1.75 * n_r + 0.5), dpi=200, squeeze=False, constrained_layout=True)
     fig_p, axes_p = plt.subplots(n_r, n_c, figsize=(3.2 * n_c + 0.6, 1.75 * n_r + 0.5), dpi=200, squeeze=False, constrained_layout=True)
-    fig_c, axes_c = plt.subplots(1, n_r, figsize=(4.2 * n_r + 0.6, 2.4), dpi=200, squeeze=False, constrained_layout=True)
+    fig_c, axes_c = plt.subplots(nrow, ncol, figsize=(4.2 * ncol + 0.6, 2.3 * nrow + 0.2), dpi=200, squeeze=False, constrained_layout=True)
+    axes_c = axes_c.reshape(1, -1)
+    for ax in axes_c[0, n_r:]:
+        ax.axis("off")
     pc_d = pc_p = pc_c = None
     all_snaps = []
     for i, (name, run, label) in enumerate(runs):
@@ -213,7 +219,10 @@ def main(argv):
         frames = []
         n_frames = max(len(sn) for sn in all_snaps)
         for k in range(0, n_frames, gif_every):
-            fig, axes = plt.subplots(1, n_r, figsize=(4.2 * n_r + 0.6, 2.4), dpi=120, squeeze=False, constrained_layout=True)
+            fig, axes = plt.subplots(nrow, ncol, figsize=(4.2 * ncol + 0.6, 2.3 * nrow + 0.2), dpi=120, squeeze=False, constrained_layout=True)
+            axes = axes.reshape(1, -1)
+            for ax in axes[0, n_r:]:
+                ax.axis("off")
             pc_any = None
             for i, (name, run, label) in enumerate(runs):
                 snaps = all_snaps[i]

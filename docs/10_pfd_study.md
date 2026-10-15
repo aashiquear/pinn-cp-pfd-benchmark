@@ -524,17 +524,22 @@ repeats the comparison (§4.7).
 
 `decks/pfd_study/cp/sweep_h_l5.i`, Gc 1106 (results
 `results/pfd_study/cp/sweep_h_l5/`, figures
-`figures/pfd/cp_sweep_h_l5_{curves,panels}.png`):
+`figures/pfd/cp_sweep_h_l5_{curves,panels}.png`; h20 added on 2026-10-15
+at the author's request, mesh `decks/pfd_study/mesh/h20_hole5.i`, 308 hex8,
+700 nodes, figure `figures/pfd/mesh_h20_hole5.png`):
 
 | mesh | h (um) | l0/h | fracture strain | peak stress (MPa) | energy (MPa) |
 |---|---|---|---|---|---|
+| h20 | 5 | 1 | 16.09% | 609 | 81.0 |
 | h40 | 2.5 | 2 | 17.19% | 596 | 85.0 |
 | h80 | 1.25 | 4 | 17.58% | 587 | 86.3 |
 
-Five load steps (0.4%) in the initiation strain and 1.4% in the peak:
-larger than for J2 (the intragranular driving force is sharper at the
-hole, and the finer mesh resolves the hot spot at the grain junction
-better) but within the 2% the Part I grain-instance check accepted. The
+h20 (l0 = h, the regularisation length equal to the cell) initiates 1.1%
+strain early and 2% too stiff; h40 to h80 differ by five load steps (0.4%)
+in the initiation strain and 1.4% in the peak. The sequence converges from
+below in the initiation strain and from above in the peak, as the
+Chakraborty 2016 Fig. 8 sequence does, and the l0 >= 2h rule is where the
+change drops under the 2% the Part I grain-instance check accepted. The
 production mesh stays h40 with l0 = 5 um (l0 = 2h) for both couplings.
 
 ## 5.7 CP grain-instance check (Part II analogue of Part I §7)
@@ -787,3 +792,49 @@ ballpark as Part I (14). The query for the fracture strain of a new
 (Gc, l0, rho0, tau_c0) is the use the author asked for in the plan
 (docs/09 §5.1 step 8); its accuracy away from the box's edge is a few
 tenths of a percent strain.
+
+## 9. Stress-concentrator shape study (CP+PFD, h40)
+
+`decks/pfd_study/cp/shape_h40.i` (meshes `decks/pfd_study/mesh/h40_ell_*.i`,
+figures `figures/pfd/mesh_h40_ell_*.png`; the author's go-ahead of
+2026-10-14 for all three series of docs/09 §6), the calibrated CP+PFD set
+(Gc 1106, l0 5, W_c 0) on the same 30-grain structure, 3 side by side at
+2 threads, 2026-10-15 00:18-00:50; figures
+`figures/pfd/cp_shape_h40_{curves,panels,damage,equivalent_plastic_strain,crack}.png`
+and `cp_shape_h40_evolution.gif`; summary
+`results/pfd_study/cp/shape_h40/shape_h40_summary.csv`. All six ellipse
+meshes keep the h40 background and the O-grid ring (24 segments; min scaled
+Jacobian 0.41-0.71); the sharpest root (5 x 1.25, root radius 0.16 um) is
+under-resolved by the 0.45 um hole arc, which the plan foresaw.
+
+| series | case | K_t (Inglis) | fracture strain | peak stress (MPa) | energy (MPa) | cracked elements at the end |
+|---|---|---|---|---|---|---|
+| -- | circle 5 um | 3 | 17.19% | 596 | 85.0 | 40 |
+| A (a = 2.5 um) | 5 x 2.5 | 5 | 17.81% | 602 | 89.1 | 61 |
+| A | 5 x 1.25 | 9 | 18.36% | 606 | 92.2 | 7 |
+| B (area of the circle) | 7.07 x 3.54 | 5 | 16.33% | 628 (a last-step spike; 590 before it) | 79.0 | 45 |
+| B | 10 x 2.5 | 9 | 15.47% | 572 | 74.1 | 11 |
+| C (5 x 2.5 rotated) | 45 deg | -- | 18.52% | 606 | 93.0 | 82 |
+| C | 90 deg | 2 | 18.91% | 610 | 95.2 | 56 |
+
+Findings. (i) Series A contradicts the elastic expectation: at fixed
+transverse extent a sharper root initiates later (17.2 -> 17.8 -> 18.4%),
+not earlier. In the CP plate the driving force is the plastic work, which
+the sharp root concentrates into a smaller volume: the damage maps show
+the 5 x 1.25 case's hot spot confined to the root elements (7 cracked
+elements at 18.4%) while the circle's spreads over the grain below the
+hole. The under-resolved root (one 0.45 um element on a 0.16 um radius)
+also smooths the concentration; the case is reported with that caveat.
+(ii) Series B follows the Irwin scaling: a larger transverse extent (r_p
+proportional to a) initiates earlier (16.3% at 7.07 um, 15.5% at 10 um)
+with a lower energy, and the crack leaves the root along the transverse
+direction. (iii) Series C: rotating the 5 x 2.5 ellipse delays initiation
+(17.8% at 0 deg, 18.5% at 45 deg, 18.9% at 90 deg) as K_t falls from 5 to
+2, and the 45 deg case tilts the crack: it leaves the root along the
+grain boundary below the hole and grows into the grain on the lower
+right, where the circle's crack also turns (the same grain-boundary path
+that the fields of §6 show). (iv) Every case initiates at the hole's root
+or the grain boundary adjacent to it, and the peak stress varies by only
++/-2% because the gross section is 95% intact until initiation. The
+sharpest-root case would need the h80 ring (0.25 um arc) to be
+quantitative.
