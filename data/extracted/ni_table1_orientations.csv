@@ -1,0 +1,10 @@
+# Rezwan et al. 2026 (rezwan-2026-predicting), Table 1: average initial crystal orientations (Bunge
+# Euler angles, degrees) and the maximum Schmid factor among the {111}<110> systems, per specimen group.
+# Transcribed from the PDF text layer (data/literature/Rezwan_2026_Ni_single_crystal.pdf) on 2026-10-15;
+# exact as printed. Sample frame: x = loading direction, y = transverse, z = thickness (Sec. 2).
+group,phi1_deg,Phi_deg,phi2_deg,max_schmid
+9,291.2,47.9,49.3,0.44
+10,126.0,45.0,56.5,0.48
+H,189.8,50.6,40.7,0.44
+L,60.0,23.5,80.2,0.42
+P,335.1,45.4,77.0,0.46

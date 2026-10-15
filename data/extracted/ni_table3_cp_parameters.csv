@@ -1,0 +1,21 @@
+# Rezwan et al. 2026 (rezwan-2026-predicting), Table 3: crystal-plasticity parameters and elastic
+# constants of single-crystal Ni (taken by the paper from Lim et al. 2025, ref. [1]); the paper's unit
+# system is mm, MPa, s. Transcribed from the PDF text layer on 2026-10-15; exact as printed.
+# The fracture parameters are from the text: G_c = 125 kJ/m^2 (Sec. 3.5; = 125 MPa mm), l_0 not stated,
+# failure criterion c > 0.85 across the cross-section (Sec. 4), zeta = 1 (Eq. 28).
+parameter,symbol,value,unit,status
+elastic constant,C11,253000,MPa,reported
+elastic constant,C12,152000,MPa,reported
+elastic constant,C44,124000,MPa,reported
+Burgers vector,b,2.5e-7,mm,reported
+slip rate coefficient,gamma0,1e-5,1/s,reported
+slip rate exponent,m_s,0.12,-,reported (n = 1/m_s = 8.333)
+shear modulus,mu,26000,MPa,reported
+critical resolved shear stress (Peierls),tau_c0,0.26,MPa,calibrated by the paper on specimen L
+latent hardening coefficient,q,1.4,-,reported
+Taylor hardening prefactor,alpha0,0.4,-,reported
+initial SSD density,rho0,2.35e6,mm^-2,calibrated by the paper on specimen L
+SSD accumulation coefficient,k_m,0.0295,-,calibrated by the paper on specimen L
+annihilation diameter,y_c,0.79e-6,mm,calibrated by the paper on specimen L
+critical energy release rate,G_c,125,MPa mm (= 125 kJ/m^2),calibrated by the paper (text)
+plastic-work prefactor,zeta,1.0,-,reported (Eq. 28)

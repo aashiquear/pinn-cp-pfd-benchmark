@@ -1,0 +1,26 @@
+# Rezwan et al. 2026 (rezwan-2026-predicting), Fig. 5: experimental fracture location and mode of the 15
+# specimens, read on 2026-10-15 from the "Exp." DIC panels of the embedded 300 dpi montage (rows cropped
+# to one orientation group each). The panels carry no scale bar or axis: the location is the position of
+# the fracture line along the visible gage (left shoulder to right shoulder = 0 to 1), estimated by eye
+# with +-0.08 (about +-0.6 mm of the 8 mm gage); the mode is "inclined" (a straight crack at roughly 45
+# degrees to the loading axis, brittle-like) or "neck" (through-width necking before separation,
+# ductile-like), the angle a visual class (45 or 90 degrees to the axis, +-15). The station nearest the
+# location (t1..t5 at 0, 0.25, 0.5, 0.75, 1) and the measured thickness minimum (Table 2) are given so the
+# "fails at the thinnest station" rule can be scored. Tier: visual estimate, not a digitization. Fig. 4(b)
+# gives the experimental failure strains (ni_fig4b_failure_strain_parity.csv).
+specimen,location_fraction,location_uncertainty,mode,angle_deg,nearest_station,thinnest_station,fails_at_thinnest
+9.1,0.15,0.08,inclined,45,t1,t1,yes
+9.3,0.85,0.08,inclined,45,t5,t5,yes
+9.4,0.60,0.08,inclined,60,t3,t2,no
+10.1,0.20,0.08,neck,90,t2,t1,yes
+10.3,0.30,0.08,neck,90,t2,t1,yes
+10.4,0.25,0.08,neck,90,t2,t1,yes
+H.1,0.75,0.08,neck,90,t4,t5,yes
+H.3,0.75,0.08,neck,90,t4,t3,no
+H.4,0.80,0.08,neck,90,t4,t5,yes
+L.1,0.20,0.08,inclined,45,t2,t1,yes
+L.3,0.65,0.08,inclined,45,t4,t5,yes
+L.4,0.75,0.08,inclined,45,t4,t5,yes
+P.1,0.20,0.08,inclined,45,t2,t5,no
+P.3,0.75,0.08,inclined,45,t4,t5,yes
+P.4,0.78,0.08,inclined,45,t4,t5,yes

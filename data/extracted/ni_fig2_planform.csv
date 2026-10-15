@@ -1,0 +1,13 @@
+# Rezwan et al. 2026 (rezwan-2026-predicting), Fig. 2: dog-bone planform. Printed dimensions (mm):
+# total length 25.4, gage length 8.0, grip width 4.8, shoulder fillet radius 3.175. The gage width is
+# not dimensioned: measured on 2026-10-15 from the plan view of the embedded 300 dpi bitmap (grip
+# height 228 px = 4.8 mm -> 0.02105 mm/px; the meshed gage 88 px tall at three columns -> 1.85 mm;
+# the meshed gage length 380 px -> 8.0 mm, which validates the scale). Nominal thickness 0.35 mm
+# (Sec. 3.4), per-specimen stations in ni_table2_thickness.csv.
+quantity,value_mm,uncertainty_mm,source
+total_length,25.4,0,printed
+gage_length,8.0,0,printed
+grip_width,4.8,0,printed
+fillet_radius,3.175,0,printed
+gage_width,1.85,0.05,digitized (plan view, grip width as scale)
+nominal_thickness,0.35,0.02,text ("approximately 0.35 mm")
