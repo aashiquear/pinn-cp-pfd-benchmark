@@ -22,7 +22,7 @@
     label = 'CP+PFD, l0 = 5 um'
   []
   [./j2]
-    dir   = ../../../results/pfd_study/j2/base_h40
+    dir   = ../../../results/pfd_study/j2/sens_h40_wc200/base
     label = 'J2+PFD, l0 = 5 um'
   []
 []

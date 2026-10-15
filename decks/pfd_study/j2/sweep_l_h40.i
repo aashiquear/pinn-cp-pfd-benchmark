@@ -7,7 +7,7 @@
 # by side (2 threads each).
 [Study]
   base       = base_h40.i
-  out_root   = ../../../results/pfd_study/j2/sweep_l_h40_wc20
+  out_root   = ../../../results/pfd_study/j2/sweep_l_h40_wc200
   concurrent = 4
 []
 [Sweep]

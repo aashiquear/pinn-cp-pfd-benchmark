@@ -1,0 +1,10 @@
+2026-10-15 00:08:52 INFO    pinnacle: Logging to solver/pinnacle.log (level=info, console=False)
+2026-10-15 00:08:52 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
+2026-10-15 00:08:53 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cpu' with precision 'float64' (composed path)
+2026-10-15 00:19:16 INFO    pinnacle.system.executioner.coupled_executioner: coupled: stopping after step 202 (max damage 0.950, mechanics converged): stop_damage reached
+2026-10-15 00:19:16 INFO    pinnacle.runner.runner: Wrote CSV output to solver/stress_strain.csv
+2026-10-15 00:19:16 INFO    pinnacle.runner.runner: Wrote per-step solver history to solver/solver_history.csv
+2026-10-15 00:19:16 INFO    pinnacle.runner.runner: Wrote VTK field output to solver/fields.vtk
+2026-10-15 00:19:16 INFO    pinnacle.runner.runner: Wrote VTK time series (50 steps) to solver/fields.pvd
+2026-10-15 00:19:16 INFO    pinnacle.runner.runner: Wrote summary to solver/summary.json
+2026-10-15 00:19:16 INFO    pinnacle.cli.main: Run complete; outputs in solver

@@ -1,0 +1,11 @@
+2026-10-15 00:20:26 INFO    pinnacle: Logging to solver/pinnacle.log (level=info, console=False)
+2026-10-15 00:20:26 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
+2026-10-15 00:20:28 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cpu' with precision 'float64' (composed path)
+2026-10-15 00:32:42 WARNING pinnacle.system.executioner.fem_quasi_static: fem_quasi_static: step 0: Newton failed on [0.89844, 0.90234]; cutback 1, solving [0.89844, 0.90039] first
+2026-10-15 00:33:25 INFO    pinnacle.system.executioner.coupled_executioner: coupled: stopping after step 234 (max damage 0.956, mechanics converged): stop_damage reached
+2026-10-15 00:33:25 INFO    pinnacle.runner.runner: Wrote CSV output to solver/stress_strain.csv
+2026-10-15 00:33:25 INFO    pinnacle.runner.runner: Wrote per-step solver history to solver/solver_history.csv
+2026-10-15 00:33:25 INFO    pinnacle.runner.runner: Wrote VTK field output to solver/fields.vtk
+2026-10-15 00:33:27 INFO    pinnacle.runner.runner: Wrote VTK time series (58 steps) to solver/fields.pvd
+2026-10-15 00:33:27 INFO    pinnacle.runner.runner: Wrote summary to solver/summary.json
+2026-10-15 00:33:27 INFO    pinnacle.cli.main: Run complete; outputs in solver

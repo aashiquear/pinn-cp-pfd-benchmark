@@ -1,0 +1,8 @@
+23:41:33 {'l0': 5.0, 'iteration': 0, 'Gc': 447.2136, 'fracture_strain': None, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.15544, 'steps_converged': 256, 'wall_s': 514.05674, 'note': ''}
+23:47:59 {'l0': 5.0, 'iteration': 1, 'Gc': 66.87403, 'fracture_strain': 0.06641, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.96971, 'steps_converged': 65, 'wall_s': 385.69891, 'note': ''}
+23:59:44 {'l0': 5.0, 'iteration': 2, 'Gc': 172.93633, 'fracture_strain': 0.18281, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95334, 'steps_converged': 209, 'wall_s': 705.26715, 'note': ''}
+00:08:51 {'l0': 5.0, 'iteration': 3, 'Gc': 107.54046, 'fracture_strain': 0.125, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95674, 'steps_converged': 144, 'wall_s': 546.99106, 'note': ''}
+00:19:17 {'l0': 5.0, 'iteration': 4, 'Gc': 136.37321, 'fracture_strain': 0.15625, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95042, 'steps_converged': 183, 'wall_s': 625.91617, 'note': ''}
+00:30:28 {'l0': 5.0, 'iteration': 5, 'Gc': 153.57045, 'fracture_strain': 0.17031, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95551, 'steps_converged': 197, 'wall_s': 671.11149, 'note': ''}
+00:41:46 {'l0': 5.0, 'iteration': 6, 'Gc': 162.96598, 'fracture_strain': 0.17656, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95782, 'steps_converged': 204, 'wall_s': 677.32194, 'note': ''}
+00:51:21 {'l0': 5.0, 'iteration': 7, 'Gc': 158.19848, 'fracture_strain': 0.17344, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95155, 'steps_converged': 200, 'wall_s': 574.91003, 'note': ''}

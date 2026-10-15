@@ -1,7 +1,7 @@
 # J2+PFD BASE case on the h40 perforated plate (Part II, docs/09 §5.1 step 2):
 # the calibrated J2 piecewise law (results/pfd_study/j2_fit), AT2 damage with
-# the plastic-work driving force (zeta = 1, W_c = 20 MPa chosen by the author on
-# 2026-10-14 after the W_c = 0 sensitivity, eta = 0: quasi-static), 256 staggered steps to 20% at 1e-3 /s as in
+# the plastic-work driving force (zeta = 1, W_c = 200 MPa from the W_c scan of
+# 2026-10-15, docs/10 §4.10, eta = 0: quasi-static), 256 staggered steps to 20% at 1e-3 /s as in
 # Part I, up to 3 alternations per step. Gc and l0 are the calibration
 # targets; the values here are the bisection's starting point and are
 # overwritten by scripts/pfd_calibrate.py and scripts/pfd_study.py cases.
@@ -36,10 +36,10 @@
   j2_fit           = ../../../results/pfd_study/j2_fit/j2_fit.json
   j2_law           = piecewise
   finite_strain    = true
-  Gc               = 2003.06        
+  Gc               = 385.515        
   l0               = 5            
   eta              = 0.0
   zeta             = 1.0
-  W_c              = 20.0        # author 2026-10-14: plastic-work threshold restores the peak without moving initiation
+  W_c              = 200.0        # author 2026-10-14/15: W_c scan (docs/10 §4.10), softening onset 13.9%, Gc refit
   damage_model     = at2
 []

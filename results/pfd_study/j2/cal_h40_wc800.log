@@ -1,0 +1,15 @@
+23:40:45 {'l0': 5.0, 'iteration': 0, 'Gc': 447.2136, 'fracture_strain': None, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.0838, 'steps_converged': 256, 'wall_s': 465.74855, 'note': ''}
+23:47:16 {'l0': 5.0, 'iteration': 1, 'Gc': 66.87403, 'fracture_strain': 0.06641, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.9697, 'steps_converged': 65, 'wall_s': 390.9147, 'note': ''}
+23:59:40 {'l0': 5.0, 'iteration': 2, 'Gc': 172.93633, 'fracture_strain': None, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.59052, 'steps_converged': 238, 'wall_s': 743.71113, 'note': ''}
+00:08:54 {'l0': 5.0, 'iteration': 3, 'Gc': 107.54046, 'fracture_strain': 0.12578, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.96052, 'steps_converged': 144, 'wall_s': 553.84297, 'note': ''}
+00:19:58 {'l0': 5.0, 'iteration': 4, 'Gc': 136.37321, 'fracture_strain': 0.1625, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.9566, 'steps_converged': 189, 'wall_s': 664.89565, 'note': ''}
+00:32:14 {'l0': 5.0, 'iteration': 5, 'Gc': 153.57045, 'fracture_strain': 0.18203, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95342, 'steps_converged': 213, 'wall_s': 735.26879, 'note': ''}
+00:44:31 {'l0': 5.0, 'iteration': 6, 'Gc': 144.7166, 'fracture_strain': 0.17188, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95572, 'steps_converged': 201, 'wall_s': 737.36495, 'note': ''}
+[
+ {
+  "l0": 5.0,
+  "Gc": 144.71660242525417,
+  "fracture_strain": 0.171875,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc800/l5/gc144.717"
+ }
+]

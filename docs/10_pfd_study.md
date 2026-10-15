@@ -288,6 +288,53 @@ both remove the early diffuse softening of the AT2 base (§3.2). Figures
 with a plastic-work threshold (§4.2: W_c = 20 MPa keeps the initiation
 strain and restores the peak) and AT1 is the author's.
 
+### 4.10 W_c scan: the carried J2 configuration (author's revision of 2026-10-14)
+
+The author read the W_c = 0 and W_c = 20 calibrations (§3.2, §4.6) as
+softening too early (onset at 6% strain while the experiment hardens to
+17%) and their Gc (2000 MPa um = 2 kJ/m^2) as too high for an aluminium
+alloy, and asked for a threshold that delays the onset past most of the
+hardening with a lower Gc. Decks `decks/pfd_study/j2/cal_h40_wc{200,400,600,800}.i`
+(bases `base_h40_wc*.i`), one log-bisection of Gc each at l0 = 5 um,
+2026-10-14 23:30 - 2026-10-15 01:00 (4-9 trials of 4-16 min); figure
+`figures/pfd/j2_wc_scan_h40_{curves,panels}.png` by
+`scripts/pfd_wc_scan_figures.py decks/pfd_study/j2/wc_scan_h40_figures.i`,
+table `results/pfd_study/j2/j2_wc_scan_h40_table.csv`. The scan values
+come from the plastic-work density at the hole of the W_c 20 run (max
+driving force 91 MPa at 5%, 428 at 10%, 928 at 15%, 1160 MPa at 17%).
+
+| W_c (MPa) | calibrated Gc (MPa um) | fracture strain | softening onset (strain at peak) | peak stress (MPa) | energy (MPa) |
+|---|---|---|---|---|---|
+| 0 | 2063 | 17.34% | 6.1% | 415 | 74.6 |
+| 20 | 2003 | 17.11% | 6.1% | 485 | 81.6 |
+| 200 | 385.5 | 17.19% | 13.9% | 571 | 87.0 |
+| 400 | (bisection running) | | | | |
+| 600 | 144.7 | 17.19% | 13.4% | 472 | 73.8 |
+| 800 | 144.7 | 17.19% | 13.4% | 472 | 73.8 |
+
+Findings. (i) The threshold and Gc trade against each other: raising W_c
+from 20 to 200 MPa moves the onset from 6.1 to 13.9% and lets Gc fall
+5x (2003 -> 386), with the peak rising from 485 to 571 MPa (97% of the
+experiment's 590). (ii) Beyond that the trade turns: at W_c = 600 the
+plastic work exceeds the threshold only in the root elements late in the
+path, the bisection needs Gc = 145 to still initiate by 17.2%, and the low
+Gc degrades the root so fast that the peak falls back to 472 MPa with the
+onset at 13.4%; W_c = 800 reproduces W_c = 600 to the digit because the
+work above 600 MPa and above 800 MPa accrue at the same elements in the
+same steps (the threshold is already above the plastic work everywhere
+except the root). (iii) The carried J2 configuration is therefore
+W_c = 200 MPa, Gc = 385.5 MPa um (= 0.39 kJ/m^2), l0 = 5 um: the J2
+plate then follows the hardening to 13.9% and the markers to within 3%
+at the peak, against the CP plate's 16.6% onset and 596 MPa. What the J2
+route still cannot do is reproduce the CP plate's late, sharp loss of
+load (the J2 curve softens over 3% of strain before initiation while CP
+softens over 0.6%): with a homogeneous flow stress the plastic work at
+the hole spreads over a wider zone, so the damage that the threshold
+delays then grows over a larger volume. The J2 l0 sweep, sensitivity (four
+values per parameter) and mesh study (h20, h40, h80) are rerun at this
+configuration (§4.11-4.13); the W_c 0 and W_c 20 results of §3.2, §4.1-4.9
+are superseded and kept only as the calibration record.
+
 ## 5. CP+PFD on the h40 perforated polycrystal plate
 
 ### 5.1 Cost of the coupled CP solve, and a fix

@@ -1,0 +1,6 @@
+W_c,Gc,fracture_strain,peak_eng_stress,strain_at_peak,fracture_energy_MPa,run
+0.0,2063.428342184234,0.17343750000000002,415.48309557162946,0.060937500000000006,74.58221129988623,/mnt/extended/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40/l5/gc2063.43
+20.0,2003.0636189840898,0.17109375000000002,485.1701703213774,0.060937500000000006,81.61623623582634,/mnt/extended/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc20/l5/gc2003.06
+200.0,385.5154216957858,0.171875,570.9560803754094,0.1390625,87.03677182635565,/mnt/extended/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc385.515
+600.0,144.71660242525417,0.171875,472.4138030764373,0.13359375,73.81305260682613,/mnt/extended/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc600/l5/gc144.717
+800.0,144.71660242525417,0.171875,472.4138030764373,0.13359375,73.81868312170909,/mnt/extended/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc800/l5/gc144.717

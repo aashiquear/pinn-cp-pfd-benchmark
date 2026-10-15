@@ -1,0 +1,3 @@
+2026-10-15 00:51:21 INFO    pinnacle: Logging to solver/pinnacle.log (level=info, console=False)
+2026-10-15 00:51:21 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
+2026-10-15 00:51:22 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cpu' with precision 'float64' (composed path)

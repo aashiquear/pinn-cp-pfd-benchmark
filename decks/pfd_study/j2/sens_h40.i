@@ -7,13 +7,13 @@
 # calibrated.json by scripts/pfd_fill_base.py.
 [Study]
   base       = base_h40.i
-  out_root   = ../../../results/pfd_study/j2/sens_h40_wc20
-  concurrent = 7
+  out_root   = ../../../results/pfd_study/j2/sens_h40_wc200
+  concurrent = 6
 []
 [Sweep]
-  Gc  = '1001.53 4006.13'
-  l0  = '2.5 10'
-  eta = '1.0 10.0'
-  W_c = '0.0 5.0'
+  Gc  = '96.3789 192.758 771.031 1542.06'   # x0.25, x0.5, x2, x4 of 385.515 (four per parameter, author 2026-10-14)
+  l0  = '2.5 3.75 7.5 10'
+  eta = '1.0 3.0 10.0 30.0'
+  W_c = '50.0 100.0 400.0 800.0'
   max_iterations = '5'
 []

@@ -1,0 +1,9 @@
+l0,iteration,Gc,fracture_strain,failed,mechanics_failed,final_max_damage,steps_converged,wall_s,dir,note
+5.0,0,447.213595499958,0.18046875,False,0,0.9543499174872387,197,761.5669498443604,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc447.214,
+5.0,1,66.87403049764218,0.0625,False,0,0.9762427612670183,65,355.8060691356659,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc66.874,
+5.0,2,172.93633402042616,0.12734375,False,0,0.9574932967486534,135,498.20611548423767,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc172.936,
+5.0,3,278.09976578533195,0.15390625000000002,False,0,0.9562592628786095,169,586.0440578460693,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc278.1,
+5.0,4,352.66130517049146,0.16718750000000002,False,0,0.9520166276754671,177,644.7599964141846,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc352.661,
+5.0,5,397.1333910400928,0.17343750000000002,False,0,0.9555155605654493,190,781.8203251361847,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc397.133,
+5.0,6,374.2373311295683,0.1703125,False,0,0.9523812464241703,183,728.1026318073273,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc374.237,
+5.0,7,385.5154216957858,0.171875,False,0,0.9507535553988123,187,600.4067230224609,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc385.515,

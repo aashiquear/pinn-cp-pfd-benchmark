@@ -1,0 +1,16 @@
+23:45:41 {'l0': 5.0, 'iteration': 0, 'Gc': 447.2136, 'fracture_strain': 0.18047, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95435, 'steps_converged': 197, 'wall_s': 761.56695, 'note': ''}
+23:51:37 {'l0': 5.0, 'iteration': 1, 'Gc': 66.87403, 'fracture_strain': 0.0625, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.97624, 'steps_converged': 65, 'wall_s': 355.80607, 'note': ''}
+23:59:55 {'l0': 5.0, 'iteration': 2, 'Gc': 172.93633, 'fracture_strain': 0.12734, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95749, 'steps_converged': 135, 'wall_s': 498.20612, 'note': ''}
+00:09:41 {'l0': 5.0, 'iteration': 3, 'Gc': 278.09977, 'fracture_strain': 0.15391, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95626, 'steps_converged': 169, 'wall_s': 586.04406, 'note': ''}
+00:20:26 {'l0': 5.0, 'iteration': 4, 'Gc': 352.66131, 'fracture_strain': 0.16719, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95202, 'steps_converged': 177, 'wall_s': 644.76, 'note': ''}
+00:33:28 {'l0': 5.0, 'iteration': 5, 'Gc': 397.13339, 'fracture_strain': 0.17344, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95552, 'steps_converged': 190, 'wall_s': 781.82033, 'note': ''}
+00:45:36 {'l0': 5.0, 'iteration': 6, 'Gc': 374.23733, 'fracture_strain': 0.17031, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95238, 'steps_converged': 183, 'wall_s': 728.10263, 'note': ''}
+00:55:36 {'l0': 5.0, 'iteration': 7, 'Gc': 385.51542, 'fracture_strain': 0.17188, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95075, 'steps_converged': 187, 'wall_s': 600.40672, 'note': ''}
+[
+ {
+  "l0": 5.0,
+  "Gc": 385.5154216957858,
+  "fracture_strain": 0.171875,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc385.515"
+ }
+]
