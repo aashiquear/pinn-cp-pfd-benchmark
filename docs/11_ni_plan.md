@@ -129,11 +129,16 @@ The meshes are shown to the author before any run (rule 3 of Part II).
 7. Neural routes and the surrogate on the coupled problem; hardware.
 8. Report Part III after the author confirms the results.
 
-Costs (local numpy, 3 threads, implicit update): 13 s per load step on the
-h040 bar (220 elements, 1,760 points), so a 500-step path is about 2 h; the
-host's torch arm and h020 (4x the points) scale that to roughly 1 h (h040)
-and 4 h (h020) per run; 15 specimens at 7 side by side are 2-8 h per stage,
-and the mesh study decides whether h040 can be the production level.
+Costs (implicit backward-Euler update, grip increment 1e-3): 10 s per load
+step on the host's torch arm (2 threads) for the h040 bar (220 elements,
+1,760 points; 40 s locally on numpy), so the 360-step path of the
+calibration deck (`decks/ni/cp/base_L1_h040.i`, grip strain 36%, gauge
+about 54%) is about 1 h per run; a Gauss-Newton iteration (base + 4
+perturbations, 5 side by side) is about 1 h; h020 (4x the points) about 4 h
+per run; 15 specimens at 7 side by side 2-8 h per stage, and the mesh study
+decides whether h040 can be the production level. The first step from the
+virgin state takes 24 Newton iterations (the clamped grip corners), the rest
+5-7.
 
 ## 6. PINNACLE needs (ADR 0032, ADR 0033)
 
