@@ -414,7 +414,7 @@ energy): the alternation test is met within three.
 ### 4.13 J2 mesh sensitivity at W_c = 200 (h20, h40, h80)
 
 `decks/pfd_study/j2/sweep_h_l5.i` (`results/pfd_study/j2/sweep_h_l5_wc200/`,
-h20 5 min, h80 2 h 10 min at 2 threads), figures
+h20 5 min, h80 37 min at 2 threads), figures
 `figures/pfd/j2_sweep_h_l5_wc200_{curves,panels}.png`:
 
 | mesh | h (um) | l0/h | fracture strain | peak (MPa) | energy (MPa) |

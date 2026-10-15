@@ -1399,8 +1399,8 @@ at each $\ell_0$ (`decks/pfd_study/cp/cal_h40.i`):
 | $\ell_0$ (um) | $\ell_0/h$ | calibrated $G_c$ (MPa um) | fracture strain | peak (MPa) at strain |
 |---|---|---|---|---|
 | 5 | 2 | 1,106 | 17.19% | 596 at 16.6% |
-| 10 | 4 | 1,832 | 17.11% | 588 at 16.5% |
-| 20 | 8 | 2,818 | 17.27% | 579 at 16.4% |
+| 10 | 4 | 1,832 | 17.11% | 577 at 15.5% |
+| 20 | 8 | 2,818 | 17.27% | 569 at 15.1% |
 
 *Table 18. CP+PFD calibration at h40.*
 
