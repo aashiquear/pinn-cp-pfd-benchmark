@@ -34,6 +34,48 @@ sensitive" parameters of Part I); the Ni study keeps the paper's constants,
 so the integration must be converged at a practical step count (a 50%
 path at 1.5e-5 increment would need 30,000 steps).
 
+Reference for the check: the material point under TRUE uniaxial stress
+(the lateral stretches iterated to zero lateral stress at every step of a
+3,000-step explicit path, `scripts/verify_material_point.py` helpers), L
+orientation, paper's set: 92 MPa at 0.1% and 120 MPa at 3% at 1e-3/s,
+126 MPa at 3% at 1.5e-3/s (the gage's rate when the grips move at 1e-3/s).
+So the paper's constants in PINNACLE's law give a flow stress about 30%
+above the Fig. 3 experiment (92 MPa at 3%); the strain rate of the test is
+not stated (a tenfold lower rate would lower the stress by 24% with
+m = 0.12), and the calibration of (rho_0, k_m, y_c, tau_c0) absorbs the
+rest. The FE must reproduce this 126 MPa before any calibration.
+
+### 1.1 Integrator study on the dog-bone (PINNACLE ADR 0033)
+
+Three state-update schemes of `stress_divergence_cp` (PINNACLE ADR 0033),
+the same h040 dog-bone and parameter set, grip strain 2% at 1e-3/s, numpy,
+3-4 threads; "stress" is the engineering stress from the reaction on the
+x+ grip (summed after the state advance in every scheme), compared at 3%
+gauge strain with the 126 MPa reference:
+
+| scheme | load steps (gauge increment) | stress at 3% gauge (MPa) | error | wall |
+|---|---|---|---|---|
+| explicit (Parts I-II) | 16 (2.3e-3) | 507 | +300% | 1 min |
+| explicit | 64 (5.7e-4) | 189 | +50% | 1 min |
+| explicit | 128 (2.9e-4) | 133 | +6% | 2 min |
+| explicit | 256 (1.5e-4) | 111 | -12% | 4 min |
+| explicit | 1024 (3.7e-5) | 121 | -4% | 17 min |
+| iterated, 2 passes, cap 1e-4 | 16 | 327 | +160% | 3 min |
+| iterated, 2 passes, cap 1e-4 | 64 | 178 | +41% | 5 min |
+| iterated, 2 passes, cap 1e-5 | 256 (1.5e-4) | 136 | +8% | 15 min |
+| iterated, 3 passes, cap 1e-5 | 64 | 144 | +14% | 10 min |
+| implicit, cap 1e-5 (single element, 16 steps of 2.5e-4) | -- | within 0.5% of a 1,024-step explicit path | -- | 12 s |
+
+The explicit scheme is not monotonic in the step count because its two
+errors have opposite signs (the trial stress overshoots, the recorded
+relaxed-state reaction undershoots) and cross between 128 and 256 steps;
+it needs increments near 1e-4 for 5% and is 4% low at 3.7e-5. The
+iterated scheme at a 1e-4 sub-increment cap is not better than the
+explicit one at the same step count; at 1e-5 it is +8% at 1.5e-4
+increments. The implicit scheme is accurate at any step size on the
+single element but costs an integration per residual evaluation (about 25
+s per load step on this 1,760-point mesh).
+
 Decision: PINNACLE gets a consistent stress update (ADR 0033): with
 `state_update = implicit` the callback's `stress()` integrates the state
 from the committed one over the step's time increment (the existing

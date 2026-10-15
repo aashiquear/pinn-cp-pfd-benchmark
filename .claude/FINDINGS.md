@@ -251,3 +251,20 @@ NOT derivable from the code: measured facts, decisions, and traps.
   superseded J2 W_c 0/20 sweep and sensitivity outputs, the check/probe runs and the
   hybrid check_fem diagnostics were removed from git and disk. When a new result enters
   the report, add its series to the ship deck and rerun the script before pushing.
+- 2026-10-15 (Part III, Ni): PINNACLE's explicit CP state update is first order in the
+  load increment (the Newton solves with the state frozen; the recorded post-advance
+  reaction undershoots, the trial equilibrium overshoots): 507 / 189 / 133 / 111 / 121 MPa
+  at 3% gauge strain for 16 / 64 / 128 / 256 / 1024 steps on the Ni dog-bone against a
+  126 MPa material-point reference. Parts I-II (increment 7.8e-4) carry that error inside
+  the calibrated Al2219 set; the J2 route is unaffected (its state does not change the
+  stress at fixed strain). ADR 0033 adds `state_update = implicit` (backward-Euler slip
+  update, local Newton per point, consistent tangent, sub-stepping fallback): within 1-4%
+  at increments up to 1e-3, 5 Newton iterations per step. Part III runs implicit; the
+  template defaults to it (`scripts/ni_specimen.py`).
+- The paper's Table 3 set in PINNACLE's law gives 120-126 MPa at 3% (true uniaxial,
+  L orientation, 1-1.5e-3/s) against 92 MPa in Fig. 3: the calibration of
+  (rho_0, k_m, y_c, tau_c0) absorbs it; the test's strain rate is not stated (m = 0.12:
+  a tenfold rate change moves the stress 24%).
+- Local scratch runs: kill by the process's cwd AND a cmdline match on `python3.11` (the
+  `pinnacle` entry script's cmdline starts with `/usr/bin/python3.11 ...`, so a 40-char
+  match on "pinnacle" misses it); three duplicate runs once wrote the same history file.

@@ -129,13 +129,19 @@ The meshes are shown to the author before any run (rule 3 of Part II).
 7. Neural routes and the surrogate on the coupled problem; hardware.
 8. Report Part III after the author confirms the results.
 
-Costs (host, torch CPU 2 threads): the h020 bar has 792 elements, below the
-Part II plate, so a CP path of 256 steps should take under 10 min and a
-coupled path under 15 min; 15 specimens at 7 side by side are under an hour
-per stage.
+Costs (local numpy, 3 threads, implicit update): 13 s per load step on the
+h040 bar (220 elements, 1,760 points), so a 500-step path is about 2 h; the
+host's torch arm and h020 (4x the points) scale that to roughly 1 h (h040)
+and 4 h (h020) per run; 15 specimens at 7 side by side are 2-8 h per stage,
+and the mesh study decides whether h040 can be the production level.
 
-## 6. PINNACLE needs (ADR 0032)
+## 6. PINNACLE needs (ADR 0032, ADR 0033)
 
+0. A consistent CP state update (ADR 0033, found by the pipeline check of
+   docs/12 §1): the explicit scheme of Parts I-II is first order in the load
+   increment and would need 30,000 steps on the Ni path; Part III runs
+   `state_update = implicit` (backward-Euler slip update) at increments of
+   about 1e-3 of gauge strain, about 500 load steps to 50%.
 1. `gauge_node_sets` on `cp_quasi_static` and `fem_quasi_static`: the
    gauge strain per step from two node sets (mean displacement difference
    over mean initial distance).

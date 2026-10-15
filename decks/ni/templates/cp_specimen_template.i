@@ -71,6 +71,8 @@
     dim           = 3
     finite_strain = true
     gnd           = false
+    state_update     = @STATEUPDATE@   # explicit | iterated | implicit (PINNACLE ADR 0033; implicit = backward-Euler slip update)
+    state_iterations = @STATEITER@     # passes of the iterated update per load step
   []
 []
 [BCs]

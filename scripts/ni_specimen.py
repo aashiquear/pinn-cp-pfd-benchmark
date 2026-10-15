@@ -21,6 +21,7 @@ Every stage is driven by ONE specimen deck (PINNACLE ``.i`` syntax):
     C11 = 253000  C12 = 152000  C44 = 124000  mu = 26000  gamma0 = 1.0e-5  nexp = 8.3333  tau_c0 = 0.26
     q_lat = 1.4  alpha0 = 0.4  burgers = 2.5e-7  rho0 = 2.35e6  k1 = 0.0295  y_c = 0.79e-6
     predictor = none | linear | fem_solver_grain   (corrector, corrector_tol, predictor_device, predictor_gpu as in pfd_plate.py)
+    state_update = implicit   state_iterations = 2   # PINNACLE ADR 0033: implicit (backward Euler) is the default here; explicit = Parts I-II scheme
 
 Stages:
   deck    render decks/ni/templates/cp_specimen_template.i into <out_dir>/cp.i (+ case.json)
@@ -104,6 +105,8 @@ def stage_deck(sp: dict, deck: Path) -> Path:
         "SPARSETHRESHOLD": str(int(sp.get("sparse_threshold", 500))), "SNAPSHOTS": str(int(sp.get("snapshots_every", 0))),
         "EULER": euler_of(sp, deck), "CORRECTOR": str(sp.get("corrector", "newton")), "CORRECTORTOL": _num(sp.get("corrector_tol", 0.05)),
         "REJECTRATIO": _num(sp.get("predictor_reject_ratio", 10)),
+        "STATEUPDATE": str(sp.get("state_update", "implicit")),
+        "STATEITER": str(int(sp.get("state_iterations", 2))),
     }
     for key, name in CP_KEYS:
         sub[key] = _num(sp[name])
