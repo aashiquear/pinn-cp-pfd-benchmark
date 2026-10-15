@@ -160,6 +160,9 @@
     sparse_threshold  = 0
     line_search       = backtracking
     reaction_node_set = x+
+    corrector         = newton       # newton; with a predictor: auto (verified PINN-as-solver route)
+    corrector_tol     = 0.05
+    predictor_reject_ratio = 10
   []
   [./damage]
     variable          = d
@@ -173,6 +176,7 @@
     dt                = 0.78125
   []
 []
+
 [Output]
   formats         = 'vtk csv json'
   save_checkpoint = false

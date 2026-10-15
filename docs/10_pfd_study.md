@@ -405,34 +405,49 @@ between 2h and 4h.
 
 ### 5.5 CP parameter sensitivity at h40, l0 = 5 um (one at a time)
 
-`decks/pfd_study/cp/sens_h40.i`, 9 cases plus the base (Gc 1106, l0 5,
-eta 0, W_c 0, 3 alternations), 3 side by side at 2 threads; figures
-`figures/pfd/cp_sens_h40_{curves,panels}.png`, summary
+`decks/pfd_study/cp/sens_h40.i`, 17 cases plus the base (Gc 1106, l0 5,
+eta 0, W_c 0, 3 alternations), four values per parameter (the author's
+2026-10-14 request; the x0.25 / x4 Gc, l0 3.75 / 7.5, eta 3 / 30 and
+W_c 10 / 40 cases were added on 2026-10-15 at 3 side by side, 2 threads);
+figures `figures/pfd/cp_sens_h40_{curves,panels}.png` (one colour per
+parameter, one line style per value), summary
 `results/pfd_study/cp/sens_h40/sens_h40_summary.csv`.
 
 | case | fracture strain | peak stress (MPa) at strain | energy (MPa) | max d at the end |
 |---|---|---|---|---|
 | base | 17.19% | 596 at 16.6% | 85.0 | 0.98 |
+| Gc x 0.25 (277) | 4.22% | 381 at 3.9% | 14.6 | 1.00 |
 | Gc x 0.5 (553) | 8.59% | 472 at 8.3% | 35.1 | 0.99 |
 | Gc x 2 (2212) | none by 20% | 657 at 20.0% | 103.1 | 0.46 |
+| Gc x 4 (4424) | none by 20% | 666 at 20.0% | 104.0 | 0.27 |
 | l0 2.5 (= h) | none by 20% | 658 at 20.0% | 103.3 | 0.57 |
+| l0 3.75 (= 1.5h) | none by 20% | 641 at 20.0% | 102.0 | 0.74 |
+| l0 7.5 (= 3h) | 12.89% | 529 at 12.0% | 57.8 | 1.00 |
 | l0 10 (= 4h) | 10.47% | 486 at 9.5% | 43.7 | 0.96 |
 | eta 1 MPa s | 17.19% | 596 at 16.6% | 85.0 | 0.98 |
+| eta 3 MPa s | 17.19% | 596 at 16.6% | 85.0 | 0.98 |
 | eta 10 MPa s | 17.19% | 596 at 16.6% | 85.0 | 0.98 |
+| eta 30 MPa s | 17.19% | 596 at 16.6% | 85.0 | 0.98 |
 | W_c 5 MPa | 17.66% | 602 at 17.1% | 88.2 | 0.98 |
+| W_c 10 MPa | 18.13% | 608 at 17.6% | 91.4 | 0.98 |
 | W_c 20 MPa | 19.06% | 619 at 18.5% | 97.9 | 0.96 |
+| W_c 40 MPa | none by 20% | 641 at 20.0% | 103.0 | 0.68 |
 | 5 alternations | 17.11% | 595 at 16.6% | 84.1 | 0.97 |
 
-As for J2, Gc and l0 govern initiation (half Gc: 8.7%; l0 = 4h: 10.5%;
-l0 = h and twice Gc: no initiation by 20%) and the viscosity is immaterial
-at the quasi-static rate (eta = 1 and 10 MPa s: identical fracture strain).
-Unlike J2, the plastic-work threshold moves the CP initiation strain
-(W_c = 5: +0.5%, W_c = 20: +2.0%): with the intragranular driving force
-the plastic work at the initiation site is spent in a narrower range, so a
-threshold of 20 MPa removes a larger share of it. Five alternations
-against three change the fracture strain by one load step (17.11 against
-17.19%) and the final damage by 0.01: the 1e-3 alternation test is met
-within three. The CP configuration therefore keeps W_c = 0 (§4.5).
+Gc and l0 govern initiation and do so monotonically over the four values:
+Gc x 0.25 / x 0.5 bring initiation to 4.2 / 8.6%, Gc x 2 / x 4 remove it
+from the path (max d 0.46 / 0.25 at 20%); l0 = 3h / 4h bring it to 12.9 /
+10.5%, l0 = h / 1.5h remove it. The viscosity is immaterial at the
+quasi-static rate (eta = 1 to 30 MPa s: the same fracture strain, the
+peak within 0.06 MPa). The plastic-work threshold moves the CP initiation
+strain by about +0.1% strain per MPa of W_c (5 / 10 / 20 MPa: +0.5 / +0.9
+/ +1.9%) and W_c = 40 MPa removes initiation from the path; with the
+intragranular driving force the plastic work at the initiation site is
+spent in a narrower range than in J2, so a threshold removes a larger
+share of it. Five alternations against three change the fracture strain
+by one load step (17.11 against 17.19%) and the final damage by 0.01: the
+1e-3 alternation test is met within three. The CP configuration therefore
+keeps W_c = 0 (§4.5).
 
 ## 6. Fields of the calibrated plates (J2 at W_c 0, CP)
 
