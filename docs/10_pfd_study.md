@@ -288,6 +288,11 @@ both remove the early diffuse softening of the AT2 base (§3.2). Figures
 with a plastic-work threshold (§4.2: W_c = 20 MPa keeps the initiation
 strain and restores the peak) and AT1 is the author's.
 
+> Cleanup of 2026-10-15 (author's request): the figures and figure decks of the
+> W_c 0 and W_c 20 J2 passes (§3.2, §4.1-4.9), the AT1/zeta set (§4.4), the
+> probe deck and the h160 mesh were removed from the repository; the numbers
+> above stay as the calibration record, the carried J2 results are §4.10-4.13.
+
 ### 4.10 W_c scan: the carried J2 configuration (author's revision of 2026-10-14)
 
 The author read the W_c = 0 and W_c = 20 calibrations (§3.2, §4.6) as
