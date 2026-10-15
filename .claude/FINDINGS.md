@@ -224,3 +224,18 @@ NOT derivable from the code: measured facts, decisions, and traps.
   The coupled routes' Newton counts to compare are `first_mech_iterations`
   (what a predictor replaces) and `mech_iterations_total`; the plain
   `mech_iterations` column is the last alternation only.
+
+- 2026-10-15 (author's revision round, memory `study-revision-2026-10-14`): the J2+PFD
+  configuration is W_c = 200 MPa, Gc = 385.5 MPa um, l0 = 5 um (W_c scan, docs/10 §4.10);
+  every J2 result at W_c 0 or 20 is superseded (kept as the calibration record). CP+PFD
+  unchanged (Gc 1106, l0 5, W_c 0). Sensitivities carry four values per parameter; the
+  mesh studies carry h20/h40/h80; the shape study (docs/10 §9) ran all three series on
+  CP+PFD. Figure rules: colour per parameter and line style per value in categorical
+  studies, colour bars on field maps, crack maps = equivalent plastic strain with the
+  d >= 0.8 elements solid, a GIF of initiation/propagation (`pfd_fields.py gif = true`).
+- The J2 VTK series carry `equivalent_plastic_strain` only from PINNACLE 863b787 (ADR 0031
+  item 16); older J2 series (W_c 0/20 calibrations) do not. Local PINNACLE runs need
+  netCDF4 in the python3.11 user site (`python3.11 -m pip install --user netCDF4`,
+  done 2026-10-15); the Exodus reader refuses to run without it.
+- Study-deck case names are lowercased by the translator (`A_x2.5_y5` -> `a_x2.5_y5`):
+  result directories and `[Labels]` keys follow the lowercase form.

@@ -10,7 +10,7 @@
   target_strain = 0.172
 []
 [Labels]
-  base = 'grain instance A (Part I structure)'
-  sB = 'grain instance B'
-  sC = 'grain instance C'
+  base = 'instance A (Part I structure)'
+  sB = 'instance B'
+  sC = 'instance C'
 []
