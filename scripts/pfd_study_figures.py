@@ -64,6 +64,8 @@ VALUE_STYLES = ["-", "--", "-.", ":"]
 
 def _case_style(rows: list[dict]) -> dict[str, tuple[str, str]]:
     """(colour, linestyle) per case of a categorical study: colour by the varied parameter, style by its value."""
+    if len(rows) <= 4:   # a short categorical study (routes, grain instances): one colour per case
+        return {r["case"]: ("#111111" if not r["params"] else PARAM_COLOURS[i % len(PARAM_COLOURS)], "-") for i, r in enumerate(rows)}
     groups: dict[str, list[str]] = {}
     for r in rows:
         param = next(iter(r["params"]), "")
