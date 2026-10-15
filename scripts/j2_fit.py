@@ -181,7 +181,8 @@ def main(argv):
         plt.rcParams.update({"font.size": 9, "axes.labelsize": 10, "legend.fontsize": 8, "mathtext.fontset": "dejavusans",
                              "xtick.direction": "in", "ytick.direction": "in", "xtick.top": True, "ytick.right": True})
         fig, ax = plt.subplots(figsize=(6.0, 4.2), dpi=200)
-        ax.plot(np.concatenate([[0], 100 * eps_e]), np.concatenate([[0], sig_e]), color="#d1495b", lw=1.6, label="experiment (digitized)")
+        # The digitized trace carries a digitising artefact (a dip near 14%); the
+        # fit is shown against the experiment markers only (author, 2026-10-14).
         for (law, fit_e), ls, col in zip(curves.items(), ("--", "-."), ("#1f4e9c", "#00798c"), strict=False):
             ax.plot(100 * grid, fit_e, color=col, lw=1.4, ls=ls, label=rec["laws"][law]["label"])
         if mrows:

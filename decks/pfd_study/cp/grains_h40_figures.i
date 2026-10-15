@@ -9,3 +9,8 @@
   markers       = ../../../data/digitized/al2219_fig3_experiment_markers.csv
   target_strain = 0.172
 []
+[Labels]
+  base = 'grain instance A (Part I structure)'
+  sB = 'grain instance B'
+  sC = 'grain instance C'
+[]

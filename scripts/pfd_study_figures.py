@@ -54,7 +54,29 @@ def read_deck(path: Path) -> dict:
     cfg = Translator().translate(InputParser().parse(path.read_text()))
     if "figures" not in cfg:
         raise SystemExit(f"{path}: missing [Figures] block")
+    cfg["figures"]["_labels"] = {k.lower(): _label(v, k) for k, v in cfg.get("labels", {}).items()}
     return cfg["figures"]
+
+
+PARAM_COLOURS = ["#1f4e9c", "#d1495b", "#00798c", "#edae49", "#6a4c93", "#2a9d8f", "#8c564b", "#e377c2"]
+VALUE_STYLES = ["-", "--", "-.", ":"]
+
+
+def _case_style(rows: list[dict]) -> dict[str, tuple[str, str]]:
+    """(colour, linestyle) per case of a categorical study: colour by the varied parameter, style by its value."""
+    groups: dict[str, list[str]] = {}
+    for r in rows:
+        param = next(iter(r["params"]), "")
+        groups.setdefault(param, []).append(r["case"])
+    out = {}
+    for gi, (param, names) in enumerate(groups.items()):
+        if param == "":
+            for n in names:
+                out[n] = ("#111111", "-")
+            continue
+        for vi, n in enumerate(names):
+            out[n] = (PARAM_COLOURS[(gi - (1 if "" in groups else 0)) % len(PARAM_COLOURS)], VALUE_STYLES[vi % len(VALUE_STYLES)])
+    return out
 
 
 def _label(v, default: str) -> str:
@@ -122,29 +144,36 @@ def main(argv):
     if key != "case":
         rows.sort(key=lambda r: (r["value"] is None, r["value"]))
     # (a) curves
-    fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=200)
+    labels = f.get("_labels", {})
+    styles = _case_style(rows) if key == "case" else {}
+    many = len(rows) > 7
+    fig, ax = plt.subplots(figsize=(8.2 if many else 6.2, 4.4), dpi=200)
     vals = [r["value"] for r in rows if r["value"] is not None]
     lo, hi = (min(vals), max(vals)) if vals else (0.0, 1.0)
     for r in rows:
         t = 0.5 if r["value"] is None or hi == lo else (np.log(r["value"] / lo) / np.log(hi / lo) if f.get("logx", True) in (True, "true") and lo > 0 else (r["value"] - lo) / (hi - lo))
-        c = cmap(0.1 + 0.8 * t)
+        c, ls = styles.get(r["case"], (cmap(0.1 + 0.8 * t), "-"))
         ok = np.isfinite(r["s"])
-        label = (
+        label = labels.get(r["case"].lower()) or (
             f"h = {r['value']:g} µm" if key == "mesh" and r["value"] is not None
             else f"{key} = {r['value']:g}" if key not in ("mesh", "case") and r["value"] is not None
             else (", ".join(f"{k} = {v}" for k, v in r["params"].items()) or "base")
         )
-        ax.plot(np.concatenate([[0], 100 * r["e"][ok]]), np.concatenate([[0], r["s"][ok]]), color=c, lw=1.4, label=label)
+        r["label"] = label
+        ax.plot(np.concatenate([[0], 100 * r["e"][ok]]), np.concatenate([[0], r["s"][ok]]), color=c, lw=1.4, ls=ls, label=label)
         fs = r["frac"].get("fracture_strain_node")
         if fs is not None:
             j = int(np.argmin(np.abs(r["e"] - fs)))
-            ax.plot([100 * r["e"][j]], [r["s"][j]], "o", ms=5, color=c, mfc="white")
+            ax.plot([100 * r["e"][j]], [r["s"][j]], "o", ms=5, color=c if isinstance(c, str) else c, mfc="white")
     if markers:
         ax.plot([100 * e for e, _ in markers], [s_ for _, s_ in markers], "x", ms=5, color="#111111", label="experiment markers")
     ax.axvline(100 * target, color="#888888", lw=0.8, ls=":")
     ax.set_xlim(0, 20.5); ax.set_ylim(0, 700); ax.grid(False)
     ax.set_xlabel(r"Nominal strain $\varepsilon$ (%)"); ax.set_ylabel(r"Engineering stress $\sigma$ (MPa), gross section")
-    ax.legend(loc="lower right", frameon=False, ncol=2)
+    if many:
+        ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0), frameon=False, fontsize=7)
+    else:
+        ax.legend(loc="lower right", frameon=False, ncol=2 if len(rows) > 4 else 1, fontsize=7.5)
     fig.tight_layout(); fig.savefig(figs / f"{prefix}_curves.png"); plt.close(fig)
     # (b) panels
     fig, axes = plt.subplots(1, 3, figsize=(9.6, 3.2), dpi=200)
@@ -161,7 +190,7 @@ def main(argv):
                 ax.plot(x[none], np.full(none.sum(), 0.2), "^", color="#1f4e9c", ms=5, mfc="white")
         if categorical:
             ax.set_xticks(x)
-            ax.set_xticklabels([(", ".join(f"{k} {v}" for k, v in r["params"].items()) or "base") for r in rows], rotation=60, ha="right", fontsize=6.5)
+            ax.set_xticklabels([r["label"] for r in rows], rotation=45, ha="right", fontsize=6.5)
         elif f.get("logx", True) in (True, "true"):
             ax.set_xscale("log")
         ax.set_xlabel("" if categorical else _label(f.get("xlabel"), key)); ax.set_ylabel(lab); ax.grid(False)

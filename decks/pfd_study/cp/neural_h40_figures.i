@@ -9,3 +9,8 @@
   markers       = ../../../data/digitized/al2219_fig3_experiment_markers.csv
   target_strain = 0.172
 []
+[Labels]
+  base = 'FE (cold Newton)'
+  linear = 'PINN+FEM, linear extrapolation'
+  solver_grain = 'PINN as solver, grain-aware, verified'
+[]

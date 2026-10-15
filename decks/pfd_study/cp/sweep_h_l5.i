@@ -7,6 +7,9 @@
   concurrent = 2
 []
 [Cases]
+  [./h20]
+    mesh = ../../../results/pfd_study/mesh/h20_hole5/mesh.e   # coarse level, author 2026-10-14
+  []
   [./h80]
     mesh = ../../../results/pfd_study/mesh/h80_hole5/mesh.e
   []
