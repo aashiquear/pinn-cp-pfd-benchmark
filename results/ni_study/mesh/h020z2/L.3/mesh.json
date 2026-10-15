@@ -1,0 +1,84 @@
+{
+  "generator": "dogbone_mesh",
+  "length": 25.4,
+  "gage_length": 8.0,
+  "gage_width": 1.85,
+  "grip_width": 4.8,
+  "fillet_radius": 3.175,
+  "fillet_extent": 2.681534075860309,
+  "grip_thickness": 0.35,
+  "stations": [
+    [
+      0.0,
+      0.3314
+    ],
+    [
+      2.0,
+      0.3279
+    ],
+    [
+      4.0,
+      0.3222
+    ],
+    [
+      6.0,
+      0.317
+    ],
+    [
+      8.0,
+      0.312
+    ]
+  ],
+  "h": 0.2,
+  "h_grip": 0.4,
+  "divisions": [
+    88,
+    9,
+    2
+  ],
+  "gage_cells": 40,
+  "thickness_range": [
+    0.312,
+    0.35
+  ],
+  "n_nodes": 2670,
+  "n_elements": 1584,
+  "n_inverted": 0,
+  "blocks": {
+    "1": 720,
+    "2": 324,
+    "3": 540
+  },
+  "validation": {
+    "passed": true,
+    "quality": {
+      "n_elements": 1584,
+      "min_scaled_jacobian": 0.5815942203460563,
+      "mean_scaled_jacobian": 0.9853977467770504,
+      "p01_scaled_jacobian": 0.7070056579960603,
+      "n_inverted": 0,
+      "n_below_threshold": 0,
+      "threshold": 0.2,
+      "max_edge_ratio": 3.848575001950232,
+      "mean_edge_ratio": 2.0630820720118566,
+      "min_volume": 0.006418494025793622,
+      "total_volume": 29.941725624239442
+    },
+    "topology": {
+      "n_nodes": 2670,
+      "n_elements": 1584,
+      "n_duplicate_elements": 0,
+      "n_degenerate_elements": 0,
+      "n_nonmanifold_faces": 0,
+      "n_boundary_faces": 1972,
+      "n_unused_nodes": 0,
+      "n_hanging_nodes": 0,
+      "conforming": true
+    },
+    "geometry": {},
+    "ligaments": {},
+    "phase_field": {},
+    "failures": []
+  },
+  "specimen": "L.3"
+}
