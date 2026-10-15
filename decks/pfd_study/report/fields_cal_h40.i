@@ -1,24 +1,28 @@
-# Field maps of the calibrated J2+PFD (W_c 0 pass) and CP+PFD plates at h40:
-# damage and equivalent plastic strain at 5, 10, 15, 17.2 (initiation) and
-# 19% nominal strain, and the crack path at the end (elements with mean
-# damage >= 0.8). Read by scripts/pfd_fields.py.
+# Report field maps of the calibrated plates (docs/10 §6): damage and
+# equivalent plastic strain at fixed strains, the crack path with the
+# d >= 0.8 elements solid over the plastic strain, and the GIF of damage
+# initiation and propagation (author's request 2026-10-14). The CP run is the
+# calibrated case as rerun by the neural-route study (identical parameters,
+# the series carries the CP state fields); the J2 run is the base at the W_c
+# chosen by the W_c scan (docs/10 §4.10).
 [Fields]
   figures    = ../../../figures/pfd
   prefix     = cal_h40
   strains    = '5 10 15 17.2 19'
-  strain_max = 0.20
   threshold  = 0.8
   field      = equivalent_plastic_strain
-  vmax       = 1.0
+  vmax       = 0.5
   deform     = 1.0
+  gif        = true
+  gif_every  = 1
 []
 [Runs]
   [./cp]
-    dir   = ../../../results/pfd_study/cp/cal_h40/l5/gc1106.12
+    dir   = ../../../results/pfd_study/cp/neural_h40/base
     label = 'CP+PFD, l0 = 5 um'
   []
   [./j2]
-    dir   = ../../../results/pfd_study/j2/cal_h40/l5/gc2063.43
+    dir   = ../../../results/pfd_study/j2/base_h40
     label = 'J2+PFD, l0 = 5 um'
   []
 []
