@@ -64,17 +64,36 @@ gauge strain with the 126 MPa reference:
 | iterated, 2 passes, cap 1e-4 | 64 | 178 | +41% | 5 min |
 | iterated, 2 passes, cap 1e-5 | 256 (1.5e-4) | 136 | +8% | 15 min |
 | iterated, 3 passes, cap 1e-5 | 64 | 144 | +14% | 10 min |
-| implicit, cap 1e-5 (single element, 16 steps of 2.5e-4) | -- | within 0.5% of a 1,024-step explicit path | -- | 12 s |
+| implicit, sub-stepping integrator, cap 1e-5 (single element, 16 steps of 2.5e-4) | -- | within 0.5% of a 1,024-step explicit path | -- | 12 s; 25 s per step on the dog-bone |
+| implicit, backward-Euler integrator (single element, 4 and 16 steps) | 4 (1e-3) and 16 (2.5e-4) | 91.1 against 90.3 of the 1,024-step explicit path | +1% | 5 Newton iterations per step |
+| implicit, backward-Euler integrator | 64 (5.7e-4) | 120.7 at 3.0%; 142.3 at 4.75% (gage field 142.6) against about 140 | -4% at 3%, +2% at 4.75% | 20 s per step, 5.7 Newton iterations per step |
 
 The explicit scheme is not monotonic in the step count because its two
 errors have opposite signs (the trial stress overshoots, the recorded
 relaxed-state reaction undershoots) and cross between 128 and 256 steps;
 it needs increments near 1e-4 for 5% and is 4% low at 3.7e-5. The
-iterated scheme at a 1e-4 sub-increment cap is not better than the
-explicit one at the same step count; at 1e-5 it is +8% at 1.5e-4
-increments. The implicit scheme is accurate at any step size on the
-single element but costs an integration per residual evaluation (about 25
-s per load step on this 1,760-point mesh).
+iterated scheme (the step re-solved with the state integrated along the
+converged path frozen) is not better than the explicit one at the same
+step count: its last pass still leaves the step's flow out of the
+equilibrium. The implicit scheme integrates the state inside every
+residual evaluation; with the path-following explicit sub-stepping it is
+accurate but costs an integration per evaluation (25 s per step here),
+with the backward-Euler slip update (a local Newton on the slip
+increments of every point, the material's exact evaluation at the trial
+end state, a semi-analytic Jacobian, backtracking, a Jacobi phase for
+trials far off equilibrium, backward-Euler sub-increments and the
+sub-stepping as fallbacks) it matches the material point within 2% at
+increments up to 1e-3 and converges the global Newton in 5-6 iterations
+with the full-gradient finite-difference tangent. Part III runs the
+implicit backward-Euler update (`state_update = implicit`, the pipeline's
+default). What the checks also showed: the reaction is to be recorded
+after the state advance in every scheme (with the explicit update the
+relaxed state's load is the better first-order estimate of the two, with
+the implicit one the committed state is what the step solved; the Part II
+CP curves are therefore the explicit scheme's post-advance reaction, which
+sits about 7% below its own trial equilibrium at 7.8e-4 increments, an
+error the Part I calibration absorbed), and the J2 route is unaffected
+(its committed state does not change the stress at fixed strain).
 
 Decision: PINNACLE gets a consistent stress update (ADR 0033): with
 `state_update = implicit` the callback's `stress()` integrates the state
