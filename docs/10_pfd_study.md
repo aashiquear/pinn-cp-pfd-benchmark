@@ -308,14 +308,15 @@ driving force 91 MPa at 5%, 428 at 10%, 928 at 15%, 1160 MPa at 17%).
 | 0 | 2063 | 17.34% | 6.1% | 415 | 74.6 |
 | 20 | 2003 | 17.11% | 6.1% | 485 | 81.6 |
 | 200 | 385.5 | 17.19% | 13.9% | 571 | 87.0 |
-| 400 | (bisection running) | | | | |
+| 400 | 155.9 | 17.19% | 14.1% | 485 | 75.1 |
 | 600 | 144.7 | 17.19% | 13.4% | 472 | 73.8 |
 | 800 | 144.7 | 17.19% | 13.4% | 472 | 73.8 |
 
 Findings. (i) The threshold and Gc trade against each other: raising W_c
 from 20 to 200 MPa moves the onset from 6.1 to 13.9% and lets Gc fall
 5x (2003 -> 386), with the peak rising from 485 to 571 MPa (97% of the
-experiment's 590). (ii) Beyond that the trade turns: at W_c = 600 the
+experiment's 590). (ii) Beyond that the trade turns: at W_c = 400 the onset is one step later
+(14.1%) but the peak is already down to 485 MPa; at W_c = 600 the
 plastic work exceeds the threshold only in the root elements late in the
 path, the bisection needs Gc = 145 to still initiate by 17.2%, and the low
 Gc degrades the root so fast that the peak falls back to 472 MPa with the
