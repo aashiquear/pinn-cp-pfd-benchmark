@@ -1,11 +1,13 @@
 # Crystal plasticity and phase-field ductile fracture of Al2219 polycrystal plates with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, draft of 2026-10-13. Status: Part I (crystal plasticity,
+Technical report, draft of 2026-10-15. Status: Part I (crystal plasticity,
 §2-§11) complete; Part II (phase-field ductile fracture on J2 plasticity and
-coupled with crystal plasticity) to follow; abstract and introduction are held
-until the full study is complete. Every number here traces to a run in
-`docs/run_ledger.md` and to a deck under `decks/`. Figures are produced by
-`scripts/report_figures.py` from `decks/report/cp_calibration_figures.i`.
+coupled with crystal plasticity, §12-§20) complete after the author's revision
+round of 2026-10-14; abstract and introduction are held until the study is
+closed. Every number here traces to a run in `docs/run_ledger.md` and to a
+deck under `decks/`. Part I figures are produced by `scripts/report_figures.py`
+from `decks/report/cp_calibration_figures.i`; Part II figures by the
+deck-driven scripts named in each section, under `figures/pfd/`.
 
 ## Abstract
 
@@ -1184,6 +1186,560 @@ routes (one run per query).
 ![surrogate cost](../../figures/report/surrogate_h40_cost_per_query.png)
 
 
+## 12. Part II: phase-field ductile fracture on the perforated plate
+
+### 12.1 Problem
+
+The Part I plate (100 x 50 x 1 um, 30 grains, x-loaded to 20% nominal
+strain at 1e-3 /s) receives a central through-hole of diameter 5 um. The
+hole is the stress concentrator whose Irwin plastic zone
+$r_p = (a/2)(\sigma/\sigma_y)^2$ stays clear of the plate edges
+($r_p \le 3.3$ um against a 22.5 um ligament) and is smaller than a grain
+(13.7 um median), so that initiation is governed by the grains at the
+hole. Two couplings are benchmarked on the same geometry, mesh and
+loading: J2 plasticity with phase-field ductile fracture (J2+PFD) and the
+Part I crystal plasticity with the same fracture model (CP+PFD).
+
+### 12.2 Fracture model
+
+The AT2 phase field $d$ with degradation $g(d) = (1-d)^2$ and the
+plastic-work driving force,
+
+$$
+\frac{G_c}{\ell_0}\, d - G_c \ell_0 \nabla^2 d = 2 (1-d)\, \mathcal{H}, \qquad
+\mathcal{H}(t) = \max_{\tau \le t} \left\langle \zeta\, W_p(\tau) - W_c \right\rangle ,
+\tag{20}
+$$
+
+where $W_p$ is the accumulated plastic work density, $\zeta = 1$, $W_c$ a
+plastic-work threshold below which no damage accrues, and $\eta = 0$
+(quasi-static). The mechanics and the damage are solved in a staggered
+loop with up to three alternations per load step (tolerance 1e-3 on the
+damage increment), 256 load steps to 20%, and the mechanics stiffness
+degraded by $g(d)$. Fracture initiation is the first load step at which
+$d \ge 0.8$ at any node (the element-average criterion gives the same
+step on every case reported); the fracture strain is the nominal strain of
+that step. The calibration target is the last point of the (vaughan 2024
+mechanistic) curve, 17.2% nominal strain.
+
+### 12.3 Mesh
+
+hexaform `plate` meshes (hexahedral, one element through the thickness,
+a conforming O-grid ring of 24 segments around the hole, grain ids from the
+Part I point file at the element centroids): h20 (5 um background, 308
+hex8, 700 nodes), h40 (2.5 um, 860, 1,864; the production level) and h80
+(1.25 um, 3,232, 6,736). The h160 level (12,800 elements) was built and
+dropped: no load step of the coupled J2 solve completed in 5.5 h.
+
+![mesh h40](../../figures/pfd/mesh_h40_hole5.png)
+
+*Figure 20. The h40 perforated mesh coloured by grain id (top) and the
+O-grid ring around the hole (bottom): 4 layers, hole-arc element 0.65 um.*
+
+### 12.4 Hardware
+
+Every run of Part II uses the torch CPU arm (the Part I hardware
+benchmark's best arm), two threads per run and up to seven runs side by
+side on the 16-core host, except the hardware comparison of §18.
+
+## 13. J2 plasticity with phase-field ductile fracture
+
+### 13.1 J2 law
+
+The isotropic hardening law is fitted to the digitized experimental curve
+converted to true stress and logarithmic strain (elastic constants from the
+Voigt average of the cubic set, E = 71.2 GPa, nu = 0.346, so that the J2
+and CP plates share one elastic response). A power law
+$\sigma_y = 299 + 829\,\alpha^{0.44}$ MPa misses the nearly linear late
+hardening by 5 to 6% at 13 to 17% strain; a 26-point piecewise table of
+median true stress in log-spaced bins of plastic strain reproduces every
+experiment marker from 0.6% to 17% within 0.3% and is the J2 law of
+Part II (`decks/pfd_study/j2_fit.i`, `scripts/j2_fit.py`).
+
+![J2 fit](../../figures/pfd/j2_fit.png)
+
+*Figure 21. The two J2 hardening laws against the experiment markers; the
+piecewise table is carried.*
+
+### 13.2 Threshold and toughness: the W_c scan
+
+With $W_c = 0$ or 20 MPa and $G_c$ calibrated to the 17.2% target, the
+perforated J2 plate softens from 6% strain (peak 415 and 485 MPa) while the
+experiment hardens to 17%, and the calibrated $G_c$ of 2,000 MPa um
+(2 kJ/m$^2$) is high for an aluminium alloy. The threshold was therefore
+scanned at $\ell_0 = 5$ um, with $G_c$ re-calibrated by log-bisection at
+every value (`decks/pfd_study/j2/cal_h40_wc{200,400,600,800}.i`,
+`scripts/pfd_calibrate.py`; the scan values bracket the plastic-work
+density at the hole, 91 MPa at 5% and 1,160 MPa at 17%):
+
+| $W_c$ (MPa) | calibrated $G_c$ (MPa um) | fracture strain | onset of softening | peak (MPa) |
+|---|---|---|---|---|
+| 0 | 2,063 | 17.3% | 6.1% | 415 |
+| 20 | 2,003 | 17.1% | 6.1% | 485 |
+| 200 | 385.5 | 17.2% | 13.9% | 571 |
+| 400 | 155.9 | 17.2% | 14.1% | 485 |
+| 600 | 144.7 | 17.2% | 13.4% | 472 |
+| 800 | 144.7 | 17.2% | 13.4% | 472 |
+
+*Table 13. The W_c scan at l0 = 5 um, h40.*
+
+![W_c scan](../../figures/pfd/j2_wc_scan_h40_curves.png)
+
+*Figure 22. Gross-section stress-strain curves of the calibrated J2 plate
+at each threshold, the CP+PFD plate in grey, the experiment markers and the
+17.2% target (dotted). Circles mark initiation.*
+
+The threshold and the toughness trade against each other: raising $W_c$
+from 20 to 200 MPa moves the onset of softening from 6.1 to 13.9% and lets
+$G_c$ fall five-fold, with the peak rising to 571 MPa (97% of the
+experiment's 590). Beyond 400 MPa the trade turns: the plastic work exceeds
+the threshold only in the root elements late in the path, the bisection
+needs $G_c \approx 150$ MPa um to initiate by 17.2%, and that low toughness
+degrades the root so fast that the peak falls back below 490 MPa; 600 and
+800 MPa reproduce each other to the digit because the threshold is already
+above the plastic work everywhere but the root. The carried J2
+configuration is $W_c = 200$ MPa, $G_c = 385.5$ MPa um (0.39 kJ/m$^2$),
+$\ell_0 = 5$ um.
+
+### 13.3 Calibrated $G_c(\ell_0)$ and the length-scale sweep
+
+| $\ell_0$ (um) | $\ell_0/h$ | calibrated $G_c$ (MPa um) | $G_c \ell_0$ | fracture strain | peak (MPa) at strain |
+|---|---|---|---|---|---|
+| 5 | 2 | 385.5 | 1,928 | 17.19% | 571 at 13.9% |
+| 10 | 4 | 488.9 | 4,889 | 17.27% | 537 at 13.0% |
+| 20 | 8 | 558.8 | 11,175 | 17.19% | 499 at 11.6% |
+
+*Table 14. J2+PFD calibration at W_c = 200 MPa, h40.*
+
+| $\ell_0$ at $G_c = 385.5$ (um) | 2.5 (= h) | 5 | 10 | 20 | 40 |
+|---|---|---|---|---|---|
+| fracture strain | 18.13% | 17.19% | 15.86% | 14.45% | 15.08% |
+| peak (MPa) | 611 | 571 | 509 | 448 | 436 |
+| fracture energy (MPa) | 101.9 | 87.0 | 71.7 | 58.2 | 58.6 |
+
+*Table 15. J2+PFD length-scale sweep at fixed G_c (the (chakraborty 2016
+multiscale) Fig. 8 analogue).*
+
+![J2 calibration](../../figures/pfd/j2_cal_h40_wc200_curves.png)
+
+*Figure 23. The calibrated J2 plates at l0 = 5, 10 and 20 um.*
+
+![J2 l0 sweep](../../figures/pfd/j2_sweep_l_h40_wc200_curves.png)
+
+*Figure 24. J2+PFD at fixed G_c, l0 from h to 16h.*
+
+The calibrated toughness rises with the length scale (x1.45 from 5 to
+20 um) and the peak falls because a wider damage band degrades more of the
+ligament before the root reaches $d = 0.8$. At fixed $G_c$ the fracture
+strain, the peak and the fracture energy fall with $\ell_0$ to 20 um and
+the fracture strain turns up at 40 um, where the band spans the ligament
+and the damage grows everywhere at once.
+
+### 13.4 Parameter sensitivity
+
+One parameter at a time from the carried configuration, four values each
+(`decks/pfd_study/j2/sens_h40.i`):
+
+| parameter | values | fracture strain | peak (MPa) |
+|---|---|---|---|
+| base | $G_c$ 385.5, $\ell_0$ 5, $\eta$ 0, $W_c$ 200 | 17.19% | 571 |
+| $G_c$ x 0.25, 0.5, 2, 4 | 96, 193, 771, 1,542 | 9.06, 13.36%, none, none | 398, 497, 617, 645 |
+| $\ell_0$ (um) | 2.5, 3.75, 7.5, 10 | 18.13, 17.58, 16.48, 15.86% | 611, 590, 537, 509 |
+| $\eta$ (MPa s) | 1, 3, 10, 30 | 17.34, 17.58, 18.28, 19.69% | 572, 573, 579, 595 |
+| $W_c$ (MPa) | 50, 100, 400, 800 | 7.97, 11.72%, none, none | 471, 523, 594, 596 |
+| alternations | 5 | 17.19% | 571 |
+
+*Table 16. J2+PFD sensitivity at h40 ("none": no initiation by 20%).*
+
+![J2 sensitivity](../../figures/pfd/j2_sens_h40_wc200_curves.png)
+
+*Figure 25. J2+PFD sensitivity curves: one colour per parameter, one line
+style per value.*
+
+Every fracture parameter is active: $G_c$ and the threshold move the
+initiation by several percent of strain (the threshold is the steepest
+lever, 8.0% at 50 MPa, none at 400 MPa), $\ell_0$ moves it monotonically
+with the peak, and the viscosity, immaterial at $W_c = 0$, now delays
+initiation by 1.1 to 2.5% at 10 to 30 MPa s because the damage grows in
+3% of strain once the threshold is crossed. Five alternations against three
+leave the result unchanged.
+
+### 13.5 Mesh sensitivity
+
+| mesh | h (um) | $\ell_0/h$ | fracture strain | peak (MPa) | fracture energy (MPa) |
+|---|---|---|---|---|---|
+| h20 | 5 | 1 | 17.34% | 570 | 92.0 |
+| h40 | 2.5 | 2 | 17.19% | 571 | 87.0 |
+| h80 | 1.25 | 4 | 16.02% | 564 | 79.4 |
+
+*Table 17. J2+PFD at W_c = 200, l0 = 5 um, three mesh levels.*
+
+![J2 mesh](../../figures/pfd/j2_sweep_h_l5_wc200_curves.png)
+
+*Figure 26. J2+PFD mesh sensitivity.*
+
+The peak is mesh-independent within 1.2%, but the initiation strain of the
+thresholded J2 source is not converged at h40: h80 initiates 1.2% strain
+earlier. The threshold confines the damage source to the root elements
+where $W_p > W_c$, and the finer mesh resolves a smaller, hotter root volume
+that crosses the threshold earlier. This is a limitation of the carried J2
+configuration (a calibration at h80 would lower $G_c$ by about 10%); the
+$\ell_0 \ge 2h$ rule, sufficient for the diffuse $W_c = 0$ source
+(h40 and h80 within two load steps), is not sufficient for a thresholded
+one.
+
+## 14. Crystal plasticity with phase-field ductile fracture
+
+### 14.1 Calibrated $G_c(\ell_0)$ and the length-scale sweep
+
+The Part I calibrated crystal-plasticity set and grain structure, the AT2
+model with $W_c = 0$ and $\eta = 0$, $G_c$ calibrated by log-bisection
+at each $\ell_0$ (`decks/pfd_study/cp/cal_h40.i`):
+
+| $\ell_0$ (um) | $\ell_0/h$ | calibrated $G_c$ (MPa um) | fracture strain | peak (MPa) at strain |
+|---|---|---|---|---|
+| 5 | 2 | 1,106 | 17.19% | 596 at 16.6% |
+| 10 | 4 | 1,832 | 17.11% | 588 at 16.5% |
+| 20 | 8 | 2,818 | 17.27% | 579 at 16.4% |
+
+*Table 18. CP+PFD calibration at h40.*
+
+| $\ell_0$ at $G_c = 1,106$ (um) | 2.5 (= h) | 5 | 10 | 20 | 40 |
+|---|---|---|---|---|---|
+| fracture strain | none | 17.2% | 10.5% | 7.1% | 6.9% |
+| peak (MPa) | 658 | 596 | 486 | 418 | 407 |
+| fracture energy (MPa) | 103 | 85.0 | 43.7 | 26.7 | 25.4 |
+
+*Table 19. CP+PFD length-scale sweep at fixed G_c.*
+
+![CP calibration](../../figures/pfd/cp_cal_h40_curves.png)
+
+*Figure 27. The calibrated CP+PFD plates at l0 = 5, 10 and 20 um against
+the experiment markers.*
+
+![CP l0 sweep](../../figures/pfd/cp_sweep_l_h40_curves.png)
+
+*Figure 28. CP+PFD at fixed G_c, l0 from h to 16h.*
+
+The crystal-plasticity plate needs no threshold: its gross-section stress
+follows the plain-specimen markers within 1 to 2% from 0.6% to 17% (peak
+596 MPa at 16.6% against 593 at 17%) and loses its load in 0.6% of strain
+after initiation. This agreement is recorded as a coincidence of a
+different specimen, not a validation: the perforated gross section is 10%
+smaller and the Part I plain plate matched the same markers, so the net-
+section loss and the different hardening of the polycrystal under the
+hole's stress state cancel on this geometry. The calibrated $G_c$ is
+1,106 MPa um at $\ell_0 = 5$ um, 2.9x the J2 value at the same length
+scale, and it rises with $\ell_0$ to the J2 $W_c = 0$ value at 20 um,
+where the band averages over the four grains at the hole. At fixed
+$G_c$ the sweep gives the clean (chakraborty 2016 multiscale) Fig. 8 form:
+peak, fracture strain and energy all fall monotonically with $\ell_0$
+and saturate between 8h and 16h; at $\ell_0 = h$ nothing initiates.
+
+### 14.2 Parameter sensitivity
+
+| parameter | values | fracture strain | peak (MPa) |
+|---|---|---|---|
+| base | $G_c$ 1,106, $\ell_0$ 5, $\eta$ 0, $W_c$ 0 | 17.19% | 596 |
+| $G_c$ x 0.25, 0.5, 2, 4 | 277, 553, 2,212, 4,424 | 4.22, 8.59%, none, none | 381, 472, 657, 666 |
+| $\ell_0$ (um) | 2.5, 3.75, 7.5, 10 | none, none, 12.89, 10.47% | 658, 641, 529, 486 |
+| $\eta$ (MPa s) | 1, 3, 10, 30 | 17.19% (all) | 596 (all) |
+| $W_c$ (MPa) | 5, 10, 20, 40 | 17.66, 18.13, 19.06%, none | 602, 608, 619, 641 |
+| alternations | 5 | 17.11% | 595 |
+
+*Table 20. CP+PFD sensitivity at h40.*
+
+![CP sensitivity](../../figures/pfd/cp_sens_h40_curves.png)
+
+*Figure 29. CP+PFD sensitivity curves.*
+
+$G_c$ and $\ell_0$ govern initiation monotonically; the viscosity is
+immaterial at the quasi-static rate (peak within 0.06 MPa over 1 to 30
+MPa s); the threshold moves initiation by about +0.1% strain per MPa and
+removes it at 40 MPa, because the intragranular plastic work at the
+initiation site is spent in a narrower range than in J2. Five alternations
+against three change the fracture strain by one load step.
+
+### 14.3 Mesh sensitivity
+
+| mesh | h (um) | $\ell_0/h$ | fracture strain | peak (MPa) | fracture energy (MPa) |
+|---|---|---|---|---|---|
+| h20 | 5 | 1 | 16.09% | 609 | 81.0 |
+| h40 | 2.5 | 2 | 17.19% | 596 | 85.0 |
+| h80 | 1.25 | 4 | 17.58% | 587 | 86.3 |
+
+*Table 21. CP+PFD at l0 = 5 um, three mesh levels.*
+
+![CP mesh](../../figures/pfd/cp_sweep_h_l5_curves.png)
+
+*Figure 30. CP+PFD mesh sensitivity.*
+
+The sequence converges from below in the initiation strain and from above
+in the peak: h20 ($\ell_0 = h$) initiates 1.1% early and 2% too stiff,
+h40 and h80 differ by five load steps (0.4%) and 1.4% in the peak, within
+the 2% the Part I grain-instance check accepted. h40 with
+$\ell_0 = 5$ um ($\ell_0 = 2h$) is the production configuration.
+
+### 14.4 Grain-instance check
+
+| instance | fracture strain | peak (MPa) | fracture energy (MPa) | max d at 20% |
+|---|---|---|---|---|
+| A (calibration) | 17.19% | 596 | 85.0 | -- |
+| B | none by 20% | 613 | 99.8 | 0.73 |
+| C | 16.09% | 612 | 83.4 | -- |
+
+*Table 22. The calibrated CP+PFD case on the three Part I grain structures.*
+
+![instances](../../figures/pfd/cp_grains_h40_curves.png)
+
+*Figure 31. CP+PFD on the three grain instances.*
+
+With the same $G_c$ and $\ell_0$, instance C initiates 1.1% earlier and
+instance B not at all within the path, while the gross-section curves
+agree within 3% to 15%: the grain configuration at the hole governs the
+initiation strain, as the plastic zone smaller than a grain implies. A
+$G_c$ calibrated on one instance is an instance-specific number.
+
+## 15. Fields: how the two couplings fail
+
+`decks/pfd_study/report/fields_cal_h40.i`, `scripts/pfd_fields.py`
+(damage and equivalent plastic strain at fixed nominal strains, the
+cracked elements $d \ge 0.8$ solid over the plastic strain, and the
+animation `figures/pfd/cal_h40_evolution.gif`).
+
+| run | strain | max d | mean d | elements with d >= 0.8 | max equivalent plastic strain |
+|---|---|---|---|---|---|
+| CP | 5 / 10 / 15 / 17.2% | 0.22 / 0.42 / 0.61 / 0.81 | 0.14 / 0.27 / 0.39 / 0.44 | 0 / 0 / 0 / 2 | 0.16 / 0.30 / 0.42 / 0.46 |
+| CP | 17.5% (end) | 0.97 | 0.47 | 40 | 0.46 |
+| J2 | 5 / 10 / 15 / 17.2% | 0.05 / 0.07 / 0.37 / 0.78 | 0.03 / 0.05 / 0.08 / 0.14 | 0 / 0 / 0 / 0 | 0.17 / 0.31 / 0.62 / 1.02 |
+| J2 | 18.1% (end) | 0.91 | 0.19 | 28 | 1.31 |
+
+*Table 23. Field statistics of the two calibrated plates.*
+
+![damage](../../figures/pfd/cal_h40_damage.png)
+
+*Figure 32. Damage (element mean) on the deformed plates at 5, 10, 15 and
+17.2% and at the end of the path; CP+PFD (top), J2+PFD at W_c = 200
+(bottom).*
+
+![plastic strain](../../figures/pfd/cal_h40_equivalent_plastic_strain.png)
+
+*Figure 33. Equivalent plastic strain at the same strains.*
+
+![crack](../../figures/pfd/cal_h40_crack.png)
+
+*Figure 34. The cracked elements (d >= 0.8, solid) over the equivalent
+plastic strain at the end of each path.*
+
+The two plates reach $d = 0.8$ at the root at the same nominal strain by
+construction, by different routes. The CP plate damages diffusely from the
+first steps (mean $d$ 0.14 at 5%, 0.44 at initiation) because every grain
+accumulates plastic work and the source has no threshold; the hot spot sits
+at the root in the grain below the hole, and the cracked elements extend
+above and below the hole with a tilt toward the lower-right grain
+boundary, while the plastic strain stays below 0.46 in a grain-wise
+pattern. The J2 plate holds its section until the plastic work at the root
+passes the threshold (max $d$ 0.07 at 10%), then a transverse band of
+damage grows across the ligament in a few percent of strain, with the
+plastic strain localised in the same band (1.0 at initiation, three times
+the CP maximum) and the plate necking at the top edge; the 28 cracked
+elements form a straight transverse crack. This is the J2 limitation: with
+a homogeneous flow stress the model matches the curve's hardening and its
+fracture strain only through a threshold and a five-fold lower toughness,
+and the mechanism it then produces (a localised plastic-work band) is not
+the CP mechanism (a grain-set hot spot in a diffusely damaged section).
+Matching the CP fields needs the heterogeneous flow stress of the grain
+structure, not a J2 parameter.
+
+## 16. Stress-concentrator shape study (CP+PFD)
+
+The calibrated CP+PFD set on six elliptical holes (hexaform ellipse holes,
+h40 background, the same ring rule; `decks/pfd_study/cp/shape_h40.i`,
+`decks/pfd_study/mesh/h40_ell_*.i`), in three series: A holds the
+transverse half-extent $a = 2.5$ um and sharpens the root (Inglis
+$K_t = 1 + 2a/b$ = 5 and 9); B holds the hole area and lengthens the
+transverse extent (7.07 and 10 um); C rotates the 5 x 2.5 um ellipse by 45
+and 90 degrees.
+
+| series | case | $K_t$ | fracture strain | peak (MPa) | fracture energy (MPa) | cracked elements at the end |
+|---|---|---|---|---|---|---|
+| -- | circle 5 um | 3 | 17.19% | 596 | 85.0 | 40 |
+| A | 5 x 2.5 | 5 | 17.81% | 602 | 89.1 | 61 |
+| A | 5 x 1.25 | 9 | 18.36% | 606 | 92.2 | 7 |
+| B | 7.07 x 3.54 | 5 | 16.33% | 590 | 79.0 | 45 |
+| B | 10 x 2.5 | 9 | 15.47% | 572 | 74.1 | 11 |
+| C | 5 x 2.5 at 45 deg | -- | 18.52% | 606 | 93.0 | 82 |
+| C | 5 x 2.5 at 90 deg | 2 | 18.91% | 610 | 95.2 | 56 |
+
+*Table 24. The shape study (the 7.07 x 3.54 peak is the value before its
+last-step spike).*
+
+![shape curves](../../figures/pfd/cp_shape_h40_curves.png)
+
+*Figure 35. Stress-strain curves of the seven stress concentrators.*
+
+![shape crack](../../figures/pfd/cp_shape_h40_crack.png)
+
+*Figure 36. Cracked elements over the plastic strain at the end of each
+path (`figures/pfd/cp_shape_h40_evolution.gif` animates the seven cases).*
+
+Series A contradicts the elastic expectation: at fixed transverse extent a
+sharper root initiates later, not earlier, because the plastic-work source
+of the CP plate is concentrated into a smaller root volume (7 cracked
+elements for the sharpest root against 40 for the circle) and because the
+0.45 um hole-arc element under-resolves a 0.16 um root radius (the case is
+reported with that caveat; the h80 ring would be needed to make it
+quantitative). Series B follows the Irwin scaling: the larger transverse
+extent ($r_p$ proportional to $a$) initiates earlier with a lower energy
+and the crack leaves the root transversely. Series C delays initiation as
+$K_t$ falls with the rotation and the 45-degree case tilts the crack along
+the grain boundary below the hole into the lower-right grain, the path the
+circle's crack also turns into. Every case initiates at the root or the
+grain boundary adjacent to it, and the peak varies by only 2% because the
+gross section is 95% intact until initiation.
+
+## 17. Neural routes inside the staggered loop
+
+The two Part I routes serve the mechanics sub-solve of every staggered
+step of the calibrated CP+PFD plate (`decks/pfd_study/cp/neural_h40.i`):
+the linear extrapolation predictor (PINN+FEM) and the grain-aware
+FE-residual-trained network as the verified solver (network on the GPU,
+Newton correction when the proposal's residual exceeds 5% of the step's).
+
+| route | fracture strain | peak (MPa) | Newton iterations (last alternation of each step) | Newton time (s) | predictor time (s) | wall (s) |
+|---|---|---|---|---|---|---|
+| FE (cold Newton start) | 17.19% | 595.8 | 1,008 | 147 | -- | 642 |
+| PINN+FEM, linear extrapolation | 17.19% | 595.8 | 1,008 | 145 | 0.0 | 609 |
+| PINN as solver, grain-aware, verified | 17.11% | 595.6 | 955 | 122 | 43.5 | 481 |
+
+*Table 25. The neural routes on the coupled problem (torch CPU, 2 threads).*
+
+![neural curves](../../figures/pfd/cp_neural_h40_curves.png)
+
+*Figure 37. The three routes coincide on the curve.*
+
+The linear extrapolation reproduces the FE run to the printed digits with
+a median proposal error of 0.6% of the step increment. The verified solver
+accepts its proposal at 216 of 222 first alternations (two cold-start
+steps without history and four early steps corrected by Newton; median
+residual of the accepted proposals 0.4% of the step) and reproduces the
+curve within one load step of initiation. The staggered scheme then
+re-solves the mechanics once or twice per step against the updated damage
+with ordinary warm-started Newton, so the predictor replaces only the first
+alternation: the route's saving is 25% of the wall time (481 against
+642 s, the predictor's 43.5 s included), not the 37% of the uncoupled
+plate. A predictor of the re-solves (a network of the damage increment)
+is the next step and outside this study.
+
+## 18. Hardware and time benchmark of the coupled routes
+
+Seven cases, each the first 16 staggered steps of the calibrated CP+PFD
+plate, one at a time on the host (`decks/benchmark/hardware_pfd_h40.i`,
+`scripts/hardware_benchmark.py`):
+
+| case | backend / threads | wall per step (s) | Newton s per iteration | Newton iterations, first alternations / all | predictor s per step | peak memory (MB) |
+|---|---|---|---|---|---|---|
+| FE, numpy | numpy / 8 | 2.68 | 0.450 | 49 / 80 | -- | 264 |
+| FE, torch CPU | torch / 2 | 1.64 | 0.150 | 49 / 80 | -- | 1,328 |
+| FE, torch CPU | torch / 8 | 1.47 | 0.117 | 49 / 80 | -- | 1,328 |
+| FE, torch GPU | torch GPU / 8 | 2.50 | 0.141 | 49 / 80 | -- | 1,718 |
+| PINN+FEM, linear extrapolation | torch / 8 | 1.46 | 0.117 | 43 / 74 | 0.000 | 1,718 |
+| PINN as solver, verified, network on GPU | torch / 8 | 2.75 | 0.116 | 16 / 51 | 1.22 | 2,124 |
+| PINN as solver, verified, network on CPU | torch / 8 | 2.60 | 0.116 | 16 / 51 | 1.17 | 2,124 |
+
+*Table 26. Time per coupled load step by route and hardware.*
+
+![hardware](../../figures/pfd/hardware_pfd_h40_time_per_step.png)
+
+*Figure 38. Time per load step: Newton and predictor shares.*
+
+The Part I backend ranking holds for the coupled problem: torch CPU is 3.0
+to 3.9x faster per Newton iteration than numpy, and the GPU no faster than
+the CPU at this size. The mechanics Newton is only 17% of a coupled step on
+torch (37% on numpy): the damage assembly and solve, the CP state handling
+and the reaction and field evaluations of the staggered loop take the rest
+and are not sped up by the backend. The linear extrapolation saves 12% of
+the first-alternation iterations at no cost; the verified solver removes
+the first-alternation Newton on 10 of the 16 steps at 1.2 s of training per
+step, the same on the GPU and the CPU (the cost is the numpy assemblies of
+the FE residual). Over the full path (§17) the retraining is cheaper per
+step and the route ends 25% faster than FE.
+
+## 19. The parametric surrogate of the coupled plate
+
+24 LHS samples of ($G_c$ 553 to 2,212 MPa um, $\ell_0$ 4 to 10 um,
+$\rho_0$ 24 to 96, $\tau_{c0}$ 2.6 to 10.6 MPa; log scale) on the
+calibrated CP+PFD deck, 17 of which initiate (5.9 to 17.9%); two
+surrogates trained on 18 and held out on 6 (3 x 64 tanh, Adam 4,000 +
+L-BFGS 50): the engineering stress and the maximum damage along the path,
+and the nodal damage field at the end of the path
+(`decks/pfd_study/cp/surrogate/`, `scripts/surrogate_compare.py`).
+
+| surrogate | held-out rel. L2 mean / max | training (s) | query (ms) | data cost (s) | break-even vs FE / linear / verified solver (runs) |
+|---|---|---|---|---|---|
+| curve (stress, max damage vs strain) | 14.7% / 69.8% (one sample; 1.6-4.9% on the other five) | 10.3 | 0.1 | 12,987 | 20 / 21 / 27 |
+| damage field at the end of the path | 5.8% / 7.1% | 198 | 0.4 | 12,987 | 21 / 22 / 27 |
+
+*Table 27. Surrogate accuracy and cost.*
+
+| held-out sample | $G_c$ | $\ell_0$ | fracture strain FE -> surrogate |
+|---|---|---|---|
+| 1 | 702 | 9.0 | 5.86% -> 5.31% |
+| 7 | 828 | 8.6 | 8.52% -> 8.44% |
+| 16 | 1,205 | 8.1 | 12.66% -> 12.89% |
+| 17 | 872 | 8.0 | 10.31% -> 10.31% |
+| 21 | 947 | 6.0 | 10.78% -> none predicted (the stress drop is predicted at 10.9%) |
+| 23 | 1,341 | 7.3 | 14.92% -> 14.84% |
+
+*Table 28. Fracture strain of the held-out samples from the curve
+surrogate (first crossing of d = 0.8).*
+
+![surrogate curves](../../figures/pfd/cp_surrogate_h40_curve_holdout.png)
+
+*Figure 39. Held-out curves, FE (solid) against the surrogate (dashed).*
+
+![surrogate fields](../../figures/pfd/cp_surrogate_h40_field_holdout_fields.png)
+
+*Figure 40. Held-out damage fields: FE, surrogate and their difference.*
+
+The curve surrogate predicts the fracture strain within 0.25% strain on
+four of the six held-out samples and the stress drop on five; its mean
+error is set by the sample at the low-$G_c$, high-$\ell_0$ corner of the
+box, where the drop comes 0.55% early and the whole error of a curve that
+ends at 6% is paid by the shifted collapse. The field surrogate is
+uniformly accurate, with the error in the band below the hole where the
+crack grows. Data cost 3.6 h of host time against 10 and 198 s of training,
+0.1 to 0.4 ms per query, break-even after about 20 FE runs.
+
+## 20. PINNACLE: what Part II required of the framework
+
+Sixteen changes under ADR 0031 (`feat/pinn_benchmark`), each with a unit
+test, before and during the runs; the ones that changed the physics or the
+feasibility of the plate:
+
+| item | before | after |
+|---|---|---|
+| damage solve | dense operator, n^2 memory: 4.3 s and 1.8 GB per solve at h80, infeasible at h160 | sparse assembly and direct/CG solve above 500 nodes: 0.05 s and 24 MB at h80, same field to 1e-15 |
+| damage boundary | the grip node sets forced d = 0 silently | `boundary_node_set = none` leaves the boundary free; the plates pin d = 0 at the grips explicitly |
+| driving force | no threshold | `plastic_work_threshold` (the $W_c$ of §13) and a viscosity term |
+| reaction force | none for the mechanics sub-solve | `reaction_node_set` with the reaction on every step row |
+| Exodus meshes | meshio misaligned the node-set names | netCDF reader with blocks, side sets and grain ids |
+| J2 finite strain | finite-difference split tangent with doubled columns; missing Hencky chain term | analytic spectral projector and the chain term |
+| Newton | no line search; absolute tolerance below the force noise | backtracking line search; working cut-backs |
+| staggered loop | every alternation started Newton cold (20 to 40 iterations) | warm start from the previous alternation (2 to 3) |
+| CP state between alternations | nested-list snapshot, 80 s per restore | arrays, milliseconds |
+| CP time increment in a coupled window | the full t_end, which halved the CP flow stress | the window's share; the first CP calibration was void and redone |
+| predictor history | lost at every re-solved window | kept across windows |
+| backend | the predictor re-pointed the shared backend to the GPU | an unshared backend per component |
+| output | the J2 route exported no plastic state | the committed equivalent plastic strain on the result and the snapshots |
+
+*Table 29. ADR 0031 in brief.*
+
+The dense-against-sparse measurement is the one that decided the mesh
+range: at h40 the dense path costs 0.9 s per damage solve and 141 MB, at
+h80 4.3 s and 1.8 GB (55 min of damage solves on a 256-step staggered run
+against 40 s sparsely), and h160 does not fit in memory.
+
 ## References
 
 - (rezwan 2025 intragranular) A. Rezwan, N. Aragon, D. de Oca Zapiain, H. Lim,
@@ -1216,3 +1772,20 @@ Both entries are in `bib/references.bib`.
 | hardware benchmark (§10) | `decks/benchmark/hardware_h40.i` + `scripts/hardware_benchmark.py`; `results/cp_study/hardware/hardware_h40.csv` |
 | surrogate (§11): design, samples, decks, runs | `decks/cp_study/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_curve_cpu,plate_h40_surrogate_field}.i`; `results/cp_study/surrogate/h40_data/{design,samples}.csv`, `h40_{curve,curve_cpu,field}/`; `decks/report/surrogate_compare.i` + `scripts/surrogate_compare.py` |
 | neural routes: comparison decks and scripts | `decks/report/hybrid_compare.i` + `scripts/hybrid_compare.py`; `decks/report/neural_compare.i` + `scripts/field_compare.py`; `results/cp_study/hybrid/hybrid_h40_{summary,steps}.csv`, `neural_h40_field_errors.csv` |
+
+## Appendix B. Artifacts behind Part II
+
+| item | path |
+|---|---|
+| meshes | `decks/pfd_study/mesh/{h20,h40,h80}_hole5.i`, `h40_ell_*.i`; `results/pfd_study/mesh/*/mesh.e`; `scripts/plate_hole_mesh.py` |
+| J2 law | `decks/pfd_study/j2_fit.i`, `scripts/j2_fit.py`, `results/pfd_study/j2_fit/` |
+| J2 W_c scan and calibration | `decks/pfd_study/j2/cal_h40_wc{200,400,600,800}.i`, `scripts/pfd_calibrate.py`, `results/pfd_study/j2/cal_h40_wc*/`; figure `decks/pfd_study/j2/wc_scan_h40_figures.i` |
+| J2 sweeps and sensitivity (W_c 200) | `decks/pfd_study/j2/{sweep_l_h40,sens_h40,sweep_h_l5}.i`, `results/pfd_study/j2/*_wc200/` |
+| CP calibration, sweeps, sensitivity, instances | `decks/pfd_study/cp/{cal_h40,sweep_l_h40,sens_h40,sweep_h_l5,grains_h40}.i`, `results/pfd_study/cp/` |
+| fields and animation | `decks/pfd_study/report/fields_cal_h40.i`, `scripts/pfd_fields.py`, `results/pfd_study/cal_h40_fields.csv` |
+| shape study | `decks/pfd_study/cp/shape_h40.i`, `decks/pfd_study/report/fields_shape_h40.i`, `results/pfd_study/cp/shape_h40/` |
+| neural routes | `decks/pfd_study/cp/neural_h40.i`, `results/pfd_study/cp/neural_h40/` |
+| hardware | `decks/benchmark/hardware_pfd_h40.i`, `results/pfd_study/cp/hardware/hardware_pfd_h40.csv` |
+| surrogate | `decks/pfd_study/cp/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_field,compare_h40}.i`, `results/pfd_study/cp/surrogate/` |
+| PINNACLE | `docs/adr/0031-pfd-plate-readiness.md` on `feat/pinn_benchmark`; the damage-solve benchmark `scripts/tools/damage_solve_benchmark.py`, `results/pfd_study/damage_solve/dense_vs_sparse.csv` |
+| study notebook and ledger | `docs/10_pfd_study.md`, `docs/run_ledger.md` (rows `pfd-*`) |

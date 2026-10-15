@@ -2,6 +2,11 @@
 
 Plan of 2026-10-13, written after the author's go-ahead for Part II of the
 benchmark (PFD on J2 plasticity, then CP-PFD) and before any simulation.
+Status 2026-10-15: executed; the author's revision round of 2026-10-14
+changed three things against this plan (h160 dropped and h20 added to the
+mesh levels; the J2 configuration carries W_c = 200 MPa from a threshold
+scan, docs/10 §4.10; the shape study of §6 ran on CP+PFD, docs/10 §9), the
+results are in `docs/10_pfd_study.md` and the report §12-§20.
 Nothing in this document is a result; results go to `docs/10_*.md` once
 they exist and to the report (`docs/reports/cp_pfd_pinnacle_benchmark_report.md`)
 once agreed.
