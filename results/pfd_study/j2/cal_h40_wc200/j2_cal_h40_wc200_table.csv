@@ -1,0 +1,4 @@
+l0_um,Gc_MPa_um,Gc_l0,fracture_strain,fracture_strain_element,peak_eng_stress_MPa,strain_at_peak,fracture_energy_MPa,final_max_damage,steps,newton_iterations,alternations,trials,dir
+5.0,385.5154216957858,1927.577108478929,0.171875,0.17343750000000002,570.9560803754094,0.1390625,87.03677182635565,0.9507535553988123,232,847,402,8,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc385.515
+10.0,488.8762541552604,4888.7625415526045,0.17265625,0.17421875,536.9759181458217,0.13046875,81.83917603958824,0.952483555600952,234,879,402,8,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l10/gc488.876
+20.0,558.7594240026259,11175.188480052519,0.171875,0.17265625,499.19486561936793,0.11640625,75.85261360740596,0.9530840940550666,240,925,433,9,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l20/gc558.759

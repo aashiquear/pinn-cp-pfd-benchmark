@@ -341,6 +341,101 @@ values per parameter) and mesh study (h20, h40, h80) are rerun at this
 configuration (§4.11-4.13); the W_c 0 and W_c 20 results of §3.2, §4.1-4.9
 are superseded and kept only as the calibration record.
 
+### 4.11 J2 calibration and length scale at W_c = 200 (the carried configuration)
+
+`decks/pfd_study/j2/cal_h40_wc200.i` (l0 5 from the scan, l0 10 and 20
+added 2026-10-15 01:00-02:10, 3-5 trials each), figures
+`figures/pfd/j2_cal_h40_wc200_{curves,bisection,gc_l0}.png`, table
+`results/pfd_study/j2/cal_h40_wc200/j2_cal_h40_wc200_table.csv`; the l0
+sweep at the l0 = 5 Gc, `decks/pfd_study/j2/sweep_l_h40.i`
+(`results/pfd_study/j2/sweep_l_h40_wc200/`, figures
+`figures/pfd/j2_sweep_l_h40_wc200_{curves,panels}.png`).
+
+| l0 (um) | calibrated Gc (MPa um) | Gc l0 | fracture strain | peak (MPa) at strain |
+|---|---|---|---|---|
+| 5 | 385.5 | 1,928 | 17.19% | 571 at 13.9% |
+| 10 | 488.9 | 4,889 | 17.27% | 537 at 13.0% |
+| 20 | 558.8 | 11,175 | 17.19% | 499 at 11.6% |
+
+| l0 at Gc 385.5 | 2.5 (= h) | 5 | 10 | 20 | 40 |
+|---|---|---|---|---|---|
+| fracture strain | 18.13% | 17.19% | 15.86% | 14.45% | 15.08% |
+| peak (MPa) | 611 | 571 | 509 | 448 | 436 |
+| energy (MPa) | 101.9 | 87.0 | 71.7 | 58.2 | 58.6 |
+
+The calibrated Gc rises with l0 (x1.45 from 5 to 20 um; at W_c 20 it was
+x1.2) and the peak falls (571 -> 499 MPa) because a wider damage band
+degrades more of the ligament before the root reaches d = 0.8. At fixed
+Gc the fracture strain falls with l0 to 20 um and turns up at 40 um (the
+band then spans the ligament and the damage grows everywhere at once),
+the Fig. 8 trend of Chakraborty 2016 with the same non-monotonic tail
+as at W_c 0 (§4.1). l0 = 5 um = 2h remains the carried value.
+
+### 4.12 J2 parameter sensitivity at W_c = 200, four values per parameter
+
+`decks/pfd_study/j2/sens_h40.i` (17 cases + base, 6 side by side at 2
+threads, 2026-10-15 01:00-02:40), figures
+`figures/pfd/j2_sens_h40_wc200_{curves,panels}.png`, summary
+`results/pfd_study/j2/sens_h40_wc200/sens_h40_summary.csv`.
+
+| case | fracture strain | peak (MPa) | energy (MPa) | max d at the end |
+|---|---|---|---|---|
+| base (Gc 385.5, l0 5, eta 0, W_c 200, 3 alternations) | 17.19% | 571 | 87.0 | 0.95 |
+| Gc x 0.25 (96.4) | 9.06% | 398 | 33.2 | 0.97 |
+| Gc x 0.5 (192.8) | 13.36% | 497 | 60.0 | 0.96 |
+| Gc x 2 (771.0) | none by 20% | 617 | 105.0 | 0.65 |
+| Gc x 4 (1542) | none by 20% | 645 | 109.0 | 0.30 |
+| l0 2.5 (= h) | 18.13% | 611 | 101.9 | 0.95 |
+| l0 3.75 | 17.58% | 590 | 92.9 | 0.95 |
+| l0 7.5 | 16.48% | 537 | 78.3 | 0.95 |
+| l0 10 | 15.86% | 509 | 71.7 | 0.95 |
+| eta 1 MPa s | 17.34% | 572 | 88.2 | 0.95 |
+| eta 3 MPa s | 17.58% | 573 | 90.3 | 0.95 |
+| eta 10 MPa s | 18.28% | 579 | 96.1 | 0.95 |
+| eta 30 MPa s | 19.69% | 595 | 103.5 | 0.84 |
+| W_c 50 MPa | 7.97% | 471 | 33.5 | 0.96 |
+| W_c 100 MPa | 11.72% | 523 | 54.1 | 0.95 |
+| W_c 400 MPa | none by 20% | 594 | 102.0 | 0.20 |
+| W_c 800 MPa | none by 20% | 596 | 102.1 | 0.10 |
+| 5 alternations | 17.19% | 571 | 86.9 | 0.95 |
+
+With the threshold carrying most of the delay, the J2 plate is now
+sensitive to every PFD parameter: Gc x 0.5 / x 0.25 bring initiation to
+13.4 / 9.1%, Gc x 2 removes it (max d 0.65 at 20%); l0 moves initiation
+monotonically (18.1% at l0 = h to 15.9% at 4h) with the peak; the
+threshold itself is the steepest lever (50 / 100 MPa: 8.0 / 11.7%; 400
+MPa: none), which is why the scan of §4.10 was needed. Unlike at W_c 0
+and 20 (and unlike CP), the viscosity now matters: at W_c 200 the damage
+grows in 3% of strain, so a rate term of 10-30 MPa s delays initiation by
+1.1-2.5% (eta = 30 reaches only d = 0.84 by 20%). Five alternations
+against three leave the fracture strain unchanged (87.0 vs 86.9 MPa
+energy): the alternation test is met within three.
+
+### 4.13 J2 mesh sensitivity at W_c = 200 (h20, h40, h80)
+
+`decks/pfd_study/j2/sweep_h_l5.i` (`results/pfd_study/j2/sweep_h_l5_wc200/`,
+h20 5 min, h80 2 h 10 min at 2 threads), figures
+`figures/pfd/j2_sweep_h_l5_wc200_{curves,panels}.png`:
+
+| mesh | h (um) | l0/h | fracture strain | peak (MPa) | energy (MPa) |
+|---|---|---|---|---|---|
+| h20 | 5 | 1 | 17.34% | 570 | 92.0 |
+| h40 | 2.5 | 2 | 17.19% | 571 | 87.0 |
+| h80 | 1.25 | 4 | 16.02% | 564 | 79.4 |
+
+The peak is mesh-independent (within 1.2%) but the initiation strain at
+W_c 200 is not yet converged at h40: h80 initiates 1.2% strain (15 load
+steps) earlier, whereas at W_c 0 h40 and h80 agreed within two steps
+(§4.9) and the CP plate within five (§5.6). With the threshold the
+damage source is confined to the root elements where the plastic work
+exceeds 200 MPa, and the finer mesh resolves a smaller, hotter root
+volume that crosses the threshold earlier; the l0 = 2h rule that holds
+for the diffuse W_c 0 source is not sufficient for a thresholded one.
+This is reported as a limitation of the carried J2 configuration (a
+calibration at h80 would lower Gc by about 10%); the CP plate, whose
+source is set by the grain orientation rather than a threshold, keeps its
+h40 convergence.
+
 ## 5. CP+PFD on the h40 perforated polycrystal plate
 
 ### 5.1 Cost of the coupled CP solve, and a fix
@@ -502,35 +597,56 @@ by one load step (17.11 against 17.19%) and the final damage by 0.01: the
 1e-3 alternation test is met within three. The CP configuration therefore
 keeps W_c = 0 (§4.5).
 
-## 6. Fields of the calibrated plates (J2 at W_c 0, CP)
+## 6. Fields of the calibrated plates (CP, J2 at W_c 200)
 
-`scripts/pfd_fields.py decks/pfd_study/report/fields_cal_h40.i` →
-`figures/pfd/cal_h40_damage.png` (nodal damage on the deformed plate at 5,
-10, 15, 17.2 and the last snapshot), `cal_h40_crack.png` (elements with
-mean d >= 0.8 at the end), `results/pfd_study/cal_h40_fields.csv`.
+`decks/pfd_study/report/fields_cal_h40.i` by `scripts/pfd_fields.py`
+(colour bars, the cracked elements d >= 0.8 solid over the equivalent
+plastic strain, and the GIF; author's figure rules of 2026-10-14):
+`figures/pfd/cal_h40_{damage,equivalent_plastic_strain,crack}.png`,
+`figures/pfd/cal_h40_evolution.gif` (58 frames, one per 4 load steps),
+table `results/pfd_study/cal_h40_fields.csv`. The CP run is the calibrated
+case (Gc 1106, l0 5) as rerun under the neural-route study (its series
+carries the CP state fields); the J2 run is the W_c 200 base
+(`results/pfd_study/j2/sens_h40_wc200/base`, PINNACLE 863b787, whose
+series carries the J2 plastic strain).
 
-| strain | CP max / mean d | J2 max / mean d |
-|---|---|---|
-| 5% | 0.22 / 0.14 | 0.17 / 0.09 |
-| 10% | 0.42 / 0.27 | 0.44 / 0.18 |
-| 15% | 0.61 / 0.39 | 0.66 / 0.23 |
-| 17.2% (initiation) | 0.81 / 0.44 | 0.78 / 0.25 |
+| run | strain | max d | mean d | elements d >= 0.8 | max eqv. plastic strain |
+|---|---|---|---|---|---|
+| CP | 5% | 0.22 | 0.14 | 0 | 0.16 |
+| CP | 10% | 0.42 | 0.27 | 0 | 0.30 |
+| CP | 15% | 0.61 | 0.39 | 0 | 0.42 |
+| CP | 17.2% | 0.81 | 0.44 | 2 | 0.46 |
+| CP | 17.5% (end) | 0.97 | 0.47 | 40 | 0.46 |
+| J2 | 5% | 0.05 | 0.03 | 0 | 0.17 |
+| J2 | 10% | 0.07 | 0.05 | 0 | 0.31 |
+| J2 | 15% | 0.37 | 0.08 | 0 | 0.62 |
+| J2 | 17.2% | 0.78 | 0.14 | 0 | 1.02 |
+| J2 | 18.1% (end) | 0.91 | 0.19 | 28 | 1.31 |
 
-The two couplings localise differently. J2 forms a transverse band
-through the hole from 10% on (the classic crack path across the
-ligament) with the far field at d < 0.2. CP damages the whole plate
-(mean 0.44 at initiation, 0.6 in the grains adjacent to the hole) and
-initiates in the element row at the hole's equator; the band after
-initiation runs along the grain structure rather than straight across.
-**For the author:** the CP plate's diffuse damage is the plastic-work
-driving force acting in every grain from the first plastic step (as the
-J2 softening of §3.2 was); the CP sensitivity (§5.5) showed a threshold
-W_c = 20 MPa moves the CP initiation strain by +2%, so a recalibration
-with W_c > 0 would localise the CP damage at the price of a new Gc.
-The equivalent plastic strain is not in the coupled runs' snapshots
-(the staggered writer carries displacement, damage, stress, strain and
-the driving force); the plastic-strain row of the figure is empty until
-the exporter carries it.
+The two couplings reach d = 0.8 at the root at the same nominal strain
+by construction, by different routes. CP: the damage is diffuse from the
+start (mean d 0.14 at 5%, 0.44 at initiation) because every grain
+accumulates plastic work from the first steps and the driving force has
+no threshold; the hot spot sits at the hole's root in the grain below
+the hole and, after initiation, the cracked elements (40 at 17.5%) extend
+above and below the hole with a tilt toward the lower-right grain
+boundary, while the plastic strain stays below 0.46 and is spread over
+the whole plate in a grain-wise pattern. J2 at W_c 200: nothing happens
+until the plastic work at the root passes the threshold (max d 0.07 at
+10%), then a transverse band of damage grows across the ligament in a
+few percent of strain (0.37 at 15%, 0.78 at 17.2%), with the plastic
+strain localised in the same band (1.0 at initiation, 1.3 at the end,
+three times the CP maximum) and the plate necking visibly at the top
+edge; the 28 cracked elements at 18.1% form a straight transverse crack.
+The GIF shows the two sequences side by side: CP "ripens" the whole
+section and fails at a grain-controlled site, J2 holds the section and
+fails by a plastic-work band. This is the J2 limitation the author asked
+to document: with a homogeneous flow stress the model can match the
+curve's hardening and its fracture strain only through a threshold and a
+5x lower Gc, and the resulting mechanism (a localised band from a
+threshold) is not the CP mechanism (a grain-set hot spot in a diffusely
+damaged section); matching the CP fields would need a heterogeneous flow
+stress (the grain structure) rather than a J2 parameter.
 
 ### 4.6 J2 calibration with W_c = 20 MPa (the carried J2 configuration)
 

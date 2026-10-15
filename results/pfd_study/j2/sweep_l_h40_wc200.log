@@ -1,0 +1,17 @@
+prepared 5 cases under /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/sweep_l_h40_wc200
+02:41:06 started base
+02:41:06 started l0_2p5
+02:41:06 started l0_10
+02:41:06 started l0_20
+02:52:46 finished l0_10 exit 0
+02:52:46 started l0_40
+02:53:06 finished l0_20 exit 0
+02:53:26 finished base exit 0
+02:54:46 finished l0_2p5 exit 0
+03:04:26 finished l0_40 exit 0
+{'case': 'base', 'fracture_strain_node': 0.1719, 'fracture_strain_element': 0.1734, 'peak_eng_stress': 570.9561, 'fracture_energy_MPa': 87.0368, 'steps_converged': 187, 'newton_iterations': 847, 'wall_s': 727.0}
+{'case': 'l0_2p5', 'fracture_strain_node': 0.1813, 'fracture_strain_element': 0.1844, 'peak_eng_stress': 611.3884, 'fracture_energy_MPa': 101.9026, 'steps_converged': 200, 'newton_iterations': 904, 'wall_s': 803.0}
+{'case': 'l0_10', 'fracture_strain_node': 0.1586, 'fracture_strain_element': 0.1594, 'peak_eng_stress': 509.4685, 'fracture_energy_MPa': 71.6904, 'steps_converged': 175, 'newton_iterations': 785, 'wall_s': 697.0}
+{'case': 'l0_20', 'fracture_strain_node': 0.1445, 'fracture_strain_element': 0.1453, 'peak_eng_stress': 447.7263, 'fracture_energy_MPa': 58.1691, 'steps_converged': 162, 'newton_iterations': 716, 'wall_s': 706.0}
+{'case': 'l0_40', 'fracture_strain_node': 0.1508, 'fracture_strain_element': 0.1516, 'peak_eng_stress': 435.913, 'fracture_energy_MPa': 58.5641, 'steps_converged': 169, 'newton_iterations': 706, 'wall_s': 680.0}
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/sweep_l_h40_wc200/sweep_l_h40_summary.csv

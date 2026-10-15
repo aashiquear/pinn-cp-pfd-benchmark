@@ -1,0 +1,11 @@
+prepared 3 cases under /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/sweep_h_l5_wc200
+02:41:06 started base
+02:41:06 started h20
+02:41:06 started h80
+02:46:46 finished h20 exit 0
+02:53:26 finished base exit 0
+03:18:26 finished h80 exit 0
+{'case': 'base', 'fracture_strain_node': 0.1719, 'fracture_strain_element': 0.1734, 'peak_eng_stress': 570.9561, 'fracture_energy_MPa': 87.0368, 'steps_converged': 187, 'newton_iterations': 847, 'wall_s': 729.0}
+{'case': 'h20', 'fracture_strain_node': 0.1734, 'fracture_strain_element': 0.1758, 'peak_eng_stress': 569.928, 'fracture_energy_MPa': 91.9986, 'steps_converged': 185, 'newton_iterations': 883, 'wall_s': 333.0}
+{'case': 'h80', 'fracture_strain_node': 0.1602, 'fracture_strain_element': 0.1609, 'peak_eng_stress': 564.1853, 'fracture_energy_MPa': 79.4349, 'steps_converged': 172, 'newton_iterations': 807, 'wall_s': 2220.0}
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/sweep_h_l5_wc200/sweep_h_l5_summary.csv

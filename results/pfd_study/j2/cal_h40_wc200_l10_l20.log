@@ -1,0 +1,45 @@
+01:00:27 {'l0': 5.0, 'iteration': 0, 'Gc': 447.2136, 'fracture_strain': 0.18047, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95435, 'steps_converged': 197, 'wall_s': 0.0031, 'note': ''}
+01:00:27 {'l0': 5.0, 'iteration': 1, 'Gc': 66.87403, 'fracture_strain': 0.0625, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.97624, 'steps_converged': 65, 'wall_s': 0.00045, 'note': ''}
+01:00:27 {'l0': 5.0, 'iteration': 2, 'Gc': 172.93633, 'fracture_strain': 0.12734, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95749, 'steps_converged': 135, 'wall_s': 0.00032, 'note': ''}
+01:00:27 {'l0': 5.0, 'iteration': 3, 'Gc': 278.09977, 'fracture_strain': 0.15391, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95626, 'steps_converged': 169, 'wall_s': 0.0003, 'note': ''}
+01:00:27 {'l0': 5.0, 'iteration': 4, 'Gc': 352.66131, 'fracture_strain': 0.16719, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95202, 'steps_converged': 177, 'wall_s': 0.0003, 'note': ''}
+01:00:27 {'l0': 5.0, 'iteration': 5, 'Gc': 397.13339, 'fracture_strain': 0.17344, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95552, 'steps_converged': 190, 'wall_s': 0.00028, 'note': ''}
+01:00:27 {'l0': 5.0, 'iteration': 6, 'Gc': 374.23733, 'fracture_strain': 0.17031, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95238, 'steps_converged': 183, 'wall_s': 0.00029, 'note': ''}
+01:00:27 {'l0': 5.0, 'iteration': 7, 'Gc': 385.51542, 'fracture_strain': 0.17188, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95075, 'steps_converged': 187, 'wall_s': 0.00029, 'note': ''}
+01:13:32 {'l0': 10.0, 'iteration': 0, 'Gc': 447.2136, 'fracture_strain': 0.16719, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95234, 'steps_converged': 185, 'wall_s': 784.70924, 'note': ''}
+01:13:35 {'l0': 20.0, 'iteration': 0, 'Gc': 447.2136, 'fracture_strain': 0.15547, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95357, 'steps_converged': 174, 'wall_s': 788.36998, 'note': ''}
+01:23:34 {'l0': 10.0, 'iteration': 1, 'Gc': 2990.69756, 'fracture_strain': None, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.13107, 'steps_converged': 256, 'wall_s': 602.32586, 'note': ''}
+01:23:36 {'l0': 20.0, 'iteration': 1, 'Gc': 2990.69756, 'fracture_strain': None, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.12936, 'steps_converged': 256, 'wall_s': 600.26872, 'note': ''}
+01:35:26 {'l0': 10.0, 'iteration': 2, 'Gc': 1156.49497, 'fracture_strain': None, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.47452, 'steps_converged': 247, 'wall_s': 711.71133, 'note': ''}
+01:36:04 {'l0': 20.0, 'iteration': 2, 'Gc': 1156.49497, 'fracture_strain': None, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.51946, 'steps_converged': 243, 'wall_s': 747.98652, 'note': ''}
+01:46:04 {'l0': 10.0, 'iteration': 3, 'Gc': 719.16637, 'fracture_strain': 0.19766, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.85122, 'steps_converged': 221, 'wall_s': 637.75373, 'note': ''}
+01:47:27 {'l0': 20.0, 'iteration': 3, 'Gc': 719.16637, 'fracture_strain': 0.19141, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.89359, 'steps_converged': 210, 'wall_s': 683.10949, 'note': ''}
+01:56:32 {'l0': 10.0, 'iteration': 4, 'Gc': 567.11637, 'fracture_strain': 0.18203, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95399, 'steps_converged': 204, 'wall_s': 628.87542, 'note': ''}
+01:58:42 {'l0': 20.0, 'iteration': 4, 'Gc': 567.11637, 'fracture_strain': 0.17344, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95086, 'steps_converged': 194, 'wall_s': 675.22853, 'note': ''}
+02:06:24 {'l0': 10.0, 'iteration': 5, 'Gc': 503.60913, 'fracture_strain': 0.175, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95388, 'steps_converged': 194, 'wall_s': 591.55116, 'note': ''}
+02:09:22 {'l0': 20.0, 'iteration': 5, 'Gc': 503.60913, 'fracture_strain': 0.16406, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.9526, 'steps_converged': 183, 'wall_s': 640.07021, 'note': ''}
+02:16:04 {'l0': 10.0, 'iteration': 6, 'Gc': 474.57439, 'fracture_strain': 0.17109, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95088, 'steps_converged': 188, 'wall_s': 580.11068, 'note': ''}
+02:19:56 {'l0': 20.0, 'iteration': 6, 'Gc': 534.42023, 'fracture_strain': 0.16875, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95006, 'steps_converged': 190, 'wall_s': 634.15281, 'note': ''}
+02:25:46 {'l0': 10.0, 'iteration': 7, 'Gc': 488.87625, 'fracture_strain': 0.17266, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95248, 'steps_converged': 190, 'wall_s': 581.77828, 'note': ''}
+02:30:33 {'l0': 20.0, 'iteration': 7, 'Gc': 550.52562, 'fracture_strain': 0.17109, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95215, 'steps_converged': 192, 'wall_s': 636.30075, 'note': ''}
+02:41:05 {'l0': 20.0, 'iteration': 8, 'Gc': 558.75942, 'fracture_strain': 0.17188, 'failed': False, 'mechanics_failed': 0, 'final_max_damage': 0.95308, 'steps_converged': 193, 'wall_s': 632.80278, 'note': ''}
+[
+ {
+  "l0": 5.0,
+  "Gc": 385.5154216957858,
+  "fracture_strain": 0.171875,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l5/gc385.515"
+ },
+ {
+  "l0": 10.0,
+  "Gc": 488.8762541552604,
+  "fracture_strain": 0.17265625,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l10/gc488.876"
+ },
+ {
+  "l0": 20.0,
+  "Gc": 558.7594240026259,
+  "fracture_strain": 0.171875,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/pfd_study/j2/cal_h40_wc200/l20/gc558.759"
+ }
+]
