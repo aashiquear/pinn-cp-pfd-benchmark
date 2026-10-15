@@ -239,3 +239,8 @@ NOT derivable from the code: measured facts, decisions, and traps.
   done 2026-10-15); the Exodus reader refuses to run without it.
 - Study-deck case names are lowercased by the translator (`A_x2.5_y5` -> `a_x2.5_y5`):
   result directories and `[Labels]` keys follow the lowercase form.
+- 2026-10-15: the author keeps the J2+PFD benchmark at h40 despite the 1.2% mesh
+  shift of the thresholded source (side-by-side comparison with the CP h40 cases
+  takes precedence); reported as a limitation in report §13.5. The study is pushed to
+  `origin/main` (github.com/aashiquear/pinn-cp-pfd-benchmark, public); local branch
+  `master` tracks `origin/main`; git uses `gh` as the credential helper.
