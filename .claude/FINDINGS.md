@@ -268,8 +268,9 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Local scratch runs: kill by the process's cwd AND a cmdline match on `python3.11` (the
   `pinnacle` entry script's cmdline starts with `/usr/bin/python3.11 ...`, so a 40-char
   match on "pinnacle" misses it); three duplicate runs once wrote the same history file.
-- 2026-10-15 (author): the Ni tests pull the grips at 0.1 mm/s (3.9e-3/s on the 25.4 mm
-  bar); every Ni deck sets t_end = strain x 25.4 / 0.1. PINNACLE is unit-agnostic like
+- 2026-10-15 (author, final): the Ni bar strain rate is 5e-2/s (grip speed 1.27 mm/s);
+  every Ni deck sets t_end = strain / 0.05 (an earlier 0.1 mm/s instruction was superseded
+  within the hour). PINNACLE is unit-agnostic like
   MOOSE (um and mm runs identical); the Ni study is entirely in mm/MPa/s. The author
   suspects the Part II Al2219 Gc is high: the Gc(l0) calibration is being redone with
   the implicit CP update (`decks/pfd_study/cp/cal_h40_implicit.i`, pipeline key

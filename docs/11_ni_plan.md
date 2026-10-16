@@ -90,10 +90,10 @@ The meshes are shown to the author before any run (rule 3 of Part II).
   mm). Parts I-II used um; the CP law is scale-free under a consistent
   system.
 - Loading: the grip faces clamped (`x-` fixed, `x+` fixed in y and z and
-  pulled in x by a ramp); the grip displacement rate is the author's
-  0.1 mm/s (2026-10-15), i.e. 3.9e-3/s on the 25.4 mm bar and about
-  6e-3/s on the gage; the first calibration iteration ran at 1e-3/s on the
-  bar and is kept as `results/ni_study/cal/gn1_rate1e-3` for the record.
+  pulled in x by a ramp); the bar strain rate is the author's 5e-2/s
+  (2026-10-15; grip speed 1.27 mm/s, about 7.5e-2/s on the gage), so
+  t_end = strain / 0.05; the first calibration iteration ran at 1e-3/s on
+  the bar and is kept as `results/ni_study/cal/gn1_rate1e-3` for the record.
 - Units: PINNACLE's CP law is unit-agnostic in the same sense as MOOSE
   (checked in docs/12 §1: the same specimen in um and in mm gives the same
   stress); every Ni deck, mesh and parameter is in mm, MPa and s.

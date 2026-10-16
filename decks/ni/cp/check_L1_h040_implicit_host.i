@@ -13,7 +13,7 @@
   gage_width      = 1.85
   length          = 25.4
   strain          = 0.05
-  t_end           = 12.7          # grip displacement 0.1 mm/s (author, 2026-10-15): strain x 25.4 mm / 0.1 mm/s
+  t_end           = 1          # bar strain rate 5e-2/s (author, 2026-10-15): strain / 0.05
   n_steps         = 50
   snapshots_every = 10
   backend         = torch

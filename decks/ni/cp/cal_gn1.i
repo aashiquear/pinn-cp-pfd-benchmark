@@ -1,4 +1,4 @@
-# Ni CP calibration, Gauss-Newton iteration 1 (docs/11 §5 stage 2; grip speed 0.1 mm/s): the paper's
+# Ni CP calibration, Gauss-Newton iteration 1 (docs/11 §5 stage 2; bar strain rate 5e-2/s): the paper's
 # Table 3 set as the centre (base_L1_h040.i) and one multiplicative perturbation
 # per free parameter (x1.2; tau_c0 x1.5), for the finite-difference Jacobian of the
 # engineering stress at the Fig. 3 experiment markers. scripts/ni_gauss_newton.py

@@ -12,7 +12,7 @@
   gage_width      = 1.85
   length          = 25.4
   strain          = 0.02
-  t_end           = 5.08          # grip displacement 0.1 mm/s (author, 2026-10-15): strain x 25.4 mm / 0.1 mm/s
+  t_end           = 0.4          # bar strain rate 5e-2/s (author, 2026-10-15): strain / 0.05
   n_steps         = 16
   snapshots_every = 4
   backend         = numpy
