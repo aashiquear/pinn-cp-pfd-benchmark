@@ -117,6 +117,9 @@ G_c (and l_0) calibration in stage 6, and the CP+PFD stage is where the softenin
 final damage are to be reproduced. Open point for stage 6: the Fig. 3 specimen-L curve ends
 at 0.513 gauge strain while Fig. 4(b) gives 0.461-0.481 for L.1/L.3/L.4 (L.1 0.463); which
 end point is the L.1 calibration target is to be settled with the author before that run.
+**Settled (author, 2026-10-16):** Fig. 4(b) (experiment axis) is the true experimental fracture
+strain of every specimen and the G_c calibration target (L.1: 0.463); the Fig. 3 curve end
+(0.513) may carry digitization error and is not used as a target.
 
 ## 5. Study design (stage order)
 

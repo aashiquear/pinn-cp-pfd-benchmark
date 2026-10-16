@@ -291,4 +291,5 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - The end point of every experimental curve shown in (rezwan 2026 predicting) is the damage
   initiation point; it is the G_c (l_0) calibration target of the CP+PFD stage. The flattening
   before it is softening from damage, not a CP-calibration miss: do not chase it with CP
-  parameters. Unresolved: Fig. 3 ends at 0.513 vs Fig. 4(b) L.1 0.463 -- ask before stage 6.
+  parameters. Settled 2026-10-16: Fig. 4(b) experiment axis is the true fracture strain and the G_c target
+  (L.1 0.463); the Fig. 3 end (0.513) may carry digitization error and is not a target.
