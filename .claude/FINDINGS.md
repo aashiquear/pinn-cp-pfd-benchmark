@@ -277,3 +277,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
   `state_update`); if it moves a lot, Part II may be rerun. Completion polls on the host
   must count "finished" lines of the study log, never `pgrep` a pattern that the polling
   command itself contains.
+
+## 2026-10-16: Ni calibration converged; late-strain trap
+- Calibrated Ni set (L.1, Fig. 3, RMSE 4.6 MPa): rho0 6.86e5, k_m 0.0111, y_c 2.26e-6,
+  tau_c0 0.246 (`decks/ni/cp/calibrated_L1_h040.i`). tau_c0 is weakly identifiable
+  (3 MPa per e-fold); k_m / y_c set the shape.
+- TRAP: on the dog-bone the global Newton stops converging beyond 54-60% gauge strain;
+  `cp_quasi_static` then keeps stepping after its 10 cutbacks and the stress jumps
+  (252 -> 520 MPa). Check the `cutbacks` column; never report a step with cutbacks at the
+  limit. CP-only curves are truncated at the first such step.

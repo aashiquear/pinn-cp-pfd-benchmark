@@ -182,3 +182,38 @@ RMSE 29.1 MPa (from 141). Sensitivities at 2 / 10 / 30%: rho_0 41 / 42 /
 31, k_m 9 / 56 / 156, y_c -3 / -23 / -79, tau_c0 3 / 3 / 3. Next centre
 rho_0 6.86e5, k_m 0.0111, y_c 2.26e-6, tau_c0 0.246 (linear prediction
 4.5 MPa, the markers' own spread); iteration 4 decides.
+
+### 2.4 Iteration 4: converged (2026-10-16 01:50-08:15)
+
+Centre rho_0 6.86e5, k_m 0.0111, y_c 2.26e-6, tau_c0 0.246:
+
+| gauge strain | experiment (MPa) | FE (MPa) | error |
+|---|---|---|---|
+| 0.5% | 85.0 | 78 | -8% |
+| 2% | 87.7 | 88 | +1% |
+| 5% | 98.4 | 107 | +8% |
+| 10% | 129.3 | 134 | +4% |
+| 20% | 180.1 | 177 | -2% |
+| 30% | 211.8 | 207 | -2% |
+| 40% | 232.8 | 229 | -1% |
+| 50% | 238.4 | 246 | +3% |
+
+RMSE 4.6 MPa (from 29.1), the markers' own spread; the next linear step
+predicts 4.5 MPa, so the calibration is converged and the iteration-4 centre
+is the calibrated set, `decks/ni/cp/calibrated_L1_h040.i` (the further step the
+script wrote, cal_center5/cal_gn5, was not run and is deleted). Sensitivities at 2 / 10 / 30%: rho_0 38 / 40 /
+28, k_m 9 / 46 / 126, y_c -4 / -25 / -78, tau_c0 3 / 3 / 3 MPa per unit ln p:
+tau_c0 is barely identifiable from this curve (it moves the whole curve by
+3 MPa per e-fold), the hardening pair k_m / y_c carries the shape.
+
+Wall time was 6.3-6.5 h per run (90-106 min in iterations 1-3): the five runs
+shared the host with the three Al2219 implicit Gc trials and run to 36% bar
+strain, where the late steps are slow (below).
+
+**Late-strain solver failure.** In all five runs the global Newton stops
+converging beyond 54-60% gauge strain (first cutback at steps 273-306 of
+360); the executioner then takes steps after exhausting its 10 cutbacks and
+the engineering stress jumps from 252 to 350-520 MPa. Those steps are not a
+solution and are not used: every marker is at or below 50% gauge strain and
+the test fractures at 46.3% (Fig. 4b). The CP+PFD runs stop at fracture
+before this range; any CP-only curve beyond 54% is reported truncated there.
