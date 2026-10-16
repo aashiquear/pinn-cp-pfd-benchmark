@@ -163,3 +163,22 @@ still 1.9x too high at 30%. Sensitivities at 2 / 10 / 30%: rho_0 50 / 50
 / 40, k_m 14 / 102 / 281, y_c -2 / -25 / -90, tau_c0 3 / 3 / 3. Next
 centre (clipped step) rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249,
 linear prediction 4.6 MPa; iteration 3 runs from it.
+
+### 2.3 Iteration 3 (2026-10-16 00:00-01:50)
+
+Centre rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249:
+
+| gauge strain | experiment (MPa) | FE (MPa) | error |
+|---|---|---|---|
+| 2% | 87.7 | 94 | +7% |
+| 5% | 98.4 | 114 | +16% |
+| 10% | 129.3 | 147 | +14% |
+| 20% | 180.1 | 201 | +12% |
+| 30% | 211.8 | 241 | +14% |
+| 40% | 232.8 | 271 | +17% |
+| 50% | 238.4 | 295 | +24% |
+
+RMSE 29.1 MPa (from 141). Sensitivities at 2 / 10 / 30%: rho_0 41 / 42 /
+31, k_m 9 / 56 / 156, y_c -3 / -23 / -79, tau_c0 3 / 3 / 3. Next centre
+rho_0 6.86e5, k_m 0.0111, y_c 2.26e-6, tau_c0 0.246 (linear prediction
+4.5 MPa, the markers' own spread); iteration 4 decides.
