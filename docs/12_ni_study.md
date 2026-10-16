@@ -117,21 +117,29 @@ against GAUGE strain, markers below 0.3% strain excluded) and writes the next
 centre and GN deck. Runs on the host, torch CPU, 2 threads, 5 side by side,
 about 90 min per iteration (10-15 s per step; the first step 45 s).
 
-### 2.1 Iteration 1: the paper's set (2026-10-15 12:54-14:22)
+### 2.1 Iteration 1: the paper's set at the test's strain rate (2026-10-15 19:40-21:15)
 
-| gauge strain | experiment (MPa) | FE, paper's set (MPa) |
+The author set the bar strain rate to 5e-2/s (t_end = strain / 0.05; an
+earlier 1e-3/s iteration, `results/ni_study/cal/gn1_rate1e-3`, gave RMSE
+182.6 MPa and is kept as the record of the paper's set at that rate).
+
+| gauge strain | experiment (MPa) | FE, paper's set, 5e-2/s (MPa) |
 |---|---|---|
-| 2% | 87.7 | 108 |
-| 5% | 98.4 | 145 |
-| 10% | 129.3 | 216 |
-| 20% | 180.1 | 337 |
-| 30% | 211.8 | 423 |
-| 40% | 232.8 | 494 |
-| 50% | 238.4 | 550 |
+| 2% | 87.7 | 169 |
+| 5% | 98.4 | 225 |
+| 10% | 129.3 | 332 |
+| 20% | 180.1 | 521 |
+| 30% | 211.8 | 652 |
+| 40% | 232.8 | 758 |
+| 50% | 238.4 | 841 |
 
-RMSE 182.6 MPa: the paper's set in PINNACLE's law hardens 2.3x too fast
-(k_m) and yields 20% high. Sensitivities dS/dln p at 2 / 10 / 30% (MPa):
-rho_0 44 / 36 / 33, k_m 19 / 144 / 353, y_c -2 / -36 / -114, tau_c0 2 /
-44 / 85. The step (clipped to +-0.7 in ln p) goes to rho_0 1.64e6, k_m
-0.0213, y_c 1.59e-6, tau_c0 0.509 with a linear prediction of 51.7 MPa
-RMSE; iteration 2 runs from that centre.
+RMSE 373.1 MPa: the paper's set in PINNACLE's law gives 942 MPa at 66%
+gauge strain against the experiment's 240 at 51%, i.e. it hardens about
+four times too fast at this rate (the rate term alone adds 60% between
+1e-3 and 5e-2/s with m = 0.12). Sensitivities dS/dln p at 2 / 10 / 30%
+(MPa): rho_0 70 / 58 / 50, k_m 29 / 226 / 562, y_c -3 / -55 / -181,
+tau_c0 3 / 3 / 3: at this rate the Peierls term is immaterial, the yield
+is set by rho_0 and the rate term, the hardening by k_m and y_c. The step
+(clipped to +-0.7 in ln p) goes to rho_0 1.17e6, k_m 0.0146, y_c 0.74e-6,
+tau_c0 0.255 (linear prediction 25.3 MPa RMSE); iteration 2 runs from
+that centre, and the clipping means two or three more iterations.
