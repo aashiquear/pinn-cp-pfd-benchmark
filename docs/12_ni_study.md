@@ -217,3 +217,10 @@ the engineering stress jumps from 252 to 350-520 MPa. Those steps are not a
 solution and are not used: every marker is at or below 50% gauge strain and
 the test fractures at 46.3% (Fig. 4b). The CP+PFD runs stop at fracture
 before this range; any CP-only curve beyond 54% is reported truncated there.
+
+### 2.5 Calibration figures (for the author's review)
+
+`python3 scripts/ni_calibration_figures.py decks/ni/figures/cal_figures.i`
+writes, for every iteration, the Al2219 calibration set (`figures/ni/cal/gn{1..4}_curve`,
+`_oat_panels`, `_oat_overlay`, `_error`, `_sensitivity`) and `cal_convergence.png`. Curves
+end at the first load cutback (dotted line).
