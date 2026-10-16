@@ -17,9 +17,15 @@ Deck-driven (PINNACLE .i syntax):
     concurrent    = 7                          # bisections run in parallel over l0, one run each
     threads       = 2
 
-Bisection in log Gc: a run whose fracture strain is below the target (or
-that fails) has too small a Gc (lo moves up); a run that never initiates
-up to the end of the path has too large a Gc (hi moves down). Every run is
+Bisection in log Gc: a run whose fracture strain is below the target has
+too small a Gc (lo moves up); a run that never initiates up to the end of
+the path has too large a Gc (hi moves down). A run that dies (no finished
+output) is judged from the step history of its newest restart checkpoint
+(scripts/pfd_plate.py): initiation before it died counts as usual; no
+initiation by a stop strain at or beyond the target counts as too large a
+Gc; no initiation before a stop strain short of the target decides nothing,
+and that length scale's bisection stops there with the run noted (it is
+not guessed either way). Every run is
 kept under <out_root>/l<l0>/gc<Gc>/ with its pipeline deck, so the whole
 history is reproducible; <out_root>/calibration.csv records every run and
 <out_root>/calibrated.json the Gc(l0) pairs with their fracture strains.
@@ -70,7 +76,8 @@ def run_case(base: Path, cdir: Path, values: dict[str, str], threads: int) -> di
     pipe = cdir / "pipeline.i"
     pipe.write_text(text)
     if not (cdir / "fracture.json").exists():
-        subprocess.run([sys.executable, str(PIPE), str(pipe), "all"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        with (cdir / "pipeline.log").open("w") as fh:
+            subprocess.run([sys.executable, str(PIPE), str(pipe), "all"], check=False, stdout=fh, stderr=subprocess.STDOUT)
     if not (cdir / "fracture.json").exists():
         return {"failed": True}
     return json.loads((cdir / "fracture.json").read_text())
@@ -91,12 +98,21 @@ def bisect(l0: float, cal: dict, base: Path, out_root: Path, log: list[dict]) ->
         rec = {"l0": l0, "iteration": it, "Gc": gc, "fracture_strain": fs, "failed": bool(frac.get("failed")),
                "mechanics_failed": int(frac.get("mechanics_failed") or 0), "final_max_damage": frac.get("final_max_damage"),
                "steps_converged": frac.get("steps_converged"), "wall_s": time.time() - t0, "dir": str(cdir)}
+        died = bool(frac.get("run_died"))
+        rec["run_died"] = died
+        stop = frac.get("final_strain")
+        undecided = None
         if frac.get("failed"):
-            rec["note"] = "run failed"
+            undecided = "run failed and left no step history"
+        elif died and fs is None and (stop is None or float(stop) < target - tol):
+            undecided = "run died at %.4f strain before the target without initiation" % float(stop or 0.0)
+        if undecided:
+            # Neither direction follows from such a run: stop this length
+            # scale's bisection and leave the bracket for the author.
+            rec["note"] = undecided + ": bisection stopped"
             log.append(rec)
             print(time.strftime("%H:%M:%S"), {k: (round(v, 5) if isinstance(v, float) else v) for k, v in rec.items() if k != "dir"}, flush=True)
-            lo = math.log(gc)  # a failed run is treated as too brittle: raise Gc
-            continue
+            break
         if fs is None and frac.get("mechanics_failed") and float(frac.get("final_max_damage") or 0.0) >= float(cal.get("failure_damage", 0.5)):
             # The mechanics stopped converging on a heavily damaged plate before a
             # node reached the criterion: fracture was imminent at the stop strain,
@@ -105,6 +121,9 @@ def bisect(l0: float, cal: dict, base: Path, out_root: Path, log: list[dict]) ->
             rec_note = "mechanics failed at max damage %.2f: counted as fracture at the stop strain" % float(frac["final_max_damage"])
         else:
             rec_note = ""
+        if died:
+            rec_note = (rec_note + "; " if rec_note else "") + (
+                "run died after initiation" if fs is not None else "run died past the target without initiation")
         rec["fracture_strain"] = fs
         rec["note"] = rec_note
         log.append(rec)

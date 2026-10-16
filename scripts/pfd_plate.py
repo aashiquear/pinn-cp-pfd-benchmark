@@ -54,14 +54,19 @@ templates/``, runs it and reduces the history to a results file.
 Stages:
   deck    render <out_dir>/pfd.i (paths relative to it, so the deck runs on any host
           with the same tree) and write <out_dir>/case.json;
-  run     `pinnacle run pfd.i` in <out_dir> with OMP/MKL threads set (skipped when
-          solver/solver_history.csv exists);
-  curve   <out_dir>/results.csv from solver/solver_history.csv: nominal strain
+  run     `pinnacle run pfd.i` in <out_dir> with OMP/MKL threads set and Python's
+          faulthandler on (skipped when solver/summary.json, written only by a
+          finished run, exists); the exit status goes to <out_dir>/run_exit.txt;
+          of the restart checkpoints (checkpoint_every, default 8 steps) the newest
+          is kept when the run dies and all are removed when it finishes;
+  curve   <out_dir>/results.csv from solver/solver_history.csv, or, when the run
+          died, from the step history of its newest checkpoint: nominal strain
           (load factor x strain), engineering stress (reaction_x over the gross
           section), the volume-mean stress, max damage, initiation counters;
           <out_dir>/fracture.json: fracture strain (first step with a node at or
           above damage_threshold, and the element-mean criterion), peak stress,
-          fracture energy (integral of the curve to the end), steps and iterations.
+          fracture energy (integral of the curve to the end), steps and iterations;
+          run_died marks a curve read from a checkpoint (it ends at the stop strain).
 
 Usage: pfd_plate.py PIPELINE.i deck|run|curve|all
 """
@@ -70,6 +75,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import pickle
 import re
 import subprocess
 import sys
@@ -157,6 +163,7 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
         "FINITESTRAIN": _bool(pl.get("finite_strain", True)),
         "SPLITSMOOTHING": _num(pl.get("split_smoothing", 0.0)),
         "STATEUPDATE": str(pl.get("state_update", "explicit")),
+        "CHECKPOINT": str(int(pl.get("checkpoint_every", 8))),
     }
     # Neural routes on the mechanics sub-solve (Part I ADR 0028/0029): the
     # [Utilities] block of the CP template; none for the plain FE route. The
@@ -211,14 +218,26 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
 
 def stage_run(pl: dict, pipe: Path) -> None:
     out = _resolve(str(pl["out_dir"]), pipe)
-    if (out / "solver" / "solver_history.csv").exists():
-        print("exists, skipping run:", out / "solver" / "solver_history.csv")
+    # summary.json is written only when the run finishes; the mechanics
+    # sub-solve rewrites solver_history.csv at every step, so its presence
+    # does not mean the run is done.
+    if (out / "solver" / "summary.json").exists():
+        print("exists, skipping run:", out / "solver" / "summary.json")
         return
     threads = str(int(pl.get("threads", 2)))
-    env = dict(os.environ, OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads)
+    env = dict(os.environ, OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads, PYTHONFAULTHANDLER="1")
     with (out / "run.log").open("w") as log:
         rc = subprocess.run([PINNACLE, "run", "pfd.i"], cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env).returncode
+    (out / "run_exit.txt").write_text(f"{rc}\n")
+    ckpts = _checkpoints(out)
+    for c in (ckpts if rc == 0 else ckpts[:-1]):
+        c.unlink()
     print("pinnacle run exit", rc, "->", out)
+
+
+def _checkpoints(out: Path) -> list[Path]:
+    """Restart checkpoints of a run, oldest first."""
+    return sorted((out / "solver").glob("restart_step*.pkl"))
 
 
 def _converged(v) -> bool:
@@ -234,7 +253,18 @@ def _f(r: dict, k: str, default=np.nan) -> float:
 def stage_curve(pl: dict, pipe: Path) -> dict:
     out = _resolve(str(pl["out_dir"]), pipe)
     hist = out / "solver" / "solver_history.csv"
-    rows = [r for r in csv.DictReader(hist.open()) if r.get("executioner", r.get("kind", "")) in ("", "staggered", "monolithic")]
+    died = not (out / "solver" / "summary.json").exists()
+    if died:
+        # The run died: its step history is the newest restart checkpoint's.
+        ckpts = _checkpoints(out)
+        if not ckpts:
+            raise SystemExit(f"{out}: the run did not finish and left no checkpoint")
+        with ckpts[-1].open("rb") as fh:
+            rows = [{k: ("" if v is None else str(float(v)) if isinstance(v, (bool, int, float, np.floating, np.integer)) else str(v))
+                     for k, v in r.items()} for r in pickle.load(fh)["history"]]
+        print("run died: curve from", ckpts[-1].name)
+    else:
+        rows = [r for r in csv.DictReader(hist.open()) if r.get("executioner", r.get("kind", "")) in ("", "staggered", "monolithic")]
     rows = [r for r in rows if "step_factor" in r and r["step_factor"] not in ("", "nan")]
     strain = float(pl.get("strain", 0.2))
     area = float(pl.get("height", 50.0)) * float(pl.get("thickness", 1.0))
@@ -273,6 +303,7 @@ def stage_curve(pl: dict, pipe: Path) -> dict:
         "final_strain": float(e[-1]), "final_eng_stress": float(s[-1]), "final_max_damage": res[-1]["max_damage"],
         "stopped_early": len(res) < int(pl.get("n_steps", 256)),
         "mechanics_failed": int(any(not x["mech_converged"] for x in res)),
+        "run_died": died,
         "steps": len(res), "steps_converged": int(sum(x["converged"] for x in res)),
         "newton_iterations": int(sum(x["newton_iterations"] for x in res)),
         "alternations": int(sum(x["alternations"] for x in res)),

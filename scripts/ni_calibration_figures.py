@@ -145,7 +145,7 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
     ymax = max([s0.max(), ey.max()] + [c[1].max() for c in curves.values()])
     fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.6), dpi=dpi, sharex=True, sharey=True)
     for ax, p in zip(axes.ravel(), PARAMS):
-        e, s, cut = curves[p]
+        e, s, _cut = curves[p]
         factor = gn["perturbations"][p]["value"] / center[p]
         u = _str(prm[p]["unit"])
         ax.plot(e0, s0, color=COLORS["fe"], lw=1.6, label="centre")

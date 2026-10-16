@@ -148,6 +148,8 @@
   snapshots_every = @SNAPSHOTS@
   stop_damage     = @STOPDAMAGE@    # end the path once max d reaches this (0 = full path)
   stop_on_mechanics_failure = true
+  checkpoint_every = @CHECKPOINT@   # restartable state every N load steps (0 = none); a run that dies keeps its curve
+  checkpoint_path  = solver/restart
   [./mechanics]
     variable          = u
     type              = cp_quasi_static
