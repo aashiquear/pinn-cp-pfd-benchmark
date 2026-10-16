@@ -286,3 +286,9 @@ NOT derivable from the code: measured facts, decisions, and traps.
   `cp_quasi_static` then keeps stepping after its 10 cutbacks and the stress jumps
   (252 -> 520 MPa). Check the `cutbacks` column; never report a step with cutbacks at the
   limit. CP-only curves are truncated at the first such step.
+
+## 2026-10-16: Ni experimental curve end = damage initiation (author)
+- The end point of every experimental curve shown in (rezwan 2026 predicting) is the damage
+  initiation point; it is the G_c (l_0) calibration target of the CP+PFD stage. The flattening
+  before it is softening from damage, not a CP-calibration miss: do not chase it with CP
+  parameters. Unresolved: Fig. 3 ends at 0.513 vs Fig. 4(b) L.1 0.463 -- ask before stage 6.

@@ -489,11 +489,13 @@ The residual has a shape the four parameters cannot remove:
   until a secondary system activates; this reading is consistent with the
   residual but not tested here. The 0.5% marker also carries the largest
   digitization spread (25 MPa) because it lies on the steep knee.
-- **The end (50%).** The experiment has stopped hardening (238 MPa at 45 and
-  50%); the FE still hardens at 150 MPa per unit strain. The flat end of
-  the experiment is most likely the onset of necking before the specimen
-  fails at 46-51%; the FE has no damage and its single element through the
-  thickness does not resolve a neck, so the comparison ends there.
+- **The end (45 to 50%).** The experiment has stopped hardening (238 MPa at
+  45 and 50%); the FE still hardens at 150 MPa per unit strain. The
+  flattening is the softening that precedes damage initiation, and the end
+  of the experimental curve is the damage-initiation point. Crystal
+  plasticity alone has no softening mechanism and cannot follow it; the
+  coupled phase-field stage calibrates the fracture parameters to that
+  point and is where the softening and the final damage are reproduced.
 
 **Figure 4.** Deviation of the calibrated specimen from the experimental
 markers.
@@ -581,5 +583,6 @@ iteration) the global Newton stops converging; the executioner then steps
 on after exhausting its ten cutbacks and the stress jumps from 252 to over
 500 MPa. Those steps are not a solution and are not used. The range is past
 every marker, past the end of the experimental curve and past the 46-48%
-failure strains of the L specimens, which the coupled phase-field stage will
-stop at.
+failure strains of the L specimens: the end of each experimental curve is
+the damage-initiation point, which the coupled phase-field stage takes as
+the calibration target of the fracture parameters and stops at.

@@ -108,6 +108,16 @@ The meshes are shown to the author before any run (rule 3 of Part II).
   gauge strain of that step; the fracture location is the station column
   that crosses first, the mode the inclination of the d >= 0.8 band.
 
+### Author's decision (2026-10-16): the end of an experimental curve is damage initiation
+
+The hardening stops at the end of the experimental curves because of softening and damage
+propagation, which CP alone cannot reproduce (report Part III §4.4). The last point of each
+experimental curve the paper shows is the damage-initiation point; it is the target of the
+G_c (and l_0) calibration in stage 6, and the CP+PFD stage is where the softening and the
+final damage are to be reproduced. Open point for stage 6: the Fig. 3 specimen-L curve ends
+at 0.513 gauge strain while Fig. 4(b) gives 0.461-0.481 for L.1/L.3/L.4 (L.1 0.463); which
+end point is the L.1 calibration target is to be settled with the author before that run.
+
 ## 5. Study design (stage order)
 
 1. Meshes at three levels (§3), shown to the author.
