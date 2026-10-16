@@ -143,3 +143,23 @@ is set by rho_0 and the rate term, the hardening by k_m and y_c. The step
 (clipped to +-0.7 in ln p) goes to rho_0 1.17e6, k_m 0.0146, y_c 0.74e-6,
 tau_c0 0.255 (linear prediction 25.3 MPa RMSE); iteration 2 runs from
 that centre, and the clipping means two or three more iterations.
+
+### 2.2 Iteration 2 (2026-10-15 21:15 - 2026-10-16 00:00)
+
+Centre rho_0 1.17e6, k_m 0.0146, y_c 0.74e-6, tau_c0 0.255:
+
+| gauge strain | experiment (MPa) | FE (MPa) |
+|---|---|---|
+| 2% | 87.7 | 117 |
+| 5% | 98.4 | 148 |
+| 10% | 129.3 | 203 |
+| 20% | 180.1 | 301 |
+| 30% | 211.8 | 373 |
+| 40% | 232.8 | 432 |
+| 50% | 238.4 | 480 |
+
+RMSE 141.2 MPa (from 373): the step halved the hardening but the curve is
+still 1.9x too high at 30%. Sensitivities at 2 / 10 / 30%: rho_0 50 / 50
+/ 40, k_m 14 / 102 / 281, y_c -2 / -25 / -90, tau_c0 3 / 3 / 3. Next
+centre (clipped step) rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249,
+linear prediction 4.6 MPa; iteration 3 runs from it.
