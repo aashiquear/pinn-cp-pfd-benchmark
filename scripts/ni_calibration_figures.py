@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Figures of the Ni CP calibration (Part III, docs/12 §2), driven by one deck.
 
-Reads ``decks/ni/figures/cal_figures.i`` and writes, for every Gauss-Newton
-iteration listed in ``[Iterations]``, the Al2219 calibration set (same style,
+Reads ``decks/ni/figures/cal_figures.i`` and writes, for the calibrated
+iteration (``[Figures] full_set``), the Al2219 calibration set (same style,
 scripts/report_figures.py):
 
-  <it>_curve.png        centre FE curve against the Fig. 3 experiment markers
-  <it>_oat_panels.png   2 x 2: one parameter perturbed per panel
-  <it>_oat_overlay.png  all perturbations on one axis
-  <it>_error.png        per-marker absolute and relative error of the centre
-  <it>_sensitivity.png  dS/d(ln p) of each parameter at the markers
+  cal_curve.png        calibrated FE curve against the Fig. 3 experiment markers
+  cal_oat_panels.png   2 x 2: one parameter perturbed per panel
+  cal_oat_overlay.png  all perturbations on one axis
+  cal_error.png        per-marker absolute and relative error
+  cal_sensitivity.png  dS/d(ln p) of each parameter at the markers
 
-and ``cal_convergence.png`` (the centre of every iteration on one axis, and
-the RMSE against the iteration).
+and ``cal_convergence.png`` (the centre of every iteration listed in
+``[Iterations]`` on one axis, and the RMSE against the iteration).
 
 Curves are gauge strain (``gauge_strain``) against engineering stress
 (``eng_stress``) from each case's ``results.csv``, prepended with (0, 0) and
@@ -116,7 +116,7 @@ def cut_note(ax, cut):
         ax.axvline(cut, color="#999999", lw=0.9, ls=":", label="first load cutback (curve ends)")
 
 
-def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path) -> dict:
+def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: bool) -> dict:
     f, prm = cfg["figures"], cfg["parameters"]
     root = _resolve(_str(it["root"]), deck)
     gn = json.loads((root / "gauss_newton.json").read_text())
@@ -125,6 +125,11 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path) -> dic
     dpi = int(f["dpi"])
     e0, s0, cut0 = read_curve(root / "base" / "results.csv")
     head = "CP FE, %s: RMSE %.1f MPa" % (_str(it["label"]), gn["rmse_center_MPa"])
+    summary = {"label": _str(it["label"]), "curve": (e0, s0), "rmse": gn["rmse_center_MPa"],
+               "pred": gn.get("rmse_predicted_linear_MPa")}
+    if not draw:
+        return summary
+    name = "cal"
 
     # centre curve
     fig, ax = plt.subplots(figsize=(5.6, 4.0), dpi=dpi)
@@ -201,8 +206,7 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path) -> dic
     ax.legend(loc="upper left", frameon=False, ncol=4)
     ax.set_title(_str(it["label"]), fontsize=10)
     fig.tight_layout(); fig.savefig(out / f"{name}_sensitivity.png"); plt.close(fig)
-    return {"label": _str(it["label"]), "curve": (e0, s0), "rmse": gn["rmse_center_MPa"],
-            "pred": gn.get("rmse_predicted_linear_MPa")}
+    return summary
 
 
 def fig_convergence(its: list[dict], cfg: dict, deck: Path, out: Path) -> None:
@@ -235,7 +239,10 @@ def main(argv):
     cfg = read_deck(deck)
     out = _resolve(_str(cfg["figures"]["out_dir"]), deck)
     out.mkdir(parents=True, exist_ok=True)
-    its = [figs_iteration(n, it, cfg, deck, out) for n, it in cfg["iterations"].items()]
+    full = _str(cfg["figures"]["full_set"])
+    if full not in cfg["iterations"]:
+        raise SystemExit(f"{deck}: full_set {full!r} is not an iteration")
+    its = [figs_iteration(n, it, cfg, deck, out, n == full) for n, it in cfg["iterations"].items()]
     fig_convergence(its, cfg, deck, out)
     print("wrote", sorted(p.name for p in out.glob("*.png")))
     return 0

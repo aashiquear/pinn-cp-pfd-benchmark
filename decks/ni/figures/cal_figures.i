@@ -1,5 +1,8 @@
-# Figures of the Ni CP calibration on specimen L.1 (docs/12 §2), one set per
-# Gauss-Newton iteration plus the convergence figure. Read by
+# Figures of the Ni CP calibration on specimen L.1 (docs/12 §2) for the Part III
+# report: the full set (curve, error, one-at-a-time panels and overlay,
+# sensitivity) for the calibrated iteration named by `full_set`, and the
+# convergence figure over all iterations (author, 2026-10-16: the earlier
+# iterations appear only in the convergence figure). Read by
 # scripts/ni_calibration_figures.py; every run, marker file and axis limit is
 # declared here.
 #
@@ -19,6 +22,7 @@
   stress_max  = 300
   stress_tick = 50
   dpi         = 200
+  full_set    = gn4
 []
 
 # Iterations: root holds base/ and <param>_p/ case directories and the

@@ -206,7 +206,7 @@ script wrote, cal_center5/cal_gn5, was not run and is deleted). Sensitivities at
 tau_c0 is barely identifiable from this curve (it moves the whole curve by
 3 MPa per e-fold), the hardening pair k_m / y_c carries the shape.
 
-Wall time was 6.3-6.5 h per run (90-106 min in iterations 1-3): the five runs
+Wall time was 6.3-6.5 h per run (1.5-2.6 h in iterations 1-3): the five runs
 shared the host with the three Al2219 implicit Gc trials and run to 36% bar
 strain, where the late steps are slow (below).
 
@@ -221,6 +221,7 @@ before this range; any CP-only curve beyond 54% is reported truncated there.
 ### 2.5 Calibration figures (for the author's review)
 
 `python3 scripts/ni_calibration_figures.py decks/ni/figures/cal_figures.i`
-writes, for every iteration, the Al2219 calibration set (`figures/ni/cal/gn{1..4}_curve`,
-`_oat_panels`, `_oat_overlay`, `_error`, `_sensitivity`) and `cal_convergence.png`. Curves
-end at the first load cutback (dotted line).
+writes the Al2219 calibration set for the calibrated iteration (`figures/ni/cal/cal_curve`,
+`cal_oat_panels`, `cal_oat_overlay`, `cal_error`, `cal_sensitivity`) and `cal_convergence.png`
+over all iterations (author, 2026-10-16: earlier iterations appear only in the convergence
+figure). Curves end at the first load cutback (dotted line). Report: Part III report §4.
