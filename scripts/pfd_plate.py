@@ -156,6 +156,7 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
         "DAMAGEMODEL": str(pl.get("damage_model", "at2")),
         "FINITESTRAIN": _bool(pl.get("finite_strain", True)),
         "SPLITSMOOTHING": _num(pl.get("split_smoothing", 0.0)),
+        "STATEUPDATE": str(pl.get("state_update", "explicit")),
     }
     # Neural routes on the mechanics sub-solve (Part I ADR 0028/0029): the
     # [Utilities] block of the CP template; none for the plain FE route. The

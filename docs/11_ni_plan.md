@@ -89,11 +89,14 @@ The meshes are shown to the author before any run (rule 3 of Part II).
   the decks unchanged (b = 2.5e-7 mm, rho_0 = 2.35e6 mm^-2, y_c = 0.79e-6
   mm). Parts I-II used um; the CP law is scale-free under a consistent
   system.
-- Loading: the grip faces, `x-` fixed in x and `x+` pulled in x by a ramp,
-  rigid-body motion removed by one node (y, z); everything else free; the
-  nominal grip strain is the ramp over the full length and the
-  displacement-controlled rate is set so the gauge strain rate matches the
-  experiment's quasi-static order (1e-3 /s on the gage).
+- Loading: the grip faces clamped (`x-` fixed, `x+` fixed in y and z and
+  pulled in x by a ramp); the grip displacement rate is the author's
+  0.1 mm/s (2026-10-15), i.e. 3.9e-3/s on the 25.4 mm bar and about
+  6e-3/s on the gage; the first calibration iteration ran at 1e-3/s on the
+  bar and is kept as `results/ni_study/cal/gn1_rate1e-3` for the record.
+- Units: PINNACLE's CP law is unit-agnostic in the same sense as MOOSE
+  (checked in docs/12 §1: the same specimen in um and in mm gives the same
+  stress); every Ni deck, mesh and parameter is in mm, MPa and s.
 - Engineering strain: the gauge strain = (mean u_x on `gage+` minus mean
   u_x on `gage-`) / 8 mm, the FE counterpart of the DIC gage average
   (PINNACLE `gauge_node_sets`, ADR 0032). Engineering stress: the reaction

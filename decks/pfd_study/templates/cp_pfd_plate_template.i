@@ -90,6 +90,7 @@
     dim           = 3
     finite_strain = true
     gnd           = false
+    state_update  = @STATEUPDATE@   # explicit (Parts I-II) | implicit (PINNACLE ADR 0033, backward-Euler slip update)
     degradation   = degradation
   []
   [./pfd]

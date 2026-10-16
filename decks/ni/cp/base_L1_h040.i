@@ -1,7 +1,7 @@
 # Ni single crystal, specimen L.1 (orientation group L, thickness variant x.1), the
 # calibration geometry (docs/11 §2, §5 stage 2): CP only, PINNACLE implicit state
 # update (ADR 0033), grip strain 36% in 360 steps (1e-3 per step; the gauge strain
-# runs about 1.5x the grip strain, to beyond the 0.51 of Fig. 3), grip rate 1e-3/s.
+# runs about 1.5x the grip strain, to beyond the 0.51 of Fig. 3), grip speed 0.1 mm/s (3.9e-3/s on the bar, about 6e-3/s on the gage).
 # Parameters: Table 3 of the paper (data/extracted/ni_table3_cp_parameters.csv);
 # rho0, k1 (k_m), y_c and tau_c0 are the calibration targets.
 # Production arm: torch CPU, 2 threads, 7 side by side on the host (docs/11 §5).
@@ -15,7 +15,7 @@
   gage_width       = 1.85
   length           = 25.4
   strain           = 0.36
-  t_end            = 360.0
+  t_end            = 91.44          # grip displacement 0.1 mm/s (author, 2026-10-15): strain x 25.4 mm / 0.1 mm/s
   n_steps          = 360
   snapshots_every  = 20
   backend          = torch
