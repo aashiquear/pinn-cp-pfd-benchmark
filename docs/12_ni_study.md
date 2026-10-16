@@ -113,7 +113,7 @@ perturbation per free parameter (x1.2; tau_c0 x1.5) through
 `scripts/ni_study.py`, and `scripts/ni_gauss_newton.py` takes the damped
 step in log space against the Fig. 3 experiment markers
 (`data/digitized/ni_fig3_experiment_markers.csv`, engineering stress
-against GAUGE strain, markers at 0.5% and 1% excluded) and writes the next
+against GAUGE strain, markers below 0.3% strain excluded) and writes the next
 centre and GN deck. Runs on the host, torch CPU, 2 threads, 5 side by side,
 about 90 min per iteration (10-15 s per step; the first step 45 s).
 
