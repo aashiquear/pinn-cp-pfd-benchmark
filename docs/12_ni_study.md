@@ -103,3 +103,35 @@ central-difference derivative of that stress per quadrature point; the
 default stays explicit so Parts I-II reproduce. Validation: the implicit
 FE at 64 steps must reproduce the explicit limit (87 MPa at 3%) and a
 single element under uniaxial stress must match the material point.
+
+## 2. CP calibration on specimen L.1 (docs/11 §5 stage 2)
+
+Deck-driven Gauss-Newton as in Part I: `decks/ni/cp/base_L1_h040.i` (the
+paper's Table 3 set, h040, 360 steps of 1e-3 grip strain, implicit update)
+is the centre, `decks/ni/cp/cal_gnN.i` runs it with one multiplicative
+perturbation per free parameter (x1.2; tau_c0 x1.5) through
+`scripts/ni_study.py`, and `scripts/ni_gauss_newton.py` takes the damped
+step in log space against the Fig. 3 experiment markers
+(`data/digitized/ni_fig3_experiment_markers.csv`, engineering stress
+against GAUGE strain, markers at 0.5% and 1% excluded) and writes the next
+centre and GN deck. Runs on the host, torch CPU, 2 threads, 5 side by side,
+about 90 min per iteration (10-15 s per step; the first step 45 s).
+
+### 2.1 Iteration 1: the paper's set (2026-10-15 12:54-14:22)
+
+| gauge strain | experiment (MPa) | FE, paper's set (MPa) |
+|---|---|---|
+| 2% | 87.7 | 108 |
+| 5% | 98.4 | 145 |
+| 10% | 129.3 | 216 |
+| 20% | 180.1 | 337 |
+| 30% | 211.8 | 423 |
+| 40% | 232.8 | 494 |
+| 50% | 238.4 | 550 |
+
+RMSE 182.6 MPa: the paper's set in PINNACLE's law hardens 2.3x too fast
+(k_m) and yields 20% high. Sensitivities dS/dln p at 2 / 10 / 30% (MPa):
+rho_0 44 / 36 / 33, k_m 19 / 144 / 353, y_c -2 / -36 / -114, tau_c0 2 /
+44 / 85. The step (clipped to +-0.7 in ln p) goes to rho_0 1.64e6, k_m
+0.0213, y_c 1.59e-6, tau_c0 0.509 with a linear prediction of 51.7 MPa
+RMSE; iteration 2 runs from that centre.
