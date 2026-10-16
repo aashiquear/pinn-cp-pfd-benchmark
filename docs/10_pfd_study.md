@@ -1007,3 +1007,36 @@ or the grain boundary adjacent to it, and the peak stress varies by only
 +/-2% because the gross section is 95% intact until initiation. The
 sharpest-root case would need the h80 ring (0.25 um arc) to be
 quantitative.
+
+## 10. Check: CP+PFD calibration with the implicit CP update (PINNACLE ADR 0033, 2026-10-15/16)
+
+The Part II CP+PFD results use the explicit CP state update, which lags the
+stress by one step (first order; Part III notebook docs/12 §1.1). The G_c
+bisection of §5.2 was repeated with `state_update = implicit` (backward
+Euler; `decks/pfd_study/cp/cal_h40_implicit.i`, same plate, mesh, grains,
+steps and criterion) to measure what the lag does to the calibration.
+
+| l0 (um) | G_c | fracture strain, explicit (§5.2) | implicit |
+|---|---|---|---|
+| 5 | 447 | 6.95% | 6.88% |
+| 5 | 1156 | 17.97% | no fracture by 18.1% (run died, below) |
+| 10 | 447 | 4.30% | 4.22% |
+| 10 | 1156 | 10.94% | 10.78% |
+| 10 | 1860 | 17.34% | 17.27% |
+| 20 | 447 | 2.97% | 2.89% |
+| 20 | 1156 | 7.42% | 7.34% |
+| 20 | 2358 | 14.61% | 14.45% |
+| 20 | 2991 | 18.28% | 18.20% |
+
+At equal G_c the implicit plate fractures 0.07-0.16% strain earlier; the
+calibrated G_c moves by +1.5% at l0 = 10 um (1860 against 1832, converged
+within the 0.08% tolerance) and by a similar amount at 5 and 20 um (read off
+the table; those bisections were stopped). Peak stress is about 4% higher
+(605 against 580 MPa at l0 = 10 um, G_c 1860). The author kept Part II as
+it is (2026-10-16): the difference is below the calibration tolerance.
+
+Two trials (l0 = 20 um at 1860, l0 = 5 um at 1156) died during damage
+localisation after the backward-Euler slip update fell back to sub-stepping,
+with no traceback and no written curve (the staggered executioner writes its
+series only at the end), and `pfd_calibrate.py` read every failed run as too
+brittle. Both are fixed before the Ni CP+PFD stage (docs/12).
