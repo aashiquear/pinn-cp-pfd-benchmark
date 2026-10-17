@@ -268,3 +268,19 @@ study's h020 run, copied in as `base`), four perturbations at 2 threads each,
 memory cap 16 GB per run; `ni_gauss_newton.py` now writes the next decks next to the
 given one (`decks/ni/cp/h020/`, results `results/ni_study/cal_h020/`). About 4 h per
 iteration.
+
+### 4.1 Iteration 1 on h020 and a third PINNACLE bug (2026-10-17)
+
+Centre (the h040 set on h020): RMSE 29.7 MPa, the curve 12-18% below the markers
+from 10% strain. The k_m x1.2 run cut back twice at 14.6% gauge strain and its
+curve then sat 46 MPa above the centre at 20% (h040's sensitivity predicts about
++19): `cp_quasi_static` kept the cutback's halved time increment for the full load
+increments that followed, i.e. twice the strain rate for the rest of the run per
+cutback level (+9% flow stress per halving at n = 8.3; 199/172 = 1.16 against
+2^(2/8.33) = 1.18). Fixed in PINNACLE ddc76c3 (the time increment now follows the
+applied load increment; regression test; ADR 0031 addendum). Earlier results are
+unaffected: Al2219 Part I had no cutback, Part II one after its fracture, and the
+Ni h040 calibration and mesh study cut back only beyond the curves' cut-off. The
+step computed from the corrupted run (k_m sensitivity 310 MPa at 30%) was discarded;
+the k_m case is rerun with the fix (the corrupted run kept as
+`results/ni_study/cal_h020/gn1_k1_p_dtbug` on the host).

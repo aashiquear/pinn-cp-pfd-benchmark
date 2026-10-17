@@ -320,3 +320,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
   (results/ni_study/cal/gn1..4) is history, not a result.
 - The BE-fallback memory runaway also happens in CP-only runs (h020z2 after 10 cutbacks at ~45%
   gauge strain): every Ni and PFD run now carries a 16 GB address-space cap (memory_cap_gb).
+
+## 2026-10-17: cutback dt bug (PINNACLE ddc76c3)
+- After a cutback `cp_quasi_static` kept the halved dt for full load increments: 2x strain rate
+  per cutback level for the rest of the run (+9% flow stress per halving). Fixed. Any curve with
+  a cutback computed before ddc76c3 is suspect beyond its first cutback (all reported curves were
+  cut there or had none). The Ni GN script still reads whole curves: check `cutbacks` in the
+  perturbation runs before trusting a step.
