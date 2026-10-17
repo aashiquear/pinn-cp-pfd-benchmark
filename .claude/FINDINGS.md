@@ -293,3 +293,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
   before it is softening from damage, not a CP-calibration miss: do not chase it with CP
   parameters. Settled 2026-10-16: Fig. 4(b) experiment axis is the true fracture strain and the G_c target
   (L.1 0.463); the Fig. 3 end (0.513) may carry digitization error and is not a target.
+
+## 2026-10-16: PINNACLE unit-suite baseline (feat/pinn_benchmark, f83c378 and e281696)
+- Known failures, identical before and after e281696 (not regressions of the study's work):
+  `test_architecture::test_no_dl_framework_imports_outside_backend` (torch imported in
+  load_step_predictor.py and residual_bridge.py), `test_vpinn::test_vpinn_steady_approaches_the_fem_reference`,
+  `test_j2_kernel::test_degradation_splits_tension_from_compression`, and the four
+  `test_m18_bc_scoping_and_parity::test_fem_operators_and_pfd_steady_assemble_the_same_system[*]`.
+  Compare a new change against this set, not against "all green".
