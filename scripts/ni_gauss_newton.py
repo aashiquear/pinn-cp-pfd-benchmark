@@ -15,6 +15,11 @@ range where the law's reading is the paper's. Writes
 <out_root>/gauss_newton.json with the residuals, Jacobian, step, predicted
 RMSE and the per-marker errors of the centre.
 
+The next decks are written next to the given one (cal_center{n+1}.i,
+cal_gn{n+1}.i) and the next out_root is the given one with gn{n} -> gn{n+1},
+so a calibration on another mesh keeps its own folder of decks and results
+(decks/ni/cp/h020/, results/ni_study/cal_h020/).
+
 Usage: ni_gauss_newton.py decks/ni/cp/cal_gn1.i [--factor 1.2]
 """
 from __future__ import annotations
@@ -110,19 +115,22 @@ def main(argv):
     center_text = base_text
     for k, v in zip(names, p1):
         center_text = re.sub(rf"^(\s*{re.escape(k)}\s*=\s*)\S+", rf"\g<1>{v:.6g}", center_text, count=1, flags=re.M)
-    center_text = re.sub(r"^(\s*out_dir\s*=\s*)\S+", rf"\g<1>../../../results/ni_study/cal/center{n+1}", center_text, count=1, flags=re.M)
+    out_root_rel = str(cfg["study"]["out_root"])
+    next_root = re.sub(rf"gn{n}$", f"gn{n+1}", out_root_rel)
+    center_dir = re.sub(rf"gn{n}$", f"center{n+1}", out_root_rel)
+    center_text = re.sub(r"^(\s*out_dir\s*=\s*)\S+", rf"\g<1>{center_dir}", center_text, count=1, flags=re.M)
     center_text = re.sub(r"^# Ni single crystal, specimen L.1.*$", f"# Ni single crystal, specimen L.1: calibration CENTRE (iteration {n+1}, from gn{n}'s step).", center_text, count=1, flags=re.M)
-    (STUDY / f"decks/ni/cp/cal_center{n+1}.i").write_text(center_text)
+    (deck.parent / f"cal_center{n+1}.i").write_text(center_text)
     gn = [f"# Ni CP calibration, Gauss-Newton iteration {n+1}: centre from iteration {n}'s step and one",
           "# multiplicative perturbation per free parameter (scripts/ni_gauss_newton.py).", "[Study]",
-          f"  base       = cal_center{n+1}.i", f"  out_root   = ../../../results/ni_study/cal/gn{n+1}",
-          "  markers    = ../../../data/digitized/ni_fig3_experiment_markers.csv", "  concurrent = 5", "[]", "[Cases]"]
+          f"  base       = cal_center{n+1}.i", f"  out_root   = {next_root}",
+          f"  markers    = {cfg['study']['markers']}", f"  concurrent = {cfg['study'].get('concurrent', 5)}", "[]", "[Cases]"]
     for k, v in zip(names, p1):
         f = 1.5 if k == "tau_c0" else factor
         gn += [f"  [./{k}_p]", f"    {k} = {v * f:.6g}", "  []"]
     gn += ["[]", ""]
-    (STUDY / f"decks/ni/cp/cal_gn{n+1}.i").write_text("\n".join(gn))
-    print(f"wrote decks/ni/cp/cal_center{n+1}.i and cal_gn{n+1}.i")
+    (deck.parent / f"cal_gn{n+1}.i").write_text("\n".join(gn))
+    print(f"wrote {deck.parent / f'cal_center{n+1}.i'} and cal_gn{n+1}.i")
     return 0
 
 

@@ -225,3 +225,46 @@ writes the Al2219 calibration set for the calibrated iteration (`figures/ni/cal/
 `cal_oat_panels`, `cal_oat_overlay`, `cal_error`, `cal_sensitivity`) and `cal_convergence.png`
 over all iterations (author, 2026-10-16: earlier iterations appear only in the convergence
 figure). Curves end at the first load cutback (dotted line). Report: Part III report §4.
+
+## 3. Mesh study on L.1 with the h040-calibrated set (2026-10-16/17)
+
+`decks/ni/cp/mesh_L1.i` (`ni_study.py`): the h040-calibrated set on h020 (gage cell
+0.2 mm, 792 hex8), h010 (0.1 mm, 3,168) and h020 with two elements through the
+thickness (1,584); grip strain 30% in 300 steps; h040 is the calibration run. The
+host froze at about 08:40 on 2026-10-17 (no memory cap on the Ni pipeline yet: the
+h020z2 run fell back to sub-stepping at step 229 after ten cutbacks, the same
+runaway as docs/10 §10, now seen in a CP-only run); h020 had finished, h010 reached
+step 112 (22.7% gauge strain), h020z2 step 248 (clean to 43.5%). Engineering
+stress (MPa) at the marker strains, curves to the first cutback:
+
+| case | 2% | 10% | 20% | 30% | 40% | 50% |
+|---|---|---|---|---|---|---|
+| experiment | 87.7 | 129.3 | 180.1 | 211.8 | 232.8 | 238.4 |
+| h040 | 88.5 | 134.0 | 177.0 | 207.3 | 229.3 | 246.1 |
+| h020 | 83.4 | 120.5 | 152.9 | 173.7 | 187.2 | 195.8 |
+| h010 (partial) | 81.9 | 116.1 | 146.3 | - | - | - |
+| h020, two layers | 83.3 | 119.1 | 151.9 | 172.8 | 186.3 | - |
+
+Refinement lowers the curve by 14% (h040 to h020) and a further 4% (h020 to h010)
+at 20% gauge strain: converging (ratio about 3.5), limit about 24% below h040; a
+second layer through the thickness changes under 1%. The equivalent plastic
+strain fields (`figures/ni/mesh/mesh_eqps.png`, `scripts/ni_fields.py
+decks/ni/figures/fields_mesh.i`) are nearly the same on h040 and h020 at equal bar
+strain (peaks 0.24/0.25, 0.42/0.41, 0.60/0.61); the gage bends into an S as the
+crystal shears with clamped grips, and the coarse mesh carries more force for the
+same deformation. The h040 calibration therefore absorbed a mesh error of about
+20%. Figures: `scripts/ni_mesh_figures.py decks/ni/figures/mesh_figures.i`.
+
+**Author's decision (2026-10-17):** recalibrate on h020; the report shows the h020
+calibration only, and the mesh sensitivity keeps h040 as a reference against the
+converging finer meshes. No study of the source of the coarse-mesh stiffness: the
+gage carries most of the plastic strain and the rate is high, so the denser mesh is
+needed in any case.
+
+## 4. CP calibration on h020 (2026-10-17)
+
+`decks/ni/cp/h020/cal_gn1.i`: centre = the h040-calibrated set on h020 (the mesh
+study's h020 run, copied in as `base`), four perturbations at 2 threads each,
+memory cap 16 GB per run; `ni_gauss_newton.py` now writes the next decks next to the
+given one (`decks/ni/cp/h020/`, results `results/ni_study/cal_h020/`). About 4 h per
+iteration.

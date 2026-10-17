@@ -312,3 +312,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
   6,880 points) until it is, so a runaway stops the run instead of the host.
 - Restarting an implicit coupled run from a checkpoint crawls (35+ min without a step, host and
   local); not diagnosed. Do not rely on restarts for now.
+
+## 2026-10-17: Ni production mesh is h020 (author)
+- h040 is 14-20% stiff against h020 (mesh converging, h010 a further -4%); the author chose to
+  recalibrate on h020 and use h020 for all later Ni stages. The report shows the h020 calibration
+  only; the mesh-sensitivity section keeps h040 as a reference. The h040 calibration
+  (results/ni_study/cal/gn1..4) is history, not a result.
+- The BE-fallback memory runaway also happens in CP-only runs (h020z2 after 10 cutbacks at ~45%
+  gauge strain): every Ni and PFD run now carries a 16 GB address-space cap (memory_cap_gb).
