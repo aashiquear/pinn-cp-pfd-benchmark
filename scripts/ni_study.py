@@ -121,7 +121,9 @@ def stage_run(cfg: dict, study: Path) -> None:
     st = cfg["study"]
     out_root = _resolve(str(st["out_root"]), study)
     n_conc = int(st.get("concurrent", 4))
-    todo = [out_root / name for name, _ in cases_of(cfg) if not (out_root / name / "solver" / "solver_history.csv").exists()]
+    # a finished run writes solver/summary.json; a run that died left only its
+    # per-step history, so it is run again
+    todo = [out_root / name for name, _ in cases_of(cfg) if not (out_root / name / "solver" / "summary.json").exists()]
     running: list[tuple[Path, subprocess.Popen]] = []
     while todo or running:
         while todo and len(running) < n_conc:
