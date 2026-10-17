@@ -1049,9 +1049,19 @@ max damage 0.95) the process reached 52 GB within 12 min and froze the host. Und
 a 16 GB address-space cap the same fallback exhausted the cap within 2 s through
 ordinary state-sized allocations (one (6,880 x 12) array per request) and the
 executioner stopped the run cleanly; that rerun fractured at 17.81% (node
-criterion; explicit 17.97%), which completes the table above. The fallback's
-runaway allocation is being located (PINNACLE now logs the traceback of an
-exception caught in a step, d91ccdb). A related PINNACLE bug found on the way:
+criterion; explicit 17.97%), which completes the table above. The trigger is a
+PINNACLE bug in the coupled load window (fixed, 4c6d026, ADR 0031 addendum):
+`cp_quasi_static` started its path at 0 rather than at the window's initial
+factor, so the mechanics cutback at 0.906 retried at 0.453, half the total load,
+unloading the cracked plate from about 18% to 9% strain; that retry is where every
+point fell back to sub-stepping. Driving the callback's fallback directly (6,880
+points, per-point orientations, damage, that unloading) keeps the memory flat, so
+the runaway allocation lies outside the CP callback and is not yet located; with
+the window fixed the retry is a half increment and the fallback should be rare.
+Effect on the reported Part II results: of the 99 CP+PFD runs only one cut back at
+all (shape study b_x3.54_y7.07, at 16.56% strain, after its fracture at 16.33%), so
+no reported fracture strain passed through the faulty retry (scan of the per-step
+histories, which carry the last alternation's cutbacks). A related PINNACLE bug found on the way:
 the callback's `state_dict` did not carry the deformation of the last accepted
 step, so a restart or a staggered rewind started the fallbacks from the wrong
 deformation (fixed, e281696, ADR 0033 addendum).

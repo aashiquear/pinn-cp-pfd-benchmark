@@ -301,3 +301,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
   `test_j2_kernel::test_degradation_splits_tension_from_compression`, and the four
   `test_m18_bc_scoping_and_parity::test_fem_operators_and_pfd_steady_assemble_the_same_system[*]`.
   Compare a new change against this set, not against "all green".
+
+## 2026-10-16: coupled-window cutback bug (PINNACLE 4c6d026) and the BE-fallback memory runaway
+- `cp_quasi_static` in a staggered window retried a cutback at half the TOTAL load (0.906 -> 0.453):
+  fixed. Standalone runs (window from 0, all Ni CP-only runs) were never affected; of 99 Part II
+  CP+PFD runs one cut back, after its fracture. Part II results stand.
+- The memory runaway (52 GB) after the BE fallback is NOT in the CP callback (harness in the
+  scratchpad keeps memory flat with 6,880 points, orientations, damage, unloading); not located.
+  Every implicit CP+PFD run must run with `ulimit -v` (16 GB per run works; 8 GB is too small at
+  6,880 points) until it is, so a runaway stops the run instead of the host.
+- Restarting an implicit coupled run from a checkpoint crawls (35+ min without a step, host and
+  local); not diagnosed. Do not rely on restarts for now.
