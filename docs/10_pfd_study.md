@@ -1019,7 +1019,7 @@ steps and criterion) to measure what the lag does to the calibration.
 | l0 (um) | G_c | fracture strain, explicit (§5.2) | implicit |
 |---|---|---|---|
 | 5 | 447 | 6.95% | 6.88% |
-| 5 | 1156 | 17.97% | no fracture by 18.1% (run died, below) |
+| 5 | 1156 | 17.97% | 17.81% (diagnostic rerun, below) |
 | 10 | 447 | 4.30% | 4.22% |
 | 10 | 1156 | 10.94% | 10.78% |
 | 10 | 1860 | 17.34% | 17.27% |
@@ -1040,3 +1040,18 @@ localisation after the backward-Euler slip update fell back to sub-stepping,
 with no traceback and no written curve (the staggered executioner writes its
 series only at the end), and `pfd_calibrate.py` read every failed run as too
 brittle. Both are fixed before the Ni CP+PFD stage (docs/12).
+
+Diagnosis (2026-10-16, ledger rows `pfd-diag-crash-*`): the runs died of memory
+exhaustion. Rerun with the resident memory logged each minute, the l0 = 5 um,
+G_c 1156 trial held 1.4 GB for 2.5 h; when the backward-Euler slip update fell
+back to sub-stepping (one point after a load cutback, during crack propagation at
+max damage 0.95) the process reached 52 GB within 12 min and froze the host. Under
+a 16 GB address-space cap the same fallback exhausted the cap within 2 s through
+ordinary state-sized allocations (one (6,880 x 12) array per request) and the
+executioner stopped the run cleanly; that rerun fractured at 17.81% (node
+criterion; explicit 17.97%), which completes the table above. The fallback's
+runaway allocation is being located (PINNACLE now logs the traceback of an
+exception caught in a step, d91ccdb). A related PINNACLE bug found on the way:
+the callback's `state_dict` did not carry the deformation of the last accepted
+step, so a restart or a staggered rewind started the fallbacks from the wrong
+deformation (fixed, e281696, ADR 0033 addendum).
