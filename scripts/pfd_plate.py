@@ -55,7 +55,8 @@ Stages:
   deck    render <out_dir>/pfd.i (paths relative to it, so the deck runs on any host
           with the same tree) and write <out_dir>/case.json;
   run     `pinnacle run pfd.i` in <out_dir> with OMP/MKL threads set and Python's
-          faulthandler on (skipped when solver/summary.json, written only by a
+          faulthandler on and an address-space cap of memory_cap_gb (default 16;
+          0 = none) (skipped when solver/summary.json, written only by a
           finished run, exists); the exit status goes to <out_dir>/run_exit.txt;
           of the restart checkpoints (checkpoint_every, default 8 steps) the newest
           is kept when the run dies and all are removed when it finishes;
@@ -77,6 +78,7 @@ import json
 import os
 import pickle
 import re
+import resource
 import subprocess
 import sys
 from pathlib import Path
@@ -226,8 +228,18 @@ def stage_run(pl: dict, pipe: Path) -> None:
         return
     threads = str(int(pl.get("threads", 2)))
     env = dict(os.environ, OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads, PYTHONFAULTHANDLER="1")
+    # Address-space cap per run (memory_cap_gb, 0 = none): a runaway allocation
+    # after a backward-Euler fallback once took 52 GB and froze the host
+    # (docs/10 §10); with the cap the allocation fails and the run stops.
+    cap = int(float(pl.get("memory_cap_gb", 16)) * 1024**3)
+
+    def _limit() -> None:
+        if cap > 0:
+            resource.setrlimit(resource.RLIMIT_AS, (cap, cap))
+
     with (out / "run.log").open("w") as log:
-        rc = subprocess.run([PINNACLE, "run", "pfd.i"], cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env).returncode
+        rc = subprocess.run([PINNACLE, "run", "pfd.i"], cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env,
+                            preexec_fn=_limit).returncode
     (out / "run_exit.txt").write_text(f"{rc}\n")
     ckpts = _checkpoints(out)
     for c in (ckpts if rc == 0 else ckpts[:-1]):
