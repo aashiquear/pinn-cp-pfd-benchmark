@@ -323,3 +323,34 @@ y_c and k_m runs are rerun with 9f31bb0 for clean figures (the old runs kept as
 `decks/ni/cp/h020/mesh_L1.i`: h040 (reference), h010 and h020z2 with the calibrated
 set; h020 is the calibrated run (copied as `base`). Threads 2 / 8 / 4, memory cap 16 /
 24 / 16 GB.
+
+### 5.1 The address-space cap was the wrong measure (2026-10-18)
+
+h020z2 stopped at step 36 (11% gauge strain): the 16 GB cap failed a 58 MB request in
+the ordinary tangent assembly (`assembler._tangent_analytic`), and every retry after
+it (275 raises, 10 cutbacks) failed the same way; the run is void. The k_m rerun of
+§4.2 raised at every step after 231 (load factor 0.77) for the same reason, at 5.8 GB
+resident, and was stopped. h010 held 12.6 GB resident against 24.5 GB of address space.
+
+On the host the address space runs about 11 GB above resident memory, a fixed amount:
+the ROCm torch libraries map about 7 GB of shared objects and reserve a 4 GB block,
+and touch almost none of it (`pmap`). The 16 GB address-space cap therefore left
+about 5 GB for the run itself. The local torch build maps far less (address space
+2.9 GB above resident).
+
+No leak was found. Locally the calibrated h020 deck rises from 1.5 to 2.5 GB over the
+first 13 steps and holds at about 2.4 GB through step 21; under tracemalloc the h040
+deck holds 1.47 GB resident and 140 MB of traced Python/numpy memory over ten steps,
+the only churn being the temporaries of the finite-difference tangent and the
+backward-Euler update, freed every iteration. h010's resident memory goes both ways
+(12.6 GB at step 96, 11.0 GB at step 100): a large working set (25,344 points), not
+an accumulation. The Al2219 runaway (1.4 GB to 52 GB within 12 min, docs/10 §10) was
+real resident growth; the Ni cap failures were not evidence of it.
+
+Fix (study scripts): `ni_specimen.py` and `pfd_plate.py` now cap resident memory
+through a user cgroup scope (`systemd-run --user --scope -pMemoryMax=<cap>G
+-pMemorySwapMax=0`, the kernel kills the run at the cap) and fall back to the
+address-space limit only where systemd-run is unavailable. The k_m case and h020z2
+were rerun under the new cap (2026-10-18 13:00); the failed runs are kept in
+`failed_ascap/` of each case directory. h010 keeps running under its 24 GB
+address-space cap and is rerun under the new cap if it hits it.

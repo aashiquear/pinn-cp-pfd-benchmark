@@ -258,7 +258,7 @@ as the calibration geometry.
 
 All runs use PINNACLE (branch `feat/pinn_benchmark`, revision d91ccdb or
 later), torch backend on the CPU, double precision, two threads per run on
-the compute host, with a 16 GB address-space cap per run (§3.4). A run is fully described by one specimen deck
+the compute host, with a 16 GB resident-memory cap per run (§3.4). A run is fully described by one specimen deck
 (`decks/ni/cp/*.i`), rendered by `scripts/ni_specimen.py` into a PINNACLE
 deck from the template `decks/ni/templates/cp_specimen_template.i`; the
 calibration iterations are study decks (`decks/ni/cp/cal_gn*.i`) run by
@@ -331,8 +331,8 @@ of the same step; the state is committed when the step converges. The last
 fallback is rare (a trial far from equilibrium after repeated cutbacks), but
 once reached it has exhausted the host's memory in some runs, through an
 allocation outside the constitutive update that is not yet located; every run
-therefore carries an address-space cap (16 GB), under which such a run stops
-with an error instead.
+therefore carries a resident-memory cap (16 GB, a cgroup limit), at which such
+a run is stopped instead.
 
 This replaces the explicit update of the Al2219 report, in which the stress
 inside Newton was evaluated with the state frozen at the last converged step.

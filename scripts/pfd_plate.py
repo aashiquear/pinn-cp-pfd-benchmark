@@ -55,7 +55,7 @@ Stages:
   deck    render <out_dir>/pfd.i (paths relative to it, so the deck runs on any host
           with the same tree) and write <out_dir>/case.json;
   run     `pinnacle run pfd.i` in <out_dir> with OMP/MKL threads set and Python's
-          faulthandler on and an address-space cap of memory_cap_gb (default 16;
+          faulthandler on and a resident-memory cap of memory_cap_gb (default 16;
           0 = none) (skipped when solver/summary.json, written only by a
           finished run, exists); the exit status goes to <out_dir>/run_exit.txt;
           of the restart checkpoints (checkpoint_every, default 8 steps) the newest
@@ -79,6 +79,7 @@ import os
 import pickle
 import re
 import resource
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -218,6 +219,19 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
     return out
 
 
+def _capped(cmd: list, cap_gb: float):
+    """(command, preexec_fn) running ``cmd`` under a resident-memory cap of
+    ``cap_gb`` GB: a user cgroup scope (MemoryMax, no swap; the kernel kills
+    the run at the cap) when systemd-run works, else an address-space rlimit."""
+    if cap_gb <= 0:
+        return cmd, None
+    if shutil.which("systemd-run") and subprocess.run(
+            ["systemd-run", "--user", "--scope", "-q", "true"], capture_output=True, check=False).returncode == 0:
+        return ["systemd-run", "--user", "--scope", "-q", f"-pMemoryMax={cap_gb:g}G", "-pMemorySwapMax=0"] + cmd, None
+    cap = int(cap_gb * 1024**3)
+    return cmd, lambda: resource.setrlimit(resource.RLIMIT_AS, (cap, cap))
+
+
 def stage_run(pl: dict, pipe: Path) -> None:
     out = _resolve(str(pl["out_dir"]), pipe)
     # summary.json is written only when the run finishes; the mechanics
@@ -228,18 +242,15 @@ def stage_run(pl: dict, pipe: Path) -> None:
         return
     threads = str(int(pl.get("threads", 2)))
     env = dict(os.environ, OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads, PYTHONFAULTHANDLER="1")
-    # Address-space cap per run (memory_cap_gb, 0 = none): a runaway allocation
-    # after a backward-Euler fallback once took 52 GB and froze the host
-    # (docs/10 §10); with the cap the allocation fails and the run stops.
-    cap = int(float(pl.get("memory_cap_gb", 16)) * 1024**3)
-
-    def _limit() -> None:
-        if cap > 0:
-            resource.setrlimit(resource.RLIMIT_AS, (cap, cap))
-
+    # Memory cap per run (memory_cap_gb, 0 = none): a runaway allocation after
+    # a backward-Euler fallback once took 52 GB and froze the host (docs/10
+    # §10). The cap is on resident memory (a cgroup scope, systemd-run): an
+    # address-space cap counts the ~11 GB the ROCm torch libraries map but
+    # barely touch, and failed runs at 6 GB resident (docs/12 §4.3).
+    cmd, limit = _capped([PINNACLE, "run", "pfd.i"], float(pl.get("memory_cap_gb", 16)))
     with (out / "run.log").open("w") as log:
-        rc = subprocess.run([PINNACLE, "run", "pfd.i"], cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env,
-                            preexec_fn=_limit).returncode
+        rc = subprocess.run(cmd, cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env,
+                            preexec_fn=limit).returncode
     (out / "run_exit.txt").write_text(f"{rc}\n")
     ckpts = _checkpoints(out)
     for c in (ckpts if rc == 0 else ckpts[:-1]):

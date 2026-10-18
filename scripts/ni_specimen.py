@@ -16,7 +16,7 @@ Every stage is driven by ONE specimen deck (PINNACLE ``.i`` syntax):
     t_end           = 250.0                  # s: the grip strain rate strain / t_end
     n_steps         = 256
     snapshots_every = 0
-    backend         = torch     use_gpu = false     threads = 2     memory_cap_gb = 16   # address-space cap per run (0 = none)
+    backend         = torch     use_gpu = false     threads = 2     memory_cap_gb = 16   # resident-memory cap per run, cgroup (0 = none)
     newton_tol = 1.0e-3   newton_rel_tol = 0   max_cutbacks = 10   linear_method = direct   sparse_threshold = 500
     C11 = 253000  C12 = 152000  C44 = 124000  mu = 26000  gamma0 = 1.0e-5  nexp = 8.3333  tau_c0 = 0.26
     q_lat = 1.4  alpha0 = 0.4  burgers = 2.5e-7  rho0 = 2.35e6  k1 = 0.0295  y_c = 0.79e-6
@@ -39,6 +39,7 @@ import json
 import os
 import re
 import resource
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -141,6 +142,19 @@ def stage_deck(sp: dict, deck: Path) -> Path:
     return out
 
 
+def _capped(cmd: list, cap_gb: float):
+    """(command, preexec_fn) running ``cmd`` under a resident-memory cap of
+    ``cap_gb`` GB: a user cgroup scope (MemoryMax, no swap; the kernel kills
+    the run at the cap) when systemd-run works, else an address-space rlimit."""
+    if cap_gb <= 0:
+        return cmd, None
+    if shutil.which("systemd-run") and subprocess.run(
+            ["systemd-run", "--user", "--scope", "-q", "true"], capture_output=True, check=False).returncode == 0:
+        return ["systemd-run", "--user", "--scope", "-q", f"-pMemoryMax={cap_gb:g}G", "-pMemorySwapMax=0"] + cmd, None
+    cap = int(cap_gb * 1024**3)
+    return cmd, lambda: resource.setrlimit(resource.RLIMIT_AS, (cap, cap))
+
+
 def stage_run(sp: dict, deck: Path) -> None:
     out = _resolve(str(sp["out_dir"]), deck)
     # solver/summary.json is written only by a finished run; the per-step
@@ -149,18 +163,15 @@ def stage_run(sp: dict, deck: Path) -> None:
         print("exists, skipping run:", out / "solver" / "summary.json"); return
     threads = str(int(sp.get("threads", 2)))
     env = dict(os.environ, OMP_NUM_THREADS=threads, MKL_NUM_THREADS=threads, PYTHONFAULTHANDLER="1")
-    # Address-space cap per run (memory_cap_gb, 0 = none): after a backward-
-    # Euler fallback a run once took the host's 64 GB and froze it (docs/10
-    # §10, docs/12 §3); with the cap the allocation fails and the run stops.
-    cap = int(float(sp.get("memory_cap_gb", 16)) * 1024**3)
-
-    def _limit() -> None:
-        if cap > 0:
-            resource.setrlimit(resource.RLIMIT_AS, (cap, cap))
-
+    # Memory cap per run (memory_cap_gb, 0 = none): a runaway allocation after
+    # a backward-Euler fallback once took 52 GB and froze the host (docs/10
+    # §10). The cap is on resident memory (a cgroup scope, systemd-run): an
+    # address-space cap counts the ~11 GB the ROCm torch libraries map but
+    # barely touch, and failed runs at 6 GB resident (docs/12 §4.3).
+    cmd, limit = _capped([PINNACLE, "run", "cp.i"], float(sp.get("memory_cap_gb", 16)))
     with (out / "run.log").open("w") as log:
-        rc = subprocess.run([PINNACLE, "run", "cp.i"], cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env,
-                            preexec_fn=_limit).returncode
+        rc = subprocess.run(cmd, cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env,
+                            preexec_fn=limit).returncode
     (out / "run_exit.txt").write_text(f"{rc}\n")
     print("pinnacle run exit", rc, "->", out)
 

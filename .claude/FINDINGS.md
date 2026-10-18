@@ -320,6 +320,8 @@ NOT derivable from the code: measured facts, decisions, and traps.
   (results/ni_study/cal/gn1..4) is history, not a result.
 - The BE-fallback memory runaway also happens in CP-only runs (h020z2 after 10 cutbacks at ~45%
   gauge strain): every Ni and PFD run now carries a 16 GB address-space cap (memory_cap_gb).
+  (2026-10-18: the cap is now on resident memory; that h020z2 event was probably the host freeze
+  of 5 uncapped runs, not proven to be a runaway; see the 2026-10-18 cap entry.)
 
 ## 2026-10-17: cutback dt bug (PINNACLE ddc76c3)
 - After a cutback `cp_quasi_static` kept the halved dt for full load increments: 2x strain rate
@@ -337,3 +339,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Since ddc76c3 a cutback no longer biases the curve; curves are cut only at unconverged steps
   (results.csv keeps converged steps only). Figure decks: cut_at_first_cutback = false for
   post-ddc76c3 runs.
+
+## 2026-10-18: memory caps are on resident memory now (cgroup)
+- On rocm-server the ROCm torch build maps ~11 GB of address space it barely touches; a 16 GB
+  RLIMIT_AS left ~5 GB for the run. Ni runs failed at the cap (h020z2 void, k1_p stuck) with
+  5-6 GB resident. `ni_specimen.py` / `pfd_plate.py` now use `systemd-run --user --scope
+  -pMemoryMax=<cap>G -pMemorySwapMax=0` (killed at the cap, no Python exception, no retry);
+  RLIMIT_AS only as fallback. Check a run's scope: `cat /proc/<pid>/cgroup` + memory.max.
+- No leak in Ni CP runs (tracemalloc flat, h010 RSS goes both ways). Working sets: h040 1.5 GB,
+  h020 2.4-6 GB (6 late, with fallbacks), h010 11-13 GB.
+- "Solve raised ... can't allocate memory" in pre-cgroup Ni logs = the address-space cap, not
+  necessarily a runaway. The Al2219 52 GB runaway (docs/10 §10) was real resident growth.
