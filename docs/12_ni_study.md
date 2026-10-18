@@ -284,3 +284,12 @@ Ni h040 calibration and mesh study cut back only beyond the curves' cut-off. The
 step computed from the corrupted run (k_m sensitivity 310 MPa at 30%) was discarded;
 the k_m case is rerun with the fix (the corrupted run kept as
 `results/ni_study/cal_h020/gn1_k1_p_dtbug` on the host).
+
+The k_m case rerun with the fix (15:23-20:13) cut back once at the same point; its
+time increment returned to 0.02 s after the two half steps and the curve stayed on
+trend (one high point, 111.6 against about 98.7 N of reaction, at the first
+accepted half step, then back on trend; to be understood before curves with cutbacks
+are relied on). Iteration 1 step (centre RMSE 29.7 MPa): sensitivities at 2 / 10 / 30%
+rho_0 38 / 37 / 25, k_m 9 / 47 / 126, y_c -3 / -26 / -78, tau_c0 3 / 3 / 3 (k_m as on
+h040); next centre rho_0 7.26e5, k_m 0.01147, y_c 1.54e-6, tau_c0 0.244 (predicted
+3.6 MPa). Iteration 2 launched 20:20 (`decks/ni/cp/h020/cal_gn2.i`, 5 x 2 threads).
