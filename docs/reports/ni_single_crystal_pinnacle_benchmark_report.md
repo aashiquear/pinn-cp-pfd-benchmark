@@ -1,11 +1,8 @@
 # Crystal plasticity and phase-field ductile fracture of single-crystal Ni tensile specimens with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, draft of 2026-10-17. Status: methodology (§2) and
-numerical method (§3) written for the production mesh h020; the
-crystal-plasticity parameter calibration (§4) is being repeated on h020 (the
-first calibration, on the coarser h040 mesh, was 14-20% stiff against the
-converging finer meshes and is withdrawn) and is written when it converges;
-the mesh and parameter sensitivity, the fifteen specimens, the neural and
+Technical report, draft of 2026-10-18. Status: methodology (§2),
+numerical method (§3) and the crystal-plasticity parameter calibration (§4)
+written for the production mesh h020; the mesh and parameter sensitivity, the fifteen specimens, the neural and
 surrogate routes and the coupled phase-field fracture stages follow as they
 are confirmed by the author; abstract and introduction are held until the
 study is closed. Every number here traces to a run in `docs/run_ledger.md`
@@ -83,7 +80,7 @@ sensitivity $m_s$ of (rezwan 2026 predicting). No kinematic backstress is
 used. With $\dot{\gamma}_0 = 10^{-5}$ s$^{-1}$ and $n = 8.33$, a slip rate of
 0.2 s$^{-1}$ (single slip at the test's gage rate, §2.6) needs
 $|\tau| = 3.3\,\tau_c$: at the strain rate of these tests the flow stress is
-mostly rate stress, which §4.3 quantifies.
+mostly rate stress (§4.6 gives its effect on the calibrated set).
 
 ### 2.4 Slip resistance and dislocation-density evolution
 
@@ -154,10 +151,10 @@ millimeters gives the same stress (`docs/12_ni_study.md` §1).
 | $\alpha_0$ | Taylor prefactor | 0.4 | - | reported_table | fixed |
 | $\dot{\gamma}_0$ | reference slip rate | $10^{-5}$ | s$^{-1}$ | reported_table | fixed |
 | $m_s$ ($n = 1/m_s$) | rate sensitivity | 0.12 (8.333) | - | reported_table | fixed |
-| $\rho_0$ | initial SSD density per system | (§4, pending) | mm$^{-2}$ | calibrated (§4); paper $2.35 \times 10^6$ | free |
-| $k_m$ | storage coefficient | (§4, pending) | - | calibrated (§4); paper 0.0295 | free |
-| $y_c$ | annihilation distance | (§4, pending) | mm | calibrated (§4); paper $0.79 \times 10^{-6}$ | free |
-| $\tau_{c0}$ | lattice friction | (§4, pending) | MPa | calibrated (§4); paper 0.26 | free |
+| $\rho_0$ | initial SSD density per system | $7.256 \times 10^5$ | mm$^{-2}$ | calibrated (§4); paper $2.35 \times 10^6$ | free |
+| $k_m$ | storage coefficient | 0.01147 | - | calibrated (§4); paper 0.0295 | free |
+| $y_c$ | annihilation distance | $1.542 \times 10^{-6}$ | mm | calibrated (§4); paper $0.79 \times 10^{-6}$ | free |
+| $\tau_{c0}$ | lattice friction | 0.244 | MPa | calibrated (§4); paper 0.26 | free |
 | $\dot{\varepsilon}$ | applied bar strain rate | $5 \times 10^{-2}$ | s$^{-1}$ | assumed (the paper does not state the test rate; author's choice of 2026-10-15) | fixed |
 
 The fixed set is the author's decision: the elastic constants, $b$, $\mu$,
@@ -257,7 +254,7 @@ as the calibration geometry.
 ## 3. Numerical method (PINNACLE)
 
 All runs use PINNACLE (branch `feat/pinn_benchmark`, revision d91ccdb or
-later), torch backend on the CPU, double precision, two threads per run on
+later; ddc76c3 or later for every run with a load cutback), torch backend on the CPU, double precision, two threads per run on
 the compute host, with a 16 GB resident-memory cap per run (§3.4). A run is fully described by one specimen deck
 (`decks/ni/cp/*.i`), rendered by `scripts/ni_specimen.py` into a PINNACLE
 deck from the template `decks/ni/templates/cp_specimen_template.i`; the
@@ -280,12 +277,15 @@ force over the constrained degrees of freedom of the pulled face.
 The quasi-static load program (`cp_quasi_static` executioner) divides the
 6.0 s ramp to 30% bar strain into 300 equal steps of $\Delta t = 0.02$ s,
 i.e. $10^{-3}$ bar strain and about $2 \times 10^{-3}$ gauge strain per
-step. A step that fails to converge is halved and retried up to ten times.
-On h020 all 300 steps of the starting set converge without a cutback, to
-62% gauge strain, beyond the last marker (50%) and the experimental curve
-(51.3%). A curve ends at its first cutback where one occurs: at large strain
-the global Newton can stop converging, and the steps it then takes after its
-ten cutbacks are not a solution.
+step. A step that fails to converge is halved and retried; a run has a
+budget of ten halvings in all (PINNACLE `max_cutbacks`, counted over the
+run, not per step). The time increment of the constitutive update follows
+the applied load increment, so a halved step keeps the strain rate and the
+curve continues past a cutback unchanged. A curve ends where the budget is
+spent: the steps the executioner takes after that have not converged and are
+not reported. The calibrated run converges at every step to 59% gauge strain
+(305 steps, its five cutbacks all beyond 41%), past the last marker (50%)
+and the end of the experimental curve (51.3%).
 
 ### 3.3 Newton solve and tangent
 
@@ -298,9 +298,10 @@ formed at every quadrature point by one-sided finite differences of the
 integrated stress of §3.4 (nine perturbations of $\mathbf{H}$, perturbation
 $10^{-6}$) and refreshed at every Newton iteration, then assembled sparse
 and solved with a sparse LU factorization (`linear_method = direct`): the
-finite-strain crystal-plasticity tangent is non-symmetric. On h020 a run
-takes 18 Newton iterations per step on average (11 for the first step from
-the virgin state, 35 at most).
+finite-strain crystal-plasticity tangent is non-symmetric. The calibrated
+run takes 19 Newton iterations per step on average (15 below 40% gauge
+strain; 11 for the first step from the virgin state, 43 at most, near the
+end).
 
 ### 3.4 Constitutive integration
 
@@ -329,10 +330,10 @@ path-following explicit sub-stepping. The stress of the step is the stress
 of the integrated end state, so the slip of the step enters the equilibrium
 of the same step; the state is committed when the step converges. The last
 fallback is rare (a trial far from equilibrium after repeated cutbacks), but
-once reached it has exhausted the host's memory in some runs, through an
-allocation outside the constitutive update that is not yet located; every run
-therefore carries a resident-memory cap (16 GB, a cgroup limit), at which such
-a run is stopped instead.
+once reached it has driven a run's memory to 16 GB within seconds in some
+runs (the cause is not located); every run therefore carries a
+resident-memory cap (16 GB, a cgroup limit), at which the run is stopped.
+The steps it has already converged stand.
 
 This replaces the explicit update of the Al2219 report, in which the stress
 inside Newton was evaluated with the state frozen at the last converged step.
@@ -362,13 +363,229 @@ written every 20 steps.
 Each run is reproducible from its specimen deck, the mesh deck and the data
 files it names; the commands are in `docs/reproduce_ni_specimen.md`, and the
 run ledger gives the deck, scripts, framework revision, host, cores and wall
-time of every run. An h020 run (300 steps to 30% bar strain) takes about
-64 s per load step on two threads, 5.3 h in all, with up to four runs side
-by side.
+time of every run. The calibrated h020 run (305 steps to 30% bar strain)
+took 82 s per load step on average on two threads (68 s below 40% gauge
+strain), 6.9 h in all, with five runs side by side.
 
 ## 4. Results: parameter calibration
 
-*(being repeated on the production mesh h020; written when the calibration
-converges, with the Gauss-Newton convergence, the calibrated set and curve,
-the error analysis and the one-at-a-time sensitivities, in the form of the
-Al2219 report)*
+### 4.1 Objective
+
+The free parameters $\rho_0$, $k_m$, $y_c$ and $\tau_{c0}$ are those that
+minimize the root-mean-square deviation between the engineering stress of
+specimen L.1 on the h020 mesh, interpolated at the thirteen marker gauge
+strains from 0.5 to 50% (§2.6), and the marker stresses, in this framework,
+on this mesh and at the assumed strain rate. The published parameter table
+is not a target. In PINNACLE's law (the latent-hardened sum of Eq. (5), the
+per-system law of Eq. (6)) at the assumed rate, the Table 3 set of
+(rezwan 2026 predicting) hardens about four times too fast: 942 MPa at 66%
+gauge strain against the experiment's 240 MPa at 51%, an RMSE of 373 MPa
+(on the preliminary mesh h040, whose excess stiffness of about 20% (§5) does
+not account for the factor). The calibrated values are therefore reported as
+such (provenance `calibrated`).
+
+### 4.2 Procedure
+
+1. Each iteration ran the center and one multiplicative perturbation per
+   parameter ($\rho_0$, $k_m$, $y_c$ x 1.2; $\tau_{c0}$ x 1.5) as five
+   concurrent runs of the specimen to 30% bar strain (study decks
+   `decks/ni/cp/h020/cal_gn*.i`, driver `scripts/ni_study.py`). The
+   finite-difference Jacobian $\partial \sigma_i / \partial \ln p_j$ at the
+   marker strains gave a damped Gauss-Newton step in log parameters, limited
+   to $\pm 0.7$ in $\ln p$ per iteration (`scripts/ni_gauss_newton.py`,
+   which writes the next center and study deck).
+2. The starting point was the set of a preliminary calibration on the
+   coarser mesh h040. On h020 that set gives a curve 12 to 18% below the
+   markers from 10% strain on (RMSE 29.7 MPa), the mesh effect of §5.
+3. The iteration stopped when the next step predicted a gain below 1 MPa.
+   Two iterations were needed (Fig. 2): the first center (RMSE 29.7 MPa)
+   stepped to the final set with a predicted 3.6 MPa; the second center
+   measured 4.1 MPa, and its own step (-0.7% on $\rho_0$, +5.9% on $k_m$,
+   +12.5% on $y_c$, -3.1% on $\tau_{c0}$) predicted 3.4 MPa. That step moves
+   $k_m$ and $y_c$ together, along the one direction the markers do not
+   resolve (§4.3), and was not taken.
+4. An iteration took 6 to 7 h. The center run cut back five times beyond
+   41% gauge strain and the $\tau_{c0}$ run four times, all recovered. In the
+   $k_m$ run every step beyond 41% needed one cutback, so it spent its budget
+   of ten (§3.2) at 43.0% gauge strain; its curve, and the $k_m$ column of
+   the Jacobian, end there. The step not taken is the only quantity that
+   used that column beyond 40%. The run later reached the memory cap of §3.4
+   and was stopped; its converged steps are unaffected.
+
+**Figure 2.** Gauss-Newton convergence on h020: the center curve of each
+iteration against the experimental markers (left) and the RMSE over the
+thirteen markers, with the linear prediction of the previous step (right).
+
+![convergence](../../figures/ni/cal/cal_convergence.png)
+
+### 4.3 Calibrated parameter set
+
+**Table 2.** Calibrated set on h020 (deck `decks/ni/cp/h020/calibrated_L1_h020.i`,
+run `results/ni_study/cal_h020/gn2/base`), against the paper's values, with
+the linearized one-standard-deviation uncertainty from the residual at the
+eleven markers from 0.5 to 40% (where all four perturbation curves exist)
+and the FE Jacobian, for the four-parameter fit and with $\tau_{c0}$ held.
+
+| parameter | value | unit | paper | ratio | relative 1$\sigma$, four free | relative 1$\sigma$, $\tau_{c0}$ held |
+|---|---|---|---|---|---|---|
+| $\rho_0$ | $7.256 \times 10^5$ | mm$^{-2}$ | $2.35 \times 10^6$ | 0.31 | $\pm 400$% | $\pm 6$% |
+| $k_m$ | 0.01147 | - | 0.0295 | 0.39 | $\pm 81$% | $\pm 20$% |
+| $y_c$ | $1.542 \times 10^{-6}$ | mm | $0.79 \times 10^{-6}$ | 1.95 | $\pm 56$% | $\pm 36$% |
+| $\tau_{c0}$ | 0.244 | MPa | 0.26 | 0.94 | $\pm 6{,}200$% | held |
+
+The uncertainties say how tightly the markers pin each value, not how far
+the curve would move:
+
+- **$\tau_{c0}$ is not identifiable here.** At 0.24 MPa it is small against
+  the Taylor term of Eq. (5), so it moves the curve by only 3 MPa per e-fold,
+  uniformly along the strain, and its column of the Jacobian is nearly
+  parallel to that of $\rho_0$ (correlation -1.0). That near-degeneracy
+  inflates all four uncertainties of the four-parameter fit. It stays close
+  to the paper's value, where it started.
+- **$\rho_0$ is well determined once $\tau_{c0}$ is held** ($\pm 6$%): it
+  alone sets the level at yield.
+- **$k_m$ and $y_c$ are determined only as a combination.** With
+  $\tau_{c0}$ held their correlation is 1.00: the markers fix
+  $k_m / \sqrt{y_c}$ to $\pm 2$%, not the two separately, because the curve
+  does not reach the plateau of Eq. (7) within 50% strain. The step not
+  taken in iteration 2 moved along this direction.
+
+**Figure 3.** Calibrated specimen against the experimental markers.
+
+![calibrated curve](../../figures/ni/cal/cal_curve.png)
+
+Characteristics of the calibrated curve: yield within the first load step
+(76 MPa at 0.24% gauge strain; the load steps do not resolve the elastic
+branch); engineering stress 87 / 104 / 134 / 179 / 211 / 233 / 248 MPa at
+2 / 5 / 10 / 20 / 30 / 40 / 50% gauge strain; a hardening rate
+$d\sigma/d\varepsilon$ of 0.55 to 0.59 GPa from 2 to 10% strain, falling to
+0.37 GPa at 20%, 0.18 GPa at 40% and 0.12 GPa at 50%.
+
+### 4.4 Error analysis
+
+**Table 3.** Calibrated specimen at the experimental markers (engineering
+stress against gauge strain).
+
+| strain (%) | experiment (MPa) | FE (MPa) | difference (MPa) | relative error |
+|---|---|---|---|---|
+| 0.5 | 85.0 | 78.8 | -6.2 | -7.3% |
+| 1 | 85.2 | 81.5 | -3.7 | -4.3% |
+| 2 | 87.7 | 86.9 | -0.8 | -1.0% |
+| 5 | 98.4 | 104.0 | +5.6 | +5.7% |
+| 10 | 129.3 | 134.0 | +4.7 | +3.6% |
+| 15 | 154.9 | 159.3 | +4.4 | +2.9% |
+| 20 | 180.1 | 179.4 | -0.7 | -0.4% |
+| 25 | 195.4 | 196.4 | +1.0 | +0.5% |
+| 30 | 211.8 | 210.9 | -0.9 | -0.4% |
+| 35 | 222.9 | 222.9 | +0.0 | +0.0% |
+| 40 | 232.8 | 232.8 | +0.0 | +0.0% |
+| 45 | 239.1 | 240.9 | +1.9 | +0.8% |
+| 50 | 238.4 | 247.7 | +9.2 | +3.9% |
+
+Root-mean-square deviation over the thirteen markers: 4.1 MPa; over the
+ten markers from 2 to 45% strain: 2.8 MPa, with a largest deviation of
+5.6 MPa (5.7%, at 5%). From 2% to 45% strain the specimen follows the
+experimental curve within a few MPa, through the change from the near-linear
+hardening of the first 15% to the flattening beyond 30%. This is a tier-4
+agreement (PROJECT_GUIDELINES §5: agreement with experiment).
+
+The deviations are not random. The FE curve is 4 to 6 MPa low at 0.5 and 1%
+and 4 to 6 MPa high from 5 to 15%: the experiment hardens slowly between 2
+and 5% (0.36 GPa) and faster between 5 and 10% (0.62 GPa), and the FE curve,
+with a nearly constant rate of 0.55 to 0.59 GPa over that range, cannot
+follow that delayed onset. No step of the four parameters removes the pattern
+(the linear prediction of the next step is 3.4 MPa). The 0.5% marker sits on
+the elastic-plastic knee, where the digitized columns spread by 25 MPa, so
+its deviation is within the data's own uncertainty; at 1% the spread is
+0.2 MPa.
+
+The other miss is the 50% marker, 3.9% high. The experiment stops hardening
+between 45 and 50% (239.1 and 238.4 MPa) as it approaches failure, and
+crystal plasticity alone keeps hardening (0.12 GPa at 50%). The end of each
+experimental curve is the onset of damage, which this part does not model;
+the phase-field fracture stage calibrates its toughness on the failure strain
+of Fig. 4(b) of (rezwan 2026 predicting) (46.3% for L.1), not on this marker.
+
+**Figure 4.** Deviation of the calibrated specimen from the experimental
+markers.
+
+![error](../../figures/ni/cal/cal_error.png)
+
+### 4.5 Effect of each parameter
+
+Each parameter was perturbed one at a time from the calibrated set while the
+others were held (Table 4, Fig. 5, Fig. 6). The Jacobian of the final
+iteration is the same information as a sensitivity
+$\partial \sigma / \partial \ln p$, i.e. the stress change per e-fold change
+of the parameter, along the curve (Fig. 7). The $k_m$ curve ends at 43.0%
+gauge strain, where its run had spent its cutback budget (§4.2); its
+sensitivity is drawn to the 40% marker, and its RMSE is taken over the
+eleven markers to 40%.
+
+**Table 4.** One-at-a-time perturbations of the calibrated set on h020
+(`decks/ni/cp/h020/cal_gn2.i`): engineering stress at the marker strains and
+the sensitivity $\partial\sigma/\partial\ln p$.
+
+| case | 2% | 10% | 20% | 30% | 40% | 50% | RMSE (MPa) | $\partial\sigma/\partial\ln p$ at 2 / 10 / 30% (MPa) |
+|---|---|---|---|---|---|---|---|---|
+| calibrated | 87 | 134 | 179 | 211 | 233 | 248 | 4.1 | |
+| $\rho_0$ x 1.2 = $8.707 \times 10^5$ mm$^{-2}$ | 94 | 141 | 185 | 216 | 237 | 252 | 7.9 | 39 / 39 / 27 |
+| $k_m$ x 1.2 = 0.01376 | 89 | 145 | 201 | 240 | 267 | (ends at 43.0%) | 21.4 (to 40%) | 10 / 59 / 161 |
+| $y_c$ x 1.2 = $1.851 \times 10^{-6}$ mm | 86 | 129 | 169 | 196 | 214 | 226 | 11.7 | -3 / -26 / -83 |
+| $\tau_{c0}$ x 1.5 = 0.366 MPa | 88 | 135 | 181 | 212 | 234 | 249 | 4.6 | 3 / 3 / 3 |
+
+What each parameter does to the curve, in this framework and with this law:
+
+- **$\rho_0$ sets the yield level.** Raising the initial density raises
+  $\tau_c$ through Eq. (5) from the first slip onward, so the whole curve
+  moves up, by 39 MPa per e-fold from yield to 10% strain and less beyond
+  (27 MPa at 30%, 23 MPa at 50%), as the stored density overtakes the
+  initial one. It is the parameter that places the knee of the curve.
+- **$k_m$ sets the hardening rate.** Its effect is small at yield (10 MPa per
+  e-fold at 2%) and grows with strain (59 MPa at 10%, 161 MPa at 30%, 187 MPa
+  at 40%): a larger storage coefficient makes the curve climb faster after
+  yield and raises the plateau of Eq. (7). It is the parameter that sets the
+  slope of the plastic branch.
+- **$y_c$ sets the saturation.** Recovery is negligible at low density and
+  grows with it, so a larger $y_c$ lowers the late curve (-83 MPa per e-fold
+  at 30%, -121 MPa at 50%) and leaves yield unchanged. It bends the curve
+  toward its plateau and, with $k_m$, fixes the plateau height.
+- **$\tau_{c0}$ is a small uniform offset.** It shifts the curve by about
+  3 MPa per e-fold at every strain, because it adds to $\tau_c$
+  independently of the density and is small against the Taylor term. On
+  this specimen, at this rate, it is immaterial to the curve, unlike in the
+  Al2219 plate, where it was interchangeable with a small change of
+  $\rho_0$.
+
+The order of the calibration follows from these shapes: level ($\rho_0$)
+first, slope ($k_m$) second, curvature ($y_c$) third; $\tau_{c0}$ is carried
+along.
+
+**Figure 5.** One parameter perturbed at a time from the calibrated set (left
+to right, top to bottom: $\rho_0$, $k_m$, $y_c$, $\tau_{c0}$). The $k_m$
+curve ends at 43.0% gauge strain (cross), where its run spent its cutback
+budget.
+
+![one at a time panels](../../figures/ni/cal/cal_oat_panels.png)
+
+**Figure 6.** All four perturbations on one axis.
+
+![one at a time overlay](../../figures/ni/cal/cal_oat_overlay.png)
+
+**Figure 7.** Sensitivity $\partial\sigma/\partial\ln p$ of the engineering
+stress to each parameter along the curve, from the finite-difference Jacobian
+of the final iteration ($k_m$ to the 40% marker).
+
+![sensitivity](../../figures/ni/cal/cal_sensitivity.png)
+
+### 4.6 Scope of the calibrated set
+
+The set of Table 2 holds for: this framework's constitutive conventions (the
+latent-hardened sum of Eq. (5), the per-system law of Eq. (6), the rate law
+of Eq. (4) with the fixed $\dot{\gamma}_0$ and $m_s$); the assumed bar
+strain rate of $5 \times 10^{-2}$ s$^{-1}$ (with $m_s = 0.12$ a factor 3 in
+rate moves the flow stress by about 14%); the h020 mesh (0.2 mm elements;
+the mesh dependence is quantified in §5); the geometry of specimen L.1 and
+the orientation of group L, while the paper does not say which of L.1, L.3
+or L.4 its Fig. 3 curve shows (§2.6); and the hardening branch up to the
+onset of damage, which the phase-field stage adds on top of this set.

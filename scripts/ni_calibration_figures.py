@@ -163,7 +163,7 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
         e, s, _cut = curves[p]
         factor = gn["perturbations"][p]["value"] / center[p]
         u = _str(prm[p]["unit"])
-        ax.plot(e0, s0, color=COLORS["fe"], lw=1.6, label="centre")
+        ax.plot(e0, s0, color=COLORS["fe"], lw=1.6, label="center")
         ax.plot(e, s, color=COLORS[p], lw=1.6,
                 label=r"%s $\times$ %.1f = %s%s" % (_str(prm[p]["symbol"]), factor,
                                                      fmt(gn["perturbations"][p]["value"]), (" " + u) if u else "")
@@ -181,7 +181,7 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
     fig.tight_layout(); fig.savefig(out / f"{name}_oat_panels.png"); plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=dpi)
-    ax.plot(e0, s0, color=COLORS["fe"], lw=2.0, label="centre, " + _str(it["label"]))
+    ax.plot(e0, s0, color=COLORS["fe"], lw=2.0, label="center, " + _str(it["label"]))
     for p in PARAMS:
         e, s, _ = curves[p]
         factor = gn["perturbations"][p]["value"] / center[p]
@@ -245,7 +245,7 @@ def fig_convergence(its: list[dict], cfg: dict, deck: Path, out: Path) -> None:
     box(a1, f, max([ey.max()] + [it["curve"][1].max() for it in its]))
     a1.legend(loc="upper left", frameon=False)
     n = np.arange(1, len(its) + 1)
-    a2.semilogy(n, [it["rmse"] for it in its], "-o", color=COLORS["fe"], lw=1.5, label="FE centre")
+    a2.semilogy(n, [it["rmse"] for it in its], "-o", color=COLORS["fe"], lw=1.5, label="FE center")
     a2.semilogy(n[1:], [it["pred"] for it in its[:-1]], "s", mfc="white", color="#777",
                 label="linear prediction of the previous step")
     a2.set_xticks(n)
