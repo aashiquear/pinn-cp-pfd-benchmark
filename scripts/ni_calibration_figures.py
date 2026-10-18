@@ -123,6 +123,14 @@ def cut_note(ax, cut):
         ax.axvline(cut, color="#999999", lw=0.9, ls=":", label="first load cutback (curve ends)")
 
 
+def early_end(e: np.ndarray, e0: np.ndarray, f: dict) -> str:
+    """Legend suffix for a perturbation curve that ends before the centre curve
+    (author, 2026-10-18: say so on the figure rather than rerun), else ''."""
+    if e[-1] < e0[-1] - 1.0:
+        return ",\nends at %.1f%% (%s)" % (e[-1], _str(f.get("early_end_reason", "run stopped")))
+    return ""
+
+
 def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: bool) -> dict:
     f, prm = cfg["figures"], cfg["parameters"]
     root = _resolve(_str(it["root"]), deck)
@@ -158,7 +166,10 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
         ax.plot(e0, s0, color=COLORS["fe"], lw=1.6, label="centre")
         ax.plot(e, s, color=COLORS[p], lw=1.6,
                 label=r"%s $\times$ %.1f = %s%s" % (_str(prm[p]["symbol"]), factor,
-                                                     fmt(gn["perturbations"][p]["value"]), (" " + u) if u else ""))
+                                                     fmt(gn["perturbations"][p]["value"]), (" " + u) if u else "")
+                + early_end(e, e0, f))
+        if early_end(e, e0, f):
+            ax.plot(e[-1], s[-1], "x", ms=7, mew=1.6, color=COLORS[p])
         exp_marker(ax, ex, ey, label=False)
         box(ax, f, ymax, xlabel=False, ylabel=False)
         ax.legend(loc="upper left", frameon=False)
@@ -174,10 +185,13 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
     for p in PARAMS:
         e, s, _ = curves[p]
         factor = gn["perturbations"][p]["value"] / center[p]
-        ax.plot(e, s, color=COLORS[p], lw=1.5, label=r"%s $\times$ %.1f" % (_str(prm[p]["symbol"]), factor))
+        ax.plot(e, s, color=COLORS[p], lw=1.5,
+                label=r"%s $\times$ %.1f" % (_str(prm[p]["symbol"]), factor) + early_end(e, e0, f))
+        if early_end(e, e0, f):
+            ax.plot(e[-1], s[-1], "x", ms=7, mew=1.6, color=COLORS[p])
     exp_marker(ax, ex, ey)
     box(ax, f, ymax)
-    ax.legend(loc="upper left", frameon=False)
+    ax.legend(loc="lower right", frameon=False)
     fig.tight_layout(); fig.savefig(out / f"{name}_oat_overlay.png"); plt.close(fig)
 
     # per-marker error
@@ -205,7 +219,10 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
     fig, ax = plt.subplots(figsize=(5.6, 3.8), dpi=dpi)
     ax.axhline(0.0, color="#777", lw=0.8)
     for j, p in enumerate(cols):
-        ax.plot(me, J[:, j], "-o", ms=4, lw=1.5, color=COLORS[p], label=_str(prm[p]["symbol"]))
+        # markers beyond the end of a perturbation curve carry a clamped value: not drawn
+        ok = me <= curves[p][0][-1] + 1e-9
+        ax.plot(me[ok], J[ok, j], "-o", ms=4, lw=1.5, color=COLORS[p],
+                label=_str(prm[p]["symbol"]) + ("" if ok.all() else " (to %.0f%%)" % me[ok][-1]))
     ax.set_xlim(0.0, float(f["strain_max"]))
     ax.set_xlabel(r"Engineering (gauge) strain $\varepsilon$ (%)")
     ax.set_ylabel(r"$\partial\sigma / \partial \ln p$ (MPa)")
@@ -232,6 +249,13 @@ def fig_convergence(its: list[dict], cfg: dict, deck: Path, out: Path) -> None:
     a2.semilogy(n[1:], [it["pred"] for it in its[:-1]], "s", mfc="white", color="#777",
                 label="linear prediction of the previous step")
     a2.set_xticks(n)
+    # labelled decades and halves, so two iterations still show a readable scale
+    vals = [it["rmse"] for it in its] + [it["pred"] for it in its[:-1] if it["pred"] is not None]
+    lo, hi = 0.7 * min(vals), 1.3 * max(vals)
+    ticks = [t for t in (1, 2, 5, 10, 20, 50, 100, 200) if lo <= t <= hi]
+    a2.set_ylim(lo, hi)
+    a2.set_yticks(ticks, [str(t) for t in ticks])
+    a2.minorticks_off()
     a2.set_xlabel("Gauss-Newton iteration")
     a2.set_ylabel("RMSE against the markers (MPa)")
     a2.grid(False)

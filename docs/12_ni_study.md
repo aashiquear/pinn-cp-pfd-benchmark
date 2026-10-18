@@ -355,3 +355,18 @@ address-space limit only where systemd-run is unavailable. The k_m case and h020
 were rerun under the new cap (2026-10-18 13:00); the failed runs are kept in
 `failed_ascap/` of each case directory. h010 keeps running under its 24 GB
 address-space cap and is rerun under the new cap if it hits it.
+
+The k_m rerun under the cgroup cap ended the same way the first k_m run did: past 41%
+gauge strain every step needed one cutback, the run-total budget (`max_cutbacks` 10)
+was spent at step 231 (load factor 0.770, 43.0% gauge strain), and steps 232-234 did
+not converge (the executioner moves on after the budget is spent; results.csv keeps
+converged steps only). At step 234 the backward-Euler update of one point fell back to
+sub-stepping (17:13:35) and the process reached the 16 GB cap 17 s later; the kernel
+killed it (systemd: `oom-kill`, memory peak 16.0 G). So the fallback runaway is real
+in CP-only runs too, and only after the run has left equilibrium; the cgroup cap
+contained it without touching the other runs. Its curve to the last converged step
+(241 steps, 43.0%) is the k_m column of iteration 2; GN summary unchanged (RMSE 4.1
+MPa, same sensitivities). The author chose to keep this curve and state the early end
+rather than rerun with a larger budget (2026-10-18). The figures (`figures/ni/cal/`)
+mark the end on the one-at-a-time panels and overlay and draw the k_m sensitivity
+only to the 40% marker.

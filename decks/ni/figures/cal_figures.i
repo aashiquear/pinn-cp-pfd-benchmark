@@ -24,6 +24,7 @@
   dpi         = 200
   full_set    = gn2
   cut_at_first_cutback = false   # all h020 runs postdate PINNACLE ddc76c3 (a cutback no longer biases the curve)
+  early_end_reason = 'cutback budget exhausted'   # k_m perturbation on h020 stops at 43% (max_cutbacks is per run); author: keep, state it
 []
 
 # Iterations: root holds base/ and <param>_p/ case directories and the

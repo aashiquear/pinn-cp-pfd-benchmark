@@ -350,3 +350,13 @@ NOT derivable from the code: measured facts, decisions, and traps.
   h020 2.4-6 GB (6 late, with fallbacks), h010 11-13 GB.
 - "Solve raised ... can't allocate memory" in pre-cgroup Ni logs = the address-space cap, not
   necessarily a runaway. The Al2219 52 GB runaway (docs/10 §10) was real resident growth.
+
+## 2026-10-18: k_m OAT curve on h020 ends at ~43% gauge strain (author)
+- PINNACLE `max_cutbacks` is a run-total budget (no grow-back by default); past 41% gauge strain
+  every k_m step needs one cutback, so the k_m perturbation run stops at ~43%. The author chose
+  not to rerun it with a larger budget: keep it, and state clearly in figures and the report that
+  the k_m curve ends at ~43% (the other curves reach 50%). The GN step was not taken, so the
+  calibration is unaffected.
+- Confirmed 2026-10-18: the BE-fallback runaway is real in CP-only Ni runs (k1_p: fallback after
+  unconverged steps past the spent cutback budget -> 16 GB resident in 17 s -> cgroup oom-kill).
+  An oom-killed Ni run still gives its curve: `ni_specimen.py <deck> curve` reads the live history.
