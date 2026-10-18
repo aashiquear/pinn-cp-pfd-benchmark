@@ -320,8 +320,8 @@ NOT derivable from the code: measured facts, decisions, and traps.
   (results/ni_study/cal/gn1..4) is history, not a result.
 - The BE-fallback memory runaway also happens in CP-only runs (h020z2 after 10 cutbacks at ~45%
   gauge strain): every Ni and PFD run now carries a 16 GB address-space cap (memory_cap_gb).
-  (2026-10-18: the cap is now on resident memory; that h020z2 event was probably the host freeze
-  of 5 uncapped runs, not proven to be a runaway; see the 2026-10-18 cap entry.)
+  (2026-10-18: the cap is now on resident memory; whether that h020z2 event was a runaway
+  is not established; see the 2026-10-18 cap entry.)
 
 ## 2026-10-17: cutback dt bug (PINNACLE ddc76c3)
 - After a cutback `cp_quasi_static` kept the halved dt for full load increments: 2x strain rate
