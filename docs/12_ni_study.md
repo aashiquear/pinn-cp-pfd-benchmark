@@ -340,7 +340,8 @@ about 5 GB for the run itself. The local torch build maps far less (address spac
 
 No leak was found. Locally the calibrated h020 deck rises from 1.5 to 2.5 GB over the
 first 13 steps and holds at about 2.4 GB through step 21; under tracemalloc the h040
-deck holds 1.47 GB resident and 140 MB of traced Python/numpy memory over ten steps,
+deck holds 1.48-1.52 GB resident and 130-150 MB of traced Python/numpy memory over 132
+steps (to load factor 0.44; no fallback or cutback in that range),
 the only churn being the temporaries of the finite-difference tangent and the
 backward-Euler update, freed every iteration. h010's resident memory goes both ways
 (12.6 GB at step 96, 11.0 GB at step 100): a large working set (25,344 points), not
