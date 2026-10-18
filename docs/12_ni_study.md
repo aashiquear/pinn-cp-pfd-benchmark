@@ -293,3 +293,33 @@ are relied on). Iteration 1 step (centre RMSE 29.7 MPa): sensitivities at 2 / 10
 rho_0 38 / 37 / 25, k_m 9 / 47 / 126, y_c -3 / -26 / -78, tau_c0 3 / 3 / 3 (k_m as on
 h040); next centre rho_0 7.26e5, k_m 0.01147, y_c 1.54e-6, tau_c0 0.244 (predicted
 3.6 MPa). Iteration 2 launched 20:20 (`decks/ni/cp/h020/cal_gn2.i`, 5 x 2 threads).
+
+### 4.2 Iteration 2 on h020: converged (2026-10-17 20:20 - 2026-10-18 04:35)
+
+Centre rho_0 7.256e5, k_m 0.01147, y_c 1.542e-6, tau_c0 0.244: RMSE 4.1 MPa (from
+29.7), the next step predicting 3.4 MPa; every marker from 2% to 45% within -1% to
++6%, 0.5% at -7%, 50% at +4% (the experiment's softening before failure). This is the
+calibrated set on h020 (`decks/ni/cp/h020/calibrated_L1_h020.i`); the further step is
+not taken. Sensitivities at 2 / 10 / 30%: rho_0 39 / 39 / 27, k_m 10 / 59 / 161, y_c
+-3 / -26 / -83, tau_c0 3 / 3 / 3. The centre and tau_c0 runs cut back 5 and 4 times
+from 41% gauge strain and recovered every time (all steps converged, valid since
+ddc76c3); the k_m run exhausted its cutbacks at 43% (the step's k_m column at 45 and
+50% is therefore clamped, which only affects the step not taken).
+
+The y_c run shows two one-step spikes (+9% at 15.9% and 56.8%, no cutback): at each,
+the backward-Euler update fell back to sub-stepping inside a line-search trial, the
+16 GB cap stopped the memory runaway within 6 s (traceback: `_integrate_stacks` ->
+`compute_stacked`, a (2,861 x 12) allocation), and `cp_quasi_static` skipped the
+step with the material state left behind, so the next step integrated two increments
+over one time increment. Fixed in PINNACLE 9f31bb0 (a raised step is cut back and
+retried; test; ADR 0031 addendum). A harness driving the callback's fallback directly
+(6,336 points, 45% far off, with the real backward-Euler cascade) keeps resident and
+virtual memory flat, so the runaway is still not located; the cap contains it. The
+y_c and k_m runs are rerun with 9f31bb0 for clean figures (the old runs kept as
+`gn2_*_pre9f31bb0` on the host).
+
+## 5. Mesh study with the h020-calibrated set (2026-10-18, running)
+
+`decks/ni/cp/h020/mesh_L1.i`: h040 (reference), h010 and h020z2 with the calibrated
+set; h020 is the calibrated run (copied as `base`). Threads 2 / 8 / 4, memory cap 16 /
+24 / 16 GB.

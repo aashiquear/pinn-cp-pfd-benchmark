@@ -327,3 +327,13 @@ NOT derivable from the code: measured facts, decisions, and traps.
   a cutback computed before ddc76c3 is suspect beyond its first cutback (all reported curves were
   cut there or had none). The Ni GN script still reads whole curves: check `cutbacks` in the
   perturbation runs before trusting a step.
+
+## 2026-10-18: Ni calibrated set on h020; raised-step bug (PINNACLE 9f31bb0)
+- Calibrated on h020 (GN iteration 2, RMSE 4.1 MPa): rho0 7.256e5, k_m 0.01147, y_c 1.542e-6,
+  tau_c0 0.244 (`decks/ni/cp/h020/calibrated_L1_h020.i`).
+- A step whose solve raised (memory cap hit in the BE fallback) was skipped with the state left
+  behind -> one-step +9% spike on the next step. Fixed (cut back and retry). Runs before 9f31bb0
+  with "Solve raised" in the log carry such spikes.
+- Since ddc76c3 a cutback no longer biases the curve; curves are cut only at unconverged steps
+  (results.csv keeps converged steps only). Figure decks: cut_at_first_cutback = false for
+  post-ddc76c3 runs.

@@ -47,6 +47,9 @@ def main(argv):
     deck = Path(argv[1]).resolve()
     cfg = read_deck(deck)
     f, meshes = cfg["figures"], cfg["mesh"]
+    import ni_calibration_figures as ncf
+
+    ncf.CUT_AT_CUTBACK = str(f.get("cut_at_first_cutback", "true")).lower() in ("true", "1", "yes")
     out = _resolve(_str(f["out_dir"]), deck)
     out.mkdir(parents=True, exist_ok=True)
     ex, ey = read_markers(_resolve(_str(f["markers"]), deck))

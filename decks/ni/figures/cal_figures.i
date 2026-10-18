@@ -1,4 +1,4 @@
-# Figures of the Ni CP calibration on specimen L.1 (docs/12 §2) for the Part III
+# Figures of the Ni CP calibration on specimen L.1, production mesh h020 (docs/12 §4), for the Part III
 # report: the full set (curve, error, one-at-a-time panels and overlay,
 # sensitivity) for the calibrated iteration named by `full_set`, and the
 # convergence figure over all iterations (author, 2026-10-16: the earlier
@@ -11,9 +11,9 @@
 # (0, 0), one tick block above the largest plotted stress; engineering stress on
 # both sides (Ni: reaction / (gage width x mean station thickness), against the
 # gauge strain of the gage- / gage+ node sets, as the paper's DIC gauge).
-# Curves end at the last step before the first load cutback: beyond 54-60%
-# gauge strain the global Newton fails and the remaining steps are not a
-# solution (docs/12 §2.4).
+# Curves run over every converged step (results.csv keeps only those); runs made
+# before PINNACLE ddc76c3 must be cut at their first cutback (cut_at_first_cutback),
+# because a cutback then left the strain rate doubled for the rest of the run.
 
 [Figures]
   out_dir     = ../../../figures/ni/cal
@@ -22,32 +22,23 @@
   stress_max  = 300
   stress_tick = 50
   dpi         = 200
-  full_set    = gn4
+  full_set    = gn2
+  cut_at_first_cutback = false   # all h020 runs postdate PINNACLE ddc76c3 (a cutback no longer biases the curve)
 []
 
 # Iterations: root holds base/ and <param>_p/ case directories and the
 # gauss_newton.json the step script wrote (centre, per-marker errors, Jacobian).
 [Iterations]
   [./gn1]
-    root  = ../../../results/ni_study/cal/gn1
-    label = 'iteration 1 (paper Table 3 set)'
+    root  = ../../../results/ni_study/cal_h020/gn1
+    label = 'iteration 1 (h040-calibrated set on h020)'
   []
   [./gn2]
-    root  = ../../../results/ni_study/cal/gn2
-    label = 'iteration 2'
-  []
-  [./gn3]
-    root  = ../../../results/ni_study/cal/gn3
-    label = 'iteration 3'
-  []
-  [./gn4]
-    root  = ../../../results/ni_study/cal/gn4
-    label = 'iteration 4 (calibrated set)'
+    root  = ../../../results/ni_study/cal_h020/gn2
+    label = 'iteration 2 (calibrated set)'
   []
 []
 
-# Parameter symbols and units (mm, MPa, s); factor is the perturbation the
-# study used around each centre (decks/ni/cp/cal_gn*.i).
 [Parameters]
   [./rho0]
     symbol = $\rho_0$

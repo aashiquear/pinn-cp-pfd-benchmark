@@ -50,14 +50,21 @@ def read_deck(path: Path) -> dict:
     return cfg
 
 
+CUT_AT_CUTBACK = True  # set from the deck: runs made before PINNACLE ddc76c3 only
+
+
 def read_curve(path: Path) -> tuple[np.ndarray, np.ndarray, float | None]:
-    """Gauge strain (%) and engineering stress (MPa) up to the first cutback,
-    with (0, 0) prepended; the third value is the gauge strain (%) of the cut."""
+    """Gauge strain (%) and engineering stress (MPa), with (0, 0) prepended.
+
+    results.csv holds converged steps only. Before PINNACLE ddc76c3 a cutback
+    left the time increment halved (twice the strain rate from there on), so for
+    such runs the curve is cut at the first cutback (``cut_at_first_cutback``);
+    the third value is the gauge strain (%) of the cut, or None."""
     rows = list(csv.DictReader(open(path)))
     cut = None
     keep = []
     for r in rows:
-        if float(r["cutbacks"]) > 0:
+        if CUT_AT_CUTBACK and float(r["cutbacks"]) > 0:
             cut = 100.0 * float(r["gauge_strain"])
             break
         keep.append(r)
@@ -237,6 +244,8 @@ def main(argv):
         print(__doc__); return 2
     deck = Path(argv[1]).resolve()
     cfg = read_deck(deck)
+    global CUT_AT_CUTBACK
+    CUT_AT_CUTBACK = str(cfg["figures"].get("cut_at_first_cutback", "true")).lower() in ("true", "1", "yes")
     out = _resolve(_str(cfg["figures"]["out_dir"]), deck)
     out.mkdir(parents=True, exist_ok=True)
     full = _str(cfg["figures"]["full_set"])

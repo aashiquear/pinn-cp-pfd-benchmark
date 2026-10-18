@@ -10,6 +10,7 @@
   stress_tick = 50
   dpi         = 200
   strains     = '10 20 30 40'      # gauge strains (%) of the convergence figure
+  cut_at_first_cutback = true      # these runs predate PINNACLE ddc76c3
 []
 # h is the gage cell (mm); layers the elements through the thickness.
 [Mesh]
