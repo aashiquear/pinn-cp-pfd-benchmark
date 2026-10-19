@@ -415,3 +415,21 @@ slip at the gage-fillet junctions (x about 9-10 and 19-20 mm) that h040 smears a
 only hints at; its peak equivalent plastic strain is higher (0.25 / 0.36 / 0.51 against
 0.20-0.21 / 0.32 / 0.48). The stiffness of the coarse meshes is consistent with these
 unresolved bands (an observation, not a measured cause).
+
+## 6. CP+PFD on L.1 h020 (2026-10-19)
+
+Author (2026-10-19): h020 and the h020 set are final; next the G_c / l0 calibration of CP+PFD on
+L.1 h020 as for Al2219, without an h-vs-l0 study; then the 15 specimens with FEM, PINN+FEM, PINN
+and the surrogate, compared with the experiments (curve, failure strain, fracture shape, axial
+strain field against the DIC panels of Fig. 5).
+
+Pipeline: `ni_specimen.py` renders `decks/ni/templates/cp_pfd_specimen_template.i` when the
+specimen deck sets Gc (AT2, zeta 1, W_c 0, eta 0, three alternations, tolerance 1e-3, damage
+fixed at 0 on the grip faces); `fracture` applies the paper's criterion as a separation test
+on the damage snapshots (d > 0.85 nodes leave no intact path from x- to x+), checked on
+synthetic bands (straight cut: location 0.25, 90 deg; 45-deg cut: 41 deg; half-width cut: not
+separated). Smoke test (local, h040, 4 steps to 1.1% gauge strain, Gc 125, l0 0.8): two
+alternations per step, max d 0.012 at 1.1%.
+
+Check run `decks/ni/pfd/check_L1_h020.i`: the paper's G_c 125 MPa mm, l0 0.4 mm (2h), to see the
+cost and where L.1 fails before the calibration design is fixed.

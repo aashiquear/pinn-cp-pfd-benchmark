@@ -24,8 +24,12 @@ Every stage is driven by ONE specimen deck (PINNACLE ``.i`` syntax):
     state_update = implicit   state_iterations = 2   # PINNACLE ADR 0033: implicit (backward Euler) is the default here; explicit = Parts I-II scheme
 
 Stages:
-  deck    render decks/ni/templates/cp_specimen_template.i into <out_dir>/cp.i (+ case.json)
-  run     `pinnacle run cp.i` in <out_dir> with OMP/MKL threads set (skipped when the history exists)
+  deck    render decks/ni/templates/cp_specimen_template.i into <out_dir>/cp.i (+ case.json); with
+          Gc in the deck, CP+PFD: decks/ni/templates/cp_pfd_specimen_template.i into <out_dir>/pfd.i
+          (Gc, l0, eta = 0, zeta = 1, W_c = 0, damage_model = at2, max_iterations = 3 staggered
+          alternations, tolerance = 1e-3, damage_threshold = 0.8, stop_damage, snapshots_every,
+          checkpoint_every = 8, as the Al2219 plate pipeline scripts/pfd_plate.py)
+  run     `pinnacle run cp.i|pfd.i` in <out_dir> with OMP/MKL threads set (skipped when the history exists)
   curve   results.csv per converged step, up to the first unconverged one: gauge strain (PINNACLE gauge_node_sets, the DIC analogue),
           grip strain, engineering stress = reaction on x+ / mean initial gage section
           (gage width x mean of the five station thicknesses), Newton count; summary.json
@@ -38,6 +42,7 @@ import csv
 import itertools
 import json
 import os
+import pickle
 import re
 import resource
 import shutil
@@ -49,6 +54,7 @@ import numpy as np
 
 STUDY_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = STUDY_ROOT / "decks/ni/templates/cp_specimen_template.i"
+TEMPLATE_PFD = STUDY_ROOT / "decks/ni/templates/cp_pfd_specimen_template.i"
 PINNACLE = os.environ.get("PINNACLE_BIN", "pinnacle")
 sys.path.insert(0, "/mnt/extended/projects/pinnacle/src")
 
@@ -129,18 +135,37 @@ def stage_deck(sp: dict, deck: Path) -> Path:
             "    seed             = 0", "    node_features    = 'orientation grain_boundary'", "  []", "[]", ""])
     else:
         raise SystemExit(f"predictor = {pred}: use none, linear or fem_solver_grain")
-    src = TEMPLATE.read_text()
+    if is_pfd(sp):
+        n_steps, t_end = int(sp.get("n_steps", 256)), float(sp.get("t_end", 250.0))
+        sub.update({
+            "SUBSTEPS": str(int(sp.get("substeps", 1))), "MAXALT": str(int(sp.get("max_iterations", 3))),
+            "ALTTOL": _num(sp.get("tolerance", 1.0e-3)), "STOPDAMAGE": _num(sp.get("stop_damage", 0.0)),
+            "CHECKPOINT": str(int(sp.get("checkpoint_every", 8))), "DTHRESHOLD": _num(sp.get("damage_threshold", 0.8)),
+            "DT": _num(t_end / n_steps), "GC": _num(sp["Gc"]), "L0": _num(sp["l0"]), "ETA": _num(sp.get("eta", 0.0)),
+            "ZETA": _num(sp.get("zeta", 1.0)), "WC": _num(sp.get("W_c", 0.0)),
+            "DAMAGEMODEL": str(sp.get("damage_model", "at2")),
+        })
+    src = (TEMPLATE_PFD if is_pfd(sp) else TEMPLATE).read_text()
     for k, v in sub.items():
         src = src.replace(f"@{k}@", v)
     leftover = sorted(set(re.findall(r"@([A-Z0-9_]+)@", re.sub(r"#.*", "", src))))
     if leftover:
         raise SystemExit(f"unsubstituted placeholders: {leftover}")
-    (out / "cp.i").write_text(src)
+    (out / deck_name(sp)).write_text(src)
     area, t_mean = gage_section(sp, deck)
     (out / "case.json").write_text(json.dumps({"specimen_deck": str(deck), "substitutions": sub, "gage_area_mm2": area,
                                               "mean_thickness_mm": t_mean, "specimen": {k: v for k, v in sp.items()}}, indent=1, default=str))
-    print("wrote", out / "cp.i")
+    print("wrote", out / deck_name(sp))
     return out
+
+
+def is_pfd(sp: dict) -> bool:
+    """CP+PFD when the specimen deck sets a fracture toughness."""
+    return "Gc" in sp
+
+
+def deck_name(sp: dict) -> str:
+    return "pfd.i" if is_pfd(sp) else "cp.i"
 
 
 def _capped(cmd: list, cap_gb: float):
@@ -169,12 +194,21 @@ def stage_run(sp: dict, deck: Path) -> None:
     # §10). The cap is on resident memory (a cgroup scope, systemd-run): an
     # address-space cap counts the ~11 GB the ROCm torch libraries map but
     # barely touch, and failed runs at 6 GB resident (docs/12 §4.3).
-    cmd, limit = _capped([PINNACLE, "run", "cp.i"], float(sp.get("memory_cap_gb", 16)))
+    cmd, limit = _capped([PINNACLE, "run", deck_name(sp)], float(sp.get("memory_cap_gb", 16)))
     with (out / "run.log").open("w") as log:
         rc = subprocess.run(cmd, cwd=out, stdout=log, stderr=subprocess.STDOUT, env=env,
                             preexec_fn=limit).returncode
     (out / "run_exit.txt").write_text(f"{rc}\n")
+    # CP+PFD restart checkpoints: the newest is kept when the run died (its curve), all go when it finished
+    ckpts = _checkpoints(out)
+    for c in (ckpts if (out / "solver" / "summary.json").exists() else ckpts[:-1]):
+        c.unlink()
     print("pinnacle run exit", rc, "->", out)
+
+
+def _checkpoints(out: Path) -> list[Path]:
+    """Restart checkpoints of a CP+PFD run, oldest first."""
+    return sorted((out / "solver").glob("restart_step*.pkl"))
 
 
 def _converged(v) -> bool:
@@ -188,6 +222,8 @@ def _f(r: dict, k: str, default=np.nan) -> float:
 
 
 def stage_curve(sp: dict, deck: Path) -> dict:
+    if is_pfd(sp):
+        return _curve_pfd(sp, deck)
     out = _resolve(str(sp["out_dir"]), deck)
     # Converged steps up to the first unconverged one: a recovered cutback leaves
     # no row, so an unconverged row means the run-total cutback budget was spent;
@@ -217,13 +253,133 @@ def stage_curve(sp: dict, deck: Path) -> dict:
     return summary
 
 
+def _curve_pfd(sp: dict, deck: Path) -> dict:
+    """results.csv of a CP+PFD run (one row per staggered load step), from the
+    step history, or from the newest restart checkpoint when the run died."""
+    out = _resolve(str(sp["out_dir"]), deck)
+    died = not (out / "solver" / "summary.json").exists()
+    if died:
+        ckpts = _checkpoints(out)
+        if not ckpts:
+            raise SystemExit(f"{out}: the run did not finish and left no checkpoint")
+        with ckpts[-1].open("rb") as fh:
+            rows = [{k: ("" if v is None else str(float(v)) if isinstance(v, (bool, int, float, np.floating, np.integer)) else str(v))
+                     for k, v in r.items()} for r in pickle.load(fh)["history"]]
+        print("run died: curve from", ckpts[-1].name)
+    else:
+        rows = [r for r in csv.DictReader((out / "solver" / "solver_history.csv").open())
+                if r.get("executioner", r.get("kind", "")) in ("", "staggered", "monolithic")]
+    rows = [r for r in rows if r.get("step_factor") not in (None, "", "nan")]
+    area, t_mean = gage_section(sp, deck)
+    strain = float(sp.get("strain", 0.25)); t_end = float(sp.get("t_end", 250.0))
+    res = []
+    for r in rows:
+        lf = _f(r, "load_factor", _f(r, "step_factor"))
+        res.append({"step": int(float(r["step"])), "grip_strain": lf * strain, "gauge_strain": _f(r, "gauge_strain"),
+                    "time": _f(r, "time", lf * t_end), "eng_stress": _f(r, "reaction_x") / area,
+                    "max_damage": _f(r, "max_damage"), "nodes_above": int(_f(r, "nodes_above_threshold", 0)),
+                    "elements_above": int(_f(r, "elements_above_threshold", 0)),
+                    "alternations": int(_f(r, "iterations", 0)), "newton_iterations": int(_f(r, "mech_iterations_total", _f(r, "mech_iterations", 0))),
+                    "cutbacks": int(_f(r, "cutbacks", 0)),
+                    "converged": int(_converged(r.get("converged", "1"))), "mech_converged": int(_converged(r.get("mech_converged", "1")))})
+    with (out / "results.csv").open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(res[0])); w.writeheader(); w.writerows(res)
+    # the curve is valid up to the first step whose mechanics did not converge
+    valid = list(itertools.takewhile(lambda x: x["mech_converged"], res))
+    e = np.array([x["gauge_strain"] for x in valid]); s = np.array([x["eng_stress"] for x in valid])
+    first_node = next((x for x in valid if x["nodes_above"] > 0), None)
+    ok = np.isfinite(s)
+    summary = {"steps": len(res), "steps_valid": len(valid), "run_died": died,
+               "final_gauge_strain": float(e[-1]) if len(e) else None, "final_grip_strain": valid[-1]["grip_strain"] if valid else None,
+               "peak_eng_stress": float(np.nanmax(s)) if ok.any() else None,
+               "strain_at_peak": float(e[int(np.nanargmax(s))]) if ok.any() else None,
+               "initiation_gauge_strain_node": first_node["gauge_strain"] if first_node else None,
+               "damage_threshold": float(sp.get("damage_threshold", 0.8)),
+               "final_max_damage": valid[-1]["max_damage"] if valid else None,
+               "gage_area_mm2": area, "mean_thickness_mm": t_mean,
+               "newton_iterations": int(sum(x["newton_iterations"] for x in res)),
+               "alternations": int(sum(x["alternations"] for x in res))}
+    (out / "summary.json").write_text(json.dumps(summary, indent=1))
+    print(json.dumps(summary))
+    return summary
+
+
+def stage_fracture(sp: dict, deck: Path) -> dict:
+    """The paper's failure criterion on the damage snapshots: the first snapshot in
+    which the nodes with damage above ``separation_damage`` (0.85, the paper's c >
+    0.85 across the cross-section) cut the specimen in two, i.e. no path of intact
+    nodes (element edges) joins the x- grip face to the x+ grip face. Also the
+    crack's location along the gage (mean x of the cut nodes, as a fraction of the
+    gage from gage- to gage+) and its angle to the loading axis in the x-y plane
+    (principal direction of the cut nodes). Writes <out_dir>/fracture.json."""
+    from vtk_legacy import read_vtk
+    out = _resolve(str(sp["out_dir"]), deck)
+    thr = float(sp.get("separation_damage", 0.85))
+    pvd = out / "solver" / "fields.pvd"
+    frames = [(float(t), out / "solver" / f) for t, f in re.findall(r'timestep="([^"]+)"[^>]*file="([^"]+)"', pvd.read_text())]
+    # the staggered executioner stamps each snapshot with its load-step index
+    gauge_of = {int(r["step"]): float(r["gauge_strain"]) for r in _rows(out / "results.csv")}
+    edges = None
+    found = None
+    for t, path in frames:
+        v = read_vtk(path)
+        d = np.asarray(v["point"]["damage"], dtype=float).reshape(-1)
+        X = v["nodes"]
+        if edges is None:
+            cells = np.asarray(v["cells"], dtype=int)
+            hexe = ((0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7))
+            edges = np.unique(np.sort(np.concatenate([cells[:, [a, b]] for a, b in hexe]), axis=1), axis=0)
+            x_lo, x_hi = X[:, 0].min(), X[:, 0].max()
+            left = np.where(np.isclose(X[:, 0], x_lo))[0]; right = set(np.where(np.isclose(X[:, 0], x_hi))[0].tolist())
+        intact = d <= thr
+        adj: dict[int, list[int]] = {}
+        for a, b in edges:
+            if intact[a] and intact[b]:
+                adj.setdefault(int(a), []).append(int(b)); adj.setdefault(int(b), []).append(int(a))
+        seen = {int(k) for k in left if intact[k]}; stack = list(seen); reached = False
+        while stack and not reached:
+            k = stack.pop()
+            for m in adj.get(k, ()):
+                if m not in seen:
+                    if m in right:
+                        reached = True; break
+                    seen.add(m); stack.append(m)
+        if not reached:
+            cut = np.where(~intact)[0]
+            found = (t, path, X[cut])
+            break
+    res = {"separation_damage": thr, "separated": found is not None}
+    if found is not None:
+        t, path, P = found
+        gx = _gage_x(sp, deck)
+        c = P[:, :2] - P[:, :2].mean(axis=0)
+        _, vec = np.linalg.eigh(c.T @ c)
+        crack_dir = vec[:, -1]
+        res.update({"step": int(t), "snapshot": path.name,
+                    "failure_gauge_strain": gauge_of.get(int(t)),
+                    "location_fraction": float((P[:, 0].mean() - gx[0]) / (gx[1] - gx[0])),
+                    "angle_to_axis_deg": float(np.degrees(np.arccos(abs(crack_dir[0])))),
+                    "cut_nodes": int(len(P))})
+    (out / "fracture.json").write_text(json.dumps(res, indent=1))
+    print(json.dumps(res))
+    return res
+
+
+def _gage_x(sp: dict, deck: Path) -> tuple[float, float]:
+    """x (mm) of the first and last thickness station (the gage- / gage+ planes): the
+    gage is centred on the bar (hexaform dogbone, mesh.json: length, gage_length)."""
+    meta = json.loads(_resolve(str(sp["mesh"]), deck).with_name("mesh.json").read_text())
+    x0 = 0.5 * (float(meta["length"]) - float(meta["gage_length"]))
+    return x0, x0 + float(meta["gage_length"])
+
+
 def main(argv):
     if len(argv) < 3:
         print(__doc__); return 2
     deck = Path(argv[1]).resolve(); sp = read_specimen(deck)
     stages = ["deck", "run", "curve"] if argv[2] == "all" else argv[2:]
     for st in stages:
-        {"deck": stage_deck, "run": stage_run, "curve": stage_curve}[st](sp, deck)
+        {"deck": stage_deck, "run": stage_run, "curve": stage_curve, "fracture": stage_fracture}[st](sp, deck)
     return 0
 
 

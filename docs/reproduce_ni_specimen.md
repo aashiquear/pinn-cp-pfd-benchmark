@@ -36,3 +36,16 @@ calibrated set, `decks/ni/cp/calibrated_L1_h040.i`.
     python3 scripts/ni_calibration_figures.py decks/ni/figures/cal_figures.i
 
 Writes `figures/ni/cal/cal_*.png` (report Part III §4).
+
+## CP+PFD (Part III stage 6)
+
+A specimen deck that sets `Gc` (and `l0`) is a CP+PFD case: `scripts/ni_specimen.py DECK
+deck run curve fracture` renders `decks/ni/templates/cp_pfd_specimen_template.i` into
+`<out_dir>/pfd.i`, runs it (restart checkpoints every `checkpoint_every` steps; the newest
+is kept when the run dies, so `curve` still has its history), writes `results.csv` (one row
+per staggered load step: gauge strain, engineering stress, max damage, nodes above the
+0.8 threshold, alternations) with `summary.json`, and `fracture` applies the paper's failure
+criterion to the damage snapshots: the first snapshot in which the nodes with d > 0.85 cut
+the specimen in two (no path of intact nodes from the x- to the x+ grip face), with the
+crack's location along the gage and its angle to the loading axis (`fracture.json`).
+Example: `decks/ni/pfd/check_L1_h020.i`.
