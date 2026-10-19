@@ -438,3 +438,24 @@ Author (2026-10-19): G_c is calibrated to 0.463 at l0 = 0.4, 0.6 and 0.8 mm (2h 
 chosen by L.1's fracture shape in Fig. 5 (inclined about 45 deg at about 0.20 of the gage, near
 its thinnest station). The check run takes about 60 s per load step at the start (two
 alternations).
+
+### 6.1 Check run at the paper's G_c (2026-10-19 09:40-16:55)
+
+`decks/ni/pfd/check_L1_h020.i` (G_c 125 MPa mm, l0 0.4 mm): no failure. The full 300 steps to
+60% gauge strain in 7.2 h (two alternations every step, one cutback, no memory issue); max
+damage 0.030 / 0.147 / 0.290 / 0.328 / 0.400 at 5 / 20 / 40 / 46.3 / 60%, the stress within 2%
+of the CP-only curve (0.985 of it at 46.3%). With the local AT2 balance d = 2 l0 H / (G_c + 2 l0
+H), the peak point carries 2 l0 H = 61 MPa mm at 46.3%, so d = 0.85 there needs G_c of about
+11 MPa mm at l0 0.4 (and about l0-proportional, 16 and 22 at 0.6 and 0.8, while the response
+is local): an order of magnitude below the paper's value, whose l0 is not stated.
+
+Pipeline consequence: the run could only stop on max damage (`stop_damage`), and PINNACLE
+writes snapshots at the end of a run, so a failing run would either stop before the section
+was cut or run on into the cracked body (where the BE fallback runaway kills it and its
+snapshots are lost). PINNACLE 14fa4c6 / e2f4e94 adds `stop_separation = 'x- x+'` with
+`stop_separation_damage` (default 0.85) to the coupled executioner (ADR 0031 addendum, tests):
+the run ends at the first step whose d > 0.85 nodes cut the grips apart, with that step's
+fields recorded and `separated = 1` in the history row. The Ni template uses it;
+`ni_specimen.py curve` reports `failure_gauge_strain` from that row. Smoke (local, h040,
+G_c 0.5): stopped at step 2 on separation; the snapshot check of `fracture` gives the same
+step.

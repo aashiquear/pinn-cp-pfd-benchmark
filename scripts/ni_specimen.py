@@ -28,7 +28,8 @@ Stages:
           Gc in the deck, CP+PFD: decks/ni/templates/cp_pfd_specimen_template.i into <out_dir>/pfd.i
           (Gc, l0, eta = 0, zeta = 1, W_c = 0, damage_model = at2, max_iterations = 3 staggered
           alternations, tolerance = 1e-3, damage_threshold = 0.8, stop_damage, snapshots_every,
-          checkpoint_every = 8, as the Al2219 plate pipeline scripts/pfd_plate.py)
+          checkpoint_every = 8, as the Al2219 plate pipeline scripts/pfd_plate.py); the run stops at
+          through-section failure (PINNACLE stop_separation 'x- x+', separation_damage = 0.85)
   run     `pinnacle run cp.i|pfd.i` in <out_dir> with OMP/MKL threads set (skipped when the history exists)
   curve   results.csv per converged step, up to the first unconverged one: gauge strain (PINNACLE gauge_node_sets, the DIC analogue),
           grip strain, engineering stress = reaction on x+ / mean initial gage section
@@ -144,6 +145,7 @@ def stage_deck(sp: dict, deck: Path) -> Path:
             "DT": _num(t_end / n_steps), "GC": _num(sp["Gc"]), "L0": _num(sp["l0"]), "ETA": _num(sp.get("eta", 0.0)),
             "ZETA": _num(sp.get("zeta", 1.0)), "WC": _num(sp.get("W_c", 0.0)),
             "DAMAGEMODEL": str(sp.get("damage_model", "at2")),
+            "SEPDAMAGE": _num(sp.get("separation_damage", 0.85)),
         })
     src = (TEMPLATE_PFD if is_pfd(sp) else TEMPLATE).read_text()
     for k, v in sub.items():
@@ -280,7 +282,7 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
                     "max_damage": _f(r, "max_damage"), "nodes_above": int(_f(r, "nodes_above_threshold", 0)),
                     "elements_above": int(_f(r, "elements_above_threshold", 0)),
                     "alternations": int(_f(r, "iterations", 0)), "newton_iterations": int(_f(r, "mech_iterations_total", _f(r, "mech_iterations", 0))),
-                    "cutbacks": int(_f(r, "cutbacks", 0)),
+                    "cutbacks": int(_f(r, "cutbacks", 0)), "separated": int(_f(r, "separated", 0)),
                     "converged": int(_converged(r.get("converged", "1"))), "mech_converged": int(_converged(r.get("mech_converged", "1")))})
     with (out / "results.csv").open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(res[0])); w.writeheader(); w.writerows(res)
@@ -288,12 +290,15 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
     valid = list(itertools.takewhile(lambda x: x["mech_converged"], res))
     e = np.array([x["gauge_strain"] for x in valid]); s = np.array([x["eng_stress"] for x in valid])
     first_node = next((x for x in valid if x["nodes_above"] > 0), None)
+    sep = next((x for x in valid if x["separated"]), None)
     ok = np.isfinite(s)
     summary = {"steps": len(res), "steps_valid": len(valid), "run_died": died,
                "final_gauge_strain": float(e[-1]) if len(e) else None, "final_grip_strain": valid[-1]["grip_strain"] if valid else None,
                "peak_eng_stress": float(np.nanmax(s)) if ok.any() else None,
                "strain_at_peak": float(e[int(np.nanargmax(s))]) if ok.any() else None,
                "initiation_gauge_strain_node": first_node["gauge_strain"] if first_node else None,
+               "failure_gauge_strain": sep["gauge_strain"] if sep else None,   # PINNACLE stop_separation
+               "failure_step": sep["step"] if sep else None,
                "damage_threshold": float(sp.get("damage_threshold", 0.8)),
                "final_max_damage": valid[-1]["max_damage"] if valid else None,
                "gage_area_mm2": area, "mean_thickness_mm": t_mean,
