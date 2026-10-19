@@ -383,3 +383,26 @@ executioner records the failed step as unconverged and moves on from a state tha
 not a solution, so a step converging after it would have entered the curve. The curve
 now stops at the first unconverged row (a recovered cutback leaves no row; the
 iteration-2 curves are unchanged, 305 / 241 / 300 / 304 / 302 steps).
+
+### 5.2 Mesh study results with the h020 set (2026-10-19)
+
+h010 spent its budget at step 243 (load factor 0.810); its curve ends at step 242,
+47.1% gauge strain (253 converged steps, 23 h). Engineering stress (MPa) and the
+change against h020 (`figures/ni/mesh_h020/`):
+
+| gauge strain | h040 | h020 | h010 | h020 two layers | h040/h020 | h010/h020 | two layers/h020 |
+|---|---|---|---|---|---|---|---|
+| 2% | 92.0 | 86.9 | 85.3 | 86.7 | +5.9% | -1.8% | -0.2% |
+| 10% | 147.2 | 134.0 | 129.7 | 132.3 | +9.9% | -3.2% | -1.3% |
+| 20% | 203.7 | 179.4 | 172.2 | 177.9 | +13.5% | -4.0% | -0.8% |
+| 30% | 244.7 | 210.9 | 199.9 | 209.1 | +16.0% | -5.2% | -0.9% |
+| 40% | 275.8 | 232.8 | 217.5 | 230.7 | +18.5% | -6.6% | -0.9% |
+| 45% | 288.5 | 240.9 | 223.6 | - | +19.7% | -7.2% | - |
+
+The difference shrinks by a factor 0.30-0.37 per halving of h (observed order 1.5-1.8).
+Richardson extrapolation from h040/h020/h010 puts h020 +2.7 / +4.9 / +6.0 / +8.4 /
++11.4% above the h -> 0 limit at 2 / 10 / 20 / 30 / 40% (h010 +0.9 to +4.0%). The
+mesh is converging, but h020 is within 5% of the limit only to about 10% strain; the
+calibrated set absorbs the rest (it is an h020 set). Two layers through the
+thickness change the curve by less than 1.3%. Awaiting the author's reading.
+h010 keeps running for its field snapshots (written at the end; valid to step 240).
