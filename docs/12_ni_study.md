@@ -370,3 +370,16 @@ MPa, same sensitivities). The author chose to keep this curve and state the earl
 rather than rerun with a larger budget (2026-10-18). The figures (`figures/ni/cal/`)
 mark the end on the one-at-a-time panels and overlay and draw the k_m sensitivity
 only to the 40% marker.
+
+h020z2 (rerun under the cgroup cap) spent its ten cutbacks by step 226 (load factor
+0.753, 44.0% gauge strain; 238 converged steps), then fell back to sub-stepping and
+was oom-killed at 16 GB (21:16). h010 spent its tenth cutback at step 199 (37.8%) and
+converged step 200 at the full increment; it continues, and its next failure ends its
+curve. The two-layer and fine meshes therefore cover the markers to 40% (h010 at
+least to 38%), h040 and h020 to 50%.
+
+`ni_specimen.py curve` kept every converged row; after the budget is spent the
+executioner records the failed step as unconverged and moves on from a state that is
+not a solution, so a step converging after it would have entered the curve. The curve
+now stops at the first unconverged row (a recovered cutback leaves no row; the
+iteration-2 curves are unchanged, 305 / 241 / 300 / 304 / 302 steps).

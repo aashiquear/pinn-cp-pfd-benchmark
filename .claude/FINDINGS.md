@@ -365,3 +365,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Approved: §4.2 names the preliminary h040 calibration as the starting point of the h020
   calibration (it is why h020 started where it did) without giving h040 values or curves; §4.1
   keeps the paper's-set check (RMSE 373 MPa, measured on h040, flagged as such).
+
+## 2026-10-18: Ni curve stops at the first unconverged step
+- After the run-total cutback budget is spent, cp_quasi_static records the failed step
+  (converged = 0) and moves on from a non-equilibrium state; a later converged step is not a
+  valid point. `ni_specimen.py curve` now stops at the first unconverged row (recovered cutbacks
+  leave no row). Pre-fix results.csv files are valid unless a converged row followed an
+  unconverged one (none in the gn2 set).

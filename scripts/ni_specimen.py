@@ -26,7 +26,7 @@ Every stage is driven by ONE specimen deck (PINNACLE ``.i`` syntax):
 Stages:
   deck    render decks/ni/templates/cp_specimen_template.i into <out_dir>/cp.i (+ case.json)
   run     `pinnacle run cp.i` in <out_dir> with OMP/MKL threads set (skipped when the history exists)
-  curve   results.csv per accepted step: gauge strain (PINNACLE gauge_node_sets, the DIC analogue),
+  curve   results.csv per converged step, up to the first unconverged one: gauge strain (PINNACLE gauge_node_sets, the DIC analogue),
           grip strain, engineering stress = reaction on x+ / mean initial gage section
           (gage width x mean of the five station thicknesses), Newton count; summary.json
 
@@ -35,6 +35,7 @@ Usage: ni_specimen.py SPECIMEN.i deck|run|curve|all
 from __future__ import annotations
 
 import csv
+import itertools
 import json
 import os
 import re
@@ -188,7 +189,12 @@ def _f(r: dict, k: str, default=np.nan) -> float:
 
 def stage_curve(sp: dict, deck: Path) -> dict:
     out = _resolve(str(sp["out_dir"]), deck)
-    rows = [r for r in csv.DictReader((out / "solver" / "solver_history.csv").open()) if _converged(r.get("converged", "1"))]
+    # Converged steps up to the first unconverged one: a recovered cutback leaves
+    # no row, so an unconverged row means the run-total cutback budget was spent;
+    # the executioner then moves on from a state that is not a solution, and a
+    # step that converges after it is not part of the curve.
+    rows = list(itertools.takewhile(lambda r: _converged(r.get("converged", "1")),
+                                    csv.DictReader((out / "solver" / "solver_history.csv").open())))
     area, t_mean = gage_section(sp, deck)
     strain = float(sp.get("strain", 0.25)); t_end = float(sp.get("t_end", 250.0))
     res = []
