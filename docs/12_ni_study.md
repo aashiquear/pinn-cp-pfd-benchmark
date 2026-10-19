@@ -405,4 +405,13 @@ Richardson extrapolation from h040/h020/h010 puts h020 +2.7 / +4.9 / +6.0 / +8.4
 mesh is converging, but h020 is within 5% of the limit only to about 10% strain; the
 calibrated set absorbs the rest (it is an h020 set). Two layers through the
 thickness change the curve by less than 1.3%. Awaiting the author's reading.
-h010 keeps running for its field snapshots (written at the end; valid to step 240).
+h010 then ran away at the address-space cap (56 raised steps, all after its curve
+end) and finished at 05:35 with its snapshots (valid to 4.8 s, step 240).
+
+Fields (`figures/ni/mesh_h020/mesh_eqps.png`, bar strain 8 / 16 / 24%): all three meshes
+give the same gauge strain for the same bar strain (15.7-16.2 / 29.8-30.1 / 45.1-46.7%)
+and the same S-bend of the gage by 24%. h010 resolves diagonal bands of concentrated
+slip at the gage-fillet junctions (x about 9-10 and 19-20 mm) that h040 smears and h020
+only hints at; its peak equivalent plastic strain is higher (0.25 / 0.36 / 0.51 against
+0.20-0.21 / 0.32 / 0.48). The stiffness of the coarse meshes is consistent with these
+unresolved bands (an observation, not a measured cause).
