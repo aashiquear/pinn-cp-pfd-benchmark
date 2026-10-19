@@ -151,13 +151,13 @@
     }
   },
   "residuals": {
-    "fem_iterations": 5302.0
+    "fem_iterations": 5361.0
   },
   "stress_strain": {
-    "strain_min": -0.1672953890259609,
-    "strain_max": 0.36031633137076685,
-    "stress_min": -0.026073204663602856,
-    "stress_max": 166.3991421232233,
-    "final_stress": 11.090246067572668
+    "strain_min": -0.16729583986794547,
+    "strain_max": 0.36032215226103315,
+    "stress_min": -0.026127415566363856,
+    "stress_max": 166.4001559061134,
+    "final_stress": 11.083409367003831
   }
 }

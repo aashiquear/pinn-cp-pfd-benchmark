@@ -360,3 +360,8 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Confirmed 2026-10-18: the BE-fallback runaway is real in CP-only Ni runs (k1_p: fallback after
   unconverged steps past the spent cutback budget -> 16 GB resident in 17 s -> cgroup oom-kill).
   An oom-killed Ni run still gives its curve: `ni_specimen.py <deck> curve` reads the live history.
+
+## 2026-10-18: Part III report §4 wording on h040 (author)
+- Approved: §4.2 names the preliminary h040 calibration as the starting point of the h020
+  calibration (it is why h020 started where it did) without giving h040 values or curves; §4.1
+  keeps the paper's-set check (RMSE 373 MPa, measured on h040, flagged as such).
