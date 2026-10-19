@@ -383,3 +383,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
   is benchmarked). Compare each route with the experiments: stress-strain curve, experimental vs
   predicted failure strain (Fig. 4(b) experiment axis), fracture shape in the coupon, and the axial
   strain field at failure against the DIC panels as the paper does (Fig. 5).
+
+## 2026-10-19: Ni G_c / l0 rule (author)
+- G_c is calibrated (bisection) to L.1's Fig. 4(b) failure strain 0.463 at l0 = 0.4, 0.6, 0.8 mm
+  (2h..4h on h020); l0 is then chosen by L.1's fracture shape in Fig. 5 (inclined ~45 deg, at
+  ~0.20 of the gage near its thinnest station). The other 14 specimens stay independent.
+- Failure = the paper's criterion as implemented in `ni_specimen.py fracture` (d > 0.85 nodes
+  cut the specimen in two); the d >= 0.8 node step is the secondary (initiation) measure.

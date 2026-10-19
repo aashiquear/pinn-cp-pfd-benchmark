@@ -433,3 +433,8 @@ alternations per step, max d 0.012 at 1.1%.
 
 Check run `decks/ni/pfd/check_L1_h020.i`: the paper's G_c 125 MPa mm, l0 0.4 mm (2h), to see the
 cost and where L.1 fails before the calibration design is fixed.
+
+Author (2026-10-19): G_c is calibrated to 0.463 at l0 = 0.4, 0.6 and 0.8 mm (2h to 4h), and l0 is
+chosen by L.1's fracture shape in Fig. 5 (inclined about 45 deg at about 0.20 of the gage, near
+its thinnest station). The check run takes about 60 s per load step at the start (two
+alternations).
