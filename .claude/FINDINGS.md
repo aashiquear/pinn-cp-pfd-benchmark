@@ -372,3 +372,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
   valid point. `ni_specimen.py curve` now stops at the first unconverged row (recovered cutbacks
   leave no row). Pre-fix results.csv files are valid unless a converged row followed an
   unconverged one (none in the gn2 set).
+
+## 2026-10-19: Ni production mesh and calibrated set are final; Part III plan revised (author)
+- h020 and the h020-calibrated CP set are the Ni production mesh and set from here on; h010 is not
+  cost-effective for its gain (h020 sits +5..+11% above the Richardson limit at 10..40%; the set
+  absorbs it and is h020-specific).
+- Next: G_c and l0 calibration of CP+PFD on L.1 h020, as for Al2219, but NO h-vs-l0 mesh study
+  (single crystal). Then the 15 specimens (5 orientation groups x 3 thickness variants) with FEM,
+  PINN+FEM, PINN and the surrogate directly (no separate CP-only neural benchmark stage: the model
+  is benchmarked). Compare each route with the experiments: stress-strain curve, experimental vs
+  predicted failure strain (Fig. 4(b) experiment axis), fracture shape in the coupon, and the axial
+  strain field at failure against the DIC panels as the paper does (Fig. 5).

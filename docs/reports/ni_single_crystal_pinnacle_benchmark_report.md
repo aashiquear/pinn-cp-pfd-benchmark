@@ -1,15 +1,17 @@
 # Crystal plasticity and phase-field ductile fracture of single-crystal Ni tensile specimens with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, draft of 2026-10-18. Status: methodology (§2),
-numerical method (§3) and the crystal-plasticity parameter calibration (§4)
-written for the production mesh h020; the mesh and parameter sensitivity, the fifteen specimens, the neural and
-surrogate routes and the coupled phase-field fracture stages follow as they
-are confirmed by the author; abstract and introduction are held until the
+Technical report, draft of 2026-10-19. Status: methodology (§2),
+numerical method (§3), the crystal-plasticity parameter calibration (§4)
+and the mesh sensitivity (§5) written for the production mesh h020; the
+phase-field fracture calibration, the fifteen specimens and the neural and
+surrogate routes follow as they are confirmed by the author; abstract and introduction are held until the
 study is closed. Every number here traces to a run in `docs/run_ledger.md`
 (rows `ni-*`) and to a deck under `decks/ni/`; the lab notebook is
 `docs/12_ni_study.md`, the plan `docs/11_ni_plan.md`. Figures of §4 are
 produced by `scripts/ni_calibration_figures.py` from
-`decks/ni/figures/cal_figures.i`.
+`decks/ni/figures/cal_figures.i`, those of §5 by `scripts/ni_mesh_figures.py`
+and `scripts/ni_fields.py` from `decks/ni/figures/mesh_figures_h020.i` and
+`decks/ni/figures/fields_mesh_h020.i`.
 
 ## Abstract
 
@@ -190,8 +192,9 @@ plates), 88 x 9 x 1 divisions, 792 elements, 1,780 nodes, 5,340 displacement
 degrees of freedom and 6,336 quadrature points; minimum scaled Jacobian
 0.58, no inverted element (Fig. 1). The 8 mm gage carries 40 x 9 cells. The
 mesh study (h040, h020, h010 and h020 with two elements through the
-thickness) is reported with the calibrated set; the coarser h040 is 14-20%
-stiffer than h020, which is the reason for the production level.
+thickness) is reported in §5 with the calibrated set; the coarser h040 is 10
+to 20% stiffer than h020 between 10 and 45% gauge strain, which is the reason
+for the production level.
 Node sets `gage-` and `gage+` sit on the first and last station planes and
 carry the gauge strain.
 
@@ -589,3 +592,83 @@ the mesh dependence is quantified in §5); the geometry of specimen L.1 and
 the orientation of group L, while the paper does not say which of L.1, L.3
 or L.4 its Fig. 3 curve shows (§2.6); and the hardening branch up to the
 onset of damage, which the phase-field stage adds on top of this set.
+
+## 5. Mesh sensitivity
+
+### 5.1 Design
+
+The calibrated set of Table 2 was run on four meshes of specimen L.1 with
+the same orientation, loading and solver criteria, changing only the
+discretization: h040 (0.4 mm gage cells, the coarse reference), h020 (the
+production mesh, which is the calibrated run itself), h010 (0.1 mm) and h020
+with two elements through the thickness (Table 5; study deck
+`decks/ni/cp/h020/mesh_L1.i`, driver `scripts/ni_study.py`). Each run follows
+the 300-step path of §3.2 and is reported to its last converged step: h040
+and h020 reach the end of the path, h010 and the two-layer mesh spend their
+cutback budget at 47.1% and 44.0% gauge strain, past the last marker their
+comparison uses (40% and 45%).
+
+**Table 5.** Meshes of the sensitivity study and the engineering stress
+(MPa) at six gauge strains; the last column is the change from h020 at
+10 / 20 / 30 / 40% strain.
+
+| mesh | elements | gage cell (mm) | through thickness | 2% | 10% | 20% | 30% | 40% | 45% | curve ends at | change from h020 | wall time (threads) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| h040 | 220 | 0.4 | 1 | 92.0 | 147.2 | 203.7 | 244.7 | 275.8 | 288.5 | 57.3% | +9.9 / +13.5 / +16.0 / +18.5% | 1.7 h (2) |
+| h020 | 792 | 0.2 | 1 | 86.9 | 134.0 | 179.4 | 210.9 | 232.8 | 240.9 | 59.0% | | 6.9 h (2) |
+| h010 | 3,168 | 0.1 | 1 | 85.3 | 129.7 | 172.2 | 199.9 | 217.5 | 223.6 | 47.1% | -3.2 / -4.0 / -5.2 / -6.6% | 24.5 h (8) |
+| h020, two layers | 1,584 | 0.2 | 2 | 86.7 | 132.3 | 177.9 | 209.1 | 230.7 | - | 44.0% | -1.3 / -0.8 / -0.9 / -0.9% | 8.4 h (4) |
+
+### 5.2 Results
+
+**Figure 8.** Stress-strain curves of the four meshes with the calibrated
+set, against the experimental markers.
+
+![mesh curves](../../figures/ni/mesh_h020/mesh_curves.png)
+
+**Figure 9.** Engineering stress at fixed gauge strains against the gage
+cell size (open symbols: h020 with two elements through the thickness).
+
+![mesh convergence](../../figures/ni/mesh_h020/mesh_convergence.png)
+
+The response softens monotonically with refinement at every strain (Figs. 8
+and 9), and the change per halving of the cell shrinks: from h040 to h020
+the curve falls by 9 to 16% between 10 and 30% gauge strain, from h020 to
+h010 by 3 to 5%. The ratio of successive changes is 0.30 to 0.37 at every
+strain from 2 to 45% (apparent order 1.5 to 1.8), so the sequence converges.
+Richardson extrapolation from the three in-plane levels places h020 above the
+limit by 2.7% at 2% strain, 4.9% at 10%, 6.0% at 20%, 8.4% at 30% and 11.4%
+at 40%, and h010 by 0.9 to 4.0% over the same range. The second element
+through the thickness changes the curve by less than 1.3% at every strain:
+one layer resolves the thickness direction of these 0.33 to 0.40 mm thick
+coupons.
+
+**Figure 10.** Equivalent plastic strain on the deformed gage (plan view)
+for h040, h020 and h010 at 8, 16 and 24% bar strain (one color scale per
+column; the panel titles give the gauge strain and the peak value).
+
+![plastic strain fields](../../figures/ni/mesh_h020/mesh_eqps.png)
+
+At the specimen scale the three meshes deform alike: the same bar strain
+gives the same gauge strain (15.7 to 16.2%, 29.8 to 30.1% and 45.1 to 46.7%)
+and the gage takes the same S-shaped lateral bend by 24% bar strain, the
+single-crystal shear of the L orientation. The finer mesh resolves diagonal
+bands of concentrated slip where the gage meets the fillets, which h040
+smears and h020 only begins to show; its peak equivalent plastic strain is
+correspondingly higher (0.25 / 0.36 / 0.51 against 0.20 to 0.21 / 0.32 /
+0.48). The stiffer response of the coarse meshes is consistent with these
+unresolved bands; as in the Al2219 plate, the constitutive law has no
+internal length, so localized slip stays mesh-dependent.
+
+### 5.3 Mesh selection
+
+The author's choice is h020 (Table 5): its curve is within 5% of the
+extrapolated limit to about 10% gauge strain and within 11% to 40%, against
+h010 at four times the elements, about four times the time per load step on
+four times the threads (348 s on eight threads against 82 s on two) and 11 GB
+of memory per run against 2.4 to 6 GB. The calibrated set of Table 2 is
+therefore an h020 set: it absorbs the remaining discretization error, so it
+reproduces the experiment on h020, and on a finer mesh the same parameters
+give a curve up to 7% lower at 40% strain (h010). Every later Ni stage runs
+on h020 with this set. h040 is the reference that shows the convergence and
+is not used further.
