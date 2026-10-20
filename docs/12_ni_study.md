@@ -468,3 +468,22 @@ l0 = 0.4 / 0.6 / 0.8 mm, a search per l0 in ln G_c: first round G_c = guess x0.5
 either side of 0.463 (geometric midpoint when the upper run never failed), accept within
 +-0.004, at most six runs per l0. Driver checked locally on the h040 smoke deck (target 0.6%,
 hit at the first run).
+
+Rounds 1-2 (2026-10-19 17:40 - 2026-10-20 07:10), failure gauge strain (location along the gage):
+
+| l0 (mm) | G_c (MPa mm) -> failure |
+|---|---|
+| 0.4 | 5.5 -> 13.9% (0.14); 22 -> none by 47.7% (oom-killed there, counted as too high); 11 -> 25.0% (0.17) |
+| 0.6 | 8 -> 14.0% (0.16); 32 -> 47.9% (0.22); 27.86 -> 41.3% (0.20) |
+| 0.8 | 11 -> 14.4% (0.19); 44 -> 49.9% (0.27); 38.18 -> 43.2% (0.24) |
+
+At G_c / l0 = 14 MPa all three fail at 14%: the response is local there. Round 3: 15.56 / 30.95 /
+40.75. `ni_specimen.py fracture` mapped snapshots to steps wrongly (the .pvd stamps a coupled run's
+snapshots with their ordinal, and the graph search overwrote the frame index); fixed, and it now
+agrees with PINNACLE's separation step on every run (the driver used summary.json, so the
+calibration was not affected). Shape figure tool `scripts/ni_pfd_shape_figures.py` (deck
+`decks/ni/figures/pfd_shape_L1_round2.i`, Green-Lagrange E_xx from the recorded H at the failure
+snapshot, cracked cells black) with the 15 Fig. 5 panels cropped to
+`data/digitized/ni_fig5_panels/`. Round-2 shapes: at every l0 the d > 0.85 zone is a band 1-2.5
+mm wide, nearly straight across the gage, at 0.17-0.24 of the gage; the experiment's L.1 crack is
+narrow and inclined at roughly 55-60 deg (Fig. 5), the paper's simulation also inclined.

@@ -322,11 +322,21 @@ def stage_fracture(sp: dict, deck: Path) -> dict:
     thr = float(sp.get("separation_damage", 0.85))
     pvd = out / "solver" / "fields.pvd"
     frames = [(float(t), out / "solver" / f) for t, f in re.findall(r'timestep="([^"]+)"[^>]*file="([^"]+)"', pvd.read_text())]
-    # the staggered executioner stamps each snapshot with its load-step index
+    # The .pvd stamps a coupled run's snapshots with their ordinal k: snapshot k
+    # is load step (k + 1) * snapshots_every - 1, and a run stopped by
+    # stop_separation adds one more at its failure step (summary.json).
     gauge_of = {int(r["step"]): float(r["gauge_strain"]) for r in _rows(out / "results.csv")}
+    every = max(int(sp.get("snapshots_every", 1)), 1)
+    summ = json.loads((out / "summary.json").read_text()) if (out / "summary.json").exists() else {}
+    fstep = summ.get("failure_step")
+
+    def step_of(k: int, n: int) -> int:
+        if fstep is not None and k == n - 1 and (k + 1) * every - 1 != int(fstep):
+            return int(fstep)
+        return (k + 1) * every - 1
     edges = None
     found = None
-    for t, path in frames:
+    for kf, (_t, path) in enumerate(frames):
         v = read_vtk(path)
         d = np.asarray(v["point"]["damage"], dtype=float).reshape(-1)
         X = v["nodes"]
@@ -351,17 +361,17 @@ def stage_fracture(sp: dict, deck: Path) -> dict:
                     seen.add(m); stack.append(m)
         if not reached:
             cut = np.where(~intact)[0]
-            found = (t, path, X[cut])
+            found = (step_of(kf, len(frames)), path, X[cut])
             break
     res = {"separation_damage": thr, "separated": found is not None}
     if found is not None:
-        t, path, P = found
+        step, path, P = found
         gx = _gage_x(sp, deck)
         c = P[:, :2] - P[:, :2].mean(axis=0)
         _, vec = np.linalg.eigh(c.T @ c)
         crack_dir = vec[:, -1]
-        res.update({"step": int(t), "snapshot": path.name,
-                    "failure_gauge_strain": gauge_of.get(int(t)),
+        res.update({"step": step, "snapshot": path.name,
+                    "failure_gauge_strain": gauge_of.get(step),
                     "location_fraction": float((P[:, 0].mean() - gx[0]) / (gx[1] - gx[0])),
                     "angle_to_axis_deg": float(np.degrees(np.arccos(abs(crack_dir[0])))),
                     "cut_nodes": int(len(P))})
