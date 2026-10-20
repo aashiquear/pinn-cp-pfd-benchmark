@@ -459,3 +459,12 @@ fields recorded and `separated = 1` in the history row. The Ni template uses it;
 `ni_specimen.py curve` reports `failure_gauge_strain` from that row. Smoke (local, h040,
 G_c 0.5): stopped at step 2 on separation; the snapshot check of `fracture` gives the same
 step.
+
+### 6.2 G_c(l0) calibration (launched 2026-10-19 17:40, author's go-ahead)
+
+`decks/ni/pfd/cal_L1_h020.i` with `scripts/ni_pfd_calibrate.py` (base `decks/ni/pfd/base_L1_h020.i`):
+l0 = 0.4 / 0.6 / 0.8 mm, a search per l0 in ln G_c: first round G_c = guess x0.5 and x2 (5.5 /
+22, 8 / 32, 11 / 44 MPa mm; six runs side by side), then regula falsi between the closest runs
+either side of 0.463 (geometric midpoint when the upper run never failed), accept within
++-0.004, at most six runs per l0. Driver checked locally on the h040 smoke deck (target 0.6%,
+hit at the first run).
