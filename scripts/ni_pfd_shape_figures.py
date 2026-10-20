@@ -10,6 +10,7 @@ Deck-driven (PINNACLE .i syntax):
     exx_range   = '0.23 0.98'          # color limits of E_xx, the experiment panel's scale
     x_range     = '5.0 20.4'           # mm, the gage, fillets and grip ends (undeformed x of the cells)
     crack       = 0.85                 # cells with mean nodal damage above this are drawn black
+    color       = exx                  # exx | damage (the phase field d, 0..1, with the d = crack contour)
     dpi         = 200
   []
   [Runs]
@@ -79,7 +80,34 @@ def failure_frame(run: Path) -> tuple[dict, dict, dict]:
     return read_vtk(run / "solver" / frac["snapshot"]), frac, summ
 
 
+def draw_damage(ax, v: dict, f: dict):
+    """The phase field d on the deformed top face (nodal, Gouraud-shaded) with its d = crack contour."""
+    import matplotlib.tri as mtri
+
+    X0 = v["nodes"]
+    x = X0 + v["point"]["displacement"]
+    cells = np.asarray(v["cells"], dtype=int)
+    top = cells[:, 4:8]
+    d = np.asarray(v["point"]["damage"], dtype=float)
+    x0, x1 = _pair(f["x_range"])
+    keep = np.where((X0[cells, 0].mean(axis=1) >= x0) & (X0[cells, 0].mean(axis=1) <= x1))[0]
+    tris = np.concatenate([top[keep][:, [0, 1, 2]], top[keep][:, [0, 2, 3]]])
+    used = np.unique(tris)
+    remap = -np.ones(len(x), dtype=int)
+    remap[used] = np.arange(len(used))
+    tri = mtri.Triangulation(x[used, 0], x[used, 1], remap[tris])
+    tpc = ax.tripcolor(tri, d[used], shading="gouraud", cmap="inferno", vmin=0.0, vmax=1.0)
+    ax.tricontour(tri, d[used], levels=[float(f.get("crack", 0.85))], colors="cyan", linewidths=0.8)
+    ax.set_xlim(x[used, 0].min(), x[used, 0].max())
+    ax.set_ylim(x[used, 1].min() - 0.2, x[used, 1].max() + 0.2)
+    ax.set_aspect("equal")
+    ax.set_yticks([])
+    return tpc
+
+
 def draw_run(ax, v: dict, f: dict, lo: float, hi: float):
+    if _str(f.get("color", "exx")) == "damage":
+        return draw_damage(ax, v, f)
     X0 = v["nodes"]
     x = X0 + v["point"]["displacement"]
     cells = np.asarray(v["cells"], dtype=int)
@@ -137,7 +165,8 @@ def main(argv):
             a.set_xlabel("x (mm), deformed")
     cax = fig.add_subplot(gs[1:, 1])
     cb = fig.colorbar(pc, cax=cax)
-    cb.set_label(r"$E_{xx}$ (Green-Lagrange)")
+    cb.set_label(r"phase field $d$ (cyan: $d$ = %g)" % float(f.get("crack", 0.85))
+                 if _str(f.get("color", "exx")) == "damage" else r"$E_{xx}$ (Green-Lagrange)")
     out = _resolve(_str(f["out"]), deck)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, bbox_inches="tight")
