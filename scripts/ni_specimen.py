@@ -290,14 +290,21 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
     valid = list(itertools.takewhile(lambda x: x["mech_converged"], res))
     e = np.array([x["gauge_strain"] for x in valid]); s = np.array([x["eng_stress"] for x in valid])
     first_node = next((x for x in valid if x["nodes_above"] > 0), None)
-    sep = next((x for x in valid if x["separated"]), None)
+    # Failure: the first separated step (PINNACLE stop_separation). Separation can come
+    # in the same step whose mechanics stops converging (the section loses its load);
+    # that step has no gauge strain, so the failure strain is the last converged one.
+    sep = next((x for x in res if x["separated"]), None)
+    sep_strain = None
+    if sep is not None:
+        sep_strain = sep["gauge_strain"] if np.isfinite(sep["gauge_strain"]) else (
+            valid[-1]["gauge_strain"] if valid else None)
     ok = np.isfinite(s)
     summary = {"steps": len(res), "steps_valid": len(valid), "run_died": died,
                "final_gauge_strain": float(e[-1]) if len(e) else None, "final_grip_strain": valid[-1]["grip_strain"] if valid else None,
                "peak_eng_stress": float(np.nanmax(s)) if ok.any() else None,
                "strain_at_peak": float(e[int(np.nanargmax(s))]) if ok.any() else None,
                "initiation_gauge_strain_node": first_node["gauge_strain"] if first_node else None,
-               "failure_gauge_strain": sep["gauge_strain"] if sep else None,   # PINNACLE stop_separation
+               "failure_gauge_strain": sep_strain,   # PINNACLE stop_separation
                "failure_step": sep["step"] if sep else None,
                "damage_threshold": float(sp.get("damage_threshold", 0.8)),
                "final_max_damage": valid[-1]["max_damage"] if valid else None,
@@ -371,7 +378,8 @@ def stage_fracture(sp: dict, deck: Path) -> dict:
         _, vec = np.linalg.eigh(c.T @ c)
         crack_dir = vec[:, -1]
         res.update({"step": step, "snapshot": path.name,
-                    "failure_gauge_strain": gauge_of.get(step),
+                    "failure_gauge_strain": gauge_of.get(step) if np.isfinite(gauge_of.get(step, np.nan))
+                    else summ.get("failure_gauge_strain"),
                     "location_fraction": float((P[:, 0].mean() - gx[0]) / (gx[1] - gx[0])),
                     "angle_to_axis_deg": float(np.degrees(np.arccos(abs(crack_dir[0])))),
                     "cut_nodes": int(len(P))})

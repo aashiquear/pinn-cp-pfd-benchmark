@@ -79,7 +79,9 @@ def run_case(base: Path, cdir: Path, values: dict[str, str], threads: int) -> di
     text = _set_keys(text, {"out_dir": ".", "threads": str(threads), **values})
     deck = cdir / "specimen.i"
     deck.write_text(text)
-    if not (cdir / "fracture.json").exists():
+    # a finished case has summary.json (a run killed before writing its fields has no
+    # fracture.json but is still done: its curve comes from the newest checkpoint)
+    if not (cdir / "summary.json").exists():
         with (cdir / "pipeline.log").open("w") as fh:
             subprocess.run([sys.executable, str(PIPE), str(deck), "deck", "run", "curve", "fracture"],
                            check=False, stdout=fh, stderr=subprocess.STDOUT)
