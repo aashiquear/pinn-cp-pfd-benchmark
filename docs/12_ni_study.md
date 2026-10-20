@@ -487,3 +487,27 @@ snapshot, cracked cells black) with the 15 Fig. 5 panels cropped to
 `data/digitized/ni_fig5_panels/`. Round-2 shapes: at every l0 the d > 0.85 zone is a band 1-2.5
 mm wide, nearly straight across the gage, at 0.17-0.24 of the gage; the experiment's L.1 crack is
 narrow and inclined at roughly 55-60 deg (Fig. 5), the paper's simulation also inclined.
+
+Round 3 and a driver error (2026-10-20). l0 0.4 / G_c 15.56 separated at step 173 in the same
+step whose mechanics stopped converging (the section lost its load); `curve` kept rows only up to
+the first unconverged step, so the separated row was dropped, summary.json had no failure strain
+and the driver read the run as "no failure" (too high a G_c) and launched G_c 13.08. The run
+failed at 0.339 (last converged step; stress 205 -> 136 MPa there). Fixed: the failure is the
+first separated row whatever its mechanics, at the last converged gauge strain when that row has
+none; `fracture` takes the summary's strain then; the driver treats a case with summary.json as
+done (a run killed before its fields has no fracture.json). The misdirected gc13.08 was stopped
+and kept as `void_l0.4_gc13.08_misjudged`; every finished run was refreshed (PINNACLE's failure
+step and the snapshot check agree on all of them). The l0 0.4 search resumed with
+`decks/ni/pfd/cal_L1_h020_resume_l04.i` (finished runs reused) at G_c 18.5; l0 0.6 / 0.8 resume
+with `cal_L1_h020_resume_l0608.i` once their round-3 runs (30.95, 40.75) end.
+
+### 6.3 Plastic-work threshold W_c on the CP route (2026-10-20)
+
+The threshold already exists in PINNACLE's `pfd_driving_force` (ADR 0031: H = max(H, psi+ + zeta
+max(W_p - W_c, 0))) and applies to any mechanics that supplies W_p; the CP callback supplies it
+(tr(sigma Fe Lp Fe^-1) det Fe over the step, also in the backward-Euler update). Checked on the
+CP+PFD cube (2x2x2, finite strain, implicit update): zeta 0 -> max H 85,077 Pa, d 0.680; W_c 0 ->
+98,911, 0.785; W_c 1e4 -> 88,911 (exactly 1e4 lower), 0.716; W_c 1e12 -> 85,077, 0.680 (elastic
+only). PINNACLE 27a8edc adds this as a slow regression test (ADR 0031 addendum, CHANGELOG); no code
+change was needed. Scale for the Ni calibration: the gage-mean plastic work along the calibrated
+CP curve is about 10 / 26 / 46 / 68 / 83 MPa at 10 / 20 / 30 / 40 / 46.3% gauge strain.
