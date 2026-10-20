@@ -390,3 +390,13 @@ NOT derivable from the code: measured facts, decisions, and traps.
   ~0.20 of the gage near its thinnest station). The other 14 specimens stay independent.
 - Failure = the paper's criterion as implemented in `ni_specimen.py fracture` (d > 0.85 nodes
   cut the specimen in two); the d >= 0.8 node step is the secondary (initiation) measure.
+
+## 2026-10-20: Ni CP+PFD fracture presentation, l0 rule, W_c stage (author)
+- Fracture shape is presented as the OUTLINE of the d = 0.85 zone (black on the E_xx field; cyan
+  on d), not a single crack path: the phase field is diffuse. The outline already shows the
+  ~50 deg inclined flanks. `ni_pfd_shape_figures.py` draws it (color = exx | damage).
+- The W_c = 0 G_c(l0) calibration continues and is reported as the W_c = 0 condition.
+- l0 is chosen from an l0/h sweep at fixed G_c: the first two consecutive l0/h that barely change
+  the result; take the larger of the two.
+- Then a second calibration at that l0 with the plastic-work threshold W_c (and G_c again): a
+  single crystal has no built-in dissipation of plastic work before damage; report both.

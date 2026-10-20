@@ -9,7 +9,7 @@ Deck-driven (PINNACLE .i syntax):
     panel_label = 'L.1, experiment (DIC) and the paper's CP-PFD (Rezwan 2026, Fig. 5)'
     exx_range   = '0.23 0.98'          # color limits of E_xx, the experiment panel's scale
     x_range     = '5.0 20.4'           # mm, the gage, fillets and grip ends (undeformed x of the cells)
-    crack       = 0.85                 # cells with mean nodal damage above this are drawn black
+    crack       = 0.85                 # the d = crack outline (black on E_xx, cyan on d): the fracture zone
     color       = exx                  # exx | damage (the phase field d, 0..1, with the d = crack contour)
     dpi         = 200
   []
@@ -24,7 +24,8 @@ Each run is drawn at its failure step (the snapshot that `ni_specimen.py fractur
 found separated; fracture.json): plan view of the deformed top face, cells colored
 by the Green-Lagrange axial strain E_xx = H_xx + (H_xx^2 + H_yx^2 + H_zx^2) / 2 from
 the displacement gradient H the run records (the measure a DIC code such as Vic-2D
-reports as e_xx), the cracked cells black (the paper draws them as voids).
+reports as e_xx), with the fracture zone outlined in black at d = crack (or, with
+color = damage, the phase field d itself with the outline in cyan).
 """
 from __future__ import annotations
 
@@ -122,14 +123,22 @@ def draw_run(ax, v: dict, f: dict, lo: float, hi: float):
     x0, x1 = _pair(f["x_range"])
     xc = X0[cells, 0].mean(axis=1)
     keep = (xc >= x0) & (xc <= x1)
-    cracked = d[cells].mean(axis=1) > float(f.get("crack", 0.85))
     polys = [x[top[k]][:, :2] for k in np.where(keep)[0]]
     vals = Exx[keep]
     pc = PolyCollection(polys, array=vals, cmap="jet", edgecolors="none")
     pc.set_clim(lo, hi)
     ax.add_collection(pc)
-    black = [x[top[k]][:, :2] for k in np.where(keep & cracked)[0]]
-    ax.add_collection(PolyCollection(black, facecolors="black", edgecolors="black", linewidths=0.2))
+    # the fracture zone as the outline of d = crack (author 2026-10-20: a phase field is
+    # diffuse, so the damaged area's outline is shown rather than a single crack path)
+    import matplotlib.tri as mtri
+
+    kk = np.where(keep)[0]
+    tris = np.concatenate([top[kk][:, [0, 1, 2]], top[kk][:, [0, 2, 3]]])
+    used = np.unique(tris)
+    remap = -np.ones(len(x), dtype=int)
+    remap[used] = np.arange(len(used))
+    tri = mtri.Triangulation(x[used, 0], x[used, 1], remap[tris])
+    ax.tricontour(tri, d[used], levels=[float(f.get("crack", 0.85))], colors="black", linewidths=1.0)
     ax.set_xlim(min(p[:, 0].min() for p in polys), max(p[:, 0].max() for p in polys))
     ax.set_ylim(min(p[:, 1].min() for p in polys) - 0.2, max(p[:, 1].max() for p in polys) + 0.2)
     ax.set_aspect("equal")
