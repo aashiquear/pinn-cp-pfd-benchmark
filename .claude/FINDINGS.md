@@ -400,3 +400,22 @@ NOT derivable from the code: measured facts, decisions, and traps.
   the result; take the larger of the two.
 - Then a second calibration at that l0 with the plastic-work threshold W_c (and G_c again): a
   single crystal has no built-in dissipation of plastic work before damage; report both.
+
+## 2026-10-20: Ni l0 plateau rule settled (author, option 1); W_c purpose; review rule
+- l0 is numerical (mesh-related), not a material parameter: on the fixed h020, move l0 until the
+  stress-strain curve and failure strain stop changing, fix l0 there, calibrate G_c there.
+- Measured: in the unnotched coupon with W_c = 0 the failure strain is set by G_c / l0 (the AT2
+  nucleation strength): at G_c 11, l0 0.4 -> 25.0% and l0 0.8 -> 14.4%; at equal G_c / l0 the three
+  l0 fail within 0.01-0.03. A fixed-G_c sweep over l0 cannot plateau, so the author chose to move l0
+  with G_c / l0 held (calibrated ratio 51-52 MPa): l0/h = 2, 3, 4 from the calibration, l0/h = 6
+  (l0 1.2, G_c 61.1 = 50.9 x 1.2) as the plateau check.
+- Two PFD calibrations are reported: W_c = 0 and W_c > 0 (W_c separate from G_c, l0, h). W_c > 0 is
+  meant to hold d at zero until near fracture: a sharper fracture zone and softening only at the
+  end of the curve.
+- Every review presentation includes the stress-strain curve of the runs shown
+  (`scripts/ni_pfd_curve_figures.py`).
+- PINNACLE CP degradation (`crystal_plasticity.degrade_pk2`) multiplies S by g(d) BEFORE tau = M:S,
+  so a damaged point needs a larger elastic stretch to reach tau_c but keeps its flow stress: the
+  W_c = 0 curve sits only ~5% under CP-only at 40% with max d ~0.75 across the gage, and the load
+  drops only once g ~ 0 (d > ~0.97) at the failing section, in one or two steps. Softening before
+  that point cannot come from g on S alone (bears on the W_c > 0 stage).

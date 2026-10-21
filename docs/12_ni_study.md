@@ -528,6 +528,18 @@ runs (`decks/ni/figures/pfd_shape_L1_cal.i`, `_cal_damage.i`): a d > 0.85 zone 2
 and 3.2 mm (l0 0.8) wide, centered at 12.4 / 12.9 mm deformed x, flanks near the axis normal
 (fracture-stage angle 87 / 73 deg); the E_xx peak sits at the lower specimen edge inside the zone.
 
+l0 plateau check (author 2026-10-20, option 1). l0 is numerical: on the fixed h020 it is moved until
+curve and failure strain stop changing, and G_c is calibrated there. Because the failure strain
+follows G_c / l0 here (above), l0 is moved with G_c / l0 held: l0/h = 2, 3, 4 are the calibrated
+pairs (l0/h = 2 completes with G_c 21.1), and l0/h = 6 is one run at l0 1.2, G_c 61.1 (= 50.9 x 1.2,
+the l0 0.8 ratio; `decks/ni/pfd/cal_L1_h020_l12.i`, launched 2026-10-20 22:20). Curves:
+`scripts/ni_pfd_curve_figures.py` (`decks/ni/figures/pfd_curves_L1_cal.i`, every calibration run in
+`pfd_curves_L1_all.i`, with max d). The W_c = 0 curves sit about 5% below CP-only from 20% on (max
+d 0.5-0.75 across the gage) and drop in one or two steps at failure, from about 226 MPa; the Fig. 3
+experiment holds 239-241 MPa from 45 to 50% and drops at 51%. PINNACLE degrades the PK2 stress
+before the resolved shear stress (`crystal_plasticity.degrade_pk2`), so damaged material keeps its
+flow stress and the load falls only once g(d) is nearly zero at the section.
+
 ### 6.3 Plastic-work threshold W_c on the CP route (2026-10-20)
 
 The threshold already exists in PINNACLE's `pfd_driving_force` (ADR 0031: H = max(H, psi+ + zeta
