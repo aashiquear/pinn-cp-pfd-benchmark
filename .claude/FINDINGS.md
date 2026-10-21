@@ -419,3 +419,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
   W_c = 0 curve sits only ~5% under CP-only at 40% with max d ~0.75 across the gage, and the load
   drops only once g ~ 0 (d > ~0.97) at the failing section, in one or two steps. Softening before
   that point cannot come from g on S alone (bears on the W_c > 0 stage).
+
+## 2026-10-20: Ni W_c calibration criterion; experiment shown to the failure strain (author)
+- Early softening with W_c = 0 (d from the first step, curve ~5% under CP-only from 20% on) is the
+  single-crystal effect: no competing neighboring grains, unlike the Al2219 polycrystal. That is why
+  the W_c stage exists.
+- W_c (with G_c) is calibrated so that the CP+PFD curve follows the experimental stress-strain curve
+  for as long as possible before fracture, and fails at 0.463. Author's expectation: this also
+  sharpens the fracture zone. The calibrated CP-only curve is within 0.8% of the markers to 45%, so
+  the aim is d ~ 0 until about 45% (W_c near the plastic work there; docs/12 §6.3 estimate ~75 MPa
+  gage peak), then G_c sets failure at 0.463.
+- PFD/fracture figures show the experiment only up to 46.3% (Fig. 3 trace and markers cut there).

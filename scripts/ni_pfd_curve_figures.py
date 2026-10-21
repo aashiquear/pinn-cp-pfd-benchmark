@@ -6,7 +6,7 @@
     markers        = ../../../data/digitized/ni_fig3_experiment_markers.csv
     experiment     = ../../../data/digitized/ni_fig3_specimenL_calibration.csv  # full Fig. 3 trace
     cp_only        = ../../../results/ni_study/cal_h020/gn2/base/results.csv   # calibrated CP, no damage
-    failure_target = 0.463          # experiment failure strain, Fig. 4(b) (dotted vertical)
+    failure_target = 0.463          # experiment failure strain, Fig. 4(b): the experiment ends here
     damage         = true           # second row: max d against gauge strain
     strain_max     = 60
     stress_max     = 300
@@ -98,11 +98,15 @@ def main(argv):
     tx, ty = read_experiment(_resolve(_str(f["experiment"]), deck))
     ce, cs, _ = read_curve(_resolve(_str(f["cp_only"]), deck))
     target = 100.0 * float(f["failure_target"])
+    # the experiment is shown only up to the adopted failure strain (author 2026-10-20: the
+    # Fig. 3 trace runs on to 51% and its 50% marker confuses the comparison)
+    ex, ey = ex[ex <= target + 1e-9], ey[ex <= target + 1e-9]
+    ty, tx = ty[tx <= target], tx[tx <= target]
     ymax = max(ty.max(), cs.max())
     data = {k: read_run(_resolve(_str(r["dir"]), deck)) for k, r in runs.items()}
     for j, p in enumerate(panels):
         ax = axes[0, j]
-        ax.plot(tx, ty, "-", color="#111111", lw=0.7, alpha=0.6, label="Experiment, full trace (Fig. 3)")
+        ax.plot(tx, ty, "-", color="#111111", lw=0.7, alpha=0.6, label="Experiment, Fig. 3 trace to the failure strain")
         exp_marker(ax, ex, ey)
         ax.plot(ce, cs, "--", color="#9a9a9a", lw=1.3, label="CP only (calibrated, no damage)")
         ax.axvline(target, color="#111111", lw=0.9, ls=":",
