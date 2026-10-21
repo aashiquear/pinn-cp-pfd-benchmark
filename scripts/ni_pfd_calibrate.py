@@ -18,8 +18,9 @@ The failure strain of a run is the gauge strain of its first separated step
 (PINNACLE stop_separation: d > 0.85 cuts the grips apart; `ni_specimen.py
 curve`, summary.json failure_gauge_strain). A run that fails below the target
 has too small a G_c; a run that fails above it, or not at all by the end of
-the path, too large a G_c. A run that dies before the target without failing
-decides nothing and stops that length scale's search (noted, not guessed).
+the path, too large a G_c. A run that ends before the target without separating
+(killed, or its mechanics lost at the load collapse) decides nothing and stops
+that length scale's search (noted, not guessed).
 
 Search in ln G_c per length scale: the first round brackets the guess; then
 regula falsi between the closest runs on either side of the target when both
@@ -122,9 +123,11 @@ def search(l0: float, guess: float, cal: dict, base: Path, out_root: Path, log: 
         if rec["failed_pipeline"]:
             rec["note"] = "pipeline failed"; return None
         if fs is None:
+            # a run that ends before the target without separating (killed, or its
+            # mechanics lost at the load collapse) decides nothing
             stop = rec["final_gauge_strain"]
-            if rec["run_died"] and (stop is None or float(stop) < target - tol):
-                rec["note"] = "died at %.4f before the target without failing" % float(stop or 0.0)
+            if stop is None or float(stop) < target - tol:
+                rec["note"] = f"ended at {float(stop or 0.0):.4f} before the target without separating"
                 return None
             return "high"
         if abs(fs - target) <= tol:

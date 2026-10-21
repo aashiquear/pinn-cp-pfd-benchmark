@@ -501,6 +501,33 @@ step and the snapshot check agree on all of them). The l0 0.4 search resumed wit
 `decks/ni/pfd/cal_L1_h020_resume_l04.i` (finished runs reused) at G_c 18.5; l0 0.6 / 0.8 resume
 with `cal_L1_h020_resume_l0608.i` once their round-3 runs (30.95, 40.75) end.
 
+Round 3 and the l0 0.4 search (2026-10-20, ended 20:40). l0 0.6 and 0.8 hit in round 3, so their
+resume deck was not needed: G_c 30.95 -> 0.460 (0.21 of the gage) and 40.75 -> 0.463 (0.25). Their
+fracture.json had been written by the pre-fix `fracture` (the pipeline process loaded the script
+before the fix), with the snapshot ordinal as step; `curve fracture` was rerun (steps 230 / 231).
+l0 0.4 spent its six runs without a hit: 18.5 -> 0.402 (0.17), then 20.17 lost its load at 0.440
+(stress 215 -> 141 MPa in one step, max d 0.999, 168 nodes above 0.85) and its mechanics failed on
+the next step before the d > 0.85 zone spanned the section, so it stopped unseparated. The driver
+read that as "no failure" (too high a G_c); with the budget spent it launched nothing more. Fixed:
+a run that ends before the target without separating decides nothing, whether killed or stopped
+on the mechanics. Bracket 20.17 (load lost at 0.440) / 22 (not separated by 0.477, max d 0.87):
+one run at 21.1 (`decks/ni/pfd/cal_L1_h020_l04_gc21.i`).
+
+| l0 (mm) | G_c (MPa mm) -> failure (G_c / l0, MPa) |
+|---|---|
+| 0.4 | 5.5 -> 0.139 (14); 11 -> 0.250 (28); 15.56 -> 0.339 (39); 18.5 -> 0.402 (46); 20.17 -> load lost at 0.440 (50); 22 -> none by 0.477 (55) |
+| 0.6 | 8 -> 0.140 (13); 27.86 -> 0.413 (46); **30.95 -> 0.460 (52)**; 32 -> 0.479 (53) |
+| 0.8 | 11 -> 0.144 (14); 38.18 -> 0.432 (48); **40.75 -> 0.463 (51)**; 44 -> 0.499 (55) |
+
+With W_c = 0 the failure strain is set almost entirely by G_c / l0 (the AT2 strength scale): at
+equal G_c / l0 the three length scales fail within about 0.01-0.03 of each other, the larger l0
+slightly later, and the calibrated ratio is 51-52 MPa at every l0. At a fixed G_c, l0 therefore
+moves the failure strain as G_c / l0 does (e.g. G_c 31 at l0 0.8 is G_c / l0 39, about 0.34), so
+a fixed-G_c sweep over l0/h measures that scaling rather than settling. Shapes of the calibrated
+runs (`decks/ni/figures/pfd_shape_L1_cal.i`, `_cal_damage.i`): a d > 0.85 zone 2.8 mm (l0 0.6)
+and 3.2 mm (l0 0.8) wide, centered at 12.4 / 12.9 mm deformed x, flanks near the axis normal
+(fracture-stage angle 87 / 73 deg); the E_xx peak sits at the lower specimen edge inside the zone.
+
 ### 6.3 Plastic-work threshold W_c on the CP route (2026-10-20)
 
 The threshold already exists in PINNACLE's `pfd_driving_force` (ADR 0031: H = max(H, psi+ + zeta
