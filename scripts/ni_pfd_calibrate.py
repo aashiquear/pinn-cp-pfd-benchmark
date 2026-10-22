@@ -14,6 +14,7 @@ Deck-driven (PINNACLE .i syntax):
     max_runs    = 6                             # runs per length scale
     threads     = 2
     W_c         = 0                             # optional: plastic-work threshold (MPa) held for every run
+    chi         = 1                             # optional: elastic prefactor (0 = purely ductile driving force)
 
 The failure strain of a run is the gauge strain of its first separated step
 (PINNACLE stop_separation: d > 0.85 cuts the grips apart; `ni_specimen.py
@@ -104,7 +105,7 @@ def search(l0: float, guess: float, cal: dict, base: Path, out_root: Path, log: 
     def one(gc: float, it: int) -> dict:
         cdir = out_root / f"l{l0:g}" / f"gc{gc:.4g}"
         t0 = time.time()
-        fixed = {k: str(cal[k]) for k in ("W_c", "zeta") if k in cal}   # the W_c stage: held per deck
+        fixed = {k: str(cal[k]) for k in ("W_c", "zeta", "chi") if k in cal}   # the W_c stage: held per deck
         res = run_case(base, cdir, {"l0": f"{l0:g}", "Gc": f"{gc:.4g}", **fixed}, threads)
         fs = res.get("failure_gauge_strain")
         frac = res.get("fracture", {})

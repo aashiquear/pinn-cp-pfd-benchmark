@@ -47,6 +47,7 @@
   zeta             = 1          # plastic-work driving force prefactor
   W_c              = 0          # plastic-work threshold (MPa): the W_c = 0 condition; the W_c stage sets it per deck
   eta              = 0
+  chi              = 1          # elastic prefactor on psi+ (PINNACLE elastic_prefactor); 0 drops the elastic energy
   damage_model     = at2
   stop_damage      = 0
   checkpoint_every = 8

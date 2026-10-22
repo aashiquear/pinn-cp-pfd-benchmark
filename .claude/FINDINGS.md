@@ -464,3 +464,13 @@ NOT derivable from the code: measured facts, decisions, and traps.
   bounds how late damage can start for a given W_c; the running pairs (65 / 2, 65 / 8, 75 / 1.2)
   cover the range. A PINNACLE option that drops or thresholds psi+ (elastic prefactor) would lift
   the floor; not built unless the author asks.
+
+## 2026-10-21: elastic prefactor option; W_c = 0 reported as the reference (author)
+- Author: the MOOSE CP-PFD has a prefactor limiting how much of the energy drives damage; add the
+  option in PINNACLE regardless of the W_c outcome. Done: `elastic_prefactor` chi on
+  pfd_driving_force (H = max(H, chi psi+ + zeta max(W_p - W_c, 0)); chi 1 default, 0 purely
+  ductile). Ni decks: `chi` key (base deck 1). If the W_c runs decide the case, chi stays 1;
+  otherwise chi is the next calibration parameter, for a sharp fracture.
+- Author: the expected max-d history is exponential growth near fracture, not the parabolic rise
+  that flattens at 20-30% strain seen with W_c = 0; that curve is reported anyway as the reference
+  (report §6.4).

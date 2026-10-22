@@ -1,9 +1,10 @@
 # Crystal plasticity and phase-field ductile fracture of single-crystal Ni tensile specimens with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, draft of 2026-10-19. Status: methodology (§2),
-numerical method (§3), the crystal-plasticity parameter calibration (§4)
-and the mesh sensitivity (§5) written for the production mesh h020; the
-phase-field fracture calibration, the fifteen specimens and the neural and
+Technical report, draft of 2026-10-21. Status: methodology (§2),
+numerical method (§3), the crystal-plasticity parameter calibration (§4),
+the mesh sensitivity (§5) and the phase-field fracture calibration without a
+plastic-work threshold (§6) written for the production mesh h020; the
+thresholded calibration (§7), the fifteen specimens and the neural and
 surrogate routes follow as they are confirmed by the author; abstract and introduction are held until the
 study is closed. Every number here traces to a run in `docs/run_ledger.md`
 (rows `ni-*`) and to a deck under `decks/ni/`; the lab notebook is
@@ -11,7 +12,9 @@ study is closed. Every number here traces to a run in `docs/run_ledger.md`
 produced by `scripts/ni_calibration_figures.py` from
 `decks/ni/figures/cal_figures.i`, those of §5 by `scripts/ni_mesh_figures.py`
 and `scripts/ni_fields.py` from `decks/ni/figures/mesh_figures_h020.i` and
-`decks/ni/figures/fields_mesh_h020.i`.
+`decks/ni/figures/fields_mesh_h020.i`, those of §6 by
+`scripts/ni_pfd_curve_figures.py`, `scripts/ni_pfd_search_figures.py` and
+`scripts/ni_pfd_shape_figures.py` from `decks/ni/figures/pfd_*.i`.
 
 ## Abstract
 
@@ -672,3 +675,196 @@ reproduces the experiment on h020, and on a finer mesh the same parameters
 give a curve up to 7% lower at 40% strain (h010). Every later Ni stage runs
 on h020 with this set. h040 is the reference that shows the convergence and
 is not used further.
+
+## 6. Phase-field ductile fracture: calibration without a plastic-work threshold
+
+### 6.1 Fracture model
+
+The calibrated crystal plasticity of §4 on the h020 mesh is coupled to the
+AT2 phase field of the Al2219 report (Part II there, Eq. (20)): the damage
+$d$ obeys
+
+$$
+\frac{G_c}{\ell_0}\, d - G_c \ell_0 \nabla^2 d = 2 (1-d)\, \mathcal{H}, \qquad
+\mathcal{H}(t) = \max_{\tau \le t} \left[ \psi^+(\tau) + \zeta \left\langle W_p(\tau) - W_c \right\rangle \right] ,
+\tag{10}
+$$
+
+with $\psi^+$ the positive part of the elastic energy density, $W_p =
+\int \sum_\alpha \tau^\alpha \dot{\gamma}^\alpha \, dt$ the accumulated
+plastic work density per unit reference volume (the slip of Eq. (4) against
+the resolved shear stress of Eq. (3)), $\zeta = 1$, $W_c$ the plastic-work
+threshold and $\eta = 0$ (quasi-static). The second Piola-Kirchhoff stress
+of Eq. (2) is degraded by $g(d) = (1-d)^2$ before the resolved shear
+stresses of Eq. (3) are formed, so a damaged point keeps its flow stress
+and loses its load-carrying capacity only as $g \to 0$. Mechanics and damage are solved in a staggered loop of up to three
+alternations per load step (tolerance $10^{-3}$ on the damage increment)
+along the 300-step path of §3.2, with $d = 0$ held on the grip faces. This
+section reports the condition $W_c = 0$, in which the plastic work drives
+damage from the first load step; §7 reports the thresholded condition.
+
+**Failure criterion.** Failure is the first load step at which the nodes
+with $d > 0.85$ cut the specimen in two: the intact nodes are joined along
+element edges and the step counts as failed when no path of intact nodes
+joins the two grip faces (PINNACLE `stop_separation`; the run ends there).
+The failure strain is the gauge strain of that step, or of the last
+converged step when the section loses its load in the same step. This is
+the paper's criterion, $d > 0.85$ across the section (rezwan 2026
+predicting); its $d \ge 0.8$ at any node is 0.5 to 0.8% strain earlier on
+every calibrated run. The calibration target is the experimental failure
+strain of specimen L.1, 0.463 (the experiment axis of the paper's Fig. 4(b)),
+accepted within $\pm 0.004$ (two load steps). The DIC gauge strain is
+reported throughout, as in §4; the experiment is shown up to its failure
+strain.
+
+### 6.2 Calibration of $G_c$ at each length scale
+
+The length scale $\ell_0$ is a numerical parameter tied to the mesh, not a
+material property, so it was fixed by the author's rule for the mesh at
+hand: on h020 (gage cell $h = 0.2$ mm) $\ell_0$ is moved until the response
+stops changing, and $G_c$ is the material parameter calibrated there. $G_c$
+was first searched at $\ell_0 = 0.4$, 0.6 and 0.8 mm ($\ell_0/h = 2$, 3, 4)
+by regula falsi in $\ln G_c$ on the failure strain (driver
+`scripts/ni_pfd_calibrate.py`, decks `decks/ni/pfd/cal_L1_h020*.i`; six to
+seven runs per length scale, about 5 to 6.6 h each on two threads).
+
+**Figure 11.** The $G_c$ searches: failure gauge strain against $G_c$ at each
+length scale (left) and against $G_c/\ell_0$ (right); the band is the
+accepted tolerance around the target. Open squares are runs that ended
+without the $d > 0.85$ zone spanning the section (one lost its load at 44.0%
+and its mechanics stopped on the next step; one was killed at 47.7%).
+
+![G_c searches](../../figures/ni/pfd/search_L1_cal.png)
+
+**Table 6.** Calibrated $G_c$ at each length scale ($W_c = 0$, h020), with
+the failure strain, the position of the fracture zone along the gage
+(0 = the gage end nearer the clamped grip; the thinnest station is at 0.20
+and the experiment's crack at 0.20), the width of the $d > 0.85$ zone on the
+top face at failure, and the peak engineering stress.
+
+| $\ell_0$ (mm) | $\ell_0/h$ | $G_c$ (MPa mm) | $G_c/\ell_0$ (MPa) | failure strain | zone center (of the gage) | zone width (mm) | peak stress (MPa) at strain |
+|---|---|---|---|---|---|---|---|
+| 0.4 | 2 | 21.1 | 52.8 | 0.461 | 0.17 | 2.2 | 226.0 at 44.8% |
+| 0.6 | 3 | 30.95 | 51.6 | 0.460 | 0.21 | 2.8 | 225.4 at 44.4% |
+| 0.8 | 4 | 40.75 | 50.9 | 0.463 | 0.25 | 3.2 | 225.4 at 44.6% |
+| 1.2 | 6 | 61.1 | 50.9 | 0.472 | 0.32 | 3.4 | 226.8 at 45.7% |
+
+The failure strain depends on $G_c$ and $\ell_0$ only through their ratio
+(Fig. 11, right): at equal $G_c/\ell_0$ the three searched length scales
+fail within 0.01 to 0.03 of each other, and the calibrated ratio is 51 to
+53 MPa at every $\ell_0$. In an unnotched coupon the damage has to
+nucleate, and the AT2 model nucleates at a driving force proportional to
+$G_c/\ell_0$; the length scale therefore sets the material strength as
+much as $G_c$ does, and a sweep of $\ell_0$ at fixed $G_c$ could not level
+off. The plateau check was accordingly run with $G_c/\ell_0$ held: the
+$\ell_0/h = 6$ point (1.2 mm, $G_c = 61.1$) is the last row of Table 6.
+
+### 6.3 Length-scale plateau and the carried pair
+
+**Figure 12.** Stress-strain curves (top) and maximum phase field (bottom)
+of the four calibrated pairs of Table 6 against the experiment, with the
+calibrated crystal plasticity without damage (dashed) and the target
+(dotted). Crosses mark failure.
+
+![plateau curves](../../figures/ni/pfd/curves_L1_plateau.png)
+
+**Figure 13.** Axial Green-Lagrange strain $E_{xx}$ on the deformed top face
+at failure for the four pairs, with the $d > 0.85$ zone outlined in black,
+against the paper's Fig. 5 panel of L.1 (DIC above, the paper's
+simulation below).
+
+![plateau shapes](../../figures/ni/pfd/shape_L1_plateau.png)
+
+**Figure 14.** The phase field itself at failure for the same runs, with
+the $d = 0.85$ contour in cyan.
+
+![plateau damage](../../figures/ni/pfd/shape_L1_plateau_damage.png)
+
+At fixed $G_c/\ell_0$ the stress-strain curve and the history of the maximum
+phase field do not depend on $\ell_0$ at all: the four curves of Fig. 12
+agree within 0.3% of stress at every strain from 5 to 43%, and the failure
+strain is flat over $\ell_0/h = 2$ to 4 (0.460 to 0.463) and rises to 0.472
+at $\ell_0/h = 6$. What the length scale changes is the fracture zone
+(Figs. 13 and 14): the $d > 0.85$ band widens from 2.2 to 3.4 mm and its
+center drifts from 0.17 to 0.32 of the gage, away from the thinnest station
+and toward the middle, and at $\ell_0/h = 6$ the band is wide and shallow
+enough that the section separates with a maximum $d$ of only 0.88. By the
+author's rule, the first two consecutive values of $\ell_0/h$ that barely
+change the result are 2 and 3 (curve, failure strain and zone center within
+0.04 of the gage), and the larger is kept: the carried pair of the $W_c = 0$
+condition is
+
+$$
+\ell_0 = 0.6 \ \mathrm{mm} \ (\ell_0/h = 3), \qquad G_c = 30.95 \ \mathrm{MPa\,mm} \ (31 \ \mathrm{kJ/m^2}),
+$$
+
+failure at 0.460, the zone at 0.21 of the gage. $\ell_0 = 0.6$ mm is fixed
+for every later phase-field stage of this study.
+
+### 6.4 What the $W_c = 0$ condition reproduces, and what it does not
+
+**Figure 15.** Every run of the three searches ($\ell_0 = 0.4$, 0.6 and
+0.8 mm), stress-strain curves above and maximum phase field below, for
+reference.
+
+![all searches](../../figures/ni/pfd/curves_L1_all.png)
+
+The calibrated pair reproduces the failure strain and the fracture location
+of L.1: 0.460 against 0.463, and the zone at 0.21 of the gage against the
+experiment's crack at 0.20, with flanks within a few degrees of the normal
+to the axis. It does not reproduce the stress-strain curve or the shape of
+the fracture. With $W_c = 0$ the plastic work drives damage from the first
+load step, so the phase field grows from the start and is diffuse: the
+maximum $d$ is 0.29 at 10% gauge strain, 0.51 at 20%, 0.65 at 30% and 0.75
+at 40% (Fig. 12, bottom; the same numbers at every $\ell_0$), the whole
+gage is above $d = 0.6$ at failure, and the grips reach $d = 0.1$ to 0.4.
+The degradation of this diffuse field lowers the stress below the
+crystal-plasticity curve by 0.9% at 10%, 2.3% at 20%, 3.8% at 30% and 5.2%
+at 40% gauge strain, so the curve sits 2 to 6% below the experiment it was
+calibrated to without damage, peaks at 225 MPa against the experiment's
+239, and leaves the experiment from about 20% strain. The load is lost
+only in the last one or two steps, from 216 MPa to 157 MPa, when $g(d)$
+reaches zero across the section; the experiment holds its stress to
+failure. The fracture zone is a band 2.8 mm wide, nearly normal to the
+axis, where the experiment and the paper's simulation show a narrow crack
+inclined at about 55 to 60 degrees (Fig. 13).
+
+The growth of the maximum phase field is the signature of what is missing.
+It rises steeply at first and flattens from 20 to 30% strain (Fig. 12,
+bottom; Fig. 15), because the plastic work accrues at a nearly constant
+rate while the AT2 response to it saturates, $d \approx 2\mathcal{H}\ell_0/G_c /
+(1 + 2\mathcal{H}\ell_0/G_c)$; a crack that nucleates late and runs would
+instead show $d$ near zero for most of the path and an exponential rise just
+before failure. In the Al2219 polycrystal of the Part II report the same
+$W_c = 0$ coupling needed no threshold, because the plastic work
+concentrates at the grain boundaries and the hole and the rest of the plate
+stays undamaged; in a single crystal there is no neighboring grain to
+compete with, the plastic work is nearly uniform along the gage, and all of
+it is counted toward damage. This is the reason for the plastic-work
+threshold $W_c$ of §7, which holds the phase field at zero until the plastic
+work at a point crosses it, and for the prefactors of Eq. (10) on the two
+energies. The $W_c = 0$ condition is kept as the reference against which
+§7 is read.
+
+### 6.5 Cost
+
+A coupled run takes 82 s per load step on two threads for the mechanics
+(19 Newton iterations) plus the three damage solves, 5 to 6.6 h to failure
+at 46% gauge strain, within a 16 GB resident-memory cap; the three
+searches took 27 h of wall time side by side, and the four calibrated
+runs are reported from their own snapshots (every second step, and the
+failure step).
+
+## 7. Phase-field ductile fracture: calibration with a plastic-work threshold
+
+*(in progress: $\ell_0 = 0.6$ mm fixed; $G_c$ searched at $W_c = 55$, 65 and
+75 MPa, bracketing the softening onset of the experimental curve; the
+prefactor on the elastic energy of Eq. (10) as the next calibration
+parameter; results follow as the author confirms them)*
+
+### 7.1 Design
+
+### 7.2 The threshold trend
+
+### 7.3 Calibrated pair and comparison with the experiment
+

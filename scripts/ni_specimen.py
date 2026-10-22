@@ -144,6 +144,7 @@ def stage_deck(sp: dict, deck: Path) -> Path:
             "CHECKPOINT": str(int(sp.get("checkpoint_every", 8))), "DTHRESHOLD": _num(sp.get("damage_threshold", 0.8)),
             "DT": _num(t_end / n_steps), "GC": _num(sp["Gc"]), "L0": _num(sp["l0"]), "ETA": _num(sp.get("eta", 0.0)),
             "ZETA": _num(sp.get("zeta", 1.0)), "WC": _num(sp.get("W_c", 0.0)),
+            "CHI": _num(sp.get("chi", 1.0)),   # elastic prefactor (PINNACLE elastic_prefactor, 2026-10-21)
             "DAMAGEMODEL": str(sp.get("damage_model", "at2")),
             "SEPDAMAGE": _num(sp.get("separation_damage", 0.85)),
         })

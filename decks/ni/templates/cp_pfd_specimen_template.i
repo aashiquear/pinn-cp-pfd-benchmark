@@ -81,6 +81,7 @@
     initial                = 0.0
     plastic_work_prefactor = @ZETA@
     plastic_work_threshold = @WC@
+    elastic_prefactor      = @CHI@   # chi on psi+ (1 = the form before the key; 0 = purely ductile driving force)
   []
   [./degradation]
     kind = pfd_degradation

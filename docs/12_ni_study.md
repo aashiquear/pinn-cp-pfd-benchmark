@@ -596,3 +596,11 @@ diffuse floor of d; that bounds the latest usable onset for each W_c. The driver
 "too low" and continues; the other five first-round runs (G_c 1.2 at W_c 75; 2 / 8 at 65; 4 / 16
 at 55) span the usable range.
 
+Report §6 (W_c = 0 condition) written 2026-10-21 from the plateau result: Figs. 11-15
+(`decks/ni/figures/pfd_search_L1_cal.i` is new: failure strain against G_c and against G_c / l0),
+Table 6, the carried pair l0 0.6 / G_c 30.95 and what the condition does not reproduce (diffuse d,
+curve 2-6% low, band normal to the axis); §7 skeleton for the W_c stage. PINNACLE gained
+`elastic_prefactor` (chi) on `pfd_driving_force` (ADR 0031 addendum 2026-10-21, author's request: the
+MOOSE CP-PFD carries such prefactors); the Ni pipeline passes it as `chi` (default 1, template key
+`elastic_prefactor`), the driver holds it per deck. Not used by the running W_c searches.
+
