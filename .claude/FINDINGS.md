@@ -491,3 +491,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Sharp cracks end runs on a mechanics failure one step before separation (max d 0.998, 28 nodes
   above 0.85 at 65 / 8, 0.4577). Proposed rule: a run ending on a mechanics failure with max d >
   0.99 counts as failed at its last converged strain.
+
+## 2026-10-22: author on the W_c first round; chi = 0 sweep launched
+- The max-d history of W_c 65 is the expected form; G_c made it fracture early. Mechanics failure
+  at d -> 1 may serve as the failure target for a sharp crack (`ni_specimen.py curve`:
+  failure_mode = mechanics_failure_cut when the run ends on a mechanics failure with max d > 0.99,
+  `cut_damage` key). Some diffuse field is kept on purpose so the crack path stays visible: a
+  trade-off between the mechanics failure and the sharpness, not a defect.
+- chi = 0 sweep (W_c 55 / 65 / 75, G_c searches) makes the W_c calibration final; the reporting
+  is decided after it.

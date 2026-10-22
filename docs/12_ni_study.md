@@ -656,3 +656,9 @@ max d only 0.15. Next round prepared, not launched: chi = 0 at W_c 55 / 65 / 75
 (`decks/ni/pfd/wc{55,65,75}_chi0_L1_h020.i`, G_c from 8 / 4 / 0.6), which removes the elastic
 barrier so that W_c alone sets the onset and the plastic work alone picks the site.
 
+Second round launched (2026-10-22 07:20, author's go-ahead): chi = 0 at W_c 55 / 65 / 75, six
+first-round runs side by side (`driver_chi0_wc*.log`). `ni_specimen.py curve` now records
+failure_mode: `separation`, or `mechanics_failure_cut` when the run ends on a mechanics failure
+with max d > 0.99 (`cut_damage`; the failing step's damage solve converged, so its max d counts):
+W_c 65 / G_c 8 (chi 1) is thereby a failure at 0.458, step 239; W_c 55 / G_c 16 (max d 0.72) is not.
+

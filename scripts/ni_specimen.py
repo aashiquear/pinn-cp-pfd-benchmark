@@ -295,10 +295,18 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
     # in the same step whose mechanics stops converging (the section loses its load);
     # that step has no gauge strain, so the failure strain is the last converged one.
     sep = next((x for x in res if x["separated"]), None)
-    sep_strain = None
+    sep_strain, mode = None, None
     if sep is not None:
         sep_strain = sep["gauge_strain"] if np.isfinite(sep["gauge_strain"]) else (
             valid[-1]["gauge_strain"] if valid else None)
+        mode = "separation"
+    elif (valid and len(valid) < len(res) and not died
+          and max(x["max_damage"] for x in res) > float(sp.get("cut_damage", 0.99))):
+        # A sharp crack (W_c > 0) ends the run on a mechanics failure at d -> 1 one step
+        # before the d > 0.85 zone spans the section; that step's damage solve did converge,
+        # so its max d counts (author 2026-10-22: failure at the last converged strain;
+        # ``cut_damage`` sets the max-d condition).
+        sep, sep_strain, mode = valid[-1], valid[-1]["gauge_strain"], "mechanics_failure_cut"
     ok = np.isfinite(s)
     summary = {"steps": len(res), "steps_valid": len(valid), "run_died": died,
                "final_gauge_strain": float(e[-1]) if len(e) else None, "final_grip_strain": valid[-1]["grip_strain"] if valid else None,
@@ -307,6 +315,7 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
                "initiation_gauge_strain_node": first_node["gauge_strain"] if first_node else None,
                "failure_gauge_strain": sep_strain,   # PINNACLE stop_separation
                "failure_step": sep["step"] if sep else None,
+               "failure_mode": mode,                 # separation | mechanics_failure_cut | None
                "damage_threshold": float(sp.get("damage_threshold", 0.8)),
                "final_max_damage": valid[-1]["max_damage"] if valid else None,
                "gage_area_mm2": area, "mean_thickness_mm": t_mean,
