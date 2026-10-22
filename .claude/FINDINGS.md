@@ -474,3 +474,9 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Author: the expected max-d history is exponential growth near fracture, not the parabolic rise
   that flattens at 20-30% strain seen with W_c = 0; that curve is reported anyway as the reference
   (report §6.4).
+- Checked 2026-10-21 (scratchpad spy on the staggered executioner, CP cube, implicit update): the
+  psi+ the coupler passes to H equals 1/2 E^e : C_voigt : E^e (nodal max 8.5e4 Pa against 9.2e4 at
+  the QPs, means equal to four digits) and sigma_1^2 / 2E (1.1e5). No coupler error; the tenfold
+  driving energy at the Ni fillets is the local elastic energy itself (stress concentration, cubic
+  anisotropy, and the degradation feedback once d > ~0.3). The AT2 strength barrier is physical
+  in this formulation; chi = 0 is the way around it for a late ductile onset.

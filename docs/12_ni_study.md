@@ -621,4 +621,7 @@ design: with chi = 1 the usable G_c / l0 is bounded below by the fillet strength
 caps how late the onset can be; chi = 0 removes the elastic barrier and lets W_c alone set the
 onset. The wc75 search stopped itself (gc1.2 undecided); wc55 stops after gc16 (gc4 undecided);
 wc65 continues after gc8.
+Check done (2026-10-21 23:30): on the CP cube the psi+ passed to H equals 1/2 E^e : C : E^e and
+sigma_1^2 / 2E to within the nodal averaging; the coupler is right, and the fillet driving energy is
+the local elastic energy. No PINNACLE change.
 
