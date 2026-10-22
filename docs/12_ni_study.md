@@ -625,3 +625,34 @@ Check done (2026-10-21 23:30): on the CP cube the psi+ passed to H equals 1/2 E^
 sigma_1^2 / 2E to within the nodal averaging; the coupler is right, and the fillet driving energy is
 the local elastic energy. No PINNACLE change.
 
+First round complete (2026-10-22 06:31). Figures `decks/ni/figures/pfd_curves_L1_wc_round1.i`,
+`pfd_shape_L1_wc_round1.i`, `_damage.i` (the shape tool now draws the last snapshot of a run that
+did not separate, so marked):
+
+| W_c (MPa) | G_c (MPa mm) | G_c / l0 | end | max d at 10 / 20 / 30 / 40% | stress / experiment at 20-45% | where |
+|---|---|---|---|---|---|---|
+| 0 (carried) | 30.95 | 51.6 | failed 0.460 | 0.29 / 0.51 / 0.65 / 0.75 | 0.97 / 0.96 / 0.95 / 0.95 / 0.94 | gage, 0.21 |
+| 55 | 4 | 6.7 | died 0.122 (max d 0.15; CP fallback, memory cap) | 0.02 ... | 1.00 | - |
+| 55 | 16 | 26.7 | mechanics failed at 0.480, not separated | 0.02 / 0.06 / 0.10 / 0.38 | 0.995 / 0.993 / 0.996 / 0.992 / 0.992 | gage, diffuse |
+| 65 | 2 | 3.3 | separated 0.138 at -0.16 (fillet) | 0.28 / 1 | - | fillet |
+| 65 | 8 | 13.3 | mechanics failed at 0.458, max d 0.998 (28 nodes > 0.85), not separated | 0.05 / 0.13 / 0.25 / 0.54 | 0.993 / 0.988 / 0.989 / 0.983 / 0.970 | fillet (-0.1) |
+| 75 | 0.3 | 0.5 | separated 0.037 at -0.10 (fillet) | - | - | fillet |
+| 75 | 1.2 | 2.0 | died 0.092 (max d 0.67) | - | - | fillet |
+
+The trend the author asked for is there: raising W_c holds the phase field down (d < 0.1 to 30%
+at W_c 55 against 3% at W_c 0), the stress-strain curve returns onto the experiment (within 1% to
+45% at W_c 55 / G_c 16, where the peak is 241 MPa against the experiment's 239), and the max-d
+history takes the expected form: flat, a knee where the plastic work crosses W_c (37% at W_c 55),
+then an accelerating rise (0.10 at 30%, 0.38 at 40%, 0.71 at 48%). But with chi = 1 every G_c small
+enough to fail by 0.463 lets the elastic energy crack the fillets first (G_c / l0 <= 7 MPa), and at
+the one pair that nearly reached the target (65 / 8) the damage localized at the fillet (x = 8 mm,
+-0.1 of the gage), not in the gage: the elastic driving energy picks the fillet, the plastic work
+the thinnest station. Two numerical notes: (i) with a sharp crack the mechanics Newton fails at
+d -> 1 one step before the d > 0.85 zone spans the section (65 / 8: 0.4577, within 0.0053 of the
+target; the W_c = 0 runs dropped their load first and separated), so a run that ends on a mechanics
+failure with max d > 0.99 should count as failed at its last converged strain (proposed to the
+author); (ii) the W_c 55 / G_c 4 death was a CP fallback at one point then the memory cap, with
+max d only 0.15. Next round prepared, not launched: chi = 0 at W_c 55 / 65 / 75
+(`decks/ni/pfd/wc{55,65,75}_chi0_L1_h020.i`, G_c from 8 / 4 / 0.6), which removes the elastic
+barrier so that W_c alone sets the onset and the plastic work alone picks the site.
+

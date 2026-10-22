@@ -74,10 +74,16 @@ def _pair(v) -> tuple[float, float]:
 
 
 def failure_frame(run: Path) -> tuple[dict, dict, dict]:
-    frac = json.loads((run / "fracture.json").read_text())
+    """The separated snapshot; for a run that never separated, its last snapshot (so marked)."""
+    fj = run / "fracture.json"
+    frac = json.loads(fj.read_text()) if fj.exists() else {"separated": False}   # a killed run has none
     summ = json.loads((run / "summary.json").read_text())
     if not frac.get("separated"):
-        raise SystemExit(f"{run}: no separated snapshot (fracture.json)")
+        frames = sorted((run / "solver").glob("fields_step*.vtk"))
+        if not frames:
+            raise SystemExit(f"{run}: no separated snapshot and no snapshots (fracture.json)")
+        frac = {**frac, "snapshot": frames[-1].name, "last_frame": True}
+        return read_vtk(frames[-1]), frac, summ
     return read_vtk(run / "solver" / frac["snapshot"]), frac, summ
 
 
@@ -167,9 +173,13 @@ def main(argv):
         a = fig.add_subplot(gs[i + 1, 0])
         pc = draw_run(a, v, f, lo, hi)
         g = json.loads((_resolve(_str(r["dir"]), deck) / "case.json").read_text())["substitutions"]
-        a.set_title(r"%s, $G_c$ = %s MPa mm: failure at %.1f%% gauge strain, at %.2f of the gage"
-                    % (_str(r["label"]), g["GC"], 100 * summ["failure_gauge_strain"], frac["location_fraction"]),
-                    fontsize=8)
+        if frac.get("last_frame"):
+            title = r"%s, $G_c$ = %s MPa mm: no separation; last snapshot, %.1f%% gauge strain" % (
+                _str(r["label"]), g["GC"], 100 * summ["final_gauge_strain"])
+        else:
+            title = r"%s, $G_c$ = %s MPa mm: failure at %.1f%% gauge strain, at %.2f of the gage" % (
+                _str(r["label"]), g["GC"], 100 * summ["failure_gauge_strain"], frac["location_fraction"])
+        a.set_title(title, fontsize=8)
         if i == n - 1:
             a.set_xlabel("x (mm), deformed")
     cax = fig.add_subplot(gs[1:, 1])

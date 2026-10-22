@@ -480,3 +480,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
   driving energy at the Ni fillets is the local elastic energy itself (stress concentration, cubic
   anisotropy, and the degradation feedback once d > ~0.3). The AT2 strength barrier is physical
   in this formulation; chi = 0 is the way around it for a late ductile onset.
+
+## 2026-10-22: W_c first round (chi = 1): trend confirmed, fillets are the elastic weak spot
+- Raising W_c holds d down and puts the curve back on the experiment (W_c 55 / G_c 16: within 1% to
+  45%, peak 241 vs 239 MPa; d < 0.1 to 30%, knee at 37%, 0.71 at 48%, no failure). Max-d history
+  takes the expected flat-then-accelerating form.
+- With chi = 1, every G_c / l0 <= 7 MPa cracks the fillets from the elastic energy before W_p reaches
+  W_c, and at 65 / 8 (13 MPa) the near-failure localized at the fillet, not the gage. The W_c > 0
+  calibration therefore needs chi = 0 (purely ductile driving force): decks prepared, not launched.
+- Sharp cracks end runs on a mechanics failure one step before separation (max d 0.998, 28 nodes
+  above 0.85 at 65 / 8, 0.4577). Proposed rule: a run ending on a mechanics failure with max d >
+  0.99 counts as failed at its last converged strain.
