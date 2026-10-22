@@ -604,3 +604,21 @@ curve 2-6% low, band normal to the axis); §7 skeleton for the W_c stage. PINNAC
 MOOSE CP-PFD carries such prefactors); the Ni pipeline passes it as `chi` (default 1, template key
 `elastic_prefactor`), the driver holds it per deck. Not used by the running W_c searches.
 
+First round, four of six runs (2026-10-21 22:40). Every small-G_c run cracked at the fillet/gage
+transition long before the plastic work reached W_c: W_c 75 / G_c 1.2 (G_c / l0 2 MPa) died at
+9.2% (max d 0.67, oom-killed in the mechanics fallback); W_c 65 / G_c 2 (3.3 MPa) separated at
+13.8% at -0.16 of the gage (in the fillet); W_c 55 / G_c 4 (6.7 MPa) died at 12.2% with max d 0.15
+(a backward-Euler fallback at one point, then the memory cap). W_c 55 / G_c 16 (27 MPa) is at 30%
+and W_c 65 / G_c 8 (13 MPa) at 19%, alive. The driving force backed out of the max-d history by the
+homogeneous AT2 relation H = (G_c / l0) d / (2 (1 - d)) is the same function of strain at every
+G_c (0.012 MPa at 0.5%, ~0.29 at 8%, ~0.44 at 10%), i.e. independent of the damage: it is the
+elastic driving energy, and it is about ten times sigma_1^2 / 2E of the nominal stress. AT2 has a
+tensile strength sigma_c = sqrt(27 E G_c / (256 l0)) (103 / 205 / 265 / 375 MPa for the four pairs)
+and the fillets cracked at nominal stresses of 94 / 127 / 148 / 145 MPa, a factor 1.1-2.6 below
+it, consistent with the local elastic energy being that much above the nominal estimate. A check
+of what the coupler passes as psi+ on the CP cube is running (scratchpad). Consequence for the
+design: with chi = 1 the usable G_c / l0 is bounded below by the fillet strength (>~ 10 MPa), which
+caps how late the onset can be; chi = 0 removes the elastic barrier and lets W_c alone set the
+onset. The wc75 search stopped itself (gc1.2 undecided); wc55 stops after gc16 (gc4 undecided);
+wc65 continues after gc8.
+
