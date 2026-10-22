@@ -1,6 +1,6 @@
 # Every run of the W_c = 0 G_c(l0) calibration on L.1 h020 (docs/12 §6.2), one panel per l0, with
 # the max-d row: how the curve and the damage history move with G_c at each length scale. Read by
-# scripts/ni_pfd_curve_figures.py. l0 0.4 / G_c 21.1 joins when its run ends.
+# scripts/ni_pfd_curve_figures.py.
 [Figures]
   out            = ../../../figures/ni/pfd/curves_L1_all.png
   markers        = ../../../data/digitized/ni_fig3_experiment_markers.csv
@@ -34,6 +34,10 @@
   []
   [./l04_gc2017]
     dir   = ../../../results/ni_study/pfd/cal_L1_h020/l0.4/gc20.17
+    panel = 0
+  []
+  [./l04_gc211]
+    dir   = ../../../results/ni_study/pfd/cal_L1_h020/l0.4/gc21.1
     panel = 0
   []
   [./l04_gc22]

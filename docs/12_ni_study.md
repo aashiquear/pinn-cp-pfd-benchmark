@@ -540,6 +540,27 @@ experiment holds 239-241 MPa from 45 to 50% and drops at 51%. PINNACLE degrades 
 before the resolved shear stress (`crystal_plasticity.degrade_pk2`), so damaged material keeps its
 flow stress and the load falls only once g(d) is nearly zero at the section.
 
+Plateau result (2026-10-21). l0 0.4 / G_c 21.1 failed at 0.461 (0.17 of the gage): hit. l0 1.2 /
+G_c 61.1 failed at 0.472 at 0.32 of the gage, with max d only 0.88 when the d > 0.85 zone first
+spanned the section (a wide, shallow band). Figures `decks/ni/figures/pfd_curves_L1_plateau.i`,
+`pfd_shape_L1_plateau.i`, `_damage.i`:
+
+| l0/h | l0 (mm) | G_c (MPa mm) | G_c / l0 | failure | location | max stress vs l0 0.8 (5-43%) |
+|---|---|---|---|---|---|---|
+| 2 | 0.4 | 21.1 | 52.8 | 0.461 | 0.17 | 0.08% |
+| 3 | 0.6 | 30.95 | 51.6 | 0.460 | 0.21 | 0.08% |
+| 4 | 0.8 | 40.75 | 50.9 | 0.463 | 0.25 | - |
+| 6 | 1.2 | 61.1 | 50.9 | 0.472 | 0.32 | 0.30% |
+
+The stress-strain curve does not depend on l0 at all at fixed G_c / l0 (the curves coincide, and
+max d against strain too). The failure strain is flat over l0/h = 2-4 and rises at 6; the fracture
+zone widens with l0 (2.2 / 2.8 / 3.2 / 3.4 mm at the top face) and its center drifts along the gage
+toward the middle (the thinnest station is at 0.20). By the author's rule (first two consecutive
+l0/h that barely change the result; take the larger) l0/h = 2 and 3 agree in curve, failure strain
+and location within 0.04 of the gage, which gives l0 = 0.6 mm (l0/h = 3); l0/h = 4 still agrees in
+curve and failure strain but the zone has moved to 0.25. Proposed to the author: l0 = 0.6 mm, G_c =
+30.95 MPa mm for the W_c = 0 condition; the W_c stage runs at l0 = 0.6.
+
 ### 6.3 Plastic-work threshold W_c on the CP route (2026-10-20)
 
 The threshold already exists in PINNACLE's `pfd_driving_force` (ADR 0031: H = max(H, psi+ + zeta
