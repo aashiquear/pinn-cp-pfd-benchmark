@@ -587,3 +587,12 @@ experiment to 46.3%, failure strain, fracture outline on E_xx and d; the measure
 criterion is how long the curve follows the experiment before it leaves (the CP-only curve is
 within 0.8% to 45%).
 
+First result (2026-10-21 20:34): W_c 75 / G_c 0.3 failed at 3.7% gauge strain in the fillet
+(location -0.10): with G_c / l0 = 0.5 MPa the unthresholded elastic energy psi+ alone drives the
+damage (d 0.04 at 0.25% strain, where psi+ ~ 0.011 MPa and AT2 gives d ~ 2 psi+ l0 / G_c), long
+before any plastic work crosses W_c. W_c gates the plastic work only. In the gage near 45% psi+ is
+about 0.17 MPa, so G_c / l0 must stay a few MPa above zero (G_c >~ 2 at l0 0.6) or psi+ sets a
+diffuse floor of d; that bounds the latest usable onset for each W_c. The driver read the run as
+"too low" and continues; the other five first-round runs (G_c 1.2 at W_c 75; 2 / 8 at 65; 4 / 16
+at 55) span the usable range.
+

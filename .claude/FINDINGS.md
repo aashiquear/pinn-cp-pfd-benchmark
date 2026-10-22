@@ -453,3 +453,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Trap: the gage-peak plastic work at the target strain is about 76 MPa (W_c = 0 check run), so a
   W_c above it cannot fail at the target. The W_c = 85 the author first named was replaced by 55
   for that reason (told to the author).
+
+## 2026-10-21: W_c stage trap: the elastic driving force is not thresholded
+- PINNACLE's pfd_driving_force is H = max(H, psi+ + zeta max(W_p - W_c, 0)): W_c gates the plastic
+  work only; the elastic energy psi+ always drives damage. With a small G_c it alone cracks the
+  specimen: W_c 75 / G_c 0.3 (G_c / l0 = 0.5 MPa) reached d 0.04 at 0.25% strain (psi+ ~ 0.011 MPa
+  at 54 MPa stress, AT2 d ~ 2 psi+ l0 / G_c) and separated at the fillet at 3.7% strain.
+- Floor: in the gage near 45% strain psi+ is about 0.17 MPa (226 MPa stress), so d from psi+ alone
+  is about 0.34 MPa / (G_c / l0); G_c / l0 >= 3.4 MPa keeps it below 0.1 (G_c >= 2 at l0 0.6). That
+  bounds how late damage can start for a given W_c; the running pairs (65 / 2, 65 / 8, 75 / 1.2)
+  cover the range. A PINNACLE option that drops or thresholds psi+ (elastic prefactor) would lift
+  the floor; not built unless the author asks.
