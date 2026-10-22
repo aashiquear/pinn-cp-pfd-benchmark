@@ -28,7 +28,7 @@ count, cutbacks; `summary.json`).
     python3 scripts/ni_study.py decks/ni/cp/cal_gn1.i collect
     python3 scripts/ni_gauss_newton.py decks/ni/cp/cal_gn1.i    # writes cal_center2.i, cal_gn2.i
 
-repeated for `cal_gn2.i` .. `cal_gn4.i`. The centre of iteration 4 is the
+repeated for `cal_gn2.i` .. `cal_gn4.i`. The center of iteration 4 is the
 calibrated set, `decks/ni/cp/calibrated_L1_h040.i`.
 
 ## 4. Figures

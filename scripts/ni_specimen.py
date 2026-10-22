@@ -390,7 +390,7 @@ def stage_fracture(sp: dict, deck: Path) -> dict:
 
 def _gage_x(sp: dict, deck: Path) -> tuple[float, float]:
     """x (mm) of the first and last thickness station (the gage- / gage+ planes): the
-    gage is centred on the bar (hexaform dogbone, mesh.json: length, gage_length)."""
+    gage is centered on the bar (hexaform dogbone, mesh.json: length, gage_length)."""
     meta = json.loads(_resolve(str(sp["mesh"]), deck).with_name("mesh.json").read_text())
     x0 = 0.5 * (float(meta["length"]) - float(meta["gage_length"]))
     return x0, x0 + float(meta["gage_length"])

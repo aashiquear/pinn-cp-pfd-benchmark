@@ -3,7 +3,7 @@
 # scripts/ni_specimen.py from a specimen deck that sets Gc (and l0); every @KEY@ is
 # substituted, nothing is edited by hand.
 #
-# UNITS: millimetre, megapascal, second (the paper's system, docs/11 §4).
+# UNITS: millimeter, megapascal, second (the paper's system, docs/11 §4).
 # Mechanics as decks/ni/templates/cp_specimen_template.i (x- clamped, x+ clamped in y
 # and z and pulled in x; gauge strain from gage-/gage+, reaction on x+); fracture as the
 # Al2219 CP+PFD plate (decks/pfd_study/templates/cp_pfd_plate_template.i): AT2 phase

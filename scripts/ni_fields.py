@@ -5,8 +5,8 @@ Reads ``decks/ni/figures/fields_*.i``: for every run in ``[Runs]`` and every tim
 in ``[Figures] times`` it picks the snapshot of the run's ``fields.pvd`` nearest
 that time, reads the legacy-ASCII VTK (points, hex8 cells, point displacement,
 the cell scalar ``field``), and draws the deformed bottom face of every element
-in the x-y plane coloured by the scalar. One row per run, one column per time,
-one colour scale per column; each panel names the run's gauge strain at that
+in the x-y plane colored by the scalar. One row per run, one column per time,
+one color scale per column; each panel names the run's gauge strain at that
 time (from its results.csv).
 
 Usage: ni_fields.py decks/ni/figures/fields_mesh.i

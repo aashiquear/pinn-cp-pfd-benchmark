@@ -1,4 +1,4 @@
-# Ni single crystal, specimen L.1: calibration CENTRE (iteration 4, from gn3's step).
+# Ni single crystal, specimen L.1: calibration CENTER (iteration 4, from gn3's step).
 # calibration geometry (docs/11 §2, §5 stage 2): CP only, PINNACLE implicit state
 # update (ADR 0033), grip strain 36% in 360 steps (1e-3 per step; the gauge strain
 # runs about 1.5x the grip strain, to beyond the 0.51 of Fig. 3), bar strain rate 5e-2/s (grip speed 1.27 mm/s, about 7.5e-2/s on the gage).

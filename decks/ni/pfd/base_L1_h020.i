@@ -44,6 +44,10 @@
   memory_cap_gb    = 16
   Gc               = 125
   l0               = 0.4
+  zeta             = 1          # plastic-work driving force prefactor
+  W_c              = 0          # plastic-work threshold (MPa): the W_c = 0 condition; the W_c stage sets it per deck
+  eta              = 0
+  damage_model     = at2
   stop_damage      = 0
   checkpoint_every = 8
 []

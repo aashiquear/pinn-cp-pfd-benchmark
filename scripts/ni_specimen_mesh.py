@@ -112,8 +112,8 @@ def main(argv):
         ax = axes[0]
         pts = mesh.points; cells = mesh.cells; bottom = cells[:, :4]
         ax.add_collection(PolyCollection(pts[bottom][:, :, :2], facecolors=["#d9e3f0", "#f5deb3", "#dddddd"][0], edgecolors="#555555", linewidths=0.25))
-        colours = {1: "#d9e3f0", 2: "#f5deb3", 3: "#dddddd"}
-        for b, c in colours.items():
+        colors = {1: "#d9e3f0", 2: "#f5deb3", 3: "#dddddd"}
+        for b, c in colors.items():
             sel = mesh.block_id == b
             if sel.any():
                 ax.add_collection(PolyCollection(pts[bottom[sel]][:, :, :2], facecolors=c, edgecolors="#555555", linewidths=0.25))

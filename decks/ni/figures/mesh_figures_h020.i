@@ -3,7 +3,7 @@
 # Read by scripts/ni_mesh_figures.py. Same style as the calibration figures
 # (decks/ni/figures/cal_figures.i). Every run postdates PINNACLE ddc76c3, so curves run
 # over every converged step up to the first unconverged one (ni_specimen.py curve); a
-# run that spent its cutback budget early ends there (labelled with its end strain).
+# run that spent its cutback budget early ends there (labeled with its end strain).
 [Figures]
   out_dir     = ../../../figures/ni/mesh_h020
   markers     = ../../../data/digitized/ni_fig3_experiment_markers.csv

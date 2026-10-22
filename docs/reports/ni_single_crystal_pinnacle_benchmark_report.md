@@ -211,8 +211,8 @@ as in the paper.
 
 **Boundary conditions and loading.** The grip end $x = 0$ is clamped
 ($\mathbf{u} = 0$ on node set `x-`); the grip end $x = 25.4$ mm is clamped
-in $y$ and $z$ and displaced along $+x$ by a linear ramp to 36% of the bar
-length (9.14 mm) in 7.2 s, i.e. a bar strain rate of
+in $y$ and $z$ and displaced along $+x$ by a linear ramp to 30% of the bar
+length (7.62 mm) in 6.0 s, i.e. a bar strain rate of
 $5 \times 10^{-2}$ s$^{-1}$ (1.27 mm s$^{-1}$). All other faces are
 traction-free. Because the gage is the narrowest and thinnest section, it
 carries most of the elongation: the gauge strain runs 1.8 times the bar
@@ -616,7 +616,7 @@ comparison uses (40% and 45%).
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | h040 | 220 | 0.4 | 1 | 92.0 | 147.2 | 203.7 | 244.7 | 275.8 | 288.5 | 57.3% | +9.9 / +13.5 / +16.0 / +18.5% | 1.7 h (2) |
 | h020 | 792 | 0.2 | 1 | 86.9 | 134.0 | 179.4 | 210.9 | 232.8 | 240.9 | 59.0% | | 6.9 h (2) |
-| h010 | 3,168 | 0.1 | 1 | 85.3 | 129.7 | 172.2 | 199.9 | 217.5 | 223.6 | 47.1% | -3.2 / -4.0 / -5.2 / -6.6% | 24.5 h (8) |
+| h010 | 3,168 | 0.1 | 1 | 85.3 | 129.7 | 172.2 | 199.9 | 217.5 | 223.6 | 47.1% | -3.2 / -4.0 / -5.2 / -6.6% | 23 h (8) |
 | h020, two layers | 1,584 | 0.2 | 2 | 86.7 | 132.3 | 177.9 | 209.1 | 230.7 | - | 44.0% | -1.3 / -0.8 / -0.9 / -0.9% | 8.4 h (4) |
 
 ### 5.2 Results

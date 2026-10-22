@@ -1,6 +1,6 @@
 # Equivalent plastic strain fields of the Ni mesh study on L.1 with the h020-calibrated set
 # (docs/12 §5), read by scripts/ni_fields.py. Plan view (x-y) of the deformed specimen
-# around the gage, one row per run, one column per time; the colour scale is shared
+# around the gage, one row per run, one column per time; the color scale is shared
 # within a column. PINNACLE writes the snapshots (every 20 steps) at the end of a run and
 # records them only at converged steps: h010's are valid to 4.8 s (step 240; its curve
 # ends at step 242); h020z2 was stopped by the memory cap and has none.

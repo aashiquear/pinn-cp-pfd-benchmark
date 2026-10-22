@@ -13,6 +13,7 @@ Deck-driven (PINNACLE .i syntax):
     tolerance   = 0.004                         # accept |failure strain - target| <= this (two load steps)
     max_runs    = 6                             # runs per length scale
     threads     = 2
+    W_c         = 0                             # optional: plastic-work threshold (MPa) held for every run
 
 The failure strain of a run is the gauge strain of its first separated step
 (PINNACLE stop_separation: d > 0.85 cuts the grips apart; `ni_specimen.py
@@ -103,10 +104,11 @@ def search(l0: float, guess: float, cal: dict, base: Path, out_root: Path, log: 
     def one(gc: float, it: int) -> dict:
         cdir = out_root / f"l{l0:g}" / f"gc{gc:.4g}"
         t0 = time.time()
-        res = run_case(base, cdir, {"l0": f"{l0:g}", "Gc": f"{gc:.4g}"}, threads)
+        fixed = {k: str(cal[k]) for k in ("W_c", "zeta") if k in cal}   # the W_c stage: held per deck
+        res = run_case(base, cdir, {"l0": f"{l0:g}", "Gc": f"{gc:.4g}", **fixed}, threads)
         fs = res.get("failure_gauge_strain")
         frac = res.get("fracture", {})
-        rec = {"l0": l0, "run": it, "Gc": float(f"{gc:.4g}"), "failure_strain": fs,
+        rec = {"l0": l0, "W_c": float(cal.get("W_c", 0.0)), "run": it, "Gc": float(f"{gc:.4g}"), "failure_strain": fs,
                "final_gauge_strain": res.get("final_gauge_strain"), "run_died": bool(res.get("run_died")),
                "failed_pipeline": bool(res.get("failed")), "location_fraction": frac.get("location_fraction"),
                "angle_to_axis_deg": frac.get("angle_to_axis_deg"), "peak_eng_stress": res.get("peak_eng_stress"),

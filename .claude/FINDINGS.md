@@ -230,8 +230,8 @@ NOT derivable from the code: measured facts, decisions, and traps.
   every J2 result at W_c 0 or 20 is superseded (kept as the calibration record). CP+PFD
   unchanged (Gc 1106, l0 5, W_c 0). Sensitivities carry four values per parameter; the
   mesh studies carry h20/h40/h80; the shape study (docs/10 §9) ran all three series on
-  CP+PFD. Figure rules: colour per parameter and line style per value in categorical
-  studies, colour bars on field maps, crack maps = equivalent plastic strain with the
+  CP+PFD. Figure rules: color per parameter and line style per value in categorical
+  studies, color bars on field maps, crack maps = equivalent plastic strain with the
   d >= 0.8 elements solid, a GIF of initiation/propagation (`pfd_fields.py gif = true`).
 - The J2 VTK series carry `equivalent_plastic_strain` only from PINNACLE 863b787 (ADR 0031
   item 16); older J2 series (W_c 0/20 calibrations) do not. Local PINNACLE runs need
@@ -430,3 +430,17 @@ NOT derivable from the code: measured facts, decisions, and traps.
   the aim is d ~ 0 until about 45% (W_c near the plastic work there; docs/12 §6.3 estimate ~75 MPa
   gage peak), then G_c sets failure at 0.463.
 - PFD/fracture figures show the experiment only up to 46.3% (Fig. 3 trace and markers cut there).
+
+## 2026-10-21: Ni l0 plateau measured; earlier author decisions recorded here for completeness
+- Measured (docs/12 §6.2): at fixed G_c / l0 (about 51 MPa) the CP+PFD stress-strain curve and the
+  max-d history do not depend on l0 at all (l0/h = 2, 3, 4, 6 within 0.3%); failure strain 0.461 /
+  0.460 / 0.463 / 0.472; the d > 0.85 zone widens with l0 (2.2 to 3.4 mm) and its center drifts along
+  the gage (0.17 / 0.21 / 0.25 / 0.32; thinnest station 0.20). By the author's rule l0/h = 2 and 3
+  agree, so l0 = 0.6 mm (G_c 30.95) is proposed for the W_c = 0 condition; awaiting the author.
+- Author 2026-10-15 (docs/11 §1-3, decks/ni/mesh/*.i): grips at the common nominal 0.35 mm with
+  the measured thickness variation only in the gage; gage width 1.85 mm measured from the plan
+  view; Fig. 3 is the hardening reference, L.1 the geometry of the calibration.
+- Author 2026-10-16: earlier calibration iterations appear only in the convergence figure; the
+  report carries the calibrated iteration's set alone.
+- Author 2026-10-17: no study of the source of the coarse-mesh (h040) stiffness; the mesh study
+  on the h020 set settles it.

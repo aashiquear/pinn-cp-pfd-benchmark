@@ -1,6 +1,6 @@
 # Ni CP calibration on the h020 mesh, Gauss-Newton iteration 1: the h040-calibrated set as
-# centre and one multiplicative perturbation per free parameter (scripts/ni_gauss_newton.py).
-# The centre run is the mesh study's h020 case (same deck values), copied in as `base`.
+# center and one multiplicative perturbation per free parameter (scripts/ni_gauss_newton.py).
+# The center run is the mesh study's h020 case (same deck values), copied in as `base`.
 [Study]
   base       = cal_center1.i
   out_root   = ../../../../results/ni_study/cal_h020/gn1

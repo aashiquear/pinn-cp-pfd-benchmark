@@ -28,7 +28,7 @@
 []
 
 # Iterations: root holds base/ and <param>_p/ case directories and the
-# gauss_newton.json the step script wrote (centre, per-marker errors, Jacobian).
+# gauss_newton.json the step script wrote (center, per-marker errors, Jacobian).
 [Iterations]
   [./gn1]
     root  = ../../../results/ni_study/cal_h020/gn1

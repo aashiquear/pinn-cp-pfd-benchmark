@@ -1,5 +1,6 @@
 # l0 plateau on h020 at G_c / l0 held near 51 MPa (docs/12 §6.2, author's option 1, 2026-10-20): the
 # calibrated pairs l0/h = 2, 3, 4 and the l0/h = 6 check. Read by scripts/ni_pfd_curve_figures.py.
+# Result (2026-10-21): curves coincide (max 0.3%); failure 0.461 / 0.460 / 0.463 / 0.472; zone at 0.17 / 0.21 / 0.25 / 0.32.
 [Figures]
   out            = ../../../figures/ni/pfd/curves_L1_plateau.png
   markers        = ../../../data/digitized/ni_fig3_experiment_markers.csv

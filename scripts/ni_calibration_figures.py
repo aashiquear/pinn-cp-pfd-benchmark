@@ -11,7 +11,7 @@ scripts/report_figures.py):
   cal_error.png        per-marker absolute and relative error
   cal_sensitivity.png  dS/d(ln p) of each parameter at the markers
 
-and ``cal_convergence.png`` (the centre of every iteration listed in
+and ``cal_convergence.png`` (the center of every iteration listed in
 ``[Iterations]`` on one axis, and the RMSE against the iteration).
 
 Curves are gauge strain (``gauge_strain``) against engineering stress
@@ -124,7 +124,7 @@ def cut_note(ax, cut):
 
 
 def early_end(e: np.ndarray, e0: np.ndarray, f: dict) -> str:
-    """Legend suffix for a perturbation curve that ends before the centre curve
+    """Legend suffix for a perturbation curve that ends before the center curve
     (author, 2026-10-18: say so on the figure rather than rerun), else ''."""
     if e[-1] < e0[-1] - 1.0:
         return ",\nends at %.1f%% (%s)" % (e[-1], _str(f.get("early_end_reason", "run stopped")))
@@ -146,7 +146,7 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
         return summary
     name = "cal"
 
-    # centre curve
+    # center curve
     fig, ax = plt.subplots(figsize=(5.6, 4.0), dpi=dpi)
     ax.plot(e0, s0, color=COLORS["fe"], lw=1.8, label=set_label(center, prm, head))
     exp_marker(ax, ex, ey)
@@ -249,7 +249,7 @@ def fig_convergence(its: list[dict], cfg: dict, deck: Path, out: Path) -> None:
     a2.semilogy(n[1:], [it["pred"] for it in its[:-1]], "s", mfc="white", color="#777",
                 label="linear prediction of the previous step")
     a2.set_xticks(n)
-    # labelled decades and halves, so two iterations still show a readable scale
+    # labeled decades and halves, so two iterations still show a readable scale
     vals = [it["rmse"] for it in its] + [it["pred"] for it in its[:-1] if it["pred"] is not None]
     lo, hi = 0.7 * min(vals), 1.3 * max(vals)
     ticks = [t for t in (1, 2, 5, 10, 20, 50, 100, 200) if lo <= t <= hi]

@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """FE Gauss-Newton step of the Ni CP calibration, from a finished iteration deck.
 
-Reads a GN study deck (decks/ni/cp/cal_gnN.i: [Study] base = the centre
+Reads a GN study deck (decks/ni/cp/cal_gnN.i: [Study] base = the center
 specimen deck, markers = the Fig. 3 experiment markers, [Cases] = one
 perturbed parameter per case; run by scripts/ni_study.py), builds the
 finite-difference Jacobian of the engineering stress (against the GAUGE
 strain, the DIC analogue) at the markers from the finished FE runs, takes a
 damped (Levenberg-Marquardt) step in log-parameter space clipped to the
-bounds below, and writes the next centre deck and the next GN deck. Markers
+bounds below, and writes the next center deck and the next GN deck. Markers
 below 0.3% strain (the elastic rise) are excluded.
 
 Bounds (log space, x0.1 .. x10 of the paper's set) keep the step inside the
 range where the law's reading is the paper's. Writes
 <out_root>/gauss_newton.json with the residuals, Jacobian, step, predicted
-RMSE and the per-marker errors of the centre.
+RMSE and the per-marker errors of the center.
 
 The next decks are written next to the given one (cal_center{n+1}.i,
 cal_gn{n+1}.i) and the next out_root is the given one with gn{n} -> gn{n+1},
@@ -105,8 +105,8 @@ def main(argv):
            "jacobian_dS_dlnp": J.tolist(), "perturbations": pert, "step_ln": (z1 - z).tolist(),
            "next": dict(zip(names, p1.tolist())), "rmse_predicted_linear_MPa": rmse_pred}
     (out_root / "gauss_newton.json").write_text(json.dumps(rec, indent=1))
-    print(f"iteration {n}: centre rmse {rmse0:.1f} MPa; predicted after step {rmse_pred:.1f} MPa")
-    print("  centre:", {k: float(f"{v:.5g}") for k, v in zip(names, p0)})
+    print(f"iteration {n}: center rmse {rmse0:.1f} MPa; predicted after step {rmse_pred:.1f} MPa")
+    print("  center:", {k: float(f"{v:.5g}") for k, v in zip(names, p0)})
     print("  next:  ", {k: float(f"{v:.5g}") for k, v in zip(names, p1)})
     print("  sensitivity dS/dln p at 2% / 10% / 30% (MPa):")
     for j, k in enumerate(names):
@@ -119,9 +119,9 @@ def main(argv):
     next_root = re.sub(rf"gn{n}$", f"gn{n+1}", out_root_rel)
     center_dir = re.sub(rf"gn{n}$", f"center{n+1}", out_root_rel)
     center_text = re.sub(r"^(\s*out_dir\s*=\s*)\S+", rf"\g<1>{center_dir}", center_text, count=1, flags=re.M)
-    center_text = re.sub(r"^# Ni single crystal, specimen L.1.*$", f"# Ni single crystal, specimen L.1: calibration CENTRE (iteration {n+1}, from gn{n}'s step).", center_text, count=1, flags=re.M)
+    center_text = re.sub(r"^# Ni single crystal, specimen L.1.*$", f"# Ni single crystal, specimen L.1: calibration CENTER (iteration {n+1}, from gn{n}'s step).", center_text, count=1, flags=re.M)
     (deck.parent / f"cal_center{n+1}.i").write_text(center_text)
-    gn = [f"# Ni CP calibration, Gauss-Newton iteration {n+1}: centre from iteration {n}'s step and one",
+    gn = [f"# Ni CP calibration, Gauss-Newton iteration {n+1}: center from iteration {n}'s step and one",
           "# multiplicative perturbation per free parameter (scripts/ni_gauss_newton.py).", "[Study]",
           f"  base       = cal_center{n+1}.i", f"  out_root   = {next_root}",
           f"  markers    = {cfg['study']['markers']}", f"  concurrent = {cfg['study'].get('concurrent', 5)}", "[]", "[Cases]"]

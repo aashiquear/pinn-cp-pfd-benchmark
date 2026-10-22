@@ -3,7 +3,7 @@
 # scripts/ni_specimen.py from a specimen deck; every @KEY@ is substituted,
 # nothing is edited by hand.
 #
-# UNITS: millimetre, megapascal, second (the paper's system, docs/11 §4).
+# UNITS: millimeter, megapascal, second (the paper's system, docs/11 §4).
 # Loading: the x- grip face clamped (u = 0), the x+ grip face clamped in y
 # and z and pulled in x by the ramp `pull` to @STRAIN@ x the bar length at
 # t_end; the gauge strain between the first and last thickness station is

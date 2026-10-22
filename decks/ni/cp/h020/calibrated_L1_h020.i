@@ -1,5 +1,5 @@
 # Ni single crystal, specimen L.1: CALIBRATED CP set on the production mesh h020 (Gauss-Newton
-# iteration 2, RMSE 4.1 MPa against Fig. 3; docs/12 §4). The run is the centre of
+# iteration 2, RMSE 4.1 MPa against Fig. 3; docs/12 §4). The run is the center of
 # decks/ni/cp/h020/cal_gn2.i (results/ni_study/cal_h020/gn2/base); every later Ni stage starts here.
 # The h040 calibration (decks/ni/cp/calibrated_L1_h040.i) was 14-20% stiff against
 # h020 (mesh study, docs/12 §3); the author chose to recalibrate on h020 (2026-10-17).

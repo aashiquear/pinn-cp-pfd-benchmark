@@ -1,4 +1,4 @@
-# Ni CP calibration, Gauss-Newton iteration 4: centre from iteration 3's step and one
+# Ni CP calibration, Gauss-Newton iteration 4: center from iteration 3's step and one
 # multiplicative perturbation per free parameter (scripts/ni_gauss_newton.py).
 [Study]
   base       = cal_center4.i

@@ -1,5 +1,6 @@
 # Fracture shape of the l0 plateau runs on L.1 (G_c / l0 near 51 MPa; l0/h = 2, 3, 4, 6) against
 # Fig. 5 (docs/12 §6.2), read by scripts/ni_pfd_shape_figures.py; color = damage.
+# Result (2026-10-21): the d > 0.85 zone widens with l0 (2.2 to 3.4 mm) and drifts along the gage (0.17 to 0.32).
 [Figures]
   out         = ../../../figures/ni/pfd/shape_L1_plateau_damage.png
   panel       = ../../../data/digitized/ni_fig5_panels/L.1.png

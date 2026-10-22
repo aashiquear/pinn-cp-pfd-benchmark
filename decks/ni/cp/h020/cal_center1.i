@@ -1,4 +1,4 @@
-# Ni single crystal, specimen L.1: calibration CENTRE on the h020 mesh (iteration 1).
+# Ni single crystal, specimen L.1: calibration CENTER on the h020 mesh (iteration 1).
 # The h040 calibration (decks/ni/cp/calibrated_L1_h040.i) was 14-20% stiff against
 # h020 (mesh study, docs/12 §3); the author chose to recalibrate on h020 (2026-10-17).
 # Starts from the h040-calibrated set; grip strain 30% in 300 steps (1e-3 per step,

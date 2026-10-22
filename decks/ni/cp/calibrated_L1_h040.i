@@ -1,5 +1,5 @@
 # Ni single crystal, specimen L.1: CALIBRATED CP set (Gauss-Newton iteration 4, RMSE 4.6 MPa
-# against Fig. 3; docs/12 §2.4). The run is the centre of cal_gn4 (results/ni_study/cal/gn4/base);
+# against Fig. 3; docs/12 §2.4). The run is the center of cal_gn4 (results/ni_study/cal/gn4/base);
 # all later Ni stages start from this deck.
 # calibration geometry (docs/11 §2, §5 stage 2): CP only, PINNACLE implicit state
 # update (ADR 0033), grip strain 36% in 360 steps (1e-3 per step; the gauge strain

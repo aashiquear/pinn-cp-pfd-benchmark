@@ -1,3 +1,4 @@
+# NOT RUN: l0 0.6 and 0.8 hit the target in round 3 (G_c 30.95 / 40.75), so no resume was needed.
 # Resume of decks/ni/pfd/cal_L1_h020.i for l0 = 0.6 and 0.8 (2026-10-20): the first driver was
 # stopped after it misjudged l0.4/gc15.56 (failed at 0.339, but its summary had no failure
 # strain because separation and the mechanics failure came in the same step; fixed in

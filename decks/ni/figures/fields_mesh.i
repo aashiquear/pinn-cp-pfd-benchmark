@@ -1,6 +1,6 @@
 # Equivalent plastic strain fields of the Ni mesh study on L.1 (docs/12 §3), read by
 # scripts/ni_fields.py. Plan view (x-y) of the deformed specimen around the gage, one
-# row per run, one column per time; the colour scale is shared within a column. Only
+# row per run, one column per time; the color scale is shared within a column. Only
 # finished runs carry a field series (h010 and h020z2 were lost with the host).
 [Figures]
   out      = ../../../figures/ni/mesh/mesh_eqps.png

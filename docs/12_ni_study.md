@@ -108,13 +108,13 @@ single element under uniaxial stress must match the material point.
 
 Deck-driven Gauss-Newton as in Part I: `decks/ni/cp/base_L1_h040.i` (the
 paper's Table 3 set, h040, 360 steps of 1e-3 grip strain, implicit update)
-is the centre, `decks/ni/cp/cal_gnN.i` runs it with one multiplicative
+is the center, `decks/ni/cp/cal_gnN.i` runs it with one multiplicative
 perturbation per free parameter (x1.2; tau_c0 x1.5) through
 `scripts/ni_study.py`, and `scripts/ni_gauss_newton.py` takes the damped
 step in log space against the Fig. 3 experiment markers
 (`data/digitized/ni_fig3_experiment_markers.csv`, engineering stress
 against GAUGE strain, markers below 0.3% strain excluded) and writes the next
-centre and GN deck. Runs on the host, torch CPU, 2 threads, 5 side by side,
+center and GN deck. Runs on the host, torch CPU, 2 threads, 5 side by side,
 about 90 min per iteration (10-15 s per step; the first step 45 s).
 
 ### 2.1 Iteration 1: the paper's set at the test's strain rate (2026-10-15 19:40-21:15)
@@ -142,11 +142,11 @@ tau_c0 3 / 3 / 3: at this rate the Peierls term is immaterial, the yield
 is set by rho_0 and the rate term, the hardening by k_m and y_c. The step
 (clipped to +-0.7 in ln p) goes to rho_0 1.17e6, k_m 0.0146, y_c 0.74e-6,
 tau_c0 0.255 (linear prediction 25.3 MPa RMSE); iteration 2 runs from
-that centre, and the clipping means two or three more iterations.
+that center, and the clipping means two or three more iterations.
 
 ### 2.2 Iteration 2 (2026-10-15 21:15 - 2026-10-16 00:00)
 
-Centre rho_0 1.17e6, k_m 0.0146, y_c 0.74e-6, tau_c0 0.255:
+Center rho_0 1.17e6, k_m 0.0146, y_c 0.74e-6, tau_c0 0.255:
 
 | gauge strain | experiment (MPa) | FE (MPa) |
 |---|---|---|
@@ -161,12 +161,12 @@ Centre rho_0 1.17e6, k_m 0.0146, y_c 0.74e-6, tau_c0 0.255:
 RMSE 141.2 MPa (from 373): the step halved the hardening but the curve is
 still 1.9x too high at 30%. Sensitivities at 2 / 10 / 30%: rho_0 50 / 50
 / 40, k_m 14 / 102 / 281, y_c -2 / -25 / -90, tau_c0 3 / 3 / 3. Next
-centre (clipped step) rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249,
+center (clipped step) rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249,
 linear prediction 4.6 MPa; iteration 3 runs from it.
 
 ### 2.3 Iteration 3 (2026-10-16 00:00-01:50)
 
-Centre rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249:
+Center rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249:
 
 | gauge strain | experiment (MPa) | FE (MPa) | error |
 |---|---|---|---|
@@ -179,13 +179,13 @@ Centre rho_0 7.64e5, k_m 0.0108, y_c 1.48e-6, tau_c0 0.249:
 | 50% | 238.4 | 295 | +24% |
 
 RMSE 29.1 MPa (from 141). Sensitivities at 2 / 10 / 30%: rho_0 41 / 42 /
-31, k_m 9 / 56 / 156, y_c -3 / -23 / -79, tau_c0 3 / 3 / 3. Next centre
+31, k_m 9 / 56 / 156, y_c -3 / -23 / -79, tau_c0 3 / 3 / 3. Next center
 rho_0 6.86e5, k_m 0.0111, y_c 2.26e-6, tau_c0 0.246 (linear prediction
 4.5 MPa, the markers' own spread); iteration 4 decides.
 
 ### 2.4 Iteration 4: converged (2026-10-16 01:50-08:15)
 
-Centre rho_0 6.86e5, k_m 0.0111, y_c 2.26e-6, tau_c0 0.246:
+Center rho_0 6.86e5, k_m 0.0111, y_c 2.26e-6, tau_c0 0.246:
 
 | gauge strain | experiment (MPa) | FE (MPa) | error |
 |---|---|---|---|
@@ -199,7 +199,7 @@ Centre rho_0 6.86e5, k_m 0.0111, y_c 2.26e-6, tau_c0 0.246:
 | 50% | 238.4 | 246 | +3% |
 
 RMSE 4.6 MPa (from 29.1), the markers' own spread; the next linear step
-predicts 4.5 MPa, so the calibration is converged and the iteration-4 centre
+predicts 4.5 MPa, so the calibration is converged and the iteration-4 center
 is the calibrated set, `decks/ni/cp/calibrated_L1_h040.i` (the further step the
 script wrote, cal_center5/cal_gn5, was not run and is deleted). Sensitivities at 2 / 10 / 30%: rho_0 38 / 40 /
 28, k_m 9 / 46 / 126, y_c -4 / -25 / -78, tau_c0 3 / 3 / 3 MPa per unit ln p:
@@ -263,7 +263,7 @@ needed in any case.
 
 ## 4. CP calibration on h020 (2026-10-17)
 
-`decks/ni/cp/h020/cal_gn1.i`: centre = the h040-calibrated set on h020 (the mesh
+`decks/ni/cp/h020/cal_gn1.i`: center = the h040-calibrated set on h020 (the mesh
 study's h020 run, copied in as `base`), four perturbations at 2 threads each,
 memory cap 16 GB per run; `ni_gauss_newton.py` now writes the next decks next to the
 given one (`decks/ni/cp/h020/`, results `results/ni_study/cal_h020/`). About 4 h per
@@ -271,9 +271,9 @@ iteration.
 
 ### 4.1 Iteration 1 on h020 and a third PINNACLE bug (2026-10-17)
 
-Centre (the h040 set on h020): RMSE 29.7 MPa, the curve 12-18% below the markers
+Center (the h040 set on h020): RMSE 29.7 MPa, the curve 12-18% below the markers
 from 10% strain. The k_m x1.2 run cut back twice at 14.6% gauge strain and its
-curve then sat 46 MPa above the centre at 20% (h040's sensitivity predicts about
+curve then sat 46 MPa above the center at 20% (h040's sensitivity predicts about
 +19): `cp_quasi_static` kept the cutback's halved time increment for the full load
 increments that followed, i.e. twice the strain rate for the rest of the run per
 cutback level (+9% flow stress per halving at n = 8.3; 199/172 = 1.16 against
@@ -289,19 +289,19 @@ The k_m case rerun with the fix (15:23-20:13) cut back once at the same point; i
 time increment returned to 0.02 s after the two half steps and the curve stayed on
 trend (one high point, 111.6 against about 98.7 N of reaction, at the first
 accepted half step, then back on trend; to be understood before curves with cutbacks
-are relied on). Iteration 1 step (centre RMSE 29.7 MPa): sensitivities at 2 / 10 / 30%
+are relied on). Iteration 1 step (center RMSE 29.7 MPa): sensitivities at 2 / 10 / 30%
 rho_0 38 / 37 / 25, k_m 9 / 47 / 126, y_c -3 / -26 / -78, tau_c0 3 / 3 / 3 (k_m as on
-h040); next centre rho_0 7.26e5, k_m 0.01147, y_c 1.54e-6, tau_c0 0.244 (predicted
+h040); next center rho_0 7.26e5, k_m 0.01147, y_c 1.54e-6, tau_c0 0.244 (predicted
 3.6 MPa). Iteration 2 launched 20:20 (`decks/ni/cp/h020/cal_gn2.i`, 5 x 2 threads).
 
 ### 4.2 Iteration 2 on h020: converged (2026-10-17 20:20 - 2026-10-18 04:35)
 
-Centre rho_0 7.256e5, k_m 0.01147, y_c 1.542e-6, tau_c0 0.244: RMSE 4.1 MPa (from
+Center rho_0 7.256e5, k_m 0.01147, y_c 1.542e-6, tau_c0 0.244: RMSE 4.1 MPa (from
 29.7), the next step predicting 3.4 MPa; every marker from 2% to 45% within -1% to
 +6%, 0.5% at -7%, 50% at +4% (the experiment's softening before failure). This is the
 calibrated set on h020 (`decks/ni/cp/h020/calibrated_L1_h020.i`); the further step is
 not taken. Sensitivities at 2 / 10 / 30%: rho_0 39 / 39 / 27, k_m 10 / 59 / 161, y_c
--3 / -26 / -83, tau_c0 3 / 3 / 3. The centre and tau_c0 runs cut back 5 and 4 times
+-3 / -26 / -83, tau_c0 3 / 3 / 3. The center and tau_c0 runs cut back 5 and 4 times
 from 41% gauge strain and recovered every time (all steps converged, valid since
 ddc76c3); the k_m run exhausted its cutbacks at 43% (the step's k_m column at 45 and
 50% is therefore clamped, which only affects the step not taken).
