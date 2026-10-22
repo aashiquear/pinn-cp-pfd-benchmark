@@ -571,3 +571,19 @@ CP+PFD cube (2x2x2, finite strain, implicit update): zeta 0 -> max H 85,077 Pa, 
 only). PINNACLE 27a8edc adds this as a slow regression test (ADR 0031 addendum, CHANGELOG); no code
 change was needed. Scale for the Ni calibration: the gage-mean plastic work along the calibrated
 CP curve is about 10 / 26 / 46 / 68 / 83 MPa at 10 / 20 / 30 / 40 / 46.3% gauge strain.
+
+### 6.4 W_c stage (launched 2026-10-21 20:10, author's go-ahead)
+
+Author 2026-10-21: l0 = 0.6 mm fixed (the plateau, §6.2); W_c varied side by side first to learn
+the trend, kept as calibration results; once the trend is known, G_c and W_c are recalibrated
+together for a sharp crack initiation and propagation. Bracket: the gage-peak plastic work of
+the W_c = 0 check run is 61 MPa at 38%, 73.5 at 44% and 76 at 46.3%, so W_c above about 76 MPa
+cannot fail at the target; W_c = 55 / 65 / 75 MPa (damage onset near 34 / 40 / 45.5%). G_c
+searched per W_c with `scripts/ni_pfd_calibrate.py` (`W_c` held per deck,
+`decks/ni/pfd/wc{55,65,75}_L1_h020.i`, results under `results/ni_study/pfd/wc_L1_h020/wc<W_c>/`),
+first round x0.5 / x2 around 8 / 4 / 0.6 MPa mm (from the W_c = 0 scaling: failure when W_p -
+W_c is about 1.5 G_c / l0). Presentation per W_c: stress-strain curve (and max d) against the
+experiment to 46.3%, failure strain, fracture outline on E_xx and d; the measure of the W_c
+criterion is how long the curve follows the experiment before it leaves (the CP-only curve is
+within 0.8% to 45%).
+

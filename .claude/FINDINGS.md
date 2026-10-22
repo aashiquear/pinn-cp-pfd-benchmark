@@ -444,3 +444,12 @@ NOT derivable from the code: measured facts, decisions, and traps.
   report carries the calibrated iteration's set alone.
 - Author 2026-10-17: no study of the source of the coarse-mesh (h040) stiffness; the mesh study
   on the h020 set settles it.
+
+## 2026-10-21: Ni l0 fixed at 0.6 mm; W_c stage design (author)
+- l0 = 0.6 mm (l0/h = 3) is fixed for the Ni CP+PFD from here on; W_c = 0 condition: G_c 30.95.
+- W_c is varied side by side first (55 / 65 / 75 MPa, each with its own G_c search to 0.463) to
+  learn the trend; those runs are kept as calibration results. Once the trend is known, G_c and
+  W_c are recalibrated together for a sharp crack initiation and propagation (the aim of W_c).
+- Trap: the gage-peak plastic work at the target strain is about 76 MPa (W_c = 0 check run), so a
+  W_c above it cannot fail at the target. The W_c = 85 the author first named was replaced by 55
+  for that reason (told to the author).
