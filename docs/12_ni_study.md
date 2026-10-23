@@ -662,3 +662,26 @@ failure_mode: `separation`, or `mechanics_failure_cut` when the run ends on a me
 with max d > 0.99 (`cut_damage`; the failing step's damage solve converged, so its max d counts):
 W_c 65 / G_c 8 (chi 1) is thereby a failure at 0.458, step 239; W_c 55 / G_c 16 (max d 0.72) is not.
 
+chi = 0, first results (2026-10-22 20:15; figures `decks/ni/figures/pfd_curves_L1_wc_chi0.i`,
+`pfd_shape_L1_wc_chi0.i`, `_damage.i`):
+
+| W_c | G_c | end | max d at 20 / 30 / 40 / 45% | onset (d > 0.1) | stress / experiment 20-45% | peak | zone |
+|---|---|---|---|---|---|---|---|
+| 55 | 4 | separated 0.476 (max d 0.86, 342 nodes > 0.85) | 0 / 0 / 0.72 / 0.84 | 35.8% | 0.996 / 0.996 / 1.00 / 0.986 / 0.984 | 237 | 0.39 of the gage, flank 48 deg, 3 mm wide |
+| 65 | 8 | mechanics failed 0.484 (max d 0.70) | 0 / 0 / 0 / 0.55 | 41.3% | 0.996 / 0.996 / 1.00 / 1.00 / 1.002 | 244 | mid-gage, diffuse |
+| 75 | 0.3 | mechanics failed 0.471 (max d 0.88, 70 nodes) | 0 / 0 / 0 / 0 | 45.7% | 0.996 / 0.996 / 1.00 / 1.00 / 1.008 | 242 | inclined band, 0.45-0.5 of the gage |
+| 75 | 1.2 | mechanics failed 0.474 (max d 0.76) | 0 / 0 / 0 / 0 | 45.9% | same | 242 | inclined band, mid-gage |
+
+With the purely ductile driving force every curve lies on the experiment to the end (within 1-2%
+at every marker from 20 to 45%; peaks 237-244 MPa against 239), the phase field is exactly zero
+until the plastic work crosses W_c (onset 36 / 41 / 46% for W_c 55 / 65 / 75) and then rises
+steeply, and the damage sits in the gage, not at the fillets: the W_c 75 band is inclined at
+about 45 deg across the gage at 0.45-0.5, the W_c 55 zone has a 48 deg flank at 0.39. The
+experiment's crack is at 0.20 and 55-60 deg. What ends the runs now is the mechanics: at 47-48%
+the staggered steps stop converging (cutback budget) whether or not the section has cut, so the
+search has to bring failure in before that; the drivers read these as "G_c too high" and
+continue (W_c 75 -> G_c 0.1, W_c 65 -> 2; W_c 55 regula falsi after G_c 16). The AT2 saturation
+d = 2H / (G_c / l0 + 2H) means a sharp cut needs H = W_p - W_c well above G_c / l0: at W_c 75 the
+plastic work beyond W_c reaches only ~2.5 MPa by 47%, so G_c / l0 must be a few tenths of a MPa
+(G_c ~ 0.1-0.2) for d -> 1 in the gage within one or two steps.
+

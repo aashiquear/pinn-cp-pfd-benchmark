@@ -500,3 +500,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
   trade-off between the mechanics failure and the sharpness, not a defect.
 - chi = 0 sweep (W_c 55 / 65 / 75, G_c searches) makes the W_c calibration final; the reporting
   is decided after it.
+
+## 2026-10-22: chi = 0 works: curve on the experiment, d = 0 to the onset, damage in the gage
+- With chi = 0 every W_c > 0 run lies on the experiment to the end (peaks 237-244 vs 239 MPa), d is
+  zero until W_p crosses W_c (36 / 41 / 46% for 55 / 65 / 75) and then rises steeply; the zone is
+  mid-gage (0.39-0.5) and inclined (45-48 deg flanks). Figures curves_L1_wc_chi0, shape_L1_wc_chi0.
+- Limit: the mechanics stops converging at 47-48% in the W_c > 0 runs (cutback budget) whether or
+  not the section is cut; failure has to come in before that. Searches continue toward smaller
+  G_c (W_c 75 needs G_c ~ 0.1-0.2 for a sharp cut: AT2 saturation).
