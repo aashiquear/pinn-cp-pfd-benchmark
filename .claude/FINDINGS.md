@@ -526,3 +526,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Author: run chi = 0.3 / 0.6 / 0.8 at the preferred pair to see whether the elastic contribution
   moves the crack location; keep all current results (chi 1 round, chi 0 round) as mechanics
   evidence, nothing voided.
+
+## 2026-10-23: chi = 0 W_c calibration complete; chi sweep answer
+- Calibrated at l0 0.6, chi 0: W_c 55 / G_c 3.255 (0.458), 65 / 1.384 (0.459), 75 / 0.1 (0.464,
+  load-drop rule). All three: curve on the experiment to 45%, d = 0 until W_p crosses W_c, crack at
+  0.38-0.41 of the gage inclined 48-60 deg. G_c falls 30x from W_c 55 to 75.
+- chi sweep at 75 / 0.1: chi 0.3 and 0.6 crack the fillets at 2-4% strain (AT2 elastic strength
+  33-54 MPa at G_c / l0 0.17). The elastic share does not move the crack along the gage; it moves
+  it to the fillet. Kept as mechanics evidence (author).

@@ -740,3 +740,25 @@ sqrt(27 E chi G_c / (256 l0)) is 33 / 46 / 54 MPa at chi 0.3 / 0.6 / 0.8, below 
 from the first few percent of strain, so these should crack the fillets early unless the
 degradation feedback is slower there; the result is kept either way (author: all results stay).
 
+W_c 55 calibrated (2026-10-23 13:30): G_c 3.255 -> 0.458 (separation), zone at 0.39, flank 55 deg,
+peak 234.4. The chi = 0 set is complete (`decks/ni/figures/pfd_curves_L1_wc_cal.i`,
+`pfd_shape_L1_wc_cal.i`, `_damage.i`):
+
+| W_c (MPa) | G_c (MPa mm) | failure | mode | onset | peak (MPa) | zone center | flank |
+|---|---|---|---|---|---|---|---|
+| 55 | 3.255 | 0.458 | separation | 35.8% | 234.4 | 0.39 | 55 deg |
+| 65 | 1.384 | 0.459 | separation | 40.7% | 234.9 | 0.41 | 58 deg |
+| 75 | 0.1 | 0.464 | load drop | 45.7% | 241.5 | 0.38 | crack line inclined |
+
+G_c falls by a factor 30 as W_c rises from 55 to 75 (the plastic work beyond W_c available before
+0.463 falls from ~17 to ~1 MPa); the three curves are indistinguishable from each other and from
+the experiment to 45% (within 1-2%); all three cracks sit at 0.38-0.41 of the gage and are
+inclined at 48-60 deg.
+
+chi sweep (W_c 75 / G_c 0.1): chi 0.3 died at 4.0% (max d 0.95 in the fillet, oom-killed in the
+mechanics fallback), chi 0.6 separated at 2.1% at -0.06 of the gage (the fillet; max d 1), chi 0.8
+running. With G_c / l0 = 0.17 MPa any elastic share cracks the fillets within the first few
+percent of strain, as the AT2 strength sqrt(27 E chi G_c / (256 l0)) = 33-54 MPa says: the elastic
+contribution does not shift the crack along the gage, it moves it to the fillet outright.
+`curves_L1_chi_sweep.png`, `shape_L1_chi_sweep_damage.png`.
+
