@@ -706,3 +706,28 @@ shape figure (`ridge = true`): the max-d node of each row across the gage width,
 colored by d, over the 0.85 outline; on the chi = 0 runs the line is inclined at roughly 45-60
 deg across the width at 0.38-0.41 of the gage.
 
+chi = 0 searches, state at 2026-10-23 11:00 (W_c 55 / G_c 3.255 still running; figures redrawn with
+every run, `pfd_curves_L1_wc_chi0.i`, `pfd_shape_L1_wc_chi0.i`, `_damage.i`, ridge line on):
+
+| W_c | G_c | failure | mode | onset (d > 0.1) | S / exp at 20 / 30 / 40 / 45% | peak | zone center | flank |
+|---|---|---|---|---|---|---|---|---|
+| 55 | 1.333 | 0.409 | separation | 35.7% | - | 225.5 | 0.39 | 56 deg |
+| 55 | 4 | 0.476 | separation | 35.8% | 0.996 / 0.996 / 0.986 / 0.984 | 237.1 | 0.39 | 48 deg |
+| 55 | 16 | none by 0.601 (path end) | - | 36% | - | 252.4 | - | - |
+| 65 | 0.6667 | 0.440 | separation | 40.7% | - | 234.8 | 0.40 | 60 deg |
+| 65 | **1.384** | **0.459** | separation | 40.7% | 0.996 / 0.996 / 1.00 / 0.978 | 234.9 | 0.41 | 58 deg |
+| 65 | 2 | 0.475 | separation | 40.7% | - | 236.4 | 0.41 | 58 deg |
+| 65 | 8 | none by 0.484 (mechanics) | - | 41.3% | - | 243.8 | - | - |
+| 75 | 1.2 / 0.3 | none by 0.474 / 0.471 (mechanics; max d 0.74 / 0.86) | - | 45.9 / 45.7% | 0.996 / 0.996 / 1.00 / 1.008 | 242 | - | - |
+| 75 | **0.1** | **0.464** | load drop (5.9%) | 45.7% | 0.996 / 0.996 / 1.00 / 1.008 | 241.5 | 0.38 | 77 deg (zone); crack line inclined |
+| 75 | 0.03333 | 0.460 | load drop (17.2%) | 45.5% | same | 241.4 | 0.38 | 83 deg (zone); crack line inclined |
+
+W_c 65 is calibrated by the driver (G_c 1.384, 0.459, within tolerance). W_c 75: G_c 0.1 (0.464,
+the author's preferred result) and 0.033 (0.460) both hit under the final definition; G_c 0.1 is
+the carried value (the larger G_c with the smaller load drop at the cut). W_c 55 awaits G_c 3.255
+(bracket 1.333 -> 0.409, 4 -> 0.476). The W_c 55 / G_c 16 run went to the path end at 60% with no
+mechanics trouble, so the 47-48% mechanics stops of the other runs are damage-related. The
+`angle_to_axis_deg` of the zone (PCA of the d > 0.85 nodes) reads 77-83 deg for the W_c 75 cases
+because their zone is a short segment at one row; the crack line (max-d ridge) is what shows
+the inclination there.
+

@@ -22,10 +22,22 @@
     color = '#9a9a9a'
     panel = 0
   []
+  [./w55_gc1333]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc55/l0.6/gc1.333
+    label = '$W_c$ = 55 MPa, $\chi$ = 0'
+    color = '#d1495b'
+    panel = 0
+  []
   [./w55_gc4]
     dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc55/l0.6/gc4
     label = '$W_c$ = 55 MPa, $\chi$ = 0'
-    color = '#d1495b'
+    color = '#1f4e9c'
+    panel = 0
+  []
+  [./w55_gc16]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc55/l0.6/gc16
+    label = '$W_c$ = 55 MPa, $\chi$ = 0'
+    color = '#00798c'
     panel = 0
   []
   [./w65_ref]
@@ -34,16 +46,28 @@
     color = '#9a9a9a'
     panel = 1
   []
-  [./w65_gc8]
-    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc8
+  [./w65_gc06667]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc0.6667
     label = '$W_c$ = 65 MPa, $\chi$ = 0'
     color = '#d1495b'
+    panel = 1
+  []
+  [./w65_gc1384]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc1.384
+    label = '$W_c$ = 65 MPa, $\chi$ = 0'
+    color = '#1f4e9c'
     panel = 1
   []
   [./w65_gc2]
     dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc2
     label = '$W_c$ = 65 MPa, $\chi$ = 0'
-    color = '#1f4e9c'
+    color = '#00798c'
+    panel = 1
+  []
+  [./w65_gc8]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc8
+    label = '$W_c$ = 65 MPa, $\chi$ = 0'
+    color = '#edae49'
     panel = 1
   []
   [./w75_ref]
@@ -68,6 +92,12 @@
     dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.1
     label = '$W_c$ = 75 MPa, $\chi$ = 0'
     color = '#00798c'
+    panel = 2
+  []
+  [./w75_gc003333]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.03333
+    label = '$W_c$ = 75 MPa, $\chi$ = 0'
+    color = '#edae49'
     panel = 2
   []
 []
