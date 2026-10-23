@@ -508,3 +508,6 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Limit: the mechanics stops converging at 47-48% in the W_c > 0 runs (cutback budget) whether or
   not the section is cut; failure has to come in before that. Searches continue toward smaller
   G_c (W_c 75 needs G_c ~ 0.1-0.2 for a sharp cut: AT2 saturation).
+- Author 2026-10-22: W_c = 75 is the shape wanted. Keep the d > 0.85 separation definition for the
+  calibration; for the fracture-shape figure the contour level may be softened (deck key `crack`)
+  to show the likely fracture shape when d stays below 0.85. Reporting decided after the round.
