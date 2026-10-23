@@ -521,3 +521,8 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Crack line: one line across the gage width through the max-d node of each node row, colored by
   that d (`ridge = true`, `ridge_x` the gage); shown with the d = 0.85 outline. Author likes the
   W_c 75 / G_c 0.1 result.
+
+## 2026-10-23: chi sweep at W_c 75 / G_c 0.1 (author); keep every result
+- Author: run chi = 0.3 / 0.6 / 0.8 at the preferred pair to see whether the elastic contribution
+  moves the crack location; keep all current results (chi 1 round, chi 0 round) as mechanics
+  evidence, nothing voided.

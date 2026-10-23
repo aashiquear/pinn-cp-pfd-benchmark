@@ -731,3 +731,12 @@ mechanics trouble, so the 47-48% mechanics stops of the other runs are damage-re
 because their zone is a short segment at one row; the crack line (max-d ridge) is what shows
 the inclination there.
 
+chi sweep (launched 2026-10-23 11:30, author): W_c 75 / G_c 0.1 / l0 0.6 at chi = 0.3, 0.6, 0.8,
+one run each (`decks/ni/pfd/wc75_gc0.1_chi*_L1_h020.i`, results under
+`results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/`), to see whether a growing elastic contribution
+moves the crack from the mid-gage (0.38 at chi 0) toward the fillets (chi 1 at small G_c cracked
+them at 4-14%). Expectation from the first round: with G_c / l0 = 0.17 MPa the AT2 strength
+sqrt(27 E chi G_c / (256 l0)) is 33 / 46 / 54 MPa at chi 0.3 / 0.6 / 0.8, below the fillet stress
+from the first few percent of strain, so these should crack the fillets early unless the
+degradation feedback is slower there; the result is kept either way (author: all results stay).
+
