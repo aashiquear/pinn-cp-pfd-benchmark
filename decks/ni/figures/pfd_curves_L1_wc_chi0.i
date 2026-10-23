@@ -40,22 +40,34 @@
     color = '#d1495b'
     panel = 1
   []
+  [./w65_gc2]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc2
+    label = '$W_c$ = 65 MPa, $\chi$ = 0'
+    color = '#1f4e9c'
+    panel = 1
+  []
   [./w75_ref]
     dir   = ../../../results/ni_study/pfd/cal_L1_h020/l0.6/gc30.95
     label = '$W_c$ = 0, $\chi$ = 1 (carried pair)'
     color = '#9a9a9a'
     panel = 2
   []
-  [./w75_gc03]
-    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.3
+  [./w75_gc12]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc1.2
     label = '$W_c$ = 75 MPa, $\chi$ = 0'
     color = '#d1495b'
     panel = 2
   []
-  [./w75_gc12]
-    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc1.2
+  [./w75_gc03]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.3
     label = '$W_c$ = 75 MPa, $\chi$ = 0'
     color = '#1f4e9c'
+    panel = 2
+  []
+  [./w75_gc01]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.1
+    label = '$W_c$ = 75 MPa, $\chi$ = 0'
+    color = '#00798c'
     panel = 2
   []
 []

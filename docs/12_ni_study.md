@@ -685,3 +685,17 @@ d = 2H / (G_c / l0 + 2H) means a sharp cut needs H = W_p - W_c well above G_c / 
 plastic work beyond W_c reaches only ~2.5 MPa by 47%, so G_c / l0 must be a few tenths of a MPa
 (G_c ~ 0.1-0.2) for d -> 1 in the gage within one or two steps.
 
+chi = 0, second results (2026-10-23 00:40). W_c 65 / G_c 2 separated at 0.475 at 0.41 of the gage
+with the flank at 58 deg (the experiment: 0.20, 55-60 deg); W_c 75 / G_c 0.1 cracked at the target:
+d 0 -> 0.09 -> 0.54 -> 0.80 -> 0.87 -> 0.88 over steps 236-241 (45.2 -> 46.4%), the load fell from
+241.5 to 227 MPa, 32 then 60 nodes above 0.85, and step 242 spent the ten cutbacks (dt halved
+to 2e-5 s) before the zone spanned the section: a mechanics failure at 0.4639 with max d 0.909.
+The driver read it as "no failure", judged G_c too high and started G_c 0.033; that driver was
+stopped (the run continues to its end for the record) because a lower G_c only repeats the
+mechanics stop. The cut rule (max d > 0.99) does not fire at 0.909. Proposed to the author: a
+run whose mechanics fails while max d >= 0.85 and the load has dropped by more than 3% from its
+peak counts as failed at its last converged strain (`cut_damage` 0.85 plus a load-drop test);
+then W_c 75 / G_c 0.1 fails at 0.464, the target. Figures redrawn
+(`pfd_curves_L1_wc_chi0.i`: 55 / 4, 65 / 8 and 2, 75 / 1.2, 0.3, 0.1; shapes: 55 / 4, 65 / 2, 75 / 0.1
+and 0.3; the 75 / 0.1 field is its last snapshot, step 240 at 46.1%, before the last two steps).
+

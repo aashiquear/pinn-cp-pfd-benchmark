@@ -15,16 +15,16 @@
     dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc55/l0.6/gc4
     label = '$W_c$ = 55 MPa, $\chi$ = 0'
   []
-  [./w65_gc8]
-    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc8
+  [./w65_gc2]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc2
     label = '$W_c$ = 65 MPa, $\chi$ = 0'
+  []
+  [./w75_gc01]
+    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.1
+    label = '$W_c$ = 75 MPa, $\chi$ = 0'
   []
   [./w75_gc03]
     dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.3
-    label = '$W_c$ = 75 MPa, $\chi$ = 0'
-  []
-  [./w75_gc12]
-    dir   = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc1.2
     label = '$W_c$ = 75 MPa, $\chi$ = 0'
   []
 []
