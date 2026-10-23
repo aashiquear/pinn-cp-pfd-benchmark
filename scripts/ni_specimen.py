@@ -301,12 +301,15 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
             valid[-1]["gauge_strain"] if valid else None)
         mode = "separation"
     elif (valid and len(valid) < len(res) and not died
-          and max(x["max_damage"] for x in res) > float(sp.get("cut_damage", 0.99))):
-        # A sharp crack (W_c > 0) ends the run on a mechanics failure at d -> 1 one step
-        # before the d > 0.85 zone spans the section; that step's damage solve did converge,
-        # so its max d counts (author 2026-10-22: failure at the last converged strain;
-        # ``cut_damage`` sets the max-d condition).
-        sep, sep_strain, mode = valid[-1], valid[-1]["gauge_strain"], "mechanics_failure_cut"
+          and max(x["max_damage"] for x in res) >= float(sp.get("cut_damage", 0.85))
+          and valid[-1]["eng_stress"] < (1.0 - float(sp.get("cut_load_drop", 0.03)))
+          * np.nanmax([x["eng_stress"] for x in valid])):
+        # A sharp crack (W_c > 0) ends the run on a mechanics failure one step before the
+        # d > 0.85 zone spans the section; that step's damage solve did converge, so its max d
+        # counts. Author 2026-10-23 (option 1): a mechanics failure with max d >= 0.85 and the
+        # load down by more than 3% from its peak is a full separation, at the last converged
+        # strain (``cut_damage``, ``cut_load_drop``).
+        sep, sep_strain, mode = valid[-1], valid[-1]["gauge_strain"], "load_drop_cut"
     ok = np.isfinite(s)
     summary = {"steps": len(res), "steps_valid": len(valid), "run_died": died,
                "final_gauge_strain": float(e[-1]) if len(e) else None, "final_grip_strain": valid[-1]["grip_strain"] if valid else None,
@@ -315,7 +318,7 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
                "initiation_gauge_strain_node": first_node["gauge_strain"] if first_node else None,
                "failure_gauge_strain": sep_strain,   # PINNACLE stop_separation
                "failure_step": sep["step"] if sep else None,
-               "failure_mode": mode,                 # separation | mechanics_failure_cut | None
+               "failure_mode": mode,                 # separation | load_drop_cut | None
                "damage_threshold": float(sp.get("damage_threshold", 0.8)),
                "final_max_damage": valid[-1]["max_damage"] if valid else None,
                "gage_area_mm2": area, "mean_thickness_mm": t_mean,
@@ -380,7 +383,16 @@ def stage_fracture(sp: dict, deck: Path) -> dict:
             cut = np.where(~intact)[0]
             found = (step_of(kf, len(frames)), path, X[cut])
             break
-    res = {"separation_damage": thr, "separated": found is not None}
+    mode = "separation" if found is not None else None
+    if found is None and summ.get("failure_mode") == "load_drop_cut" and frames:
+        # the curve stage's load-drop rule (author 2026-10-23, option 1): the zone is the
+        # d >= threshold nodes of the last snapshot, at the summary's failure step
+        v = read_vtk(frames[-1][1])
+        d = np.asarray(v["point"]["damage"], dtype=float).reshape(-1)
+        cut = np.where(d > thr)[0]
+        if len(cut):
+            found, mode = (int(summ["failure_step"]), frames[-1][1], v["nodes"][cut]), "load_drop_cut"
+    res = {"separation_damage": thr, "separated": found is not None, "mode": mode}
     if found is not None:
         step, path, P = found
         gx = _gage_x(sp, deck)

@@ -699,3 +699,10 @@ then W_c 75 / G_c 0.1 fails at 0.464, the target. Figures redrawn
 (`pfd_curves_L1_wc_chi0.i`: 55 / 4, 65 / 8 and 2, 75 / 1.2, 0.3, 0.1; shapes: 55 / 4, 65 / 2, 75 / 0.1
 and 0.3; the 75 / 0.1 field is its last snapshot, step 240 at 46.1%, before the last two steps).
 
+Author 2026-10-23: option 1 adopted and final (load drop > 3% with max d >= 0.85 = full
+separation; `failure_mode = load_drop_cut`, `fracture.json` mode); W_c 75 / G_c 0.1 fails at 0.464
+at 0.38 of the gage (18 nodes above 0.85 in its last snapshot, step 240). Crack line added to the
+shape figure (`ridge = true`): the max-d node of each row across the gage width, joined and
+colored by d, over the 0.85 outline; on the chi = 0 runs the line is inclined at roughly 45-60
+deg across the width at 0.38-0.41 of the gage.
+

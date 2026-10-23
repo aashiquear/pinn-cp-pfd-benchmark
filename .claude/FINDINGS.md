@@ -511,3 +511,13 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Author 2026-10-22: W_c = 75 is the shape wanted. Keep the d > 0.85 separation definition for the
   calibration; for the fracture-shape figure the contour level may be softened (deck key `crack`)
   to show the likely fracture shape when d stays below 0.85. Reporting decided after the round.
+
+## 2026-10-23: failure definition final (option 1); crack line presentation (author)
+- A mechanics failure with max d >= 0.85 and the load more than 3% below its peak is a full
+  separation, at the last converged strain (`failure_mode = load_drop_cut`; the fracture stage then
+  takes the zone from the last snapshot's d > 0.85 nodes, `mode = load_drop_cut`). W_c 75 / G_c 0.1
+  (chi 0) fails at 0.464 under it; W_c 75 / G_c 0.3 (load not dropped) and the chi 1 W_c 65 / G_c 8
+  (drop 0.8%) do not. Earlier max d > 0.99 rule superseded.
+- Crack line: one line across the gage width through the max-d node of each node row, colored by
+  that d (`ridge = true`, `ridge_x` the gage); shown with the d = 0.85 outline. Author likes the
+  W_c 75 / G_c 0.1 result.

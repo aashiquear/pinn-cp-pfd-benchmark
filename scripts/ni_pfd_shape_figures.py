@@ -11,6 +11,7 @@ Deck-driven (PINNACLE .i syntax):
     x_range     = '5.0 20.4'           # mm, the gage, fillets and grip ends (undeformed x of the cells)
     crack       = 0.85                 # the d = crack outline (black on E_xx, cyan on d): the fracture zone
     color       = exx                  # exx | damage (the phase field d, 0..1, with the d = crack contour)
+    ridge       = true                 # crack line: at each node row across the width, the x of max d in the gage
     dpi         = 200
   []
   [Runs]
@@ -25,7 +26,11 @@ found separated; fracture.json): plan view of the deformed top face, cells color
 by the Green-Lagrange axial strain E_xx = H_xx + (H_xx^2 + H_yx^2 + H_zx^2) / 2 from
 the displacement gradient H the run records (the measure a DIC code such as Vic-2D
 reports as e_xx), with the fracture zone outlined in black at d = crack (or, with
-color = damage, the phase field d itself with the outline in cyan).
+color = damage, the phase field d itself with the outline in cyan). With ridge = true
+the crack is also drawn as one line across the gage width (author 2026-10-23): for
+every node row across the width, the node of that row with the largest d within the
+gage, joined row to row and colored by that d (so the line carries the maximum of d
+along x at each y; it is the likely fracture path when the field stays below crack).
 """
 from __future__ import annotations
 
@@ -85,6 +90,43 @@ def failure_frame(run: Path) -> tuple[dict, dict, dict]:
         frac = {**frac, "snapshot": frames[-1].name, "last_frame": True}
         return read_vtk(frames[-1]), frac, summ
     return read_vtk(run / "solver" / frac["snapshot"]), frac, summ
+
+
+def ridge(v: dict, f: dict, run: Path) -> tuple[np.ndarray, np.ndarray]:
+    """Deformed (x, y) of the max-d node of each row across the width, and its d.
+
+    Rows are the undeformed y of the top-face nodes within the gage (the dog-bone mesh is a
+    mapped grid: a row keeps its y along the straight gage)."""
+    X0 = v["nodes"]
+    x = X0 + v["point"]["displacement"]
+    d = np.asarray(v["point"]["damage"], dtype=float)
+    cells = np.asarray(v["cells"], dtype=int)
+    top = np.unique(cells[:, 4:8])
+    g0, g1 = _pair(f.get("ridge_x", f.get("gage_x", "8.7 16.7")))
+    sel = top[(X0[top, 0] >= g0) & (X0[top, 0] <= g1)]
+    rows = np.round(X0[sel, 1], 4)
+    pts, vals = [], []
+    for y in np.unique(rows):
+        ids = sel[rows == y]
+        k = ids[np.argmax(d[ids])]
+        pts.append(x[k, :2]); vals.append(d[k])
+    return np.array(pts), np.array(vals)
+
+
+def draw_ridge(ax, v: dict, f: dict, run: Path):
+    from matplotlib.collections import LineCollection
+
+    pts, vals = ridge(v, f, run)
+    if len(pts) < 2:
+        return None
+    segs = np.stack([pts[:-1], pts[1:]], axis=1)
+    # a dark underlay keeps the colored core readable on the jet / inferno fields
+    ax.add_collection(LineCollection(segs, colors="black", linewidths=4.2, zorder=5))
+    lc = LineCollection(segs, cmap="inferno" if _str(f.get("color", "exx")) == "exx" else "cool",
+                        norm=plt.Normalize(0.0, 1.0), linewidths=2.2, zorder=6)
+    lc.set_array(0.5 * (vals[:-1] + vals[1:]))
+    ax.add_collection(lc)
+    return lc
 
 
 def draw_damage(ax, v: dict, f: dict):
@@ -168,12 +210,18 @@ def main(argv):
     ax.set_axis_off()
     ax.set_title(_str(f.get("panel_label", "experiment (Fig. 5)")), fontsize=8)
     pc = None
+    lc = None
     for i, (_, r) in enumerate(runs.items()):
         v, frac, summ = failure_frame(_resolve(_str(r["dir"]), deck))
         a = fig.add_subplot(gs[i + 1, 0])
         pc = draw_run(a, v, f, lo, hi)
+        if _str(f.get("ridge", "false")).lower() == "true":
+            lc = draw_ridge(a, v, f, _resolve(_str(r["dir"]), deck)) or lc
         g = json.loads((_resolve(_str(r["dir"]), deck) / "case.json").read_text())["substitutions"]
-        if frac.get("last_frame"):
+        if frac.get("last_frame") and summ.get("failure_mode") == "load_drop_cut":
+            title = r"%s, $G_c$ = %s MPa mm: failure (load drop) at %.1f%% gauge strain; last snapshot %.1f%%" % (
+                _str(r["label"]), g["GC"], 100 * summ["failure_gauge_strain"], 100 * frac.get("snapshot_strain", summ["final_gauge_strain"]))
+        elif frac.get("last_frame"):
             title = r"%s, $G_c$ = %s MPa mm: no separation; last snapshot, %.1f%% gauge strain" % (
                 _str(r["label"]), g["GC"], 100 * summ["final_gauge_strain"])
         else:
@@ -186,6 +234,11 @@ def main(argv):
     cb = fig.colorbar(pc, cax=cax)
     cb.set_label(r"phase field $d$ (cyan: $d$ = %g)" % float(f.get("crack", 0.85))
                  if _str(f.get("color", "exx")) == "damage" else r"$E_{xx}$ (Green-Lagrange)")
+    if lc is not None and _str(f.get("color", "exx")) == "exx":
+        cax2 = fig.add_axes([cax.get_position().x1 + 0.09, cax.get_position().y0,
+                             0.018, cax.get_position().height])
+        cb2 = fig.colorbar(lc, cax=cax2)
+        cb2.set_label(r"crack line: max $d$ across the gage at each row")
     out = _resolve(_str(f["out"]), deck)
     out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, bbox_inches="tight")

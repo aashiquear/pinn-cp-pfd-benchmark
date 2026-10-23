@@ -7,6 +7,8 @@
   exx_range   = '0.23 0.98'
   x_range     = '5.0 20.4'
   crack       = 0.85
+  ridge       = true
+  ridge_x     = '8.7 16.7'          # the gage (undeformed x), where the rows are read
   color       = exx
   dpi         = 200
 []
