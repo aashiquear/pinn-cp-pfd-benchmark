@@ -769,3 +769,7 @@ calibrations compared in nature and value (Table 9), 7.5 the chi sweep (Fig. 21)
 with the experiment-only panel (`ni_fig5_panels/<spec>_exp.png`); the W_c = 0 round-2 and the
 round-1 figures kept as records. `tanne-2018-crack` added to the bibliography (AT2 strength).
 
+chi 0.8 rerun (40 GB cap, 2026-10-23 23:30): separated at 1.5% at -0.04 of the gage (fillet), peak
+83 MPa. The chi sweep is complete: 0.8 / 0.6 / 0.3 crack the fillet at 1.5 / 2.1 / 4.0%, earlier
+the larger the elastic share. Report §7.5 and Fig. 21 updated. The chi 0.55 check runs on.
+

@@ -1028,15 +1028,15 @@ measured station.
 At the carried pair ($W_c$ 75, $G_c$ 0.1) the elastic prefactor was raised
 to 0.3, 0.6 and 0.8 to see whether a growing elastic share moves the crack
 (`decks/ni/pfd/wc75_gc0.1_chi*_L1_h020.i`). It does not move it along the
-gage; it moves it to the fillet outright: $\chi = 0.6$ separated at 2.1%
-strain at -0.06 of the gage, $\chi = 0.3$ lost its mechanics at 4.0% with
-$d = 0.95$ there, as the AT2 strength of 33 to 54 MPa at $G_c/\ell_0 =
-0.17$ MPa predicts ($\chi = 0.8$ is being rerun; its first run was killed
-by the memory cap before the fillet cracked). At the $G_c$ a late ductile
+gage; it moves it to the fillet outright: $\chi = 0.8$ separated at 1.5%
+strain at -0.04 of the gage, $\chi = 0.6$ at 2.1% at -0.06, and $\chi =
+0.3$ lost its mechanics at 4.0% with $d = 0.95$ there, as the AT2 strength
+of 33 to 54 MPa at $G_c/\ell_0 = 0.17$ MPa predicts: the larger the
+elastic share, the earlier the fillet cracks. At the $G_c$ a late ductile
 onset needs, the driving force has to be purely ductile.
 
 **Figure 21.** The elastic share at the carried pair: curves and maximum
-phase field for $\chi$ = 0, 0.3 and 0.6.
+phase field for $\chi$ = 0, 0.3, 0.6 and 0.8.
 
 ![chi sweep](../../figures/ni/pfd/curves_L1_chi_sweep.png)
 
