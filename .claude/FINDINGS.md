@@ -534,3 +534,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - chi sweep at 75 / 0.1: chi 0.3 and 0.6 crack the fillets at 2-4% strain (AT2 elastic strength
   33-54 MPa at G_c / l0 0.17). The elastic share does not move the crack along the gage; it moves
   it to the fillet. Kept as mechanics evidence (author).
+
+## 2026-10-23: trap: the CP backward-Euler fallback's sub-stepping blows past the 16 GB cap
+- Recurring: a point whose backward-Euler update fails ("no residual decrease in ten halvings" /
+  "did not converge in 100 iterations") hands the evaluation to the explicit sub-stepping, whose
+  memory grows until the cgroup cap kills the run (exit -9): k1_p (CP), W_c 55 / G_c 4 (chi 1), the
+  W_c 75 / G_c 30 / chi 0.55 check at 14.9% with d 0.011, chi 0.8 at 1.5%. It is a mechanics death,
+  not a result; such runs are rerun under `base_L1_h020_cap40.i` (40 GB) when the host is free.
+  A PINNACLE-side bound on the sub-stepper's memory is the proper fix (not yet done).
