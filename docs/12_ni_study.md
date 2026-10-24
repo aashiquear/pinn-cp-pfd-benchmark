@@ -762,3 +762,10 @@ percent of strain, as the AT2 strength sqrt(27 E chi G_c / (256 l0)) = 33-54 MPa
 contribution does not shift the crack along the gage, it moves it to the fillet outright.
 `curves_L1_chi_sweep.png`, `shape_L1_chi_sweep_damage.png`.
 
+Report §7 written (2026-10-23): 7.1 design and the failure definition, 7.2 the chi = 1 round as the
+elastic barrier (Table 7, Fig. 16), 7.3 the chi = 0 calibration (Table 8, Figs. 17-20), 7.4 the two
+calibrations compared in nature and value (Table 9), 7.5 the chi sweep (Fig. 21), 7.6 the carried set
+(chi 0, W_c 75, G_c 0.1, l0 0.6), 7.7 cost. Eq. (10) now carries chi. Every shape figure redrawn
+with the experiment-only panel (`ni_fig5_panels/<spec>_exp.png`); the W_c = 0 round-2 and the
+round-1 figures kept as records. `tanne-2018-crack` added to the bibliography (AT2 strength).
+

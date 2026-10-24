@@ -3,8 +3,8 @@
 # (failure below the target at every l0), for the figure layout; the calibrated runs replace them.
 [Figures]
   out         = ../../../figures/ni/pfd/shape_L1_round2.png
-  panel       = ../../../data/digitized/ni_fig5_panels/L.1.png
-  panel_label = 'L.1: experiment (DIC, top) and the CP-PFD of Rezwan 2026 (bottom), Fig. 5'
+  panel       = ../../../data/digitized/ni_fig5_panels/L.1_exp.png
+  panel_label = 'L.1: experiment, DIC axial strain at the onset of failure (Rezwan 2026, Fig. 5)'
   exx_range   = '0.23 0.98'
   x_range     = '5.0 20.4'
   crack       = 0.85

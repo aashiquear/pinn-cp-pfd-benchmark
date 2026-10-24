@@ -542,3 +542,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
   W_c 75 / G_c 30 / chi 0.55 check at 14.9% with d 0.011, chi 0.8 at 1.5%. It is a mechanics death,
   not a result; such runs are rerun under `base_L1_h020_cap40.i` (40 GB) when the host is free.
   A PINNACLE-side bound on the sub-stepper's memory is the proper fix (not yet done).
+
+## 2026-10-23: carried PFD set and reporting (author)
+- Going forward: chi = 0, W_c = 75 MPa, G_c = 0.1 MPa mm, l0 = 0.6 mm on h020 (report §7.6).
+- Report both calibrations (W_c = 0, §6; W_c > 0 at chi = 0, §7) with how and why they differ in
+  nature and value (§7.4). Field figures show only the experiment's DIC panel
+  (`data/digitized/ni_fig5_panels/<spec>_exp.png`, `scripts/ni_fig5_exp_crops.py`); the paper's
+  simulation strip is left out to avoid confusion about what is simulated here.

@@ -1,18 +1,18 @@
 # Crystal plasticity and phase-field ductile fracture of single-crystal Ni tensile specimens with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, draft of 2026-10-21. Status: methodology (§2),
+Technical report, draft of 2026-10-23. Status: methodology (§2),
 numerical method (§3), the crystal-plasticity parameter calibration (§4),
-the mesh sensitivity (§5) and the phase-field fracture calibration without a
-plastic-work threshold (§6) written for the production mesh h020; the
-thresholded calibration (§7), the fifteen specimens and the neural and
-surrogate routes follow as they are confirmed by the author; abstract and introduction are held until the
+the mesh sensitivity (§5) and the two phase-field fracture calibrations,
+without (§6) and with (§7) a plastic-work threshold, written for the
+production mesh h020; the fifteen specimens and the neural and surrogate
+routes follow as they are confirmed by the author; abstract and introduction are held until the
 study is closed. Every number here traces to a run in `docs/run_ledger.md`
 (rows `ni-*`) and to a deck under `decks/ni/`; the lab notebook is
 `docs/12_ni_study.md`, the plan `docs/11_ni_plan.md`. Figures of §4 are
 produced by `scripts/ni_calibration_figures.py` from
 `decks/ni/figures/cal_figures.i`, those of §5 by `scripts/ni_mesh_figures.py`
 and `scripts/ni_fields.py` from `decks/ni/figures/mesh_figures_h020.i` and
-`decks/ni/figures/fields_mesh_h020.i`, those of §6 by
+`decks/ni/figures/fields_mesh_h020.i`, those of §6 and §7 by
 `scripts/ni_pfd_curve_figures.py`, `scripts/ni_pfd_search_figures.py` and
 `scripts/ni_pfd_shape_figures.py` from `decks/ni/figures/pfd_*.i`.
 
@@ -686,11 +686,14 @@ $d$ obeys
 
 $$
 \frac{G_c}{\ell_0}\, d - G_c \ell_0 \nabla^2 d = 2 (1-d)\, \mathcal{H}, \qquad
-\mathcal{H}(t) = \max_{\tau \le t} \left[ \psi^+(\tau) + \zeta \left\langle W_p(\tau) - W_c \right\rangle \right] ,
+\mathcal{H}(t) = \max_{\tau \le t} \left[ \chi\, \psi^+(\tau) + \zeta \left\langle W_p(\tau) - W_c \right\rangle \right] ,
 \tag{10}
 $$
 
-with $\psi^+$ the positive part of the elastic energy density, $W_p =
+with $\psi^+$ the positive part of the elastic energy density (Miehe's
+spectral split of the elastic Green-Lagrange strain with the Voigt average
+of the cubic constants), $\chi$ a prefactor on it ($\chi = 1$ in this
+section, the form of the Al2219 report), $W_p =
 \int \sum_\alpha \tau^\alpha \dot{\gamma}^\alpha \, dt$ the accumulated
 plastic work density per unit reference volume (the slip of Eq. (4) against
 the resolved shear stress of Eq. (3)), $\zeta = 1$, $W_c$ the plastic-work
@@ -700,8 +703,9 @@ stresses of Eq. (3) are formed, so a damaged point keeps its flow stress
 and loses its load-carrying capacity only as $g \to 0$. Mechanics and damage are solved in a staggered loop of up to three
 alternations per load step (tolerance $10^{-3}$ on the damage increment)
 along the 300-step path of §3.2, with $d = 0$ held on the grip faces. This
-section reports the condition $W_c = 0$, in which the plastic work drives
-damage from the first load step; §7 reports the thresholded condition.
+section reports the condition $W_c = 0$, $\chi = 1$, in which the plastic
+work drives damage from the first load step; §7 reports the thresholded
+condition.
 
 **Failure criterion.** Failure is the first load step at which the nodes
 with $d > 0.85$ cut the specimen in two: the intact nodes are joined along
@@ -770,8 +774,8 @@ calibrated crystal plasticity without damage (dashed) and the target
 
 **Figure 13.** Axial Green-Lagrange strain $E_{xx}$ on the deformed top face
 at failure for the four pairs, with the $d > 0.85$ zone outlined in black,
-against the paper's Fig. 5 panel of L.1 (DIC above, the paper's
-simulation below).
+against the experiment's DIC panel of L.1 (axial strain at the onset of
+failure, the paper's Fig. 5; only the experiment is shown).
 
 ![plateau shapes](../../figures/ni/pfd/shape_L1_plateau.png)
 
@@ -857,14 +861,201 @@ failure step).
 
 ## 7. Phase-field ductile fracture: calibration with a plastic-work threshold
 
-*(in progress: $\ell_0 = 0.6$ mm fixed; $G_c$ searched at $W_c = 55$, 65 and
-75 MPa, bracketing the softening onset of the experimental curve; the
-prefactor on the elastic energy of Eq. (10) as the next calibration
-parameter; results follow as the author confirms them)*
-
 ### 7.1 Design
 
-### 7.2 The threshold trend
+The $W_c = 0$ condition of §6 reproduces the failure strain but not the
+path to it: the phase field grows from the first load step, the curve sits
+2 to 6% under the experiment from 20% strain on, and the fracture zone is a
+band normal to the axis (§6.4). The threshold stage asks the model to
+follow the experimental curve for as long as possible before fracture and
+then to fail at 0.463. The calibrated crystal plasticity without damage
+matches the experiment within 0.8% to the 45% marker, so the plastic work
+density at that strain is the natural scale of $W_c$: in the $W_c = 0$
+check run the gage-peak plastic work is 61 MPa at 38%, 73.5 at 44% and 76
+at 46.3%. A threshold above 76 MPa cannot fail at the target, so $W_c$ was
+bracketed at 55, 65 and 75 MPa (damage onset near 36, 41 and 46% strain)
+with $G_c$ searched to the failure strain at each value, at the fixed
+$\ell_0 = 0.6$ mm of §6.3 (decks `decks/ni/pfd/wc*_L1_h020.i`, driver
+`scripts/ni_pfd_calibrate.py`, one search per threshold side by side).
 
-### 7.3 Calibrated pair and comparison with the experiment
+**Failure definition.** The separation criterion of §6.1 is kept, with one
+addition for a sharp crack: when the cracking step's mechanics stop
+converging before the $d > 0.85$ zone spans the section, the run counts
+as failed at its last converged step if the maximum $d$ has reached 0.85
+and the load has fallen by more than 3% from its peak (the section is
+losing its load through the crack). This fires on one run of this section,
+the carried one.
 
+### 7.2 The elastic driving energy as a barrier ($\chi = 1$)
+
+The first round kept the driving force of §6 ($\chi = 1$). Every $G_c$
+small enough to fail by 0.463 cracked the fillets at 4 to 14% strain,
+before any plastic work had reached $W_c$ (Table 7, Fig. 16): with the
+threshold on the plastic work only, the elastic energy $\psi^+$ drives
+damage from the first step, and the AT2 model has a tensile strength
+$\sigma_c = \sqrt{27 E G_c / (256\,\ell_0)}$ (tanne 2018 crack) that falls
+to 100 to 375 MPa at the $G_c/\ell_0$ of 0.5 to 7 MPa these runs needed,
+below the stress the fillet transition carries (the check on the coupled
+cube in `docs/12_ni_study.md` §6.4 confirms the coupler passes the stored
+elastic energy itself; the fillet energy is real). At the one pair that
+nearly reached the target ($W_c$ 65, $G_c$ 8) the damage localized at the
+fillet, not in the gage. The threshold did what it was meant to do where
+the fillets held: at $W_c$ 55 and $G_c$ 16 the curve lies on the
+experiment within 1% to 45% (peak 241 MPa against 239), $d$ stays below
+0.1 to 30% and rises from a knee at 37%; the run had not failed by 48%.
+
+**Table 7.** First round, $\chi = 1$, $\ell_0 = 0.6$ mm. Onset is the strain
+at which the maximum $d$ passes 0.1; location as in Table 6.
+
+| $W_c$ (MPa) | $G_c$ (MPa mm) | $G_c/\ell_0$ (MPa) | end of run | onset | peak stress (MPa) | where |
+|---|---|---|---|---|---|---|
+| 75 | 0.3 | 0.5 | separated at 0.037 | 0.3% | 94 | fillet (-0.10 of the gage) |
+| 75 | 1.2 | 2.0 | mechanics lost at 0.092, $d$ 0.67 | 2% | 127 | fillet |
+| 65 | 2 | 3.3 | separated at 0.138 | 6% | 148 | fillet (-0.16) |
+| 65 | 8 | 13 | mechanics lost at 0.458, $d$ 0.998 (28 nodes above 0.85) | 17% | 233 | fillet (-0.10) |
+| 55 | 4 | 6.7 | mechanics lost at 0.122, $d$ 0.15 | - | 145 | - |
+| 55 | 16 | 27 | no failure by 0.480, $d$ 0.72 | 30% | 241 | gage, diffuse |
+
+**Figure 16.** First round ($\chi = 1$): stress-strain curves (top) and
+maximum phase field (bottom) at each threshold, with the $W_c = 0$ pair of
+§6.3 in gray.
+
+![W_c round 1 curves](../../figures/ni/pfd/curves_L1_wc_round1.png)
+
+The elastic energy therefore picks the fillet and the plastic work the
+gage, and the two cannot be balanced by $G_c$ alone. PINNACLE gained a
+prefactor $\chi$ on the elastic energy in Eq. (10) (the author's MOOSE
+CP-PFD carries such prefactors on both energies); $\chi = 0$ is the purely
+ductile driving force, in which $W_c$ alone sets the onset and the plastic
+work alone picks the site, and $\chi = 1$ keeps every earlier deck as it
+was.
+
+### 7.3 Calibrated $G_c(W_c)$ with the purely ductile driving force ($\chi = 0$)
+
+**Table 8.** Calibrated pairs at $\chi = 0$, $\ell_0 = 0.6$ mm, h020. Onset
+as in Table 7; stress ratios against the experiment markers at 20 / 30 /
+40 / 45%; the fracture zone from the top face at failure; the flank angle
+from the principal direction of the $d > 0.85$ nodes (for the narrow
+$W_c = 75$ zone the crack line of Fig. 19 is the better descriptor).
+
+| $W_c$ (MPa) | $G_c$ (MPa mm) | failure strain | mode | onset | stress / experiment | peak (MPa) at strain | zone center | zone width (mm) | flank |
+|---|---|---|---|---|---|---|---|---|---|
+| 55 | 3.255 | 0.458 | separation | 35.8% | 0.996 / 0.996 / 0.986 / 0.984 | 234.4 at 45.8% | 0.39 | 2.5 | 55 deg |
+| 65 | 1.384 | 0.459 | separation | 40.7% | 0.996 / 0.996 / 1.000 / 0.978 | 234.9 at 43.1% | 0.41 | 2.3 | 58 deg |
+| 75 | 0.1 | 0.464 | load drop (5.9%) | 45.7% | 0.996 / 0.996 / 1.000 / 1.008 | 241.5 at 45.5% | 0.38 | 0.6 | inclined (line) |
+
+**Figure 17.** Stress-strain curves (top) and maximum phase field (bottom)
+of the three calibrated pairs against the experiment, with the $W_c = 0$
+pair of §6.3 in gray. Crosses mark failure.
+
+![W_c calibrated curves](../../figures/ni/pfd/curves_L1_wc_cal.png)
+
+**Figure 18.** Every run of the three $\chi = 0$ searches, one panel per
+threshold, for reference.
+
+![W_c chi 0 searches](../../figures/ni/pfd/curves_L1_wc_chi0.png)
+
+**Figure 19.** Axial Green-Lagrange strain $E_{xx}$ on the deformed top face
+at failure for the three calibrated pairs, with the $d > 0.85$ zone
+outlined in black and the crack line (for each node row across the gage
+width, the node of largest $d$; colored by that $d$) against the
+experiment's DIC panel.
+
+![W_c calibrated shapes](../../figures/ni/pfd/shape_L1_wc_cal.png)
+
+**Figure 20.** The phase field at failure for the same runs, with the
+$d = 0.85$ contour in cyan and the crack line.
+
+![W_c calibrated damage](../../figures/ni/pfd/shape_L1_wc_cal_damage.png)
+
+With the purely ductile driving force every threshold reproduces the
+experiment to failure: the three curves are indistinguishable from each
+other and from the markers within 1 to 2% from 20 to 45% strain, peak at
+234 to 242 MPa against the experiment's 239, and the phase field is exactly
+zero until the plastic work crosses $W_c$ (36, 41 and 46% strain) and then
+rises steeply to failure within 10, 5 and 0.7% strain of its onset (Fig.
+17). The damage sits in the gage and the crack is inclined at 48 to 60
+degrees across the width, at 0.38 to 0.41 of the gage (Figs. 19 and 20);
+the experiment's crack is at 0.20 and 55 to 60 degrees. The three
+thresholds differ in the toughness they need: $G_c$ falls thirty-fold from
+55 to 75 MPa, because the plastic work that accrues beyond $W_c$ before
+0.463 falls from about 17 to about 1 MPa, and the AT2 field reaches 0.85
+only when that excess is several times $G_c/\ell_0$. The fracture zone
+narrows accordingly, from 2.5 mm at $W_c = 55$ to 0.6 mm (three cells) at
+75.
+
+### 7.4 How and why the two calibrations differ
+
+**Table 9.** The carried pair of each condition.
+
+| | $W_c = 0$, $\chi = 1$ (§6) | $W_c = 75$ MPa, $\chi = 0$ (§7) |
+|---|---|---|
+| $G_c$ (MPa mm) at $\ell_0 = 0.6$ mm | 30.95 | 0.1 |
+| what $G_c/\ell_0$ sets | the nucleation strength: failure strain follows $G_c/\ell_0$ alone (Fig. 11) | the energy that completes the cut once $W_p > W_c$ |
+| damage onset (max $d$ > 0.1) | 3% | 45.7% |
+| max $d$ at 20 / 40% strain | 0.51 / 0.75 | 0 / 0 |
+| stress / experiment at 20 / 40% | 0.973 / 0.948 | 0.996 / 1.000 |
+| peak stress (MPa) | 225 | 241.5 |
+| failure strain | 0.460 | 0.464 |
+| load at failure | lost in one to two steps, 216 to 157 MPa | 227 MPa, 6% below the peak, when the mechanics loses the cracking step |
+| fracture zone at failure | band 2.3 mm wide, flanks within 3 degrees of the normal to the axis, at 0.21 of the gage; whole gage above $d$ = 0.6 | line 0.6 mm wide, inclined across the width, at 0.38 of the gage; the rest of the specimen at $d$ = 0 |
+| mesh cost to failure | 231 steps, 6,600 Newton iterations | 243 steps, 4,600 Newton iterations |
+
+The two conditions are different models of the same material, not two
+values of one parameter. With $W_c = 0$ the whole plastic work drives
+damage, so the phase field is a slowly saturating function of the
+accumulated work everywhere in the gage (§6.4), the degradation of that
+diffuse field is what lowers the curve, and $G_c/\ell_0$ acts as a strength
+that decides when the saturating field reaches 0.85 across the thinnest
+section; the toughness is large (31 kJ/m$^2$) because it must hold back
+the work of the entire path. With $W_c = 75$ MPa nothing is damaged until
+the work at a point exceeds the threshold, which in this single crystal
+happens first at one row of the gage at 45.7%; the field there goes from 0
+to 0.85 within 0.7% strain and the toughness needed to let it do so is
+0.1 MPa mm, three hundred times smaller, because only the excess work
+beyond the threshold, about 1 MPa, is available to pay for the crack. The
+threshold replaces the dissipation that a polycrystal supplies through its
+neighboring grains (the Al2219 plate needed none): in a single crystal the
+plastic work is nearly uniform along the gage and all of it would count,
+so the single-crystal coupling needs $W_c$ to concentrate the damage in
+strain as well as in space. The location is the one feature neither
+condition reproduces: the plastic work of the model peaks at 0.38 to 0.41
+of the gage where the experiment cracked at 0.20, near the thinnest
+measured station.
+
+### 7.5 The elastic share at the carried pair
+
+At the carried pair ($W_c$ 75, $G_c$ 0.1) the elastic prefactor was raised
+to 0.3, 0.6 and 0.8 to see whether a growing elastic share moves the crack
+(`decks/ni/pfd/wc75_gc0.1_chi*_L1_h020.i`). It does not move it along the
+gage; it moves it to the fillet outright: $\chi = 0.6$ separated at 2.1%
+strain at -0.06 of the gage, $\chi = 0.3$ lost its mechanics at 4.0% with
+$d = 0.95$ there, as the AT2 strength of 33 to 54 MPa at $G_c/\ell_0 =
+0.17$ MPa predicts ($\chi = 0.8$ is being rerun; its first run was killed
+by the memory cap before the fillet cracked). At the $G_c$ a late ductile
+onset needs, the driving force has to be purely ductile.
+
+**Figure 21.** The elastic share at the carried pair: curves and maximum
+phase field for $\chi$ = 0, 0.3 and 0.6.
+
+![chi sweep](../../figures/ni/pfd/curves_L1_chi_sweep.png)
+
+### 7.6 Carried set
+
+Every later phase-field stage of this study runs with
+
+$$
+\chi = 0, \qquad W_c = 75 \ \mathrm{MPa}, \qquad G_c = 0.1 \ \mathrm{MPa\,mm}, \qquad \ell_0 = 0.6 \ \mathrm{mm},
+$$
+
+on h020 with the crystal-plasticity set of Table 2 and the failure
+definition of §7.1. The $W_c = 0$ pair of §6.3 is kept as the reference
+condition.
+
+### 7.7 Cost
+
+The $\chi = 0$ runs take 5 to 10 h each to failure on two threads; the three
+searches needed fourteen runs (Fig. 18). A run whose crystal-plasticity
+update falls back to sub-stepping at one point can exceed the 16 GB memory
+cap and is killed; such runs are mechanics deaths, not results, and are
+rerun under a 40 GB cap (`docs/run_ledger.md`, rows `ni-pfd-*`).
