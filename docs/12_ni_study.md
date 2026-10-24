@@ -773,3 +773,8 @@ chi 0.8 rerun (40 GB cap, 2026-10-23 23:30): separated at 1.5% at -0.04 of the g
 83 MPa. The chi sweep is complete: 0.8 / 0.6 / 0.3 crack the fillet at 1.5 / 2.1 / 4.0%, earlier
 the larger the elastic share. Report §7.5 and Fig. 21 updated. The chi 0.55 check runs on.
 
+chi 0.55 check, second death (2026-10-23 23:58): the 40 GB rerun was oom-killed at the same step
+(72, 14.85%, max d 0.011); the user-scope journal records a 40.0 GB memory peak reached within
+40 s of the fallback message (point 1827, max |R| 2.7e9). The sub-stepping fallback has no memory
+bound; being traced on a one-point far trial locally (scratchpad memcheck) before a PINNACLE fix.
+
