@@ -549,3 +549,15 @@ NOT derivable from the code: measured facts, decisions, and traps.
   nature and value (§7.4). Field figures show only the experiment's DIC panel
   (`data/digitized/ni_fig5_panels/<spec>_exp.png`, `scripts/ni_fig5_exp_crops.py`); the paper's
   simulation strip is left out to avoid confusion about what is simulated here.
+
+## 2026-10-24: the fallback memory runaway found and fixed in PINNACLE
+- Cause: the FEM assembler builds u with requires_grad=True (autograd tangent of the elastic
+  materials), so the CP callback's deformation carried a graph; under torch every sub-step of
+  the backward-Euler update / sub-stepping fallback added graph nodes that were never freed
+  (tracemalloc flat at 0.02 GB while RSS rose 0.1 GB/s; a hook showed F3.requires_grad = True).
+  All memory-cap deaths of the study (k1_p, W_c 55 / G_c 4, chi 0.8, the chi 0.55 check twice)
+  were this.
+- Fix (PINNACLE, ADR 0033 addendum 2026-10-24): the three integrators are wrappers that detach
+  the deformations and run under no_grad; the stress stays differentiable at the frozen state.
+  113 tests pass. The chi 0.55 check is rerun under the original 16 GB cap as the test
+  (`...chi0.55_fix`). The 40 GB base deck is no longer needed.

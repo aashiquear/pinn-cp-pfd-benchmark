@@ -778,3 +778,17 @@ chi 0.55 check, second death (2026-10-23 23:58): the 40 GB rerun was oom-killed 
 40 s of the fallback message (point 1827, max |R| 2.7e9). The sub-stepping fallback has no memory
 bound; being traced on a one-point far trial locally (scratchpad memcheck) before a PINNACLE fix.
 
+Fallback memory runaway, found and fixed (2026-10-24). A restart from the dead check's
+`restart_step0072.pkl` reproduced the runaway in a minute under a 12 GB cap: tracemalloc saw
+0.02 GB of Python objects while RSS rose 0.1 GB/s inside `_integrate_stacks`, i.e. torch
+tensors; a hook at the sub-stepper's entry showed the deformation arriving with
+`requires_grad = True` and a `grad_fn` (the assembler builds u with grad for the autograd
+tangent of the elastic materials). Every sub-step of the fallback therefore added autograd
+nodes that nothing freed. PINNACLE fix: the backward-Euler update, the sub-stepping and
+`_integrate_step` are wrappers that detach the deformations and run under `torch.no_grad()`;
+the stress remains differentiable in the deformation at the integrated (frozen) state, as in the
+explicit mode. Regression test on the torch backend (113 tests of the implicit-update and
+coupling suites pass). The check is relaunched under the 16 GB cap as the proof
+(`check_wc75_gc30_chi0.55_fix`); the earlier memory-cap deaths of the study were the same
+mechanism. The 40 GB base deck stays only as a record.
+
