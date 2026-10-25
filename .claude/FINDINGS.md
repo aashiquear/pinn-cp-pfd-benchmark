@@ -561,3 +561,9 @@ NOT derivable from the code: measured facts, decisions, and traps.
   the deformations and run under no_grad; the stress stays differentiable at the frozen state.
   113 tests pass. The chi 0.55 check is rerun under the original 16 GB cap as the test
   (`...chi0.55_fix`). The 40 GB base deck is no longer needed.
+
+## 2026-10-25: the fallback fix confirmed on the step that killed two runs
+- The chi 0.55 / W_c 75 / G_c 30 check ran the full 300-step path under 16 GB with two fallback
+  events (step 72 among them) and no oom-kill. Memory caps of 16 GB are sufficient again; the
+  40 GB base deck is a record only. Result of the check (not for reporting): no failure by 59.2%,
+  max d 0.53, stress above the experiment past 45% (255 MPa at the path end).

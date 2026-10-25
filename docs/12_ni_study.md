@@ -792,3 +792,12 @@ coupling suites pass). The check is relaunched under the 16 GB cap as the proof
 (`check_wc75_gc30_chi0.55_fix`); the earlier memory-cap deaths of the study were the same
 mechanism. The 40 GB base deck stays only as a record.
 
+chi 0.55 check, done (2026-10-25; `decks/ni/figures/pfd_curves_L1_check_chi055.i`,
+`pfd_shape_L1_check_chi055_damage.i`; not for reporting). W_c 75 / G_c 30 / chi 0.55 ran the full
+300-step path (59.2% gauge strain) with no failure: the elastic share at this large G_c
+(G_c / l0 = 50 MPa, AT2 strength ~560 MPa) gives only a slow diffuse background (max d 0.007 /
+0.016 / 0.026 / 0.037 / 0.043 at 10-45%), and the plastic part beyond W_c is far too weak for
+G_c 30 (d 0.22 at 50%, 0.52 at 59%, in the gage center); the curve lies on the experiment to 45%
+(0.996 / 0.995 / 0.999 / 1.006) and on the CP-only curve beyond (0.997 at 50%, 0.991 at 59%, 255
+MPa at the path end). Mechanics: two fallback events survived under 16 GB; the PINNACLE fix holds.
+

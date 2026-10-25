@@ -1055,7 +1055,11 @@ condition.
 ### 7.7 Cost
 
 The $\chi = 0$ runs take 5 to 10 h each to failure on two threads; the three
-searches needed fourteen runs (Fig. 18). A run whose crystal-plasticity
-update falls back to sub-stepping at one point can exceed the 16 GB memory
-cap and is killed; such runs are mechanics deaths, not results, and are
-rerun under a 40 GB cap (`docs/run_ledger.md`, rows `ni-pfd-*`).
+searches needed fourteen runs (Fig. 18). Four runs of §6 and §7 were killed
+by the 16 GB memory cap when the crystal-plasticity update of one point fell
+back to sub-stepping; the cause was an autograd graph growing by one node
+per sub-step under the torch backend (the assembler's displacement carries
+grad), fixed in PINNACLE on 2026-10-24 (ADR 0033 addendum) by integrating
+the state on detached deformations. The runs reported here were unaffected
+in their results (a killed run was rerun or superseded; `docs/run_ledger.md`,
+rows `ni-pfd-*`).
