@@ -578,3 +578,6 @@ NOT derivable from the code: measured facts, decisions, and traps.
   fracture location in the calibration style; then the four routes compared on accuracy, memory,
   time, efficiency-to-accuracy over all 15; then a cost-to-accuracy study. Compare with the
   paper's EXPERIMENTS only; never the paper's MOOSE results (figures, tables, text).
+- Surrogate design (author 2026-10-25): inputs Euler angles (3) + station thicknesses (5); outputs
+  curve, failure strain, fracture location; 30 LHS synthetic specimens as training data (FE runs),
+  the 15 real specimens held out and predicted.

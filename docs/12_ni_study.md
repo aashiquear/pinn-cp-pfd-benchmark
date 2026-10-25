@@ -828,3 +828,26 @@ first solver attempt failed on `node_features = 'orientation grain_boundary'` (n
 field on a single crystal); `predictor_features = ''` omits the features. CPU fastest, as for the
 polycrystal; threads nearly irrelevant with the implicit update.
 
+## 8. The 15 specimens on the four routes (last stage; author 2026-10-25)
+
+Design (author): the carried set (chi 0, W_c 75, G_c 0.1, l0 0.6; h020; Table 2 CP set) on the
+15 specimens (groups 9, 10, H, L, P x variants 1, 3, 4) with FEM (cold FE), PINN+FEM (linear
+predictor), PINN (fem_residual network on the GPU, no node features) and the surrogate; per route
+the true-vs-predicted strain to failure (Fig. 4(b) experiment axis) and the fracture location
+(Fig. 5 reading), then the four compared on accuracy, memory, time and efficiency-to-accuracy,
+then a cost-to-accuracy study. Experiment only; the paper's MOOSE results are never used. Decks
+`decks/ni/final/{fem,hybrid,pinn}_{base,15}_h020.i` (`ni_study.py`, `include_base = false`);
+figures `scripts/ni_final_figures.py` (parity, location, table; experiment columns only).
+
+Surrogate (author): inputs the three Euler angles and the five station thicknesses, outputs the
+curve, the failure strain and the fracture location; training data 30 Latin-hypercube synthetic
+specimens (`scripts/ni_surrogate_design.py`, `decks/ni/final/surrogate_design_h020.i`: Euler angles
+uniform over the rotation group, thickness as mean 0.325-0.400 mm and linear taper -0.04 to +0.06 mm
+over the gage; seed 0), meshed with the h020 settings (30 meshes, local hexaform), run with the
+carried set; the 15 real specimens held out. The design's decks carry relative paths so they run
+unchanged on the host; `ni_study.py` re-bases "./" override values; `ni_specimen_mesh.py` accepts
+specimen names without a variant.
+
+Checks running (2026-10-25): specimen 9.1 on the FEM route (first of the 15) and synthetic sample
+S01 (first of the 30). The campaigns launch after the author's go-ahead.
+

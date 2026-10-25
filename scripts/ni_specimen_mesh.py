@@ -136,7 +136,7 @@ def main(argv):
         cmap = {"9": "#1f4e9c", "10": "#2a9d8f", "H": "#6a4c93", "L": "#d1495b", "P": "#111111"}
         styles = {"x.1": "-", "x.3": "--", "x.4": ":"}
         for name_i, group_i, xs_i, t_i, _, opts_i in profiles:
-            variant = "x." + name_i.split(".")[1]
+            variant = ("x." + name_i.split(".")[1]) if "." in name_i else name_i   # synthetic specimens (S01...) have no variant
             ax.plot(xs_i, t_i, color=cmap.get(group_i, "#888888"), ls=styles.get(variant, "-"), lw=1.0, label=name_i)
         ax.set_xlim(0, opts.length); ax.set_xlabel("x (mm)"); ax.set_ylabel("thickness (mm)")
         ax.set_title(f"thickness profiles of the {len(profiles)} specimens (Table 2 stations, spline in the gage, linear blend to {t_grip} mm across the fillets)", fontsize=7.5)
