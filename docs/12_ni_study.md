@@ -801,3 +801,20 @@ G_c 30 (d 0.22 at 50%, 0.52 at 59%, in the gage center); the curve lies on the e
 (0.996 / 0.995 / 0.999 / 1.006) and on the CP-only curve beyond (0.997 at 50%, 0.991 at 59%, 255
 MPa at the path end). Mechanics: two fallback events survived under 16 GB; the PINNACLE fix holds.
 
+## 7. Hardware and time check (launched 2026-10-25 10:30, author)
+
+Before the 15-specimen stage: the cost of the routes on the Ni single crystal with the carried
+CP+PFD set (chi 0, W_c 75, G_c 0.1, l0 0.6; h020) and the internal backward-Euler CP update,
+one case at a time on the host, first 16 of the 300 load steps (strain per step unchanged):
+cold FE on torch CPU 2 / 4 / 8 threads, torch GPU, numpy 8; PINN+FEM (linear predictor, 2
+threads); PINN as solver (fem_residual network, 'orientation' feature only: a single crystal
+has no grain boundaries; network on the GPU and on the CPU). `scripts/hardware_benchmark.py`
+on `decks/ni/benchmark/hardware_L1_h020.i`; the three pipeline decks are staged with
+`ni_specimen.py ... deck` (`results/ni_study/benchmark/<case>_L1_h020/pfd.i`). Changes for the
+Ni deck: the benchmark's path rewrite now handles the dog-bone's pull expression
+(STRAIN*25.4*t/TEND) and makes the mesh path absolute; `ni_specimen.py` gained
+`predictor_features`. The surrogate has no per-step solve: its cost is derived from the FE
+sample cost measured here plus the training and query times (Al2219 report §11, same host).
+Question (author): the polycrystal with the external solver found the CPU fastest; does that
+hold with the internal implicit update?
+

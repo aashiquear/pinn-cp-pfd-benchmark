@@ -20,7 +20,8 @@ Every stage is driven by ONE specimen deck (PINNACLE ``.i`` syntax):
     newton_tol = 1.0e-3   newton_rel_tol = 0   max_cutbacks = 10   linear_method = direct   sparse_threshold = 500
     C11 = 253000  C12 = 152000  C44 = 124000  mu = 26000  gamma0 = 1.0e-5  nexp = 8.3333  tau_c0 = 0.26
     q_lat = 1.4  alpha0 = 0.4  burgers = 2.5e-7  rho0 = 2.35e6  k1 = 0.0295  y_c = 0.79e-6
-    predictor = none | linear | fem_solver_grain   (corrector, corrector_tol, predictor_device, predictor_gpu as in pfd_plate.py)
+    predictor = none | linear | fem_solver_grain   (corrector, corrector_tol, predictor_device, predictor_gpu as in pfd_plate.py;
+                                                    predictor_features = 'orientation' for a single crystal, no grain boundaries)
     state_update = implicit   state_iterations = 2   # PINNACLE ADR 0033: implicit (backward Euler) is the default here; explicit = Parts I-II scheme
 
 Stages:
@@ -133,7 +134,7 @@ def stage_deck(sp: dict, deck: Path) -> Path:
             "    precision        = float64", "    hidden_layers    = 3", "    neurons          = 64", "    activation       = tanh",
             "    fourier_features = false", "    epochs_initial   = 5", "    epochs_per_step  = 4", "    lr               = 1",
             "    optimizer        = lbfgs", f"    residual_target  = {_num(sp.get('predictor_target', 0.05))}", "    reset_each_step  = false",
-            "    seed             = 0", "    node_features    = 'orientation grain_boundary'", "  []", "[]", ""])
+            "    seed             = 0", f"    node_features    = '{sp.get('predictor_features', 'orientation grain_boundary')}'", "  []", "[]", ""])
     else:
         raise SystemExit(f"predictor = {pred}: use none, linear or fem_solver_grain")
     if is_pfd(sp):

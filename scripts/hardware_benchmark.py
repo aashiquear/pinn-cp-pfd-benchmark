@@ -78,7 +78,7 @@ def _resolve(p: str, deck: Path) -> Path:
 def _pipeline_out_dir(pipe: Path) -> Path:
     m = re.search(r"^\s*out_dir\s*=\s*(\S+)", pipe.read_text(), re.M)
     if not m:
-        raise SystemExit(f"{pipe}: no out_dir in [Mechanics]")
+        raise SystemExit(f"{pipe}: no out_dir in [Mechanics] / [Plate] / [Specimen]")
     return _resolve(m.group(1), pipe)
 
 
@@ -101,6 +101,10 @@ def rewrite(src: Path, dst: Path, case: dict, n_steps: int) -> None:
     setkey("Global", "backend", str(case.get("backend", "numpy")))
     setkey("Global", "use_gpu", "true" if bool(case.get("use_gpu", False)) else "false")
     setkey("Global", "output_dir", str(dst.parent / "solver"))
+    # a mesh file named relative to the staged deck (the Ni dog-bone) must stay reachable from the case directory
+    m_mesh = re.search(r"^(\s*path\s*=\s*)(\S+)", text, re.M)
+    if m_mesh and not Path(m_mesh.group(2)).is_absolute():
+        text = text[: m_mesh.start(2)] + str((src.parent / m_mesh.group(2)).resolve()) + text[m_mesh.end(2) :]
     # Shorten the load path keeping the strain per step.
     m_n = re.search(r"^\s*n_steps\s*=\s*(\S+)", text, re.M); m_t = re.search(r"^\s*t_end\s*=\s*(\S+)", text, re.M)
     n_full, t_full = int(float(m_n.group(1))), float(m_t.group(1))
@@ -114,7 +118,8 @@ def rewrite(src: Path, dst: Path, case: dict, n_steps: int) -> None:
         m_pull = re.search(r"^(\s*values\s*=\s*\[)([0-9.eE+-]+)(\]\s*#[^\n]*strain x width[^\n]*)$", text, re.M)
         if m_pull:
             text = text[: m_pull.start(2)] + f"{float(m_pull.group(2)) * n_steps / n_full:.12g}" + text[m_pull.end(2):]
-        text = re.sub(r"^(\s*expression\s*=\s*)([0-9.eE+-]+)(\*100\.0\*t/)([0-9.eE+-]+)", lambda m: f"{m.group(1)}{float(m.group(2)) * n_steps / n_full:.12g}{m.group(3)}{t_full * n_steps / n_full:.12g}", text, count=1, flags=re.M)
+        # the pulled end's ramp "STRAIN*LENGTH*t/TEND" (plate: *100.0*; Ni dog-bone: *25.4*)
+        text = re.sub(r"^(\s*expression\s*=\s*)([0-9.eE+-]+)(\*[0-9.eE+-]+\*t/)([0-9.eE+-]+)", lambda m: f"{m.group(1)}{float(m.group(2)) * n_steps / n_full:.12g}{m.group(3)}{t_full * n_steps / n_full:.12g}", text, count=1, flags=re.M)
     else:
         setkey("Executioner", "t_end", f"{t_full * n_steps / n_full:.12g}")
     setkey("Executioner", "snapshots_every", "0")
