@@ -818,3 +818,13 @@ sample cost measured here plus the training and query times (Al2219 report §11,
 Question (author): the polycrystal with the external solver found the CPU fastest; does that
 hold with the internal implicit update?
 
+Results (2026-10-25 14:15; `results/ni_study/benchmark/hardware_L1_h020/hardware_L1_h020.csv`,
+`figures/ni/benchmark/hardware_L1_h020.png`; report §8, Table 10): time per step torch CPU 50.4 /
+49.1 / 48.6 s at 2 / 4 / 8 threads (113 Newton iterations, 7.1-6.8 s each), GPU 54.0 s, numpy
+71.4 s; linear predictor 36.9 s (63 iterations); fem_residual network solver 236 s with the
+network on the GPU (predictor 199 s per step, 563 assemblies) and 339 s on the CPU (302 s, 846
+assemblies), 3.8 GB against 2.0; in 16 steps the network never replaced a Newton solve. The
+first solver attempt failed on `node_features = 'orientation grain_boundary'` (no orientation
+field on a single crystal); `predictor_features = ''` omits the features. CPU fastest, as for the
+polycrystal; threads nearly irrelevant with the implicit update.
+

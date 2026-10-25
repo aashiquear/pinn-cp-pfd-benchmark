@@ -8,6 +8,7 @@ scripts/ni_specimen.py and the cases to run, one parameter at a time or named:
     base       = ../cp/base_L1_h040.i        # specimen deck with the base [Specimen]
     out_root   = ../../../results/ni_study/cp/sens_h040
     concurrent = 7                           # runs at a time (each uses [Specimen] threads)
+    include_base = true                      # false: only the named [Cases] (no reference case)
   [Sweep]
     rho0 = '1.175e6 4.7e6'                   # levels of one key at a time (OAT); the
     k1   = '0.01475 0.059'                   # base is the reference case
@@ -64,7 +65,10 @@ def _levels(v) -> list[str]:
 
 
 def cases_of(cfg: dict) -> list[tuple[str, dict[str, str]]]:
-    out: list[tuple[str, dict[str, str]]] = [("base", {})]
+    # the base is the reference case of a sweep; a named-case study may leave it out
+    # ([Study] include_base = false: the 15-specimen stage, whose base is one of the cases)
+    with_base = str((cfg.get("study") or {}).get("include_base", "true")).lower() != "false"
+    out: list[tuple[str, dict[str, str]]] = [("base", {})] if with_base else []
     for key, levels in (cfg.get("sweep") or {}).items():
         for lv in _levels(levels):
             out.append((f"{key}_{lv}".replace(".", "p").replace("-", "m"), {key: lv}))

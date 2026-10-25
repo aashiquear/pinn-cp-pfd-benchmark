@@ -38,7 +38,7 @@
   k1      = 0.0114677
   y_c     = 1.54209e-06
   predictor = fem_solver_grain
-  predictor_features = orientation      # single crystal: no grain-boundary feature
+  predictor_features = ''               # single crystal: one orientation everywhere carries no information, no grain boundaries
   memory_cap_gb    = 16
   Gc               = 0.1
   l0               = 0.6

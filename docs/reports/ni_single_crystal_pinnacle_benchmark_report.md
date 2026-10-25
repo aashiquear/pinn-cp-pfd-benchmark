@@ -3,9 +3,10 @@
 Technical report, draft of 2026-10-23. Status: methodology (§2),
 numerical method (§3), the crystal-plasticity parameter calibration (§4),
 the mesh sensitivity (§5) and the two phase-field fracture calibrations,
-without (§6) and with (§7) a plastic-work threshold, written for the
-production mesh h020; the fifteen specimens and the neural and surrogate
-routes follow as they are confirmed by the author; abstract and introduction are held until the
+without (§6) and with (§7) a plastic-work threshold, and the hardware and
+time check of the routes (§8) written for the production mesh h020; the
+fifteen specimens on the four routes (§9 onward) follow as they are
+confirmed by the author; abstract and introduction are held until the
 study is closed. Every number here traces to a run in `docs/run_ledger.md`
 (rows `ni-*`) and to a deck under `decks/ni/`; the lab notebook is
 `docs/12_ni_study.md`, the plan `docs/11_ni_plan.md`. Figures of §4 are
@@ -1063,3 +1064,88 @@ grad), fixed in PINNACLE on 2026-10-24 (ADR 0033 addendum) by integrating
 the state on detached deformations. The runs reported here were unaffected
 in their results (a killed run was rerun or superseded; `docs/run_ledger.md`,
 rows `ni-pfd-*`).
+
+## 8. Hardware and time check of the routes with the implicit update
+
+### 8.1 Design
+
+The Al2219 report (§10 there) measured the routes with the explicit
+crystal-plasticity update on the polycrystal plate and found the CPU
+fastest. The Ni specimens use the implicit backward-Euler update of §3.4,
+a local Newton per quadrature point inside every stress evaluation, so the
+balance between the arms was measured again before the specimen campaign,
+on the carried CP+PFD deck of §7.6 (L.1, h020, $\chi = 0$, $W_c = 75$ MPa,
+$G_c = 0.1$ MPa mm, $\ell_0 = 0.6$ mm): the first 16 of its 300 load steps,
+with the strain per step unchanged, one case at a time on the host (16
+cores, one GPU), the thread count pinned (deck
+`decks/ni/benchmark/hardware_L1_h020.i`, script
+`scripts/hardware_benchmark.py`; the three pipeline decks
+`decks/ni/benchmark/{fe,linear,solver}_L1_h020.i`). Cases: the cold
+finite-element route on torch CPU at 2, 4 and 8 threads, on the torch GPU,
+and on numpy at 8 threads; the PINN+FEM route with the linear
+extrapolation predictor at 2 threads; the PINN-as-solver route
+(`fem_residual` network, the formulation of the Al2219 report §8 without
+grain features, since a single crystal carries one orientation) with the
+network on the GPU and on the CPU. For each case: the wall time per load
+step, the Newton time per iteration, the predictor time per step, the
+Newton iterations of the 16 steps and the peak resident memory. The
+surrogate route has no per-step solve; its cost is derived in §8.3.
+
+### 8.2 Results
+
+**Table 10.** Hardware and time check, first 16 load steps of the carried
+deck, one case at a time. The five finite-element cases converged in the
+same 113 Newton iterations, so they are timed on identical work.
+
+| route | FE arm | threads | network device | Newton iterations | Newton time per iteration | predictor time per step | time per step | peak memory |
+|---|---|---|---|---|---|---|---|---|
+| cold FE | torch CPU | 2 | -- | 113 | 7.08 s | -- | 50.4 s | 2.0 GB |
+| cold FE | torch CPU | 4 | -- | 113 | 6.90 s | -- | 49.1 s | 2.0 GB |
+| cold FE | torch CPU | 8 | -- | 113 | 6.84 s | -- | 48.6 s | 2.0 GB |
+| cold FE | torch GPU | 8 | -- | 113 | 7.55 s | -- | 54.0 s | 2.1 GB |
+| cold FE | numpy | 8 | -- | 113 | 10.09 s | -- | 71.4 s | 2.1 GB |
+| PINN+FEM, linear extrapolation | torch CPU | 2 | -- | 63 | 8.59 s | 0.0 s | 36.9 s | 2.1 GB |
+| PINN as solver (`fem_residual`) | torch CPU | 2 | GPU | 63 | 8.67 s | 199 s | 236 s | 3.8 GB |
+| PINN as solver (`fem_residual`) | torch CPU | 2 | CPU | 63 | 8.64 s | 302 s | 339 s | 3.8 GB |
+
+**Figure 22.** Time per load step by case (Newton and predictor parts).
+
+![hardware](../../figures/ni/benchmark/hardware_L1_h020_time_per_step.png)
+
+The conclusion of the polycrystal holds with the implicit update, and more
+strongly. The CPU is the fastest arm; the thread count is nearly
+irrelevant (2 to 8 threads gain 3.5%), because the implicit update is a
+per-point local Newton whose cost is in small dense operations that do not
+use the threaded BLAS, so the host is best used as several two-thread runs
+side by side, as every campaign of §6 and §7 did. The GPU is 7% slower than
+the CPU at this size (792 elements, 6,336 quadrature points): the kernel
+launches of the local Newton outweigh the parallelism. numpy is 1.45 times
+slower than torch on the CPU. The linear-extrapolation predictor nearly
+halves the Newton iterations (63 against 113) and cuts the time per step
+by 27% at no cost in memory or accuracy: it is the PINN+FEM route of the
+specimen campaign. The PINN-as-solver route costs 4.7 times the cold
+finite-element step with its network on the GPU and 6.7 times on the CPU:
+the network's training (199 and 302 s per step, 563 and 846 residual
+assemblies over the 16 steps) dominates, and in these 16 steps its
+prediction never replaced a Newton solve (63 iterations, the same as the
+linear baseline it starts from), so the Newton work is that of the PINN+FEM
+route plus the training. The GPU helps this route (1.5 times faster
+training) and nothing else; memory is 1.8 times the finite-element route.
+The ordering is the one the polycrystal gave: cold FE on the CPU, the
+linear predictor cheaper still, the network solver several times dearer.
+
+### 8.3 The surrogate's cost
+
+The surrogate of the specimen campaign (§9) is trained once on
+finite-element runs and answers a specimen in milliseconds, so its cost is
+the data plus the training, amortized over the queries. From Table 10 one
+full finite-element specimen run (about 245 load steps to failure at the
+PINN+FEM step time of 37 s) costs about 2.5 h on two threads, 15 of them
+side by side on the host about 6 h of wall time; the training of a network
+of the Al2219 size (three hidden layers of 64 units) took 28 to 121 s on
+this host and a query 0.2 to 0.6 ms (Al2219 report §11.2). The surrogate
+therefore breaks even against the finite-element route after as many
+queries as it has training runs, and against the PINN-as-solver route after
+a fifth of that. *(The measured training and query times of the specimen
+surrogate are added in §9 when it is trained.)*
+

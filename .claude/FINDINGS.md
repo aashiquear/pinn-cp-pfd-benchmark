@@ -567,3 +567,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
   events (step 72 among them) and no oom-kill. Memory caps of 16 GB are sufficient again; the
   40 GB base deck is a record only. Result of the check (not for reporting): no failure by 59.2%,
   max d 0.53, stress above the experiment past 45% (255 MPa at the path end).
+
+## 2026-10-25: hardware section and the last stage (author)
+- Hardware check (implicit CP update, L.1 h020, carried set, 16 steps): CPU fastest; threads
+  nearly irrelevant (2 -> 8: -3.5%); GPU 7% slower than CPU; numpy 1.45x slower than torch CPU;
+  linear predictor -27% time per step (63 vs 113 Newton iterations). Goes into the report (§8) so
+  a reader can choose hardware; the surrogate row is derived when its estimate is done.
+- Last stage: 15 specimens (5 orientation groups x 3 thickness variants) with the carried set on
+  FEM, PINN+FEM, PINN and the surrogate; per route the true-vs-predicted strain to failure and the
+  fracture location in the calibration style; then the four routes compared on accuracy, memory,
+  time, efficiency-to-accuracy over all 15; then a cost-to-accuracy study. Compare with the
+  paper's EXPERIMENTS only; never the paper's MOOSE results (figures, tables, text).
