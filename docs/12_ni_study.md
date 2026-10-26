@@ -851,3 +851,17 @@ specimen names without a variant.
 Checks running (2026-10-25): specimen 9.1 on the FEM route (first of the 15) and synthetic sample
 S01 (first of the 30). The campaigns launch after the author's go-ahead.
 
+### 8.1 The checks: Newton on the other orientations (2026-10-25 evening)
+
+Specimen 9.1 (FEM) and synthetic sample S01 both ran into Newton trouble that L.1 never showed.
+S01 (Euler 31.8 / 22.1 / 11.6, a soft orientation: 128 MPa at 30%) ended at 36.6% gauge strain
+on the cutback budget, max d 0, with the last Newton solves stalling at a residual of 1.0-2.0e-3
+against the absolute tolerance 1e-3 (initial norms 35-140 N). 9.1 (Euler 291.2 / 47.9 / 49.3)
+crawls from 32% on: 40-42 Newton iterations per accepted step (L.1: 9-26), 44 cutbacks by 33%,
+steps failing either at a residual of 1-2e-3 (initial norm 2,000-4,000 N: the tolerance is
+2.5-5e-7 relative, below the noise floor of the finite-difference tangent of the implicit stress)
+or at 0.6-1.5 N after a trial far off equilibrium threw 156 points into the sub-stepping budget
+(|gamma_dot| 850 1/s). Experiment (running): restarts of 9.1 from its step-160 checkpoint with
+newton_tol 2e-3 and 5e-3 (`results/ni_study/final/fem/exp_9.1_tol*`), 12+ steps, against the
+continuing 1e-3 run at the same load factors (iterations, cutbacks, reaction).
+
