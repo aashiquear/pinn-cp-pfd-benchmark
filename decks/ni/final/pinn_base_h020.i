@@ -17,8 +17,8 @@
   backend          = torch
   use_gpu          = false
   threads          = 2
-  newton_tol       = 1.0e-3
-  newton_rel_tol   = 0
+  newton_tol       = 5.0e-3   # 2026-10-26: 1e-3 N is below the tangent noise floor on orientations 9 and S01 (R0 2-4 kN); reactions unchanged to 1e-7
+  newton_rel_tol   = 1.0e-6
   max_cutbacks     = 10
   linear_method    = direct
   sparse_threshold = 500
