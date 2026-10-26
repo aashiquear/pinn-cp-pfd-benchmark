@@ -893,3 +893,9 @@ were stopped (kept: `fem_check_tol1e-3_9.1`, `tol5/9.1`). Author: FEM on all 15 
 PINN+FEM and the surrogate data together; the pure PINN route on one representative specimen only
 (the cheapest by FEM wall time). FEM campaign launched 09:05 (`ni_study.py ... run`, 6 at a time).
 
+S01 at 0.05 N (done 09:04): full 300-step path, 4 cutbacks, no failure by 60.2% gauge strain, max d
+0 (188 MPa at 60%: this soft orientation has not reached W_c). Consequence: the 30% grip-strain
+path (gauge ~60%) is too short for 9.3 / 9.4 (experiment 61.6 / 62.6%) and for soft synthetic
+specimens. All last-stage base decks now pull to 40% grip strain in 400 steps (same step); the FEM
+campaign was relaunched at 09:50 (its first 45 min at the 30% path discarded).
+

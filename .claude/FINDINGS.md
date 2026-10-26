@@ -602,3 +602,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Harder orientations cost 13-15 h per FEM run (L.1: 5 h): the Newton floor of the implicit
   stress's finite-difference tangent on multi-slip orientations; tolerance 0.05 N (5e-4 of the
   reaction) is the campaign setting if the S01 test passes (reactions unchanged at 5e-3 to 1e-7).
+
+## 2026-10-26: the load path of the last stage is 40% grip strain (400 steps)
+- The calibration path (30% grip strain, 300 steps) ends near 60% gauge strain. Specimens 9.3 and
+  9.4 fail in the experiment at 61.6 / 62.6%, and soft synthetic specimens (S01: 188 MPa at 60%,
+  max d 0 at the path end) reach W_c later still. Every last-stage deck therefore pulls to 40% grip
+  strain in 400 steps (same 1e-3 per step, t_end 8 s). A run that reaches the path end without
+  failing is recorded as "no failure by <final strain>" (the surrogate learns it as censored).

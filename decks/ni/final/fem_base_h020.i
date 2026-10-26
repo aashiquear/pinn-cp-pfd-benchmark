@@ -10,9 +10,9 @@
   specimen         = L.1
   gage_width       = 1.85
   length           = 25.4
-  strain           = 0.30
-  t_end            = 6.0          # bar strain rate 5e-2/s: strain / 0.05
-  n_steps          = 300
+  strain           = 0.40          # 2026-10-26: the 30% path ends near 60% gauge strain, below the 61.6 / 62.6% failures of 9.3 / 9.4 and the soft synthetic specimens
+  t_end            = 8.0          # bar strain rate 5e-2/s: strain / 0.05
+  n_steps          = 400          # same 1e-3 grip strain per step
   snapshots_every  = 2
   backend          = torch
   use_gpu          = false
