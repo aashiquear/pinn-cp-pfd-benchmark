@@ -865,3 +865,15 @@ or at 0.6-1.5 N after a trial far off equilibrium threw 156 points into the sub-
 newton_tol 2e-3 and 5e-3 (`results/ni_study/final/fem/exp_9.1_tol*`), 12+ steps, against the
 continuing 1e-3 run at the same load factors (iterations, cutbacks, reaction).
 
+Restart experiments: VOID (no step taken: point 797's backward-Euler update failed at the same
+residual on every evaluation after the restart, 6.5 min per fallback; FINDINGS trap). Fresh runs
+instead: 9.1 and S01 with newton_tol 5e-3 + newton_rel_tol 1e-6 (`results/ni_study/final/tol5/`),
+against the continuing 1e-3 run of 9.1. At 2026-10-26 01:20: reactions of the two 9.1 runs
+identical to 1e-7 at every common load factor (0.003-0.400, no damage yet): the looser tolerance
+does not change the answer. Below load factor 0.25 the iterations differ by one. In the stalling
+region (load factor >= 0.45) the 5e-3 run needs 29 iterations per step (max 36) against 32 (max
+49) and has 6 cutbacks by 0.477 against 73 by 0.571; S01 at 5e-3 is at 0.538 with 15 cutbacks and
+37 iterations per step. The tolerance removes the floor failures; the slow Newton convergence at
+large strain remains (L.1 also rose to 26 iterations near its failure) and sets the cost of the
+campaign at about 70-115 s per step late in the path.
+
