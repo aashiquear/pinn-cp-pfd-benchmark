@@ -17,7 +17,7 @@
   backend          = torch
   use_gpu          = false
   threads          = 2
-  newton_tol       = 5.0e-3   # 2026-10-26: 1e-3 N is below the tangent noise floor on orientations 9 and S01 (R0 2-4 kN); reactions unchanged to 1e-7
+  newton_tol       = 5.0e-2   # 2026-10-26: Newton floor of the implicit stress's FD tangent on multi-slip orientations (S01 1e-2 N); 5e-4 of the reaction; reactions unchanged at 5e-3 to 1e-7
   newton_rel_tol   = 1.0e-6
   max_cutbacks     = 10
   linear_method    = direct

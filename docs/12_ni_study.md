@@ -885,3 +885,11 @@ consistency floor of the implicit stress, not a load-step problem. Test 2 (runni
 newton_tol 0.05 N (`tol50/s01`). The 9.1 runs continue (1e-3: load factor 0.584, 90 cutbacks,
 13 h; 5e-3: 0.532, 24 cutbacks, 5.3 h).
 
+Decision (2026-10-26 09:00). S01 at newton_tol 0.05 N passed its stall point and reached load
+factor 0.97 in 5 h with 4 cutbacks, while the 9.1 runs at 1e-3 and 5e-3 were still at 0.61 / 0.58
+with 126 / 72 cutbacks after 18 / 11 h: 0.05 N (5e-4 of the reaction; 5e-3 had left the reactions
+unchanged to 1e-7) is the Newton tolerance of every route of the last stage. The old 9.1 runs
+were stopped (kept: `fem_check_tol1e-3_9.1`, `tol5/9.1`). Author: FEM on all 15 first, then
+PINN+FEM and the surrogate data together; the pure PINN route on one representative specimen only
+(the cheapest by FEM wall time). FEM campaign launched 09:05 (`ni_study.py ... run`, 6 at a time).
+
