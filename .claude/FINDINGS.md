@@ -594,3 +594,11 @@ NOT derivable from the code: measured facts, decisions, and traps.
   (9.76) on every evaluation, each fallback 6.5 min; two such restarts made no step in 35 min.
   Not used for experiments until understood (PINNACLE issue to look at: the committed
   deformation / trial after a restart).
+
+## 2026-10-26: last-stage campaign order and PINN scope (author)
+- FEM on all 15 first; then PINN+FEM (15) and the surrogate data (30) together. The pure PINN
+  route runs on ONE representative specimen, the cheapest of the 15 by FEM wall time, to show it
+  works; its cost-accuracy enters the comparison for that specimen only.
+- Harder orientations cost 13-15 h per FEM run (L.1: 5 h): the Newton floor of the implicit
+  stress's finite-difference tangent on multi-slip orientations; tolerance 0.05 N (5e-4 of the
+  reaction) is the campaign setting if the S01 test passes (reactions unchanged at 5e-3 to 1e-7).
