@@ -877,3 +877,11 @@ region (load factor >= 0.45) the 5e-3 run needs 29 iterations per step (max 36) 
 large strain remains (L.1 also rose to 26 iterations near its failure) and sets the cost of the
 campaign at about 70-115 s per step late in the path.
 
+S01 at 5e-3 (2026-10-26 03:11): ended at 37.7% (1e-3: 36.6%), max d 0. Its log: at load factor
+0.5717, after ten halvings down to dt 2e-5 s, Newton still ends at residuals of 5.4e-3 to 2.3e-2 N
+in 50 iterations, while the accepted mini-steps just before converged in 20-35 iterations; the
+floor is 1e-4 of the reaction (R0 35-140 N) and does not depend on the step size: a tangent
+consistency floor of the implicit stress, not a load-step problem. Test 2 (running): S01 with
+newton_tol 0.05 N (`tol50/s01`). The 9.1 runs continue (1e-3: load factor 0.584, 90 cutbacks,
+13 h; 5e-3: 0.532, 24 cutbacks, 5.3 h).
+
