@@ -581,3 +581,16 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Surrogate design (author 2026-10-25): inputs Euler angles (3) + station thicknesses (5); outputs
   curve, failure strain, fracture location; 30 LHS synthetic specimens as training data (FE runs),
   the 15 real specimens held out and predicted.
+
+## 2026-10-25: Newton tolerance on the other orientations; coupled restart trap
+- The absolute Newton tolerance 1e-3 N is 2.5-5e-7 of the initial residual (2-4 kN) on
+  orientation 9 and sits below the finite-difference tangent's noise floor: 40-42 iterations
+  per step, steps failing at 1-2e-3, 44 cutbacks by 33%; S01 (soft orientation) stalled at
+  1.0-2.0e-3 and ended at 36.6%. L.1 converged fast and never showed it. Test running: 9.1 and
+  S01 from scratch with newton_tol 5e-3 (5e-5 of the ~100 N reaction) + newton_rel_tol 1e-6
+  (`results/ni_study/final/tol5/`), against the continuing 1e-3 run of 9.1.
+- Trap: a coupled restart (`restart_from`) of a CP+PFD run with the implicit update got stuck
+  from its first evaluation: point 797's backward-Euler update failed at the same residual
+  (9.76) on every evaluation, each fallback 6.5 min; two such restarts made no step in 35 min.
+  Not used for experiments until understood (PINNACLE issue to look at: the committed
+  deformation / trial after a restart).
