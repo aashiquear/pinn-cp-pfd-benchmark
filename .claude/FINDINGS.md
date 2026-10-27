@@ -609,3 +609,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
   max d 0 at the path end) reach W_c later still. Every last-stage deck therefore pulls to 40% grip
   strain in 400 steps (same 1e-3 per step, t_end 8 s). A run that reaches the path end without
   failing is recorded as "no failure by <final strain>" (the surrogate learns it as censored).
+
+## 2026-10-27: first campaign result: the single W_c transfers to late failure on soft orientations
+- 10.3 (FEM): failure 0.771 vs experiment 0.528 (+46%), location 0.46 vs 0.30, crack sharp and
+  inclined (56 deg). Orientation 10 hardens much less than L (153 MPa at 53%), so the plastic work
+  reaches W_c = 75 MPa late. Group 9 shows no damage at 0.38-0.47 (exp 0.55-0.63). The campaign
+  continues as designed; the report states the transfer error as the model's result (author to
+  decide whether a second calibration is wanted; not done unasked).

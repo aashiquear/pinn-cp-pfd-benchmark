@@ -106,9 +106,10 @@ def main(argv):
     data = {k: read_run(_resolve(_str(r["dir"]), deck)) for k, r in runs.items()}
     for j, p in enumerate(panels):
         ax = axes[0, j]
-        ax.plot(tx, ty, "-", color="#111111", lw=0.7, alpha=0.6, label="Experiment, Fig. 3 trace to the failure strain")
-        exp_marker(ax, ex, ey)
-        ax.plot(ce, cs, "--", color="#9a9a9a", lw=1.3, label="CP only (calibrated, no damage)")
+        if _str(f.get("hide_experiment", "false")).lower() != "true":   # other specimens: no digitized curve
+            ax.plot(tx, ty, "-", color="#111111", lw=0.7, alpha=0.6, label="Experiment, Fig. 3 trace to the failure strain")
+            exp_marker(ax, ex, ey)
+            ax.plot(ce, cs, "--", color="#9a9a9a", lw=1.3, label="CP only (calibrated, no damage)")
         ax.axvline(target, color="#111111", lw=0.9, ls=":",
                    label="experiment failure strain %.1f%% (Fig. 4(b))" % target)
         keys = [k for k, r in runs.items() if int(r.get("panel", 0)) == p]

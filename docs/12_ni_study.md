@@ -899,3 +899,14 @@ path (gauge ~60%) is too short for 9.3 / 9.4 (experiment 61.6 / 62.6%) and for s
 specimens. All last-stage base decks now pull to 40% grip strain in 400 steps (same step); the FEM
 campaign was relaunched at 09:50 (its first 45 min at the 30% path discarded).
 
+First specimen of the campaign (10.3, FEM; done 2026-10-27 00:15, 14.8 h, 343 steps, 7,502 Newton
+iterations): failure (separation) at 0.771 gauge strain at 0.46 of the gage, flank 56 deg, peak
+191.5 MPa at 0.759 (`figures/ni/final/fem_curve_10.3.png`, `fem_shape_10.3.png`). The experiment:
+0.528 at 0.30, neck mode. The crack itself is sharp and inclined, in the gage; the failure strain
+is 46% late. Cause: orientation 10 hardens far less than L (153 MPa at 53% against L's 240 at 46%),
+so the plastic work reaches W_c = 75 MPa much later; a single work threshold calibrated on L
+transfers to a late failure on the softer orientations. 10.1 (max d 0.90 at 0.761 gauge, exp
+0.540) and 10.4 (d 0 at 0.71, exp 0.530) are heading the same way; group 9 (exp 0.55-0.63) has no
+damage at 0.38-0.47. This is a result of the benchmark (the carried model's transfer across
+orientations), reported as such; the campaign continues unchanged.
+
