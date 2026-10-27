@@ -80,6 +80,13 @@ def _resolve(p: str, deck: Path) -> Path:
     return q if q.is_absolute() else (deck.parent / q).resolve()
 
 
+def _str(v) -> str:
+    """A deck value as text ('' and [] both mean empty)."""
+    if isinstance(v, (list, tuple)):
+        return " ".join(str(x) for x in v).strip()
+    return str(v).strip().strip("'\"")
+
+
 def _num(v) -> str:
     return f"{float(v):.12g}"
 
@@ -134,7 +141,10 @@ def stage_deck(sp: dict, deck: Path) -> Path:
             "    precision        = float64", "    hidden_layers    = 3", "    neurons          = 64", "    activation       = tanh",
             "    fourier_features = false", "    epochs_initial   = 5", "    epochs_per_step  = 4", "    lr               = 1",
             "    optimizer        = lbfgs", f"    residual_target  = {_num(sp.get('predictor_target', 0.05))}", "    reset_each_step  = false",
-            "    seed             = 0", f"    node_features    = '{sp.get('predictor_features', 'orientation grain_boundary')}'", "  []", "[]", ""])
+            "    seed             = 0",
+            *([f"    node_features    = '{_str(sp.get('predictor_features', 'orientation grain_boundary'))}'"]
+              if _str(sp.get("predictor_features", "orientation grain_boundary")) else []),   # none for a single crystal
+            "  []", "[]", ""])
     else:
         raise SystemExit(f"predictor = {pred}: use none, linear or fem_solver_grain")
     if is_pfd(sp):

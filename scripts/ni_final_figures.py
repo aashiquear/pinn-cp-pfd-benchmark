@@ -104,7 +104,7 @@ def main(argv):
     for j, (name, r) in enumerate(routes.items()):
         pred = predicted(_resolve(_str(r["root"]), deck))
         ax, al = axes[0, j], axl[0, j]
-        lim = (0.3, 0.7)
+        lim = (0.3, 0.9)
         ax.plot(lim, lim, "-", color="#111111", lw=0.9)
         ax.fill_between(lim, [0.9 * x for x in lim], [1.1 * x for x in lim], color="#dddddd", lw=0, label=r"$\pm$10%")
         al.plot([0, 1], [0, 1], "-", color="#111111", lw=0.9)
