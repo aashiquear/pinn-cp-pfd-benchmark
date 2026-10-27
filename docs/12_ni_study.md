@@ -910,3 +910,16 @@ transfers to a late failure on the softer orientations. 10.1 (max d 0.90 at 0.76
 damage at 0.38-0.47. This is a result of the benchmark (the carried model's transfer across
 orientations), reported as such; the campaign continues unchanged.
 
+Group 10 complete (FEM; 2026-10-27 16:34):
+
+| specimen | failure (FEM) | experiment | error | location (FEM / exp) | flank | peak (MPa) at strain | wall | steps / Newton |
+|---|---|---|---|---|---|---|---|---|
+| 10.1 | 0.779 (separation) | 0.540 | +44% | 0.38 / 0.20 | 64 deg | 183.8 at 0.752 | 24.0 h | 351 / 9,595 |
+| 10.3 | 0.771 (separation) | 0.528 | +46% | 0.46 / 0.30 | 56 deg | 191.5 at 0.759 | 14.8 h | 343 / 7,502 |
+| 10.4 | 0.773 (separation) | 0.530 | +46% | 0.41 / 0.25 | 68 deg | 171.8 at 0.753 | 31.2 h | 331 / 11,059 |
+
+The three thickness variants fail within 0.008 of each other (the experiment: within 0.012), all
+44-46% late, with the crack 0.1-0.2 of the gage further along than the experiment's and inclined
+where the experiment necked. Group 9 (9.1 / 9.3 / 9.4 at load factor 0.49 / 0.49 / 0.41 after 32 h,
+150-200 cutbacks) and group H (h.1 0.44, h.3 0.33, h.4 started) run on.
+
