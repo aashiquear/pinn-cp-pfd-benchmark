@@ -616,3 +616,10 @@ NOT derivable from the code: measured facts, decisions, and traps.
   reaches W_c = 75 MPa late. Group 9 shows no damage at 0.38-0.47 (exp 0.55-0.63). The campaign
   continues as designed; the report states the transfer error as the model's result (author to
   decide whether a second calibration is wanted; not done unasked).
+
+## 2026-10-28: group 9 hits the Newton floor before damage (9.1)
+- 9.1 (FEM) ended undamaged at 43.5% gauge strain (exp 0.5465): Newton stalled at a residual
+  floor 0.157 N (3x the 0.05 N tolerance, 1e-3 of the reaction), 210 cutbacks, 46 h. Recorded as
+  "stopped unseparated"; 9.3 / 9.4 (431 / 338 cutbacks at load factor 0.53 / 0.44) will follow.
+  Not rerun unasked: the author decides between reporting the floor and a looser tolerance.
+- `ni_pfd_shape_figures.py` draws no crack line when max d < `ridge_min` (0.05).

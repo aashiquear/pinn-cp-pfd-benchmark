@@ -117,7 +117,8 @@ def draw_ridge(ax, v: dict, f: dict, run: Path):
     from matplotlib.collections import LineCollection
 
     pts, vals = ridge(v, f, run)
-    if len(pts) < 2:
+    # an undamaged run (mechanics breakdown before initiation) has no crack line to draw
+    if len(pts) < 2 or vals.max() < float(f.get("ridge_min", 0.05)):
         return None
     segs = np.stack([pts[:-1], pts[1:]], axis=1)
     # a dark underlay keeps the colored core readable on the jet / inferno fields

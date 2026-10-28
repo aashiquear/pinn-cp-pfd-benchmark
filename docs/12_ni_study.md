@@ -923,3 +923,17 @@ The three thickness variants fail within 0.008 of each other (the experiment: wi
 where the experiment necked. Group 9 (9.1 / 9.3 / 9.4 at load factor 0.49 / 0.49 / 0.41 after 32 h,
 150-200 cutbacks) and group H (h.1 0.44, h.3 0.33, h.4 started) run on.
 
+9.1 (FEM; ended 2026-10-28 07:58, 46 h): no failure. The mechanics broke down at load factor 0.519
+(grip strain 20.7%, gauge strain 43.5%, 224 MPa and still hardening) with max d = 0: Newton stalled
+at a residual floor of 0.157-0.159 N against the 0.05 N tolerance (about 1e-3 of the 144 N reaction;
+the finite-difference tangent floor of this multi-slip orientation, §8.1) and the cutback budget
+ended the path after 207 steps, 210 cutbacks and 28,484 Newton iterations. The experiment fails at
+0.5465 (inclined band at 0.15 of the gage). The run is recorded as "stopped unseparated at 43.5%"
+(open square in `figures/ni/final/fem_parity.png`; `fem_curve_9.1.png`, `fem_shape_9.1.png`: the
+gage has sheared into an S between the fixed grips, the single-crystal lattice rotation of this
+orientation). 9.3 / 9.4 are at load factor 0.528 / 0.438 with 431 / 338 cutbacks after 48 h and
+are heading for the same floor; h.1 / h.3 / h.4 at 0.49 / 0.42 / 0.31 (192 / 137 / 116 cutbacks);
+l.1 started 2026-10-28 08:00 (0.16, no cutbacks yet). Author to decide whether group 9 is reported
+as "no failure before the Newton floor" or rerun at a looser tolerance (the floor is 3x the
+tolerance; 0.5 N would be 3.5e-3 of the reaction).
+
