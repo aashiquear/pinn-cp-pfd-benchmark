@@ -1,5 +1,5 @@
 # Last stage, route 'fem': the 15 specimens (5 orientation groups x 3 thickness variants) with the
-# W_c = 0 set (G_c 30.95, chi 1, l0 0.6; docs/12 §8.3, author 2026-10-28:
+# W_c = 0 set (G_c 30.95, chi 0, l0 0.6; docs/12 §8.3, author 2026-10-28:
 # W_c = 75 calibrated on L transfers late on the other orientations). Driver scripts/ni_study.py
 # (prepare | run | collect); then ni_specimen.py ... curve fracture per case for the failure
 # strain and the fracture location. Compared with the paper's experiments only (Fig. 4(b), Fig. 5).

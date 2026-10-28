@@ -629,10 +629,14 @@ NOT derivable from the code: measured facts, decisions, and traps.
   orientation's strength; it fixed the crack shape of L. All W_c = 75 runs stopped 09:15; the
   results (10.x 44-46% late, 9.1 no damage at the Newton floor) are reported in report §9 as the
   record of the carried set. Do not resume them.
-- Rerun: all 15 on FEM with W_c 0 / G_c 30.95 / chi 1 / l0 0.6 (`fem_wc0_*` decks, results
-  `final/fem_wc0/`). Then one specimen per orientation gets its own W_c calibration (sharper
+- Rerun: all 15 on FEM with W_c 0 / G_c 30.95 / chi 0 / l0 0.6 (`fem_wc0_*` decks, results
+  `final/fem_wc0/`). No W_c = 0 / chi = 0 calibration run exists (the W_c = 0 calibration predates
+  chi); author 10:20: carried chi 0 with the same G_c (elastic term ~0.2% at W_c = 0); L.1 in the
+  campaign verifies it. Then one specimen per orientation gets its own W_c calibration (sharper
   crack; L done). PINN+FEM, PINN and surrogate are PAUSED until then.
 - Figures: the d = 0.85 outline and the ridge are drawn only once the run met the failure
   definition. `[Extra]` block in the final figure decks pulls in runs outside the route root.
 - Host trap: a `nohup` launch over ssh has no venv on PATH; export
   `PATH=$HOME/venvs/pinnacle/bin:$PATH` first (the driver reports exit 0 after 20 s otherwise).
+- Kill trap: `grep -E "[n]i_study.py"` also matches the ssh shell whose own command line carries
+  a later `ni_study.py` launch; kill and launch in separate ssh calls.

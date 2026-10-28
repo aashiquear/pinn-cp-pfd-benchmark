@@ -1,5 +1,5 @@
 # BASE specimen deck of the last stage, route 'fem' (docs/12 §8; author 2026-10-25): the carried
-# CP+PFD set (chi 1, W_c 0, G_c 30.95 MPa mm, l0 0.6 mm: the W_c = 0 calibration of docs/12 §6.2) with the calibrated h020 CP set,
+# CP+PFD set (chi 0, W_c 0, G_c 30.95 MPa mm, l0 0.6 mm: the G_c of the W_c = 0 calibration of docs/12 §6.2 with the carried chi = 0) with the calibrated h020 CP set,
 # predictor = none. The 15 specimens are the [Cases] of fem_15_h020.i (scripts/ni_study.py).
 [Specimen]
   out_dir          = ../../../results/ni_study/final/fem_wc0/L.1
@@ -44,7 +44,7 @@
   zeta             = 1          # plastic-work driving force prefactor
   W_c              = 0
   eta              = 0
-  chi              = 1   # as in the W_c = 0 calibration (chi had its default 1 there)
+  chi              = 0           # author 2026-10-28: the carried chi = 0 with the W_c = 0 G_c (calibrated at chi 1; at W_c = 0 the elastic term is ~0.2% of the driving force)
   damage_model     = at2
   stop_damage      = 0
   checkpoint_every = 8

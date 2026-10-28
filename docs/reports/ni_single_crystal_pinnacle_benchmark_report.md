@@ -1271,8 +1271,12 @@ after 210 cutbacks and 46 h, before any damage.
 ### 9.4 Consequence for the campaign (author, 2026-10-28)
 
 The specimen campaign is rerun on the finite-element route with the
-$W_c = 0$ pair of §6.3 ($G_c = 30.95$ MPa mm at $\ell_0 = 0.6$ mm, $\chi =
-1$, all else unchanged), whose driving force needs no threshold and whose
+$W_c = 0$ pair of §6.3 ($G_c = 30.95$ MPa mm at $\ell_0 = 0.6$ mm) with the
+carried $\chi = 0$ and all else unchanged, whose driving force needs no
+threshold (the pair was calibrated at $\chi = 1$, but without a threshold
+the elastic term is about 0.2% of the driving force, $\psi^+ \approx 0.15$
+MPa against 80 MPa of plastic work at L.1's failure, so $G_c$ is kept and
+L.1, one of the 15, verifies it) and whose
 failure strain follows $G_c / \ell_0$ on the calibration specimen. The
 crack outline and the crack line are drawn once a run has met the failure
 definition. After that campaign, one specimen per orientation receives its

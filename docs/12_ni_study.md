@@ -955,11 +955,17 @@ final figure decks bring in a run from outside the route root (the L.1 calibrati
 
 ### 8.3 FEM campaign with the W_c = 0 pair (launched 2026-10-28 09:31, author)
 
-Author: all 15 with W_c = 0, G_c = 30.95 (the l0 = 0.6 pair of §6.2), chi 1 as in that
-calibration, everything else as the stopped campaign (40% path, 400 steps, 0.05 N). Decks
+Author: all 15 with W_c = 0, G_c = 30.95 (the l0 = 0.6 pair of §6.2), everything else as the stopped campaign (40% path, 400 steps, 0.05 N). Decks
 `decks/ni/final/fem_wc0_base_h020.i`, `fem_wc0_15_h020.i`; results
 `results/ni_study/final/fem_wc0/<case>/`; six at a time, two threads, 16 GB cap. (A first launch
 at 09:29 found no `pinnacle` executable: the nohup shell lacked the venv on PATH; re-prepared and
-relaunched with `PATH=~/venvs/pinnacle/bin:$PATH`.) After it: one specimen per orientation gets
+relaunched with `PATH=~/venvs/pinnacle/bin:$PATH`.) First launched with chi 1, the value of the W_c = 0
+calibration (made before the chi option existed); author 10:20: switch to the carried chi = 0 and
+keep G_c. No W_c = 0 / chi = 0 run exists, but at W_c = 0 the elastic term chi psi+ is about 0.2%
+of the driving force (psi+ ~ 0.15 MPa against W_p ~ 80 MPa at L.1's failure), so G_c 30.95 is
+expected to hold; L.1 is one of the 15 and verifies it. The chi 1 hour (`fem_wc0_chi1_aborted/`,
+not a result) was killed and the campaign re-prepared and relaunched at 10:25 (the kill pattern
+`[n]i_study.py` matched the ssh shell's own command line, which also carried the launch command:
+run the kill and the launch in separate ssh calls). After it: one specimen per orientation gets
 its own W_c calibration (L done in §6.4); PINN+FEM, PINN and the surrogate wait.
 
