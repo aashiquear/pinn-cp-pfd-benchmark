@@ -12,3 +12,11 @@
   specimens = all
   dpi       = 200
 []
+[Extra]
+  # the L.1 run of the W_c = 75 calibration (docs/12 §6.4; 30% path, newton_tol 1e-3): the
+  # specimen the carried set was calibrated on (author 2026-10-28)
+  [./L1]
+    specimen = L.1
+    dir      = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.1
+  []
+[]

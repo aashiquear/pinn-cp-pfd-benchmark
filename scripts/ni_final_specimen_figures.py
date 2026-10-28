@@ -15,6 +15,9 @@ Deck-driven (PINNACLE .i syntax):
     specimens = all                                      # or a list: '10.1 10.3'
     dpi      = 200
   []
+  [Extra]                        # optional: runs made outside the root (e.g. a calibration run)
+    [./L1]  specimen = L.1  dir = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.1 []
+  []
 
 For every finished specimen it writes a curve deck and a shape deck under <out_dir>/decks/ and
 runs scripts/ni_pfd_curve_figures.py and scripts/ni_pfd_shape_figures.py on them:
@@ -47,7 +50,7 @@ def read_deck(path: Path) -> dict:
     cfg = Translator().translate(InputParser().parse(path.read_text()))
     if "figures" not in cfg:
         raise SystemExit(f"{path}: missing [Figures]")
-    return cfg["figures"]
+    return cfg
 
 
 def _rows(path: Path) -> list[dict]:
@@ -59,7 +62,9 @@ def main(argv):
         print(__doc__)
         return 2
     deck = Path(argv[1]).resolve()
-    f = read_deck(deck)
+    cfg = read_deck(deck)
+    f = cfg["figures"]
+    extra = {_str(x["specimen"]): _resolve(_str(x["dir"]), deck) for x in cfg.get("extra", {}).values()}
     root = _resolve(_str(f["root"]), deck)
     out_dir = _resolve(_str(f["out_dir"]), deck)
     (out_dir / "decks").mkdir(parents=True, exist_ok=True)
@@ -71,7 +76,7 @@ def main(argv):
     specs = sorted(exp) if want == "all" else want.split()
     done = 0
     for spec in specs:
-        case = root / spec.lower()
+        case = extra.get(spec, root / spec.lower())
         if not (case / "summary.json").exists():
             continue
         lo, hi = scales.get(spec, (0.23, 0.98))
@@ -120,10 +125,15 @@ def main(argv):
   []
 []
 """)
-        for script, d in (("ni_pfd_curve_figures.py", cdeck), ("ni_pfd_shape_figures.py", sdeck)):
-            subprocess.run([sys.executable, str(HERE / script), str(d)], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run([sys.executable, str(HERE / "ni_pfd_curve_figures.py"), str(cdeck)], check=True, stdout=subprocess.DEVNULL)
+        # a run killed before its end wrote no field snapshot: curve only
+        if any(case.glob("solver/fields_step*.vtk")) or (case / "solver/fields.vtk").exists():
+            subprocess.run([sys.executable, str(HERE / "ni_pfd_shape_figures.py"), str(sdeck)], check=True, stdout=subprocess.DEVNULL)
+            print("drew", spec)
+        else:
+            (out_dir / f"{prefix}_shape_{spec}.png").unlink(missing_ok=True)
+            print("drew", spec, "(curve only: no field snapshot)")
         done += 1
-        print("drew", spec)
     print(f"{done} specimens drawn under {out_dir}")
     return 0
 

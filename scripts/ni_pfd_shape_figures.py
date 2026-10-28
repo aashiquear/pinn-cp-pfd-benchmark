@@ -147,7 +147,8 @@ def draw_damage(ax, v: dict, f: dict):
     remap[used] = np.arange(len(used))
     tri = mtri.Triangulation(x[used, 0], x[used, 1], remap[tris])
     tpc = ax.tripcolor(tri, d[used], shading="gouraud", cmap="inferno", vmin=0.0, vmax=1.0)
-    ax.tricontour(tri, d[used], levels=[float(f.get("crack", 0.85))], colors="cyan", linewidths=0.8)
+    if f.get("crack") is not None:
+        ax.tricontour(tri, d[used], levels=[float(f["crack"])], colors="cyan", linewidths=0.8)
     ax.set_xlim(x[used, 0].min(), x[used, 0].max())
     ax.set_ylim(x[used, 1].min() - 0.2, x[used, 1].max() + 0.2)
     ax.set_aspect("equal")
@@ -187,7 +188,8 @@ def draw_run(ax, v: dict, f: dict, lo: float, hi: float):
     remap = -np.ones(len(x), dtype=int)
     remap[used] = np.arange(len(used))
     tri = mtri.Triangulation(x[used, 0], x[used, 1], remap[tris])
-    ax.tricontour(tri, d[used], levels=[float(f.get("crack", 0.85))], colors="black", linewidths=1.0)
+    if f.get("crack") is not None:
+        ax.tricontour(tri, d[used], levels=[float(f["crack"])], colors="black", linewidths=1.0)
     ax.set_xlim(min(p[:, 0].min() for p in polys), max(p[:, 0].max() for p in polys))
     ax.set_ylim(min(p[:, 1].min() for p in polys) - 0.2, max(p[:, 1].max() for p in polys) + 0.2)
     ax.set_aspect("equal")
@@ -215,9 +217,15 @@ def main(argv):
     for i, (_, r) in enumerate(runs.items()):
         v, frac, summ = failure_frame(_resolve(_str(r["dir"]), deck))
         a = fig.add_subplot(gs[i + 1, 0])
-        pc = draw_run(a, v, f, lo, hi)
-        if _str(f.get("ridge", "false")).lower() == "true":
-            lc = draw_ridge(a, v, f, _resolve(_str(r["dir"]), deck)) or lc
+        # the crack outline and the ridge line are drawn once the run has met the failure
+        # definition (author 2026-10-28); an unfailed run shows its field only
+        fr = {"crack": 0.85, **f}
+        if summ.get("failure_gauge_strain") is None:
+            fr["crack"] = None
+            fr["ridge"] = "false"
+        pc = draw_run(a, v, fr, lo, hi)
+        if _str(fr.get("ridge", "false")).lower() == "true":
+            lc = draw_ridge(a, v, fr, _resolve(_str(r["dir"]), deck)) or lc
         g = json.loads((_resolve(_str(r["dir"]), deck) / "case.json").read_text())["substitutions"]
         if frac.get("last_frame") and summ.get("failure_mode") == "load_drop_cut":
             title = r"%s, $G_c$ = %s MPa mm: failure (load drop) at %.1f%% gauge strain; last snapshot %.1f%%" % (

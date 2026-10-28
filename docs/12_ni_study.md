@@ -937,3 +937,29 @@ l.1 started 2026-10-28 08:00 (0.16, no cutbacks yet). Author to decide whether g
 as "no failure before the Newton floor" or rerun at a looser tolerance (the floor is 3x the
 tolerance; 0.5 N would be 3.5e-3 of the reaction).
 
+### 8.2 The carried W_c does not transfer; campaign stopped (author, 2026-10-28 09:15)
+
+Author's reading: W_c is not independent of the strength of the orientation; it fixed the crack
+shape of L (which depends on the orientation, hence on its strength). All runs stopped at 09:15
+(9.3 / 9.4 / h.1 / h.3 / h.4 / l.1 at load factor 0.528 / 0.439 / 0.493 / 0.418 / 0.307 / 0.260,
+282 / 222 / 161 / 98 / 75 / 0 cutbacks; curves post-processed to the stopping point, no field
+snapshot: a killed run writes none). Work to the end, int(sigma d eps) of the gauge curve: L.1
+(W_c 75 calibration) 83 MPa at failure 0.464; 10.1 / 10.3 / 10.4 101 / 102 / 97 at 0.77-0.78
+(the work passes 75 MPa at 0.62-0.64, the crack cuts the section at 0.77); 9.1 75 at 0.435 with
+d = 0 (as strong as L; the experiment needs 0.5465); h.1 63 at 0.363. Report §9 (Table 11,
+Figs. 23-26) documents the group 9, 10 and L results with this reading; figures
+`figures/ni/final/fem_{parity,location}.png`, `fem_curve_*.png` (10 specimens), `fem_shape_*.png`
+(10.x, 9.1, L.1). Figure rules from here: the d = 0.85 outline and the ridge line are drawn only
+once the run has met the failure definition (`ni_pfd_shape_figures.py`); `[Extra]` blocks of the
+final figure decks bring in a run from outside the route root (the L.1 calibration run).
+
+### 8.3 FEM campaign with the W_c = 0 pair (launched 2026-10-28 09:31, author)
+
+Author: all 15 with W_c = 0, G_c = 30.95 (the l0 = 0.6 pair of §6.2), chi 1 as in that
+calibration, everything else as the stopped campaign (40% path, 400 steps, 0.05 N). Decks
+`decks/ni/final/fem_wc0_base_h020.i`, `fem_wc0_15_h020.i`; results
+`results/ni_study/final/fem_wc0/<case>/`; six at a time, two threads, 16 GB cap. (A first launch
+at 09:29 found no `pinnacle` executable: the nohup shell lacked the venv on PATH; re-prepared and
+relaunched with `PATH=~/venvs/pinnacle/bin:$PATH`.) After it: one specimen per orientation gets
+its own W_c calibration (L done in §6.4); PINN+FEM, PINN and the surrogate wait.
+

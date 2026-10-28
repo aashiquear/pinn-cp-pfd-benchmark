@@ -14,6 +14,9 @@ Deck-driven (PINNACLE .i syntax):
   [Routes]                       # one or more routes; each a study root with <specimen>/summary.json
     [./fem]    root = ../../../results/ni_study/final/fem    label = 'FEM'       color = '#1f4e9c' []
   []
+  [Extra]                        # optional: runs made outside the route root (e.g. a calibration run)
+    [./L1]  route = fem  specimen = L.1  dir = ../../../results/ni_study/pfd/wc_L1_h020/chi0_wc75/l0.6/gc0.1 []
+  []
 
 Writes <out_dir>/<prefix>_parity.png (experimental against predicted strain to failure, one
 marker per specimen, colored by orientation group and shaped by thickness variant as the
@@ -69,14 +72,20 @@ def experiment(f: dict, deck: Path) -> dict[str, dict]:
     return exp
 
 
-def predicted(root: Path) -> dict[str, dict]:
+def _case(d: Path) -> dict:
+    s = json.loads((d / "summary.json").read_text())
+    fr = json.loads((d / "fracture.json").read_text()) if (d / "fracture.json").exists() else {}
+    return {"strain": s.get("failure_gauge_strain"), "mode": s.get("failure_mode"), "final": s.get("final_gauge_strain"),
+            "location": fr.get("location_fraction"), "angle": fr.get("angle_to_axis_deg"), "peak": s.get("peak_eng_stress")}
+
+
+def predicted(root: Path, extra: dict[str, Path] | None = None) -> dict[str, dict]:
     out = {}
     for d in sorted(p for p in root.iterdir() if p.is_dir() and (p / "summary.json").exists()):
-        s = json.loads((d / "summary.json").read_text())
-        fr = json.loads((d / "fracture.json").read_text()) if (d / "fracture.json").exists() else {}
         spec = json.loads((d / "case.json").read_text())["substitutions"].get("SPECIMEN", d.name.upper()) if (d / "case.json").exists() else d.name.upper()
-        out[str(spec)] = {"strain": s.get("failure_gauge_strain"), "mode": s.get("failure_mode"), "final": s.get("final_gauge_strain"),
-                          "location": fr.get("location_fraction"), "angle": fr.get("angle_to_axis_deg"), "peak": s.get("peak_eng_stress")}
+        out[str(spec)] = _case(d)
+    for spec, d in (extra or {}).items():       # runs made outside the root (a calibration run)
+        out[spec] = _case(d)
     return out
 
 
@@ -102,9 +111,11 @@ def main(argv):
     fig, axes = plt.subplots(1, len(routes), figsize=(4.0 * len(routes), 3.9), squeeze=False, dpi=dpi)
     figl, axl = plt.subplots(1, len(routes), figsize=(4.0 * len(routes), 3.9), squeeze=False, dpi=dpi)
     for j, (name, r) in enumerate(routes.items()):
-        pred = predicted(_resolve(_str(r["root"]), deck))
+        extra = {_str(x["specimen"]): _resolve(_str(x["dir"]), deck)
+                 for x in cfg.get("extra", {}).values() if _str(x.get("route", name)) == name}
+        pred = predicted(_resolve(_str(r["root"]), deck), extra)
         ax, al = axes[0, j], axl[0, j]
-        lim = (0.3, 0.9)
+        lim = (0.2, 0.9)
         ax.plot(lim, lim, "-", color="#111111", lw=0.9)
         ax.fill_between(lim, [0.9 * x for x in lim], [1.1 * x for x in lim], color="#dddddd", lw=0, label=r"$\pm$10%")
         al.plot([0, 1], [0, 1], "-", color="#111111", lw=0.9)

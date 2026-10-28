@@ -623,3 +623,16 @@ NOT derivable from the code: measured facts, decisions, and traps.
   "stopped unseparated"; 9.3 / 9.4 (431 / 338 cutbacks at load factor 0.53 / 0.44) will follow.
   Not rerun unasked: the author decides between reporting the floor and a looser tolerance.
 - `ni_pfd_shape_figures.py` draws no crack line when max d < `ridge_min` (0.05).
+
+## 2026-10-28: W_c does not transfer across orientations; campaign rerun with W_c = 0 (author)
+- Author's reading of groups 9 / 10 / L: W_c (plastic-work threshold) is not independent of the
+  orientation's strength; it fixed the crack shape of L. All W_c = 75 runs stopped 09:15; the
+  results (10.x 44-46% late, 9.1 no damage at the Newton floor) are reported in report §9 as the
+  record of the carried set. Do not resume them.
+- Rerun: all 15 on FEM with W_c 0 / G_c 30.95 / chi 1 / l0 0.6 (`fem_wc0_*` decks, results
+  `final/fem_wc0/`). Then one specimen per orientation gets its own W_c calibration (sharper
+  crack; L done). PINN+FEM, PINN and surrogate are PAUSED until then.
+- Figures: the d = 0.85 outline and the ridge are drawn only once the run met the failure
+  definition. `[Extra]` block in the final figure decks pulls in runs outside the route root.
+- Host trap: a `nohup` launch over ssh has no venv on PATH; export
+  `PATH=$HOME/venvs/pinnacle/bin:$PATH` first (the driver reports exit 0 after 20 s otherwise).

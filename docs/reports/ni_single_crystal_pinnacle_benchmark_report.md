@@ -1136,7 +1136,7 @@ linear predictor cheaper still, the network solver several times dearer.
 
 ### 8.3 The surrogate's cost
 
-The surrogate of the specimen campaign (§9) is trained once on
+The surrogate of the specimen campaign (§10) is trained once on
 finite-element runs and answers a specimen in milliseconds, so its cost is
 the data plus the training, amortized over the queries. From Table 10 one
 full finite-element specimen run (about 245 load steps to failure at the
@@ -1147,5 +1147,136 @@ this host and a query 0.2 to 0.6 ms (Al2219 report §11.2). The surrogate
 therefore breaks even against the finite-element route after as many
 queries as it has training runs, and against the PINN-as-solver route after
 a fifth of that. *(The measured training and query times of the specimen
-surrogate are added in §9 when it is trained.)*
+surrogate are added in §10 when it is trained.)*
+
+## 9. The carried set on the other orientations: the plastic-work threshold does not transfer
+
+### 9.1 Design
+
+The finite-element route of the specimen campaign (§8.3; 15 specimens,
+five orientation groups by three thickness variants, h020 meshes, the
+crystal-plasticity set of Table 2) was launched with the carried set of §7.6
+($\chi = 0$, $W_c = 75$ MPa, $G_c = 0.1$ MPa mm, $\ell_0 = 0.6$ mm), on a
+40% grip-strain path in 400 steps, with the Newton tolerance of 0.05 N (§8)
+and six cases side by side on two threads each. The failure definition is
+that of §7.1 (a $d > 0.85$ zone cutting the section, or a load drop of more
+than 3% from the peak with $d \ge 0.85$); the predicted strain to failure is
+compared with the experiment's Fig. 4(b) axis and the fracture location
+with the reading of its Fig. 5 panels; the paper's own simulation values
+are never used. Group 10 and specimen 9.1 ran to their end; the campaign
+was stopped by the author on 2026-10-28 once the result below was clear,
+with 9.3, 9.4, H.1, H.3, H.4 and L.1 part way along their paths (their
+curves to the stopping point are kept). The L.1 entry is the calibration
+run of §7.3 (the specimen the carried set was fitted on; 30% path, Newton
+tolerance 1e-3 N).
+
+### 9.2 Results
+
+**Table 11.** The carried set on the specimens that ran (FEM route). The
+work column is $\int \sigma\,\mathrm{d}\varepsilon$ of the gauge curve to
+the run's end, the plastic work per reference volume of a uniformly
+deforming gage.
+
+| specimen | experiment: failure strain, location, mode | FEM: failure strain | error | location | crack flank to the axis | peak stress (MPa) at strain | work to the end (MPa) | wall | end of the run |
+|---|---|---|---|---|---|---|---|---|---|
+| L.1 | 0.463, 0.20, inclined | 0.464 (load drop) | +0.1% | 0.38 | 87 deg | 241.5 at 0.45 | 83 | 7.6 h | failure |
+| 10.1 | 0.540, 0.20, neck | 0.779 (separation) | +44% | 0.38 | 64 deg | 183.8 at 0.75 | 101 | 24.0 h | failure |
+| 10.3 | 0.528, 0.30, neck | 0.771 (separation) | +46% | 0.46 | 56 deg | 191.5 at 0.76 | 102 | 14.8 h | failure |
+| 10.4 | 0.530, 0.25, neck | 0.773 (separation) | +46% | 0.41 | 68 deg | 171.8 at 0.75 | 97 | 31.2 h | failure |
+| 9.1 | 0.547, 0.15, inclined | none by 0.435 | -- | -- | -- | 224.3 at 0.435 (rising) | 75 | 46 h | mechanics (Newton floor), $d = 0$ |
+| 9.3 | 0.616, 0.85, inclined | none by 0.389 | -- | -- | -- | 233.1 (rising) | 67 | 48 h | stopped, $d = 0$ |
+| 9.4 | 0.626, 0.60, inclined | none by 0.320 | -- | -- | -- | 198.0 (rising) | 49 | 48 h | stopped, $d = 0$ |
+| H.1 | 0.549, 0.75, neck | none by 0.363 | -- | -- | -- | 222.7 (rising) | 63 | 33 h | stopped, $d = 0$ |
+| H.3 | 0.566, 0.75, neck | none by 0.300 | -- | -- | -- | 209.8 (rising) | 49 | 24 h | stopped, $d = 0$ |
+| H.4 | 0.568, 0.80, neck | none by 0.227 | -- | -- | -- | 188.9 (rising) | 34 | 17 h | stopped, $d = 0$ |
+
+**Figure 23.** Strain to failure, experiment against the FEM route with the
+carried set (one marker per specimen, colored by orientation group and
+shaped by thickness variant as Fig. 4(b); $\pm 10\%$ band). Open squares:
+runs that ended without failing, drawn at their last strain.
+
+![carried set parity](../../figures/ni/final/fem_parity.png)
+
+**Figure 24.** Fracture location along the gage, experiment (Fig. 5
+reading, $\pm 0.08$) against the FEM route, for the specimens that failed.
+
+![carried set location](../../figures/ni/final/fem_location.png)
+
+**Figure 25.** Engineering stress and maximum phase field against gauge
+strain for L.1 (the calibration specimen, with the digitized experiment),
+10.3 and 9.1 (no digitized curves exist for these specimens; the dotted
+line is the experiment's failure strain). The remaining specimens are in
+`figures/ni/final/fem_curve_<specimen>.png`.
+
+![L.1 curve](../../figures/ni/final/fem_curve_L.1.png)
+
+![10.3 curve](../../figures/ni/final/fem_curve_10.3.png)
+
+![9.1 curve](../../figures/ni/final/fem_curve_9.1.png)
+
+**Figure 26.** The experiment's DIC axial strain at the onset of failure
+(Fig. 5, experiment panel only) and the Green-Lagrange $E_{xx}$ of the FEM
+route on the deformed gage, each on the panel's own color scale, for L.1,
+10.3 and 9.1. On a run that met the failure definition the $d = 0.85$
+outline and the crack line (the maximum $d$ of each node row across the
+width, colored by $d$) are drawn; an unfailed run shows its field only.
+The S-shaped gage of 9.1 is the lattice rotation of this multi-slip
+orientation between the fixed grips.
+
+![L.1 field](../../figures/ni/final/fem_shape_L.1.png)
+
+![10.3 field](../../figures/ni/final/fem_shape_10.3.png)
+
+![9.1 field](../../figures/ni/final/fem_shape_9.1.png)
+
+### 9.3 Why the threshold does not carry
+
+With $\chi = 0$ the crack is driven by the plastic work in excess of $W_c$
+alone (Eq. (10)), so the strain at which damage starts is the strain at
+which the plastic work density of the gage reaches $W_c$:
+
+$$
+\int_0^{\varepsilon_i} \sigma\,\mathrm{d}\varepsilon \approx W_c .
+$$
+
+The integral is set by the flow stress of the orientation. Orientation L
+hardens to 240 MPa by 45% and reaches 75 MPa of work at the experiment's
+failure strain, which is what the calibration of §7.3 fitted. Orientation
+10 flows at 130 MPa at 40% strain and at most 190 MPa, so its work reaches
+75 MPa only near 63% strain and the three variants fail at 77 to 78%, 44 to
+46% late against the experiment's 53 to 54%, with the crack 0.1 to 0.2 of
+the gage further along and inclined where the experiment necked (Table 11,
+Figs. 23 and 24; the three variants fail within 0.008 of each other, as the
+experiment's within 0.012, so the thickness effect is carried, the
+orientation effect is not). Orientation 9 is as strong as L (224 MPa at
+43.5%), so its work had reached the 75 MPa of L's initiation at 43.5% with
+no damage yet, while the experiment fails at 55 to 63%: on this orientation
+the same threshold errs the other way. Group H (190 to 223 MPa by 23 to
+36%) was stopped before its work reached the threshold.
+
+The threshold $W_c$ is therefore not a material constant independent of the
+orientation: it is the work to failure of the orientation it was fitted on,
+and it carries to another orientation only in proportion to that
+orientation's strength. In §7 it was fitted to L.1 to sharpen the crack
+(the $d = 0.85$ zone of the $W_c = 0$ pair spreads along the gage before it
+cuts the section; §6.4), so the quantity it fixed is the crack shape of one
+orientation, and the crack shape depends on the orientation through its
+flow stress. The second finding of this section is numerical: on the
+multi-slip orientation 9 the Newton solve of the implicit
+crystal-plasticity update stalls at a residual floor of about 0.16 N
+(three times the 0.05 N tolerance, $10^{-3}$ of the 144 N reaction) from
+40% strain on, the finite-difference tangent floor of §8; 9.1 ended there
+after 210 cutbacks and 46 h, before any damage.
+
+### 9.4 Consequence for the campaign (author, 2026-10-28)
+
+The specimen campaign is rerun on the finite-element route with the
+$W_c = 0$ pair of §6.3 ($G_c = 30.95$ MPa mm at $\ell_0 = 0.6$ mm, $\chi =
+1$, all else unchanged), whose driving force needs no threshold and whose
+failure strain follows $G_c / \ell_0$ on the calibration specimen. The
+crack outline and the crack line are drawn once a run has met the failure
+definition. After that campaign, one specimen per orientation receives its
+own $W_c$ calibration for a sharper crack (done for L in §7); the
+PINN+FEM, PINN and surrogate routes wait for this answer. The results of
+Table 11 stay as the record of the carried set on the other orientations.
 
