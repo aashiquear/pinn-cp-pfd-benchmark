@@ -5,7 +5,8 @@ literature syntheses the author placed in `data/literature/` (`ScholarGPT_histor
 2019-2024 foundations; `SciSpace_history_CP`, 2020-2026 with the recent CP work), read
 against the PINNACLE branch `feat/pinn_benchmark` (HEAD 9a706ae; ADR 0028, 0029, 0030,
 0033) and the measured costs of the Al2219 plate (report §8, §10, §11, §17, §19) and of the
-Ni specimen (report §8, Table 10). Nothing in the framework is changed by this document.
+Ni specimen (report §8, Table 10). Nothing in the framework was changed by this document
+when it was written; §8 (added 2026-10-29) records what was implemented afterwards.
 
 Both syntheses are machine-written reviews, not primary sources. Their equations and model
 classes are standard; their numerical claims about individual papers are flagged by the
@@ -371,3 +372,30 @@ per step, no checkpoint; PINNACLE 9a706ae, torch 2.12.1 CPU, `OMP_NUM_THREADS=2`
 workstation, 2026-10-28 10:09-10:17. Steps accepted in 11 / 5 / 6 / 6 Newton iterations
 (235 / 83 / 100 / 98 s under the profiler). Not a ledger run (no result is kept; the
 profile output is in the session scratchpad and the 45-line summary is reproduced in §2.1).
+
+## 8. Status after implementation (2026-10-29)
+
+The author approved items 1 to 6 of the §5 order on 2026-10-28 (a grouped version of the
+list: P1; P6a; P7.1-P7.4; P2 + P5 state features; P3). Implemented in PINNACLE
+`feat/pinn_benchmark` at 1aa1ff5 (ADR 0034, ADR 0028 and 0029 addenda, CHANGELOG,
+regenerated syntax docs, tests); the specimen-level measurement is the notebook's §8.4
+and the ledger rows `pinnacle-p1-L1-stencil` / `pinnacle-p1-L1-consistent`.
+
+| item | status | where | what was measured |
+|---|---|---|---|
+| P1 consistent tangent | **done** | `implicit_tangent = consistent` (default under torch); `cp_field_callback._consistent_tangent`; ADR 0034 | 1e-7 of the largest entry against central differences (stencil 1e-4); 0.04 s against 0.12 s per point; L.1 four-step deck 706 s to 93 s with the warm start below |
+| P2 bridge tangent refresh | **done** | `tangent_every` on `load_step_predictor` (`FEMResidualBridge(tangent_every=...)`), reported as `_tangent_assemblies`; ADR 0029 addendum | unit test only (the residual still falls with a stale tangent); not yet run on a specimen, the solver route is paused |
+| P3 warm start of the local Newton | **done in its exact form, not the neural one** | the local Newton starts from the point's last converged increments (or the summed ladder sub-increments); ADR 0034 addendum | essential, not optional: without it the one-increment solve fails on nearly every trial, the ladder serves and P1 cannot serve. The learned predictor of §4.3 (sample writer, trainer, deck switch) is not built; the exact warm start removes most of its case |
+| P4 learned state update | not done, not recommended | | |
+| P5 state-aware node features | **done** | `node_features = 'plastic_strain damage'` (`fem_residual` only; qp to element mean to node mean, scaled); ADR 0029 addendum | unit test only; gain on the representative specimen not measured (route paused) |
+| P6a quadratic baseline | **done** | `baseline = quadratic`, `mode = quadratic`; ADR 0028 addendum | exact on a quadratic path; on the Ni single element worse than linear on the step that straddles the yield knee, then better, 20x by the tenth step. The 20-40% Newton-iteration gain on a specimen is not yet measured |
+| P6b tangent reuse across Newton iterations | not done | | moot after P1 (the tangent costs one integration) |
+| P6c adaptive step growth | not done | | needs the author's convergence check |
+| P7.1-P7.4 surrogate structure and multi-fidelity data | **not done** | would be an ADR 0030 addendum on `parametric_surrogate` (Schmid-factor inputs, the material-point curve as a feature, separate heads, h040/h020 data) | changes the 2026-10-25 surrogate design (30 h020 samples); awaiting the author's decision |
+
+Two things the implementation taught that the review did not know: the warm start is a
+precondition of P1 on this material (§4.3 described it as a 2-3x extra); and the first
+step of a run differs by 1.2% in the reaction between the old and the new solver (the old
+commits were served by the sub-increment ladder, a different discretization of the same
+step), after which they agree to 0.05%. Any rerun of the campaign with the new solver
+therefore reproduces the old results, not bit for bit, but within the calibration tolerance.
