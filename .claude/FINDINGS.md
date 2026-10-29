@@ -647,5 +647,7 @@ NOT derivable from the code: measured facts, decisions, and traps.
   stress still rising; no localization, no load drop, failure definition never met (exp 0.54 /
   0.53). Uniform AT2 solution d = 2H/(G_c/l0 + 2H) = 0.83 at H ~ 123 MPa explains it; d = 0.85
   needs W_p ~ 146 MPa. The W_c = 75 set failed late (+45%) but sharp; the W_c = 0 set does not fail.
-- Campaign left running (author decides with the full set); figure decks `final_fem_wc0*.i`,
+- Author 22:40: STOP all runs (killed 22:42; nothing resumes). Next: implement the docs/13
+  review items 1-6 in PINNACLE (P1 consistent tangent first), before the per-orientation W_c.
+  Figure decks `final_fem_wc0*.i`,
   prefix `fem_wc0`, no [Extra] (the L.1 W_c = 0 calibration run is chi = 1).
