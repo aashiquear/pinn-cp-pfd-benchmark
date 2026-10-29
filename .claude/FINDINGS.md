@@ -666,3 +666,4 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Pre-existing PINNACLE failures, not ours: test_j2_kernel spectral split signature;
   test_cp_pfd_hybrid [1d]. Deselect them when running the suite.
 - PINNACLE commit of the review items: feat/pinn_benchmark 1aa1ff5 (2026-10-29 00:20).
+- PINNACLE suite at 1aa1ff5 (non-slow): 35 failures, all present on 9a706ae too (29 parity-harness VTK hash drifts, M18 assembly parity x4, architecture import guard, parametric_surrogate example-deck coverage): pre-existing, not ours.
