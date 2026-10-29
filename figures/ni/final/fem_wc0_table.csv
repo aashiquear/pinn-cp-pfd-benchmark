@@ -1,0 +1,16 @@
+route,specimen,exp_failure_strain,pred_failure_strain,pred_final_strain,pred_mode,rel_error,exp_location,pred_location,exp_mode,pred_angle_deg,pred_peak_MPa
+fem_wc0,10.1,0.5404,,0.932161230264944,,,0.2,,neck,,187.52080631232946
+fem_wc0,10.3,0.5284,,0.9331654979548399,,,0.3,,neck,,199.21236492244594
+fem_wc0,10.4,0.5296,,,,,0.25,,neck,,
+fem_wc0,9.1,0.5465,,,,,0.15,,inclined,,
+fem_wc0,9.3,0.6163,,,,,0.85,,inclined,,
+fem_wc0,9.4,0.626,,,,,0.6,,inclined,,
+fem_wc0,H.1,0.5489,,,,,0.75,,neck,,
+fem_wc0,H.3,0.5657,,,,,0.75,,neck,,
+fem_wc0,H.4,0.5681,,,,,0.8,,neck,,
+fem_wc0,L.1,0.4633,,,,,0.2,,inclined,,
+fem_wc0,L.3,0.4814,,,,,0.65,,inclined,,
+fem_wc0,L.4,0.4609,,,,,0.75,,inclined,,
+fem_wc0,P.1,0.4657,,,,,0.2,,inclined,,
+fem_wc0,P.3,0.3778,,,,,0.75,,inclined,,
+fem_wc0,P.4,0.4055,,,,,0.78,,inclined,,

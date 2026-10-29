@@ -969,3 +969,20 @@ not a result) was killed and the campaign re-prepared and relaunched at 10:25 (t
 run the kill and the launch in separate ssh calls). After it: one specimen per orientation gets
 its own W_c calibration (L done in §6.4); PINN+FEM, PINN and the surrogate wait.
 
+**First two specimens (2026-10-28 evening, 10.1 and 10.3, ~10 h each).** Neither fails. Both run
+the whole 40% grip path (93% gauge strain) with the engineering stress still rising (188 / 199 MPa
+at the end, no load drop) and the phase field diffuse: max d 0.10 at 3.6% gauge strain, 0.50 at
+27%, 0.70 at 58-60%, 0.80 at 91% (10.1) and 0.79 at the end (10.3), the whole gauge at that level
+(Fig. `fem_wc0_shape_10.x`: E_xx uniform near 1.2 over the gauge, no neck; the experiment necks at
+0.2-0.3 of the gage at 0.54 / 0.53). This is the homogeneous branch of AT2: with no threshold and
+G_c/l0 = 51.6 MPa the uniform solution d = 2H/(G_c/l0 + 2H) gives 0.83 for H = W_p ~ 123 MPa (the
+work to the end of the path), against 0.80 computed; d = 0.85 needs W_p ~ 146 MPa, beyond the path.
+Against the stopped W_c = 75 campaign (failure 0.78 / 0.77, +44 / +46%, sharp inclined crack) the
+W_c = 0 pair moves group 10 the wrong way: no localization at all. The L.1 calibration localized
+with this pair (and chi = 1) because orientation L hardens to 230 MPa and necks; orientation 10
+hardens to 150 MPa at the experiment's strain. The campaign continues as launched (group 9 at
+load factor 0.37-0.56 after 12 h, variants h.1 / h.3 just started); the author decides on the
+threshold per orientation with the full set. Figures: `figures/ni/final/fem_wc0_{parity,location}.png`,
+`fem_wc0_curve_10.x.png`, `fem_wc0_shape_10.x.png` (decks `decks/ni/figures/final_fem_wc0*.i`, no
+`[Extra]` block: the W_c = 0 calibration run of L.1 is a chi = 1 run and not this set).
+
