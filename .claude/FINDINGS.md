@@ -665,3 +665,4 @@ NOT derivable from the code: measured facts, decisions, and traps.
   by the exact warm start; P7 (surrogate) is benchmark-side, next.
 - Pre-existing PINNACLE failures, not ours: test_j2_kernel spectral split signature;
   test_cp_pfd_hybrid [1d]. Deselect them when running the suite.
+- PINNACLE commit of the review items: feat/pinn_benchmark 1aa1ff5 (2026-10-29 00:20).
