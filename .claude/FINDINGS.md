@@ -651,3 +651,17 @@ NOT derivable from the code: measured facts, decisions, and traps.
   review items 1-6 in PINNACLE (P1 consistent tangent first), before the per-orientation W_c.
   Figure decks `final_fem_wc0*.i`,
   prefix `fem_wc0`, no [Extra] (the L.1 W_c = 0 calibration run is chi = 1).
+
+## 2026-10-28 night: PINNACLE review items 1, 2, 5 and 6 implemented (ADR 0034, 0028/0029 addenda)
+- Consistent backward-Euler tangent by autograd implicit differentiation, default
+  `implicit_tangent = consistent` (torch); plus a warm-started local Newton. L.1 four-step
+  deck: 706 s -> 93 s (7.6x; steady steps 12-20x), every tangent consistent. Step-1 reaction
+  1.2% lower than the old code (the old commits at the knee were ladder solves, a finer
+  integration; now the one-increment BE of ADR 0033), steps 2+ within 0.05%.
+- Without the warm start the gain was nil: the one-increment solve from zero failed at some
+  point on nearly every trial and the ladder served (stencil behind it). Any future change to
+  the local Newton must keep the direct-solve fraction high (the per-step log line says).
+- Quadratic predictor baseline; bridge `tangent_every`; state node features. P3 superseded
+  by the exact warm start; P7 (surrogate) is benchmark-side, next.
+- Pre-existing PINNACLE failures, not ours: test_j2_kernel spectral split signature;
+  test_cp_pfd_hybrid [1d]. Deselect them when running the suite.

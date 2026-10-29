@@ -986,3 +986,57 @@ threshold per orientation with the full set. Figures: `figures/ni/final/fem_wc0_
 `fem_wc0_curve_10.x.png`, `fem_wc0_shape_10.x.png` (decks `decks/ni/figures/final_fem_wc0*.i`, no
 `[Extra]` block: the W_c = 0 calibration run of L.1 is a chi = 1 run and not this set).
 
+
+### 8.4 PINNACLE: the review items implemented (2026-10-28 evening, author's go-ahead)
+
+Author (22:40): stop the W_c = 0 campaign; implement the docs/13 review items 1-6 in
+PINNACLE before the per-orientation W_c. Done on the feat/pinn_benchmark work tree
+(ADR 0034, ADR 0028/0029 addenda):
+
+1. **Consistent backward-Euler tangent (P1, ADR 0034).** `tangent()` differentiates the
+   converged slip update implicitly: autograd through ONE constitutive evaluation at the end
+   state gives dσ/dF|Δγ, dσ/dΔγ, dR/dF and J = dR/dΔγ (9 + 12 reverse passes), one batched
+   12x12 solve with nine right-hand sides, and dσ/dF = dσ/dF|Δγ - dσ/dΔγ J⁻¹ dR/dF. Against
+   central differences: 1e-7 of the largest entry (the forward stencil sat at 1e-4), with
+   g(d), in tension and on the compressive branch of the split. One point: 0.04 s against
+   0.12 s. Torch only (numpy and the ladder/sub-stepper fall back to the stencil;
+   `implicit_tangent = finite_difference` keeps it; `tangent_counts` says which served).
+2. **The local Newton of the backward-Euler solve is warm-started** from the last solve's
+   increments (and, after a ladder solve, from the summed sub-increments). Without it the
+   one-increment solve from Δγ = 0 failed at some point of the mesh on nearly every trial
+   of L.1 (the elastic predictor overshoots τ_c0 = 0.24 MPa forty-fold at a 1e-3 step) and
+   the 2..64 sub-increment ladder served 139 of 144 integrations in step 1, with the stencil
+   tangent behind each: the first consistent-tangent arm took 322 s for step 1, no faster
+   than the stencil. With the warm start the direct solve serves 27 of 41 integrations in
+   step 1 and 14 of 17 afterwards, every tangent is consistent, and the local Newton
+   needs 6.4 instead of 11 iterations per solve. The stencil runs on cold solves (a
+   warm-started solve stops just under its 1e-10 tolerance, which a 1e-6 difference
+   divides). Per-step log line: tangents, integrations (direct / ladder / sub-stepped),
+   local Newton iterations.
+3. **Measured on the L.1 four-step deck** (ledger `pinnacle-p1-L1-*`): 706 s with the
+   stencil (295 / 109 / 176 / 126 s per step) against 93 s consistent (67.5 / 9.0 / 7.8 /
+   8.5 s): 7.6x over the four steps, 12 to 20x on the steady steps, the same Newton counts
+   (11-14 / 5 / 6 / 6). Reactions agree to 0.05% from step 2 on; step 1 is 1.2% lower with
+   the consistent arm because the old code's commits at the knee were ladder solves (two
+   or more sub-increments, a finer integration of the same step) and the new code's are
+   the one-increment backward-Euler solve ADR 0033 defines. The campaign's 400-step runs
+   will therefore differ from the stopped ones by about that much at the first step and
+   agree afterwards; everything is rerun anyway.
+4. **Quadratic extrapolation (P6a, ADR 0028 addendum)**: `mode = quadratic` and
+   `baseline = quadratic` on the predictor, the Lagrange extrapolation of the last three
+   accepted fields. On the Ni single element it overshoots on the one step that straddles
+   the elastic-plastic knee (0.011 against 0.0044 of the increment) and is better on every
+   later step, twenty-fold by the tenth, two Newton iterations instead of three.
+5. **Bridge tangent reuse and state features (P2 + P5, ADR 0029 addendum)**:
+   `tangent_every` on the FE-residual predictor (tangent assembled every n epochs, residual
+   every epoch, `tangent_assemblies` reported) and the node-feature kinds `plastic_strain`
+   and `damage` (committed state averaged to the nodes, rebuilt every step; FE-residual
+   mode only). With item 1 the tangent is no longer nine-tenths of an assembly, so the
+   reuse saves the autograd pass only.
+6. **Not done**: P3 (a learned warm start) is superseded for now by item 2, the exact warm
+   start, which takes the local Newton from 11 to about 6 iterations; P7 (surrogate
+   structure, multi-fidelity) is benchmark-side and comes next; P4 stays out.
+
+Two pre-existing PINNACLE test failures, unrelated and left alone (not this change:
+they fail on the unchanged tree too): `test_j2_kernel::test_degradation_splits_tension_from_compression`
+(`_spectral_split` signature) and `test_cp_pfd_hybrid::test_cp_pfd_matches_the_all_fem_reference[1d]`.
