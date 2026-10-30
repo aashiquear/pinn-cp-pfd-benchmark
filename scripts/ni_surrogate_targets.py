@@ -13,6 +13,8 @@ Deck-driven (PINNACLE .i syntax):
     scalars    = 'failure_gauge_strain location_fraction'
     hf_scalars = location_fraction
     up_to      = failure        # failure: the curve up to the failure step (summary.json); end: the whole run
+    orientations = ../../../data/extracted/ni_table1_orientations.csv  # optional: the 15 real specimens
+    thickness    = ../../../data/extracted/ni_table2_thickness.csv     #   as query rows (real_specimens.csv)
   []
 
 Writes what PINNACLE's ``parametric_surrogate`` reads with ``samples_file`` and ``data_dir``
@@ -28,7 +30,10 @@ A design row i is specimen S{i+1:02d} of ``ni_surrogate_design.py``; its run dir
 curve comes from the run's ``results.csv`` (ni_specimen.py: gauge_strain, eng_stress per
 converged step), the scalars from ``summary.json`` (failure_gauge_strain, failure_mode, ...)
 and ``fracture.json`` (location_fraction, angle_to_axis_deg). Runs that have not finished
-are skipped with a note; the surrogate deck can regenerate or ignore them. No solver run.
+are skipped with a note (the surrogate deck sets ``missing_samples = skip``). With
+``orientations`` and ``thickness`` it also writes ``<out>/real_specimens.csv``: the 15 real
+specimens (Table 1 group angles, Table 2 stations) in the same columns, the rows the trained
+surrogate predicts (``evaluate``); they are never training data. No solver run.
 
 Usage: ni_surrogate_targets.py TARGETS.i
 """
@@ -89,9 +94,28 @@ def curve_of(d: Path, abscissa: str, columns: list[str], up_to: str) -> tuple[np
         step = json.loads((d / "summary.json").read_text()).get("failure_step")
         if step is not None:
             rows = [r for r in rows if int(float(r["step"])) <= int(step)]
-    t = np.array([float(r[abscissa]) for r in rows])
-    y = np.array([[float(r[c]) for c in columns] for r in rows])
-    return t, y
+    t = np.array([float(r[abscissa]) if r[abscissa] not in ("", None) else np.nan for r in rows])
+    y = np.array([[float(r[c]) if r[c] not in ("", None) else np.nan for c in columns] for r in rows])
+    # rows without a finite abscissa or value (a step whose gauge nodes were not read) are
+    # dropped: the network and the material-point baseline need a finite, ordered path
+    ok = np.isfinite(t) & np.isfinite(y).all(axis=1)
+    return t[ok], y[ok]
+
+
+def _table(path: Path) -> list[dict]:
+    return list(csv.DictReader(ln for ln in path.open() if not ln.startswith("#")))
+
+
+def write_real(cfg: dict, deck: Path, out: Path) -> int:
+    groups = {r["group"]: r for r in _table(_resolve(_str(cfg["orientations"]), deck))}
+    rows = []
+    for r in _table(_resolve(_str(cfg["thickness"]), deck)):
+        g = groups[r["group"]]
+        rows.append({"specimen": r["specimen"], "phi1": float(g["phi1_deg"]), "phi": float(g["Phi_deg"]),
+                     "phi2": float(g["phi2_deg"]), **{f"t{k}": float(r[f"t{k}_mm"]) for k in range(1, 6)}})
+    with (out / "real_specimens.csv").open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+    return len(rows)
 
 
 def main(argv):
@@ -128,7 +152,8 @@ def main(argv):
                 skipped.append(spec)
                 continue
             t, y = curve_of(d, abscissa, columns, up_to)
-            arrays = {"t": t, "y": y, "e": t if abscissa.endswith("strain") else t, "run_time_s": np.asarray(0.0)}
+            # e: the engineering strain of the material-point baseline (the gauge strain here)
+            arrays = {"t": t, "y": y, "e": t, "run_time_s": np.asarray(0.0)}
             if scalars:
                 arrays["s"] = scalars_of(d, scalars)
             if hf_scalars:
@@ -142,6 +167,8 @@ def main(argv):
           f"samples.csv has the [Parameters] columns {list(PARAM_COLUMNS)}")
     if skipped:
         print("no finished run for:", " ".join(skipped))
+    if cfg.get("orientations") and cfg.get("thickness"):
+        print(f"wrote {write_real(cfg, deck, out)} real specimens to {out / 'real_specimens.csv'}")
     return 0
 
 

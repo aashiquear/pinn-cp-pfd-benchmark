@@ -672,3 +672,26 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - TRAP (2026-10-29): running pytest inside a git worktree of PINNACLE imports the MAIN tree's package (editable install) unless `PYTHONPATH=<worktree>/src` is set. The 2026-10-28 "verified on 9a706ae via worktree" check was therefore not a real check of 9a706ae (its conclusion still holds: all 35 were pre-existing, re-verified today with PYTHONPATH forced and by bisect). Also: a `pkill -f PATTERN` whose pattern appears anywhere in the same bash command line (heredoc text included) kills the shell; kill in a separate call.
 - 2026-10-29 (evening) P7 + P6c implemented in PINNACLE, P4 documented (author's order; commit d907de6 on feat/pinn_benchmark, pushed). P7 = ADR 0030 addendum on `parametric_surrogate`: `orientation_features = schmid` + `orientation_parameters = 'phi1 phi phi2'` (the parser lowercases block names: Phi -> phi), `loading_axis`, `baseline = material_point` + `baseline_material` (the point's uniaxial curve with the IMPLICIT one-point update; the explicit point update diverges on the Ni set at any useful increment), `baseline_strain_column` / `baseline_strain_scale`, `baseline_lateral = free|fixed|none`, `scalars` (heads on a shared trunk), `hf_scalars` / `hf_overrides` / `hf_samples` (additive correction), `ensemble` / `ensemble_flag`, `drop_fraction`. External data: `<data_dir>/<i>/target.npz` with t, y, e, s, s_hf + `samples_file`. Mechanism check on the 1-D CP bar (24 samples): held-out curve 5.4 %, scalars 6 %, hf 10 %, spread 6 %. P6c = ADR 0028 addendum: `step_growth_max` (+ guards) on `staggered`; default off; window columns only when on. Measured: 48-step bar in 15 windows within 3 %; 4x windows of a 12-step bar differ 7 % (BE first order) -> stays an option; the specimen convergence check is the author's. P4: PINNACLE `docs/research/learned_state_update_path.md`. Benchmark side: `scripts/ni_surrogate_targets.py` (design.csv + run dirs -> target.npz, samples.csv; smoke-tested on results/ni_study/final/fem/{9.1,h.1}, no solver run). NO benchmark run (hold). Next: the Ni surrogate deck with the structured keys and the h040/h020 design, after the author's go-ahead; check first whether h040-within-1 % holds under the per-orientation W_c.
 - TRAP (2026-10-29): `pkill -f PATTERN` self-kills the calling shell when PATTERN (or any later command in the same shell line, e.g. a relaunch of the same pytest) matches; run kills alone. Benchmark scripts need `python3` (matplotlib), not `python3.11`.
+
+## 2026-10-29 night: h040 cannot stand in for h020 (multi-fidelity check); surrogate pipeline check
+- The P7.4 premise "h040 within 1% of h020 on the curve" (docs/13 §4.7, repeated in my 10-29 report
+  to the author) was WRONG: docs/12 §5.2 had measured h040 +6 to +20% above h020 with the h020 CP set.
+  Checked with the only orientation that has its own W_c (L, carried set): `decks/ni/pfd/
+  mfcheck_L1_h040.i`, 8 min on the host at PINNACLE d907de6. Curve +5.8/+9.9/+13.5/+16.0/+18.5% at
+  2/10/20/30/40% (= the CP-only mesh difference: W_c holds d at 0 to 43%); failure 0.438 vs 0.464
+  (-5.7%, 6x the 0.004 tolerance); location 0.48 vs 0.38; angle 87 vs 77 deg. Decision input for the
+  author: the 30 surrogate runs are h020 runs; the additive correction needs paired runs over several
+  orientations before it could be trusted. docs/12 §8.5, figures `figures/ni/pfd/*_mfcheck.png`.
+- Cost note: the h040 CP+PFD run took 8 min (3,467 Newton iterations, 232 steps) on the ADR 0034 code;
+  the h020 reference took 5-10 h on e7fd0d2 (pre-ADR 0034). Not a like-for-like timing.
+- Surrogate deck `decks/ni/final/surrogate/surrogate_h020.i` + `targets_h020.i` (structured keys; t1-t5
+  data-only `path = none`; `missing_samples = skip`). Only S01 of 30 exists -> pipeline check only
+  (`final/surrogate/pipelinecheck_1of30`, all 15 real predictions flagged, NOT results). PINNACLE
+  additions for it (uncommitted until this entry's commit): `missing_samples = generate|skip|error`,
+  `[Parameters] path = none`, material-point rejects non-finite strain paths. S01's results.csv has a
+  NaN gauge-strain row (its last step): `ni_surrogate_targets.py` now drops non-finite rows.
+- OPEN (author): the 30-run h020 campaign needs a W_c for arbitrary orientations; W_c = 75 is L's and
+  does not transfer (10-28), W_c = 0 does not fail (10-28 evening). Options to put to the author:
+  per-orientation W_c calibration first (9, 10, H, P) and a W_c(orientation) model for the synthetic
+  samples; or a CP-only h020 campaign now (the curve head's data, valid for any W_c up to damage
+  onset) with the failure targets added later.

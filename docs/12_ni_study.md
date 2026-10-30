@@ -1040,3 +1040,50 @@ PINNACLE before the per-orientation W_c. Done on the feat/pinn_benchmark work tr
 Two pre-existing PINNACLE test failures, unrelated and left alone (not this change:
 they fail on the unchanged tree too): `test_j2_kernel::test_degradation_splits_tension_from_compression`
 (`_spectral_split` signature) and `test_cp_pfd_hybrid::test_cp_pfd_matches_the_all_fem_reference[1d]`.
+
+### 8.5 Can the surrogate's training runs use h040? (multi-fidelity check, 2026-10-29)
+
+docs/13 §4.7 item 4 proposed running the 30 synthetic specimens on h040 for the curve and the
+failure strain and only 8 to 10 on h020 for the location, on the premise that h040 is within 1% of
+h020 on the curve. The premise was wrong: §5.2 already measured h040 6-20% above h020 with the h020
+CP set. Author (2026-10-29): check it under the per-orientation W_c. Only L has its own W_c (the
+carried set), so the check is L.1 with that set on h040, everything else as the h020 calibration run
+(`decks/ni/pfd/mfcheck_L1_h040.i`, PINNACLE d907de6, 8 min on the host).
+
+| gauge strain | h040 | h020 | h040/h020 |
+|---|---|---|---|
+| 2% | 91.9 | 86.9 | +5.8% |
+| 10% | 147.2 | 134.0 | +9.9% |
+| 20% | 203.7 | 179.4 | +13.5% |
+| 30% | 244.7 | 210.9 | +16.0% |
+| 40% | 275.8 | 232.8 | +18.5% |
+
+| | h040 | h020 |
+|---|---|---|
+| failure gauge strain | 0.438 (separation) | 0.464 (load drop and cut) |
+| peak engineering stress (MPa) | 283.4 | 241.5 |
+| fracture location (of the gage) | 0.48 | 0.38 |
+| crack angle to the axis | 87 deg | 77 deg |
+
+The damage stays at zero until 43% on both meshes (W_c holds it off), so the curve difference is the
+CP-only mesh difference of §5.2 to the decimal. h040 fails 5.7% early (six times the calibration
+tolerance of 0.004), with the crack 0.09 of the gage further along (beyond the 0.08 reading
+uncertainty of Fig. 5) and more transverse. h040 therefore cannot stand in for h020 for the curve,
+the failure strain or the location; the 30 training runs are h020 runs. An additive h040-to-h020
+correction (the P7.4 mechanism, now in PINNACLE) would need paired runs over several orientations to
+show the correction is smooth in the orientation; one pair cannot say. Figures
+`figures/ni/pfd/curves_L1_mfcheck.png`, `shape_L1_mfcheck.png`.
+
+### 8.6 The structured surrogate deck: pipeline check (2026-10-29)
+
+`decks/ni/final/surrogate/surrogate_h020.i` (PINNACLE `parametric_surrogate` with the ADR 0030
+addendum keys: Schmid-factor orientation inputs, the CP set's material-point curve as baseline
+(ratio), heads for the failure strain, the fracture location and the peak stress, a five-seed
+ensemble; the five station thicknesses as data-only parameters, `missing_samples = skip`) reads the
+targets written by `scripts/ni_surrogate_targets.py` (`decks/ni/final/surrogate/targets_h020.i`)
+and predicts the 15 real specimens (`real_specimens.csv`, never training data). Of the 30 synthetic
+runs only S01 exists (the 2026-10-25 pipeline run: no failure by 36.6%), so the run is a check of
+the pipeline, not a surrogate: 29 samples skipped with no FE run started, the S01 baseline in 2.7 s,
+every real-specimen prediction flagged by the ensemble. Output `final/surrogate/pipelinecheck_1of30`.
+Its training data needs the 30 h020 runs, and their W_c is the open question: the carried W_c = 75 is
+L's and does not transfer (§8.2); the synthetic orientations span the whole rotation group.

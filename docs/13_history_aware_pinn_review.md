@@ -317,8 +317,11 @@ that cost little and attack exactly that:
    because the curve head alone placed the drop 0.5% early; a scalar head does not have
    that failure mode.
 4. **Multi-fidelity data.** The data cost dominates (30 h020 runs at 15 to 46 h each at
-   present; 4 to 12 h after P1). The curve to failure is nearly mesh-insensitive (notebook
-   §3: h040 within 1% of h020 on the curve) while the location needs h020. Run the 30
+   present; 4 to 12 h after P1). ~~The curve to failure is nearly mesh-insensitive (notebook
+   §3: h040 within 1% of h020 on the curve) while the location needs h020.~~ **Correction
+   (2026-10-29):** this premise was wrong; notebook §5.2 measured h040 6-20% above h020, and
+   the CP+PFD check of §8.5 adds a 5.7% early failure and a location 0.09 off on h040. The
+   additive correction exists in PINNACLE, but the campaign runs h020 only. Run the 30
    samples at h040 for the curve and failure strain, and a subset of 8 to 10 at h020 for the
    location head (or correct the h040 location by the h020 subset). Cost: one day of tooling;
    gain: the data campaign shrinks from weeks to days.
@@ -404,3 +407,8 @@ Update 2026-10-29 (evening): the author approved P7 (all four parts) and P6c for
 framework and asked for P4 to be documented, not built. Implemented in PINNACLE
 `feat/pinn_benchmark` (ADR 0030 and 0028 addenda, `docs/research/learned_state_update_path.md`,
 CHANGELOG); the table above carries the status. No benchmark run was made (the author's hold).
+
+Correction 2026-10-29 (later): the P7.4 premise (h040 within 1% of h020) does not hold. Measured
+on L.1 with the carried set (notebook §8.5): h040 is +5.8% to +18.5% on the curve, fails at 0.438
+against 0.464 and 0.09 of the gage further along. The mechanism stays in the framework; the Ni
+surrogate's data are h020 runs.
