@@ -687,7 +687,7 @@ NOT derivable from the code: measured facts, decisions, and traps.
 - Surrogate deck `decks/ni/final/surrogate/surrogate_h020.i` + `targets_h020.i` (structured keys; t1-t5
   data-only `path = none`; `missing_samples = skip`). Only S01 of 30 exists -> pipeline check only
   (`final/surrogate/pipelinecheck_1of30`, all 15 real predictions flagged, NOT results). PINNACLE
-  additions for it (uncommitted until this entry's commit): `missing_samples = generate|skip|error`,
+  additions for it (PINNACLE 2cbdb1c, pushed): `missing_samples = generate|skip|error`,
   `[Parameters] path = none`, material-point rejects non-finite strain paths. S01's results.csv has a
   NaN gauge-strain row (its last step): `ni_surrogate_targets.py` now drops non-finite rows.
 - OPEN (author): the 30-run h020 campaign needs a W_c for arbitrary orientations; W_c = 75 is L's and
