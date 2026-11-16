@@ -1,0 +1,21 @@
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/wc75/l0.6/gc1.2/pfd.i
+pinnacle run exit -9 -> /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/wc75/l0.6/gc1.2
+run died: curve from restart_step0040.pkl
+{"steps": 40, "steps_valid": 40, "run_died": true, "final_gauge_strain": 0.09204677855853616, "final_grip_strain": 0.04, "peak_eng_stress": 126.72042209841464, "strain_at_peak": 0.09204677855853616, "initiation_gauge_strain_node": null, "failure_gauge_strain": null, "failure_step": null, "damage_threshold": 0.8, "final_max_damage": 0.670369797377599, "gage_area_mm2": 0.6556399999999999, "mean_thickness_mm": 0.35439999999999994, "newton_iterations": 563, "alternations": 107}
+Traceback (most recent call last):
+  File "/home/aashiquear/projects/pinn-cp-pfd-benchmark/scripts/ni_specimen.py", line 410, in <module>
+    if __name__ == "__main__":
+                 ^^^^^^^^^^^^^^
+  File "/home/aashiquear/projects/pinn-cp-pfd-benchmark/scripts/ni_specimen.py", line 405, in main
+    for st in stages:
+        ^^^^^^^^^^^^^^
+  File "/home/aashiquear/projects/pinn-cp-pfd-benchmark/scripts/ni_specimen.py", line 331, in stage_fracture
+    pvd = out / "solver" / "fields.pvd"
+                                        
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/wc75/l0.6/gc1.2/solver/fields.pvd'

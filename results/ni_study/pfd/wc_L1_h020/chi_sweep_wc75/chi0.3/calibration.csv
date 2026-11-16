@@ -1,0 +1,2 @@
+l0,W_c,run,Gc,failure_strain,final_gauge_strain,run_died,failed_pipeline,location_fraction,angle_to_axis_deg,peak_eng_stress,wall_h,dir,note
+0.6,75.0,0,0.1,,0.04001487199268842,True,False,,,95.22963939936831,2.1641789587338764,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.3/l0.6/gc0.1,ended at 0.0400 before the target without separating

@@ -1,0 +1,5 @@
+l0,W_c,run,Gc,failure_strain,final_gauge_strain,run_died,failed_pipeline,location_fraction,angle_to_axis_deg,peak_eng_stress,wall_h,dir,note
+0.6,65.0,0,2.0,0.47467471092682784,0.47467471092682784,False,False,0.413888888888889,58.436646331232694,236.44892849217055,11.195111466646194,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc2,
+0.6,65.0,1,8.0,,0.4839444432960296,False,False,,,243.80238508676703,9.710902193453578,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc8,
+0.6,65.0,2,0.6667,0.43985217759585565,0.43985217759585565,False,False,0.4046875000000001,60.1244600048367,234.82051308049714,5.912797622084618,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc0.6667,
+0.6,65.0,3,1.384,0.4594201942474314,0.4594201942474314,False,False,0.41057692307692273,58.00390852149779,234.9321073608385,6.403847260408932,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc1.384,

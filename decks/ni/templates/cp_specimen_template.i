@@ -70,6 +70,7 @@
     material      = cp
     dim           = 3
     finite_strain = true
+    kinematics    = @KINEMATICS@   # total_lagrangian | legacy (PINNACLE ADR 0035; legacy = the withdrawn first attempt)
     gnd           = false
     state_update     = @STATEUPDATE@   # explicit | iterated | implicit (PINNACLE ADR 0033; implicit = backward-Euler slip update)
     state_iterations = @STATEITER@     # passes of the iterated update per load step

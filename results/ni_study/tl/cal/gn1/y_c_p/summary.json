@@ -1,0 +1,11 @@
+{
+ "steps": 310,
+ "final_gauge_strain": 0.6978384633949604,
+ "final_grip_strain": 0.3,
+ "gauge_to_grip_ratio": 2.3261282113165347,
+ "peak_eng_stress": 200.7001444584989,
+ "strain_at_peak": 0.5009823505180528,
+ "gage_area_mm2": 0.6556399999999999,
+ "mean_thickness_mm": 0.35439999999999994,
+ "newton_iterations": 1278
+}

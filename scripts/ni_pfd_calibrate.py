@@ -15,6 +15,13 @@ Deck-driven (PINNACLE .i syntax):
     threads     = 2
     W_c         = 0                             # optional: plastic-work threshold (MPa) held for every run
     chi         = 1                             # optional: elastic prefactor (0 = purely ductile driving force)
+    search      = Gc                            # optional: Gc (default) or W_c, the parameter searched
+    outward     = 3                             # optional: factor of the outward step while one side is missing
+
+W_c search (docs/12 §8.7, author 2026-10-29: one specimen per orientation): set
+`search = W_c`, a single `l0`, `Gc` held, `W_c_guess` instead of `Gc_guess`; the
+failure strain rises with W_c as it does with G_c, so the same search runs in ln W_c
+and every run lives under <out_root>/wc<W_c>/.
 
 The failure strain of a run is the gauge strain of its first separated step
 (PINNACLE stop_separation: d > 0.85 cuts the grips apart; `ni_specimen.py
@@ -97,19 +104,31 @@ def run_case(base: Path, cdir: Path, values: dict[str, str], threads: int) -> di
 
 
 def search(l0: float, guess: float, cal: dict, base: Path, out_root: Path, log: list[dict]) -> dict:
+    param = str(cal.get("search", "Gc"))
+    if param not in ("Gc", "W_c"):
+        raise SystemExit(f"search must be Gc or W_c, got {param!r}")
+    outward = math.log(float(cal.get("outward", 3.0)))
     target = float(cal.get("target", 0.463))
     tol = float(cal.get("tolerance", 0.004))
     threads = int(cal.get("threads", 2))
     pts: list[tuple[float, float | None]] = []      # (ln Gc, failure strain or None = no failure)
 
     def one(gc: float, it: int) -> dict:
-        cdir = out_root / f"l{l0:g}" / f"gc{gc:.4g}"
+        # ``gc`` is the searched value: G_c, or W_c with search = W_c
         t0 = time.time()
-        fixed = {k: str(cal[k]) for k in ("W_c", "zeta", "chi") if k in cal}   # the W_c stage: held per deck
-        res = run_case(base, cdir, {"l0": f"{l0:g}", "Gc": f"{gc:.4g}", **fixed}, threads)
+        if param == "Gc":
+            cdir = out_root / f"l{l0:g}" / f"gc{gc:.4g}"
+            fixed = {k: str(cal[k]) for k in ("W_c", "zeta", "chi") if k in cal}   # the W_c stage: held per deck
+            values = {"l0": f"{l0:g}", "Gc": f"{gc:.4g}", **fixed}
+        else:
+            cdir = out_root / f"wc{gc:.4g}"
+            fixed = {k: str(cal[k]) for k in ("Gc", "zeta", "chi") if k in cal}
+            values = {"l0": f"{l0:g}", "W_c": f"{gc:.4g}", **fixed}
+        res = run_case(base, cdir, values, threads)
         fs = res.get("failure_gauge_strain")
         frac = res.get("fracture", {})
-        rec = {"l0": l0, "W_c": float(cal.get("W_c", 0.0)), "run": it, "Gc": float(f"{gc:.4g}"), "failure_strain": fs,
+        rec = {"l0": l0, "W_c": float(f"{gc:.4g}") if param == "W_c" else float(cal.get("W_c", 0.0)), "run": it,
+               "Gc": float(f"{gc:.4g}") if param == "Gc" else float(cal["Gc"]), "failure_strain": fs,
                "final_gauge_strain": res.get("final_gauge_strain"), "run_died": bool(res.get("run_died")),
                "failed_pipeline": bool(res.get("failed")), "location_fraction": frac.get("location_fraction"),
                "angle_to_axis_deg": frac.get("angle_to_axis_deg"), "peak_eng_stress": res.get("peak_eng_stress"),
@@ -143,16 +162,22 @@ def search(l0: float, guess: float, cal: dict, base: Path, out_root: Path, log: 
     n_run = len(recs)
     best = None
     while True:
-        for rec in recs:
-            verdict = judge(rec)
+        # a hit in the round decides the search even when another run of the same round
+        # decides nothing (2026-11-04: H.1 W_c 106.7 hit 0.5511 against 0.5489 and was
+        # dropped because its partner W_c 87.3, judged first, stalled at 0.4505)
+        verdicts = [judge(rec) for rec in recs]
+        recs = [rec for _v, rec in sorted(zip(verdicts, recs, strict=True),
+                                          key=lambda vr: vr[0] != "hit")]
+        verdicts = sorted(verdicts, key=lambda v: v != "hit")
+        for verdict, rec in zip(verdicts, recs, strict=True):
             if verdict is None:
                 return {"l0": l0, "Gc": None, "note": rec["note"], "dir": rec["dir"]}
-            pts.append((math.log(rec["Gc"]), rec["failure_strain"]))
+            pts.append((math.log(rec[param]), rec["failure_strain"]))
             if rec["failure_strain"] is not None and (
                     best is None or abs(rec["failure_strain"] - target) < abs(best["failure_strain"] - target)):
                 best = rec
             if verdict == "hit":
-                return {"l0": l0, **{k: rec[k] for k in ("Gc", "failure_strain", "location_fraction", "angle_to_axis_deg", "dir")}}
+                return {"l0": l0, **{k: rec[k] for k in ("Gc", "W_c", "failure_strain", "location_fraction", "angle_to_axis_deg", "dir")}}
         if n_run >= int(cal.get("max_runs", 6)):
             break
         lows = [p for p in pts if p[1] is not None and p[1] < target]
@@ -167,14 +192,14 @@ def search(l0: float, guess: float, cal: dict, base: Path, out_root: Path, log: 
             else:
                 x = 0.5 * (lo[0] + hi[0])
         elif lo:
-            x = lo[0] + math.log(3.0)
+            x = lo[0] + outward
         else:
-            x = hi[0] - math.log(3.0)
+            x = hi[0] - outward
         recs = [one(math.exp(x), n_run)]
         n_run += 1
-    out = {"l0": l0, "Gc": best["Gc"] if best else None, "note": "run budget spent; closest run kept"}
+    out = {"l0": l0, param: best[param] if best else None, "note": "run budget spent; closest run kept"}
     if best:
-        out.update({k: best[k] for k in ("failure_strain", "location_fraction", "angle_to_axis_deg", "dir")})
+        out.update({k: best[k] for k in ("Gc", "W_c", "failure_strain", "location_fraction", "angle_to_axis_deg", "dir")})
     return out
 
 
@@ -187,9 +212,10 @@ def main(argv):
     base = _resolve(str(cal["base"]), deck)
     out_root = _resolve(str(cal["out_root"]), deck)
     out_root.mkdir(parents=True, exist_ok=True)
-    l0s, guesses = _levels(cal["l0"]), _levels(cal["Gc_guess"])
+    key = "W_c_guess" if str(cal.get("search", "Gc")) == "W_c" else "Gc_guess"
+    l0s, guesses = _levels(cal["l0"]), _levels(cal[key])
     if len(l0s) != len(guesses):
-        raise SystemExit("Gc_guess needs one value per l0")
+        raise SystemExit(f"{key} needs one value per l0")
     log: list[dict] = []
     with ThreadPoolExecutor(max_workers=len(l0s)) as ex:
         results = list(ex.map(lambda a: search(a[0], a[1], cal, base, out_root, log), zip(l0s, guesses, strict=True)))

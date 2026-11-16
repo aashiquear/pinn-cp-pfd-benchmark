@@ -1,0 +1,11 @@
+{
+ "separation_damage": 0.85,
+ "separated": true,
+ "mode": "separation",
+ "step": 255,
+ "snapshot": "fields_step0127.vtk",
+ "failure_gauge_strain": 0.5382860658228525,
+ "location_fraction": 0.3153846153846154,
+ "angle_to_axis_deg": 71.91504982062685,
+ "cut_nodes": 130
+}

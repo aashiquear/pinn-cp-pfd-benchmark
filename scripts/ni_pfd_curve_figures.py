@@ -8,6 +8,7 @@
     cp_only        = ../../../results/ni_study/cal_h020/gn2/base/results.csv   # calibrated CP, no damage
     failure_target = 0.463          # experiment failure strain, Fig. 4(b): the experiment ends here
     damage         = true           # second row: max d against gauge strain
+    d_markers      = true           # markers where a d > 0.55 .. 0.85 zone first cuts the section (thresholds.json)
     strain_max     = 60
     stress_max     = 300
     stress_tick    = 50
@@ -47,6 +48,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ni_calibration_figures import box, exp_marker, read_curve, read_markers  # noqa: E402
 from report_figures import _resolve, _str  # noqa: E402
 
+D_MARKERS = {0.55: "o", 0.65: "s", 0.75: "^", 0.85: "D"}
 RUN_COLORS = ("#d1495b", "#edae49", "#00798c", "#1f4e9c", "#66a182", "#8d5a97", "#9a9a9a")
 
 
@@ -71,7 +73,9 @@ def read_run(run: Path) -> dict:
     summ = json.loads((run / "summary.json").read_text())
     gc = json.loads((run / "case.json").read_text())["substitutions"]["GC"]
     fs = summ.get("failure_gauge_strain")
-    return {"e": e, "s": s, "d": d, "Gc": gc, "fail": None if fs is None else 100.0 * fs}
+    marks = run / "thresholds.json"
+    th = json.loads(marks.read_text())["markers"] if marks.exists() else []
+    return {"e": e, "s": s, "d": d, "Gc": gc, "fail": None if fs is None else 100.0 * fs, "th": th}
 
 
 def read_experiment(path: Path) -> tuple[np.ndarray, np.ndarray]:
@@ -123,6 +127,11 @@ def main(argv):
             ax.plot(r["e"][-1], r["s"][-1], "x" if r["fail"] is not None else "s", color=c,
                     ms=7 if r["fail"] is not None else 5, mew=1.6, mfc="none", zorder=6)
             ymax = max(ymax, r["s"].max())
+            if _str(f.get("d_markers", "false")).lower() == "true":
+                for m in r["th"]:
+                    ax.plot(100.0 * m["gauge_strain"], m["eng_stress"], D_MARKERS.get(m["d"], "o"), color=c,
+                            ms=5.5, mfc="white", mew=1.2, zorder=7, ls="none",
+                            label=r"$d > %.2f$ across the section at %.1f%%" % (m["d"], 100.0 * m["gauge_strain"]))
             if with_d:
                 axes[1, j].plot(r["e"], r["d"], "-", color=c, lw=1.5)
                 axes[1, j].plot(r["e"][-1], r["d"][-1], "x" if r["fail"] is not None else "s",

@@ -1,0 +1,24 @@
+Fatal Python error: Aborted
+
+Current thread 0x00007e39b3fae1c0 (most recent call first):
+  File "/home/aashiquear/.local/lib/python3.11/site-packages/numpy/linalg/_linalg.py", line 451 in solve
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/materials/cp_field_callback.py", line 1165 in _backward_euler_stacks
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/materials/cp_field_callback.py", line 1244 in _integrate_step
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/materials/cp_field_callback.py", line 1522 in _stress_all
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/materials/cp_field_callback.py", line 1431 in tangent
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/fem/assembly.py", line 217 in _tangent_analytic
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/fem/assembly.py", line 187 in tangent
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/solvers/nonlinear.py", line 149 in solve
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/system/executioner/cp_quasi_static.py", line 699 in run
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/system/executioner/coupled_executioner.py", line 1398 in _run_mechanics
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/system/executioner/coupled_executioner.py", line 489 in run
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/system/problem.py", line 643 in run
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/models/composed_model.py", line 43 in train
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/runner/runner.py", line 53 in train
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/runner/runner.py", line 259 in run
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/runner/runner.py", line 471 in from_config
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/cli/main.py", line 217 in _cmd_run
+  File "/mnt/extended/projects/pinnacle/src/pinnacle/cli/main.py", line 293 in main
+  File "/home/aashiquear/.local/bin/pinnacle", line 8 in <module>
+
+Extension modules: numpy._core._multiarray_umath, numpy.linalg._umath_linalg, _cyutility, scipy._cyutility, scipy._lib._ccallback_c, numpy.random._common, numpy.random.bit_generator, numpy.random._bounded_integers, numpy.random._pcg64, numpy.random._generator, numpy.random._mt19937, numpy.random._philox, numpy.random._sfc64, numpy.random.mtrand, scipy.sparse._sparsetools, _csparsetools, scipy.sparse._csparsetools, scipy.linalg._fblas, scipy.linalg._flapack, scipy.linalg.cython_lapack, scipy.linalg._cythonized_array_utils, scipy.linalg._solve_toeplitz, scipy.linalg._batched_linalg, scipy.linalg._decomp_lu_cython, scipy.linalg._matfuncs_schur_sqrtm, scipy.linalg._matfuncs_expm, scipy.linalg._linalg_pythran, scipy.linalg.cython_blas, scipy.linalg._decomp_update, scipy.sparse.linalg._dsolve._superlu, scipy.sparse.linalg._eigen.arpack._arpacklib, scipy.sparse.linalg._propack, scipy.optimize._group_columns, scipy._lib.messagestream, scipy.optimize._trlib._trlib, scipy.optimize._lbfgsb, _moduleTNC, scipy.optimize._moduleTNC, scipy.optimize._slsqplib, scipy.optimize._minpack, scipy.optimize._lsq.givens_elimination, scipy.optimize._zeros, scipy._lib._uarray._uarray, scipy.special._ufuncs_cxx, scipy.special._ellip_harm_2, scipy.special._special_ufuncs, scipy.special._gufuncs, scipy.special._ufuncs, scipy.special._specfun, scipy.special._comb, scipy.linalg._decomp_interpolative, scipy.optimize._bglu_dense, scipy.optimize._lsap, scipy.spatial._ckdtree, scipy.spatial._qhull, scipy.spatial._voronoi, scipy.spatial._hausdorff, scipy.spatial._distance_wrap, scipy.spatial.transform._rotation_cy, scipy.spatial.transform._rigid_transform_cy, scipy.optimize._direct, scipy.sparse.csgraph._tools, scipy.sparse.csgraph._shortest_path, scipy.sparse.csgraph._traversal, scipy.sparse.csgraph._min_spanning_tree, scipy.sparse.csgraph._flow, scipy.sparse.csgraph._matching, scipy.sparse.csgraph._reordering, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special, cuda.bindings._bindings.cydriver, cuda.bindings.cydriver, cuda.bindings.driver, cuda.bindings._bindings.cyruntime_ptds, cuda.bindings._bindings.cyruntime, cuda.bindings.cyruntime, cuda.bindings.runtime, cftime._cftime, netCDF4._netCDF4 (total: 88)

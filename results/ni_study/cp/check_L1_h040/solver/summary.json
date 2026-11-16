@@ -1,0 +1,161 @@
+{
+  "config": {
+    "global": {
+      "backend": "numpy",
+      "use_gpu": false,
+      "precision": "float64",
+      "seed": 0,
+      "output_dir": "solver"
+    },
+    "problem": {
+      "type": "composed",
+      "dimension": 3,
+      "finite_strain": true
+    },
+    "mesh": {
+      "type": "file",
+      "path": "../../mesh/h040/L.1/mesh.e",
+      "format": "exodus",
+      "scale": 1.0,
+      "verify": true
+    },
+    "variables": {
+      "u": {
+        "family": "fem",
+        "components": 3,
+        "order": 2
+      }
+    },
+    "functions": {
+      "pull": {
+        "kind": "parsed",
+        "expression": "0.02*25.4*t/20"
+      }
+    },
+    "materials": {
+      "cp": {
+        "type": "dislocation_density_cp",
+        "C11": 253000,
+        "C12": 152000,
+        "C44": 124000,
+        "mu": 26000,
+        "gamma0": 1e-05,
+        "rate_exponent_n": 8.33333333333,
+        "tau_c0": 0.26,
+        "q_lat": 1.4,
+        "alpha0": 0.4,
+        "burgers": 2.5e-07,
+        "rho0": 2350000,
+        "k1": 0.0295,
+        "annihilation_diameter": 7.9e-07,
+        "crystal": {
+          "structure": "fcc",
+          "euler_angles": [
+            60,
+            23.5,
+            80.2
+          ]
+        }
+      }
+    },
+    "kernels": {
+      "sd_cp": {
+        "type": "stress_divergence_cp",
+        "variable": "u",
+        "material": "cp",
+        "dim": 3,
+        "finite_strain": true,
+        "gnd": false
+      }
+    },
+    "bcs": {
+      "clamp_x": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "x-",
+        "components": [
+          0,
+          1,
+          2
+        ],
+        "values": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "grip_yz": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "x+",
+        "components": [
+          1,
+          2
+        ],
+        "values": [
+          0.0,
+          0.0
+        ]
+      },
+      "pull_x": {
+        "variable": "u",
+        "kind": "dirichlet",
+        "node_set": "x+",
+        "components": [
+          0
+        ],
+        "values": [
+          1.0
+        ],
+        "function": "pull"
+      }
+    },
+    "executioner": {
+      "type": "cp_quasi_static",
+      "n_steps": 16,
+      "t_end": 20,
+      "newton_tol": 0.001,
+      "newton_rel_tol": 0,
+      "max_iter": 50,
+      "max_cutbacks": 10,
+      "linear_method": "direct",
+      "sparse_threshold": 500,
+      "line_search": "backtracking",
+      "snapshots_every": 4,
+      "reaction_node_set": "x+",
+      "gauge_node_sets": [
+        "gage-",
+        "gage+"
+      ],
+      "corrector": "newton",
+      "corrector_tol": 0.05,
+      "predictor_reject_ratio": 10
+    },
+    "output": {
+      "formats": [
+        "vtk",
+        "csv",
+        "json"
+      ],
+      "save_checkpoint": false,
+      "fields": [
+        "displacement",
+        "stress",
+        "strain",
+        "equivalent_plastic_strain",
+        "slip_activity",
+        "mean_rho"
+      ]
+    }
+  },
+  "residuals": {
+    "fem_iterations": 52.0
+  },
+  "stress_strain": {
+    "strain_min": -0.014237996316237362,
+    "strain_max": 0.021261046593822722,
+    "stress_min": -0.04559198173271571,
+    "stress_max": 463.963103978532,
+    "final_stress": 10.835158289579997
+  }
+}

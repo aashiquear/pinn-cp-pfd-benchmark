@@ -1,0 +1,24 @@
+2026-10-25 11:06:46 INFO    pinnacle: Logging to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/hybrid_linear_t2/solver/pinnacle.log (level=info, console=False)
+2026-10-25 11:06:46 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
+2026-10-25 11:06:47 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cpu' with precision 'float64' (composed path)
+2026-10-25 11:08:34 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.06250, newton, 11 Newton iterations, 107.2 s)
+2026-10-25 11:09:09 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.12500, newton, 5 Newton iterations, 34.7 s)
+2026-10-25 11:09:38 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.18750, newton, 3 Newton iterations, 25.8 s)
+2026-10-25 11:10:07 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.25000, newton, 3 Newton iterations, 25.9 s)
+2026-10-25 11:10:37 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.31250, newton, 3 Newton iterations, 26.2 s)
+2026-10-25 11:11:07 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.37500, newton, 3 Newton iterations, 26.2 s)
+2026-10-25 11:11:36 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.43750, newton, 3 Newton iterations, 26.2 s)
+2026-10-25 11:12:06 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.50000, newton, 3 Newton iterations, 26.3 s)
+2026-10-25 11:12:36 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.56250, newton, 3 Newton iterations, 26.3 s)
+2026-10-25 11:13:05 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.62500, newton, 3 Newton iterations, 26.3 s)
+2026-10-25 11:13:35 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.68750, newton, 3 Newton iterations, 26.2 s)
+2026-10-25 11:14:11 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.75000, newton, 4 Newton iterations, 32.8 s)
+2026-10-25 11:14:47 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.81250, newton, 4 Newton iterations, 32.8 s)
+2026-10-25 11:15:23 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.87500, newton, 4 Newton iterations, 32.7 s)
+2026-10-25 11:16:00 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.93750, newton, 4 Newton iterations, 32.7 s)
+2026-10-25 11:16:36 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 1.00000, newton, 4 Newton iterations, 32.7 s)
+2026-10-25 11:16:36 INFO    pinnacle.runner.runner: Wrote CSV output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/hybrid_linear_t2/solver/stress_strain.csv
+2026-10-25 11:16:36 INFO    pinnacle.runner.runner: Wrote per-step solver history to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/hybrid_linear_t2/solver/solver_history.csv
+2026-10-25 11:16:36 INFO    pinnacle.runner.runner: Wrote VTK field output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/hybrid_linear_t2/solver/fields.vtk
+2026-10-25 11:16:36 INFO    pinnacle.runner.runner: Wrote summary to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/hybrid_linear_t2/solver/summary.json
+2026-10-25 11:16:36 INFO    pinnacle.cli.main: Run complete; outputs in /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/hybrid_linear_t2/solver

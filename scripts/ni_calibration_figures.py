@@ -156,10 +156,15 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
     fig.tight_layout(); fig.savefig(out / f"{name}_curve.png"); plt.close(fig)
 
     # one at a time
-    curves = {p: read_curve(root / f"{p}_p" / "results.csv") for p in PARAMS}
+    # only the parameters the iteration perturbed (2026-11-15: tau_c0 is held in the restart)
+    params = [p for p in PARAMS if (root / f"{p}_p" / "results.csv").exists()]
+    curves = {p: read_curve(root / f"{p}_p" / "results.csv") for p in params}
     ymax = max([s0.max(), ey.max()] + [c[1].max() for c in curves.values()])
-    fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.6), dpi=dpi, sharex=True, sharey=True)
-    for ax, p in zip(axes.ravel(), PARAMS):
+    if len(params) == 4:
+        fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.6), dpi=dpi, sharex=True, sharey=True)
+    else:
+        fig, axes = plt.subplots(1, len(params), figsize=(4.0 * len(params), 3.8), dpi=dpi, sharey=True)
+    for ax, p in zip(np.atleast_1d(axes).ravel(), params):
         e, s, _cut = curves[p]
         factor = gn["perturbations"][p]["value"] / center[p]
         u = _str(prm[p]["unit"])
@@ -173,16 +178,17 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
         exp_marker(ax, ex, ey, label=False)
         box(ax, f, ymax, xlabel=False, ylabel=False)
         ax.legend(loc="upper left", frameon=False)
-    for ax in axes[1]:
+    grid = np.atleast_2d(axes)
+    for ax in grid[-1]:
         ax.set_xlabel(r"Engineering (gauge) strain $\varepsilon$ (%)")
-    for ax in axes[:, 0]:
+    for ax in grid[:, 0]:
         ax.set_ylabel(r"Engineering stress $\sigma$ (MPa)")
     fig.suptitle(_str(it["label"]), fontsize=10)
     fig.tight_layout(); fig.savefig(out / f"{name}_oat_panels.png"); plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(6.2, 4.4), dpi=dpi)
     ax.plot(e0, s0, color=COLORS["fe"], lw=2.0, label="center, " + _str(it["label"]))
-    for p in PARAMS:
+    for p in params:
         e, s, _ = curves[p]
         factor = gn["perturbations"][p]["value"] / center[p]
         ax.plot(e, s, color=COLORS[p], lw=1.5,
@@ -216,9 +222,12 @@ def figs_iteration(name: str, it: dict, cfg: dict, deck: Path, out: Path, draw: 
     # sensitivity
     J = np.array(gn["jacobian_dS_dlnp"])
     cols = list(center)
+    # a held parameter has a zero column and no perturbation curve
     fig, ax = plt.subplots(figsize=(5.6, 3.8), dpi=dpi)
     ax.axhline(0.0, color="#777", lw=0.8)
     for j, p in enumerate(cols):
+        if p not in curves:
+            continue
         # markers beyond the end of a perturbation curve carry a clamped value: not drawn
         ok = me <= curves[p][0][-1] + 1e-9
         ax.plot(me[ok], J[ok, j], "-o", ms=4, lw=1.5, color=COLORS[p],

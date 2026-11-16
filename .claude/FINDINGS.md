@@ -695,3 +695,182 @@ NOT derivable from the code: measured facts, decisions, and traps.
   per-orientation W_c calibration first (9, 10, H, P) and a W_c(orientation) model for the synthetic
   samples; or a CP-only h020 campaign now (the curve head's data, valid for any W_c up to damage
   onset) with the failure targets added later.
+
+## 2026-11-02: W_c = 0 baseline of the 15 specimens at chi 1 (author, planned, not launched)
+- Author: full 15 with chi 1, l0 0.6, G_c 30.95, W_c 0 as the baseline of the first parameter set.
+  Report order: baseline parity; W_c calibration on L; why W_c is per orientation; per-orientation
+  W_c and the full 15 parity. Decks `decks/ni/final/fem_wc0_chi1_{base,15}_h020.i`, results
+  `final/fem_wc0_chi1/`, predictor linear, same solver as the per-orientation stage.
+- Expected from the chi 0 pair (10.1 / 10.3 no failure, d 0.80 at the path end): chi 1 adds about
+  0.2% to the driving force, so group 10 likely reports no failure. Plot those as run-out points
+  at the end of the path, not as failure strains. L.1 goes first: it must reproduce 0.460.
+- Author 2026-11-02 go-ahead: PINNACLE fix committed (7645793), L.1 launched alone from
+  `fem_wc0_chi1_L1_h020.i`. Baseline figures: ridge on every run (`ridge_always`), and on the curve
+  the first snapshot whose d > 0.55 / 0.65 / 0.75 / 0.85 zone cuts the section
+  (`ni_specimen.py thresholds`, `d_markers`). `python3` has matplotlib locally, `python3.11` does not.
+- The through-section test is stricter than max d: P.3 reaches max d 0.87 with a load-drop failure
+  and no value of the four cuts the section, so it gets no marker.
+- 2026-11-03: baseline L.1 on 7645793 reproduces the old calibration curve to 0.43 (d > 0.75 cut at
+  0.4285, same stress) but loses mechanics at the start of the load collapse (Newton floor 0.21 N,
+  10 cutbacks), as L.3 / L.4 did. The old run went through with newton_tol 1e-3 on pre-0034 code.
+  L.1 baseline (27 min) is the cheap reproducer for this. The threshold test FAILS on 7645793:
+  psi+ of the W_c = 10 W_p run 84666.9 vs 83704.9 (1.15 %, rel 1e-8 asserted), 6 h 50 min.
+- TRAP: a watcher `until ! pgrep -f "PATTERN"` over ssh never ends, its own bash command line
+  matches PATTERN. Use `pgrep -f "[n]i_study.py ..."` style or wait on a PID.
+- 2026-11-03 root cause of the collapse failures on 7645793: a repeated window ramped the damage
+  from the step's post-damage-solve field, while its start displacement was in equilibrium with
+  the damage of the step's last MECHANICS solve (about 0.003 apart). The residual of a vanishing
+  increment then levelled off at 0.21 N. Fix: ramp from the last mechanics damage
+  (`mech_d_last`). L.1 baseline on it separates at 0.4630 (68 min). Affected fix5 runs: any that
+  lost mechanics with d < 0.85 (L.3, L.4, H.1 wc87.3); 9.1 wc99 ran past its target first, so it
+  is still a valid upper bracket.
+- Author 2026-11-03 go-ahead: fix committed as PINNACLE 617adcb (test
+  `test_repeated_window_damage_start.py`, ADR 0034 addendum 2026-11-03), host pulled. Launched on
+  it: 9.1 and H.1 W_c calibrations from scratch, L.3 / L.4 at W_c 75, one P.1 check at W_c 82.68,
+  and all 15 baseline runs (L.1 again, so the set is one commit). Earlier points are in
+  `results/ni_study/{wc,final}/superseded_20261103/`. Every kept run of 7645793 (P.1, P.3, P.4,
+  9.1 wc81) took 170-613 cutbacks, so the old ramp may have acted on them; the P.1 check decides.
+- TRAP: `ni_pfd_calibrate.py` reuses any case folder with `summary.json`; a stalled point
+  (no failure, ended before target) ends the search at once. Move old points away before a rerun.
+- The W_c threshold test passes on 2cbdb1c (2 h 28 min) and fails on 7645793, so the line-search /
+  repeated-window commit changed it. Its cube deck has no degradation, so the cause is the
+  mechanics path (cutbacks, start-field interpolation), not the damage ramp. Rerun on 617adcb
+  started locally (`scratchpad/t_thr_fix7.out`). Pre-existing, not ours: `test_vpinn_steady_
+  approaches_the_fem_reference` fails locally with and without the fix (peak 6.6 vs 12.5 K).
+- 2026-11-03 baseline on 617adcb: only L.1 separated; 10 of 11 finished runs lost mechanics
+  (d 0.71 to 0.97). The fix7 reruns of L.3 / L.4 / H.1 wc87.3 / 9.1 wc81 reproduce the 7645793
+  stops to four digits; the P.1 check reproduces 0.4667, so the P set stands. Finished runs keep no
+  checkpoint (`ni_specimen.py` deletes them all once summary.json exists, also on a mechanics stop).
+- Two stall signatures at a vanishing increment. (A) initial residual far above tol (9.3 7.9 N,
+  H.1 4.0, 9.1 1.3, 10.1 6.0): the FIRST pass of a window applies the new damage at once; only
+  repeated passes ramped it. Fix in side copy `pinnacle_fix8` (ramp on every pass of
+  cp_quasi_static). (B) initial residual floors at 0.0508 N against tol 0.05 (L.3, P.3, 10.4) and
+  Newton raises it: the backtracking takes the smallest feasible step even when no trial lowers
+  the residual. `ni_diag_newton.py` logs the line-search outcome and Je = 1 branch flips of
+  damaged points (degrade_pk2's tangent jumps from g K to K there).
+
+**2026-11-04 (evening): restart, calibration-order trap, H.1 hit.**
+- A coupled restart does not reproduce the uninterrupted run near the softening: L.3 resumed from its step-200 checkpoint (fix8 code) opened its first step at 1.7e3 N against tol 0.05 N, found no feasible line-search trial at any cutback and sub-stepped for 18 h. The checkpoint does not carry the damage of the last mechanics solve (`mech_d_last`), so the first step after a restart likely meets the whole damage jump (mechanism A again; not yet confirmed). Do not use restarts for diagnosis until the checkpoint carries it.
+- `ni_pfd_calibrate.py` judged a round in run order and stopped at the first run that decided nothing, dropping a hit of the same round: H.1 W_c 106.7 failed at 0.5511 (target 0.5489, tol 0.004) and was discarded because W_c 87.3 stalled at 0.4505. Fixed 2026-11-04: hits are judged first. The H.1 result is on 617adcb (mechanism A present) and is rerun with the fix.
+- 9.1 W_c search on 617adcb: 81 -> 0.4848, 99 -> no failure by 0.5754, 89.55 -> 0.5302, 94.16 -> 0.5556; 92.48 running (target 0.5465).
+- Tangent check smoke test on the cube deck: one point evaluated twice, warm-started then cold, differs by 1.4e5 against |R0| 2.7e7 (0.5 %). The local slip tolerance (1e-10 absolute on dgamma) leaves a residual floor; whether that floor is the 0.05 N floor of L.3 is what ni-diag-check-L3b measures.
+
+**2026-11-04 (night): mechanism B is a transposed finite-strain tangent.**
+- Check on L.3 (fix8 code, ni-diag-check-L3b): the linear solve is exact (K du = -R to 1e-9), the residual repeats to 1e-6 N, but R changes along du by 2.8 |R| more than K du says, the same at eps 1e-2 and 1e-4. The material tangent fits the finite-difference stress change when contracted as C[a,c,k,l] dH[k,l] (0.4 %) and is 100x worse in the assembler's contraction C[a,c,b,d] dH[d,b].
+- Cause: the finite-strain assembler stores H[d,b] = du_b/dX_d and contracts the tangent's third index with the displacement component, the fourth with the gradient direction. The CP callback differentiates sigma(H) component by component, the transposed pair. Harmless while C is minor-symmetric (small-strain elastic); at large plastic strain with rotation the skew part is wrong, and on a softened specimen the Newton direction went uphill.
+- Fix (PINNACLE 53966d4, pushed 2026-11-04): the full-gradient CP tangent is returned in the assembler layout (`_assembly_layout`), consistent and stencil paths. New test `tests/unit/fem/test_cp_finite_strain_assembled_tangent.py` (K du against a central-difference Jacobian of the assembled residual on one Hex8): 0.5 % before, passes after; the central-difference helper of `test_cp_implicit_update.py` now builds the same layout. The residual is unchanged, so converged solutions are the same; only Newton changes.
+- Open for the author (not changed): the callback builds F = I + H with H[d,b] = du_b/dX_d, which is the transpose of the deformation gradient F[i,J] = delta + du_i/dX_J, so the crystal sees F^T (the left instead of the right stretch, the inverse rotation); and the finite-strain residual integrates Cauchy stress with reference-configuration gradients and weights instead of P = J sigma F^-T. Both change results, not only convergence.
+
+**2026-11-04 (late): fix9 verified; restart root cause.**
+- With the first-pass ramp and the tangent layout fix, L.3 separates at load factor 0.5175 in 19 min (212 Newton iterations, no cutback) and 9.4 at 0.5375 in 20 min. The L.3 curve matches the fix8 run to 3e-4 in reaction up to step 190: only convergence changed.
+- Restart root cause (supersedes the "likely mech_d_last" note above and explains the 2026-10-25 restart trap): on a coupled restart the mechanics callback did not exist yet when the checkpoint was restored, so the restore was a silent no-op and the resumed run started from a virgin crystal with no damage pushed. Fixed in PINNACLE (`cp_quasi_static.ensure_material`, called before the restore); checkpoints also carry `mech_damage`. Checkpoints written before the fix restore correctly with the new code except for that one field.
+- Run durations drop by an order of magnitude on the fixed code (L.3 6 h -> 19 min); plan the reruns with that in mind.
+- Threshold test `test_wc_shifts_the_cp_driving_force_by_exactly_the_threshold` at 53966d4 on rocm-server: passed in 2 min 40 s (617adcb: 9 min 29 s; 2cbdb1c: 2 h 28 min).
+
+## 2026-11-15: review of Part III (Ni) against the paper; root cause of the stalled study
+
+Author asked for a full recheck. No campaign run; two checks on existing data.
+- **The reported "engineering stress" is the Cauchy stress.** The finite-strain assembler integrates
+  the Cauchy stress with reference gradients and weights (PINNACLE `fem/assembly.py`), so
+  reaction / A0 = mean sigma_xx, with no area reduction. Measured on the calibrated CP-only L.1
+  run (`cal_h020/gn2/base`, last step, gauge strain 0.590): reported 257.2 MPa, mean Cauchy
+  sigma_xx of the 270 gauge elements 257.9 MPa, J = 1.000, mean stretches 1.628 / 0.812 / 0.741,
+  section at 0.615 A0. A consistent force (P = J sigma F^-T) gives 158.5 MPa. No geometric
+  softening exists in any Ni run, so no necking (Considere) can occur. Also F is fed transposed
+  (FINDINGS 2026-11-04).
+- **The paper's Table 3 set nearly reproduces Fig. 3 once the force and the rate are right.**
+  Material point, orientation L, `uniaxial_curve` (lateral free, force over original area), eng
+  stress (MPa) at 0.5 / 2 / 5 / 10 / 20 / 30 / 40 / 50 %: experiment 85 / 88 / 98 / 129 / 180 /
+  212 / 233 / 238; paper set at 1e-4/s 74 / 83 / 104 / 135 / 179 / 205 / 220 / 227; at 1e-3/s
+  97 / 110 / 137 / 178 / 236 / 271 / 290 / 299; at the assumed 5e-2/s 154 ... 478. The h020
+  calibrated set (rho0 7.256e5, k_m 0.01147, y_c 1.542e-6) under the same consistent measure
+  gives 85 / 91 / 102 / 118 / 135 / 142 / 143 / 141: it peaks at 40 % and is 40 % low at 50 %.
+  So "Table 3 hardens four times too fast" (report §4.1) = rate 5e-2/s (about 2x at m = 0.12)
+  times the missing area reduction (1.5x at 50 %), and the calibrated set compensates both.
+- Consequences: report §4 (CP set), §5 (mesh numbers), §6-7 (G_c, W_c, chi), §9 are not valid
+  results. W_c / chi / per-orientation W_c were added because damage had to supply all the
+  softening the geometry could not; the paper uses one G_c (125 kJ/m2), zeta 1, no threshold, one
+  set for all 15, parity RMSE 0.064. Parts I-II share the kinematics (20 % strain: up to 1.2x).
+- Other gaps against the paper: 792 elements (h020, 11 % above the mesh limit at 40 %) against
+  9,880 in the paper's gage; no valid 15-specimen result on any route; baseline of 2026-11-03 is
+  on pre-fix code (only L.1 separated). Host idle since 2026-11-05, PINNACLE 53966d4.
+- Proposed (awaiting the author): total-Lagrangian fix in PINNACLE (F not transposed, residual on
+  P, tangent dP/dF, legacy switch for Parts I-II), then Table 3 set with the rate as the one
+  knob on L.1, one G_c at fixed l0 (chi 1, zeta 1, W_c 0), all 15 with that single set, then the
+  three neural routes.
+
+**2026-11-15 (restart, author: "agreed, strip the invalid report, clean figures, go on with the plan").**
+- Report stripped to §2 (model, specimen); first draft in `archive/docs/ni_report_first_attempt_2026-11-15.md`, its figures in `archive/figures/ni_first_attempt/`. Old decks stay (ledger rows point at them).
+- PINNACLE ADR 0035 written and tested (`kinematics = total_lagrangian`: H[i,J] = du_i/dX_J to the material, residual on P = J sigma F^-T, stiffness dP/dF; default legacy). UNCOMMITTED: the commit was blocked by the permission classifier (the author's approval did not name a commit); runs use the host side copy `~/projects/pinnacle_tl`. Suite: 1,325 passed, 1 failed (the pre-existing VPINN test).
+- Ni pipeline: `[Specimen] kinematics` key (default legacy for the old decks); new decks under `decks/ni/{cp,pfd}/tl/`, results under `results/ni_study/tl/`.
+- The material-point estimate of the morning was optimistic (it forces a symmetric stretch; the specimen shears): on the specimen the paper's set gives RMSE 12.6 MPa at 1e-3/s, high by 15 MPa at 5-15 %, low by 20 MPa at 40-50 %, peak at 0.525.
+- CP set carried (GN iteration 2 center, rate 1e-3/s assumed, tau_c0 held): rho0 2.0257e6, k_m 0.0243375, y_c 4.6689e-7; RMSE 4.9 MPa; CP-only peak at 0.606. k_m / sqrt(y_c) is again the identified combination; a further step would lower y_c more and delay the peak, not taken.
+- A run takes 10 min (310 steps, 4 Newton iterations per step, 4 threads).
+
+## 2026-11-15: restart results on the total-Lagrangian balance (author approved: "this is what I am expecting")
+- Single set: CP = paper's Table 3 with rho0 2.0257e6, k_m 0.0243375, y_c 4.6689e-7 (tau_c0 0.26
+  held), gauge rate about 1e-3/s (assumed; bar ramp 30 % in 600 s, 40 % in 800 s); fracture = the
+  paper's model (AT2, chi 1, zeta 1, W_c 0), l0 0.6 mm, G_c 49.37 MPa mm (L.1 fails at 0.4635
+  against 0.463; seven runs, 17 to 31 min each).
+- Mesh check: h010 with the same set fails at 0.4697 (+1.3 %), peak -1.5 %. h020 kept.
+- Fifteen specimens, FEM, one set: L, P, 10 within 6.3 % (RMSE 0.019 strain); groups 9 and H fail
+  19 to 26 % early (0.43-0.47 against 0.55-0.63); RMSE over 15 is 0.088 (paper 0.064). Reading:
+  threshold-free AT2 fails the gage at a plastic-work level, and 9 / H carry the same or higher
+  stress than L; the experiment localizes late near a fillet. No per-orientation parameter is added.
+- Known offset: diffuse damage lowers the L.1 peak to 223.5 MPa against 239 (6 %); a CP refit with
+  damage active would remove it. Not done.
+- Figure rule (author 2026-11-15): the fracture is shown with a ridge line, ONE thin line through
+  the maximum of d along x at each y (`ni_pfd_shape_figures.py`: weighted crest, black, 0.9 pt);
+  the d = 0.85 outline is dashed.
+- Trap: `ni_final_specimen_figures.py` resolves data paths three levels up from its deck; figure
+  decks for it sit in `decks/ni/figures/` (tl_final_fem*.i), not in the `tl/` subfolder.
+- Trap: `ni_study.py all` does not run `fracture`; run `ni_specimen.py <case>/specimen.i curve
+  fracture` per case before `ni_final_figures.py`. `ni_gauss_newton.py` writes the next center
+  deck as a side effect (delete it when the step is not taken).
+- PINNACLE 30ed4dc (committed and pushed 2026-11-15 with ADR 0035): `backend/autograd_bridge.py` enables gradient recording
+  inside the wrapped forward. The fem_residual network failed at its first step on the Ni specimen
+  because the consistent CP tangent runs autodiff inside the bridge (never exercised before: the
+  Ni neural routes had not run with the implicit update). Test in tests/unit/fem/test_residual_bridge.py.
+- Neural routes: PINN+FEM = `predictor = fem_solver_grain`, no node features, corrector newton;
+  PINN = same with corrector auto, tolerance 0.05. Both inherit the total-Lagrangian assembler
+  through the residual bridge. L.1 checks: 21 to 23 min per run, about the FEM cost
+  (the earlier "50 s per load step" note was a misread log).
+
+## 2026-11-15 (evening): neural solver routes on the single set
+- PINN+FEM on all 15 = FEM to seven digits (failure, location; Newton 10,334 vs 10,332). Cause, not
+  a success of the network: the linear extrapolation already meets residual_target 0.05 on 2,881 of
+  3,247 load steps, the network trains on 365 and gains 0.1 % at the median. Cost +11 % wall.
+- PINN on L.1: failure 0.4603 vs 0.4635, 193 of 458 mechanics solves accepted without Newton; these
+  are accepted extrapolations (network trained on 31 of 223 steps). Report §8.3 says so. A stricter
+  target or longer training was NOT run (author's decision).
+- 9.1 PINN+FEM died at load factor 0.5175: an L-BFGS training iterate the CP update could not
+  integrate went to the explicit sub-stepper (23 min, all 6,336 points), error left the unguarded
+  predictor hook. Fix in PINNACLE `load_step_predictor.py` (fem_residual scoring inside
+  `trial_evaluation(ladder=True)`, weights restored, optimizer rebuilt, `training_aborted`), two
+  tests, CHANGELOG, ADR 0029 addendum. Committed and pushed as PINNACLE 9e79174 (author 2026-11-15); host pulled, side copy `pinnacle_tl` equal to
+  it. Rerun of 9.1 = FEM (0.4445).
+- Experiment fracture location of L.1 is 0.20 (prediction 0.30); a chat table of mine said 0.30.
+- Trap: the host has no matplotlib (neither system python3 nor the venv): `ni_surrogate_design.py`
+  (imports report_figures) runs locally, its data dir is rsynced. hexaform is not importable in
+  the host venv either: the surrogate meshes were copied from the first attempt (same design).
+- Trap: a waiter `until ! pgrep -f PATTERN` over ssh never ends when PATTERN is in its own command
+  line; test for an output file instead.
+- Surrogate: 30 FEM training runs launched 18:26 under `results/ni_study/tl/final/surrogate/data`.
+- Author 2026-11-15 (evening): keep the network training settings as they are (residual target
+  0.05, 5/4 L-BFGS epochs); they may be revisited in the later study of the ductile-like
+  orientations. Do not rerun the neural routes with other settings before that.
+
+## 2026-11-15 (night): surrogate on the single set; plan of 2026-11-15 finished
+
+- 30 synthetic h020 specimens on the FEM route: all separated (0.465-0.599), 2 h 29 min wall, 15.3 h summed.
+- Surrogate (`decks/ni/final/tl/surrogate/surrogate_h020.i`, 24 train / 6 held out): held-out failure strain 3.6% RMS,
+  curve 4.3% mean. 15 real specimens (never training data) against FEM: 6.7% RMS in failure strain, worst P.3 +14.1%,
+  9.1 -11.5%, P.4 +9.9%, L.1 -9.0%. Against the experiment RMSE 0.096 (FEM 0.088); L, P, 10: 0.038 (FEM 0.019).
+- Measured tapers of P.3, P.4, L.4, 10.4 (-0.073, -0.054, -0.056, +0.067 mm) lie outside the design range
+  (-0.04 to +0.06); FEM failure strain of P.3 (0.396) is below every training specimen. A later design should
+  widen the taper range to at least -0.08 to +0.07. The ensemble flag at 0.1 flagged nothing (max spread 0.080).
+- Trap: `pinnacle run` resolves the deck's relative paths against the working directory; run surrogate decks
+  from their own directory. `surrogate_predictions.csv` carries no curve for queried rows (peak and scalars only).
+- Trap: the host has no matplotlib; `ni_surrogate_targets.py` and all figure scripts run locally, then rsync.
+- Report §8.4, §8.5, abstract and introduction written. Open by the author's decision: the ductile-like
+  orientation study (groups 9, H); network settings of the solver routes stay frozen until then.

@@ -36,7 +36,9 @@ Stages:
           grip strain, engineering stress = reaction on x+ / mean initial gage section
           (gage width x mean of the five station thicknesses), Newton count; summary.json
 
-Usage: ni_specimen.py SPECIMEN.i deck|run|curve|all
+  thresholds  first snapshot whose d > 0.55 / 0.65 / 0.75 / 0.85 zone cuts the section (thresholds.json)
+
+Usage: ni_specimen.py SPECIMEN.i deck|run|curve|fracture|thresholds|all
 """
 from __future__ import annotations
 
@@ -125,6 +127,8 @@ def stage_deck(sp: dict, deck: Path) -> Path:
         "REJECTRATIO": _num(sp.get("predictor_reject_ratio", 10)),
         "STATEUPDATE": str(sp.get("state_update", "implicit")),
         "STATEITER": str(int(sp.get("state_iterations", 2))),
+        # PINNACLE ADR 0035. Decks of the first attempt (before 2026-11-15) carry no key and stay legacy.
+        "KINEMATICS": str(sp.get("kinematics", "legacy")),
     }
     for key, name in CP_KEYS:
         sub[key] = _num(sp[name])
@@ -340,6 +344,61 @@ def _curve_pfd(sp: dict, deck: Path) -> dict:
     return summary
 
 
+def _cut_through(d: np.ndarray, thr: float, edges: np.ndarray, left: np.ndarray, right: set) -> bool:
+    """True when no path of nodes with d <= thr (element edges) joins the x- face to the x+ face."""
+    intact = d <= thr
+    adj: dict[int, list[int]] = {}
+    for a, b in edges:
+        if intact[a] and intact[b]:
+            adj.setdefault(int(a), []).append(int(b)); adj.setdefault(int(b), []).append(int(a))
+    seen = {int(k) for k in left if intact[k]}; stack = list(seen)
+    while stack:
+        k = stack.pop()
+        for m in adj.get(k, ()):
+            if m not in seen:
+                if m in right:
+                    return False
+                seen.add(m); stack.append(m)
+    return True
+
+
+def stage_thresholds(sp: dict, deck: Path) -> dict:
+    """Where the failure would sit if the through-section value were other than 0.85 (author
+    2026-11-02): for each of ``damage_markers`` (default 0.55 0.65 0.75 0.85) the first snapshot
+    whose d > value zone cuts the specimen in two, as stage_fracture tests it. A value no snapshot
+    reaches is left out. Writes <out_dir>/thresholds.json."""
+    from vtk_legacy import read_vtk
+    out = _resolve(str(sp["out_dir"]), deck)
+    todo = sorted(float(t) for t in str(sp.get("damage_markers", "0.55 0.65 0.75 0.85")).split())
+    pvd = (out / "solver" / "fields.pvd").read_text()
+    files = re.findall(r'timestep="[^"]+"[^>]*file="([^"]+)"', pvd)
+    rows = {int(r["step"]): r for r in _rows(out / "results.csv")}
+    every = max(int(sp.get("snapshots_every", 1)), 1)
+    edges = left = right = None
+    hits: list[dict] = []
+    for k, name in enumerate(files):
+        if not todo:
+            break
+        v = read_vtk(out / "solver" / name)
+        d = np.asarray(v["point"]["damage"], dtype=float).reshape(-1)
+        if edges is None:
+            cells, X = np.asarray(v["cells"], dtype=int), v["nodes"]
+            hexe = ((0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7))
+            edges = np.unique(np.sort(np.concatenate([cells[:, [a, b]] for a, b in hexe]), axis=1), axis=0)
+            left = np.where(np.isclose(X[:, 0], X[:, 0].min()))[0]
+            right = set(np.where(np.isclose(X[:, 0], X[:, 0].max()))[0].tolist())
+        step = (k + 1) * every - 1
+        while todo and d.max() > todo[0] and _cut_through(d, todo[0], edges, left, right):
+            # the step a run stopped on has no converged mechanics row: its last converged one
+            at = max(t for t, r in rows.items() if t <= step and np.isfinite(_f(r, "eng_stress")))
+            hits.append({"d": todo.pop(0), "step": step, "snapshot": name,
+                         "gauge_strain": _f(rows[at], "gauge_strain"), "eng_stress": _f(rows[at], "eng_stress")})
+    res = {"markers": hits, "not_reached": todo}
+    (out / "thresholds.json").write_text(json.dumps(res, indent=1))
+    print(json.dumps(res))
+    return res
+
+
 def stage_fracture(sp: dict, deck: Path) -> dict:
     """The paper's failure criterion on the damage snapshots: the first snapshot in
     which the nodes with damage above ``separation_damage`` (0.85, the paper's c >
@@ -377,21 +436,8 @@ def stage_fracture(sp: dict, deck: Path) -> dict:
             edges = np.unique(np.sort(np.concatenate([cells[:, [a, b]] for a, b in hexe]), axis=1), axis=0)
             x_lo, x_hi = X[:, 0].min(), X[:, 0].max()
             left = np.where(np.isclose(X[:, 0], x_lo))[0]; right = set(np.where(np.isclose(X[:, 0], x_hi))[0].tolist())
-        intact = d <= thr
-        adj: dict[int, list[int]] = {}
-        for a, b in edges:
-            if intact[a] and intact[b]:
-                adj.setdefault(int(a), []).append(int(b)); adj.setdefault(int(b), []).append(int(a))
-        seen = {int(k) for k in left if intact[k]}; stack = list(seen); reached = False
-        while stack and not reached:
-            k = stack.pop()
-            for m in adj.get(k, ()):
-                if m not in seen:
-                    if m in right:
-                        reached = True; break
-                    seen.add(m); stack.append(m)
-        if not reached:
-            cut = np.where(~intact)[0]
+        if _cut_through(d, thr, edges, left, right):
+            cut = np.where(d > thr)[0]
             found = (step_of(kf, len(frames)), path, X[cut])
             break
     mode = "separation" if found is not None else None
@@ -435,7 +481,8 @@ def main(argv):
     deck = Path(argv[1]).resolve(); sp = read_specimen(deck)
     stages = ["deck", "run", "curve"] if argv[2] == "all" else argv[2:]
     for st in stages:
-        {"deck": stage_deck, "run": stage_run, "curve": stage_curve, "fracture": stage_fracture}[st](sp, deck)
+        {"deck": stage_deck, "run": stage_run, "curve": stage_curve, "fracture": stage_fracture,
+         "thresholds": stage_thresholds}[st](sp, deck)
     return 0
 
 

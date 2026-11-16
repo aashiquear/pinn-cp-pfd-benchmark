@@ -12,6 +12,7 @@ Deck-driven (PINNACLE .i syntax):
     crack       = 0.85                 # the d = crack outline (black on E_xx, cyan on d): the fracture zone
     color       = exx                  # exx | damage (the phase field d, 0..1, with the d = crack contour)
     ridge       = true                 # crack line: at each node row across the width, the x of max d in the gage
+    ridge_always = true                # optional: draw the ridge on a run that never met the failure definition
     dpi         = 200
   []
   [Runs]
@@ -108,8 +109,12 @@ def ridge(v: dict, f: dict, run: Path) -> tuple[np.ndarray, np.ndarray]:
     pts, vals = [], []
     for y in np.unique(rows):
         ids = sel[rows == y]
-        k = ids[np.argmax(d[ids])]
-        pts.append(x[k, :2]); vals.append(d[k])
+        # the crest of d along the row, between nodes: centroid of the nodes within 2 % of the
+        # row maximum, weighted by their excess (a bare argmax jumps node to node on a flat crest)
+        dm = float(d[ids].max())
+        w = np.clip(d[ids] - 0.98 * dm, 0.0, None)
+        w = w / w.sum() if w.sum() > 0 else np.full(len(ids), 1.0 / len(ids))
+        pts.append(w @ x[ids, :2]); vals.append(dm)
     return np.array(pts), np.array(vals)
 
 
@@ -120,14 +125,11 @@ def draw_ridge(ax, v: dict, f: dict, run: Path):
     # an undamaged run (mechanics breakdown before initiation) has no crack line to draw
     if len(pts) < 2 or vals.max() < float(f.get("ridge_min", 0.05)):
         return None
-    segs = np.stack([pts[:-1], pts[1:]], axis=1)
-    # a dark underlay keeps the colored core readable on the jet / inferno fields
-    ax.add_collection(LineCollection(segs, colors="black", linewidths=4.2, zorder=5))
-    lc = LineCollection(segs, cmap="inferno" if _str(f.get("color", "exx")) == "exx" else "cool",
-                        norm=plt.Normalize(0.0, 1.0), linewidths=2.2, zorder=6)
-    lc.set_array(0.5 * (vals[:-1] + vals[1:]))
-    ax.add_collection(lc)
-    return lc
+    # author 2026-11-15: the ridge is ONE thin line through the layer of maximum damage (the
+    # x of max d at each row across the width); the d = crack outline is dashed beside it
+    ax.plot(pts[:, 0], pts[:, 1], "-", color="black", lw=float(f.get("ridge_width", 0.9)), zorder=6,
+            solid_capstyle="round")
+    return None
 
 
 def draw_damage(ax, v: dict, f: dict):
@@ -148,7 +150,7 @@ def draw_damage(ax, v: dict, f: dict):
     tri = mtri.Triangulation(x[used, 0], x[used, 1], remap[tris])
     tpc = ax.tripcolor(tri, d[used], shading="gouraud", cmap="inferno", vmin=0.0, vmax=1.0)
     if f.get("crack") is not None:
-        ax.tricontour(tri, d[used], levels=[float(f["crack"])], colors="cyan", linewidths=0.8)
+        ax.tricontour(tri, d[used], levels=[float(f["crack"])], colors="cyan", linewidths=0.8, linestyles="--")
     ax.set_xlim(x[used, 0].min(), x[used, 0].max())
     ax.set_ylim(x[used, 1].min() - 0.2, x[used, 1].max() + 0.2)
     ax.set_aspect("equal")
@@ -189,7 +191,7 @@ def draw_run(ax, v: dict, f: dict, lo: float, hi: float):
     remap[used] = np.arange(len(used))
     tri = mtri.Triangulation(x[used, 0], x[used, 1], remap[tris])
     if f.get("crack") is not None:
-        ax.tricontour(tri, d[used], levels=[float(f["crack"])], colors="black", linewidths=1.0)
+        ax.tricontour(tri, d[used], levels=[float(f["crack"])], colors="black", linewidths=0.7, linestyles="--")
     ax.set_xlim(min(p[:, 0].min() for p in polys), max(p[:, 0].max() for p in polys))
     ax.set_ylim(min(p[:, 1].min() for p in polys) - 0.2, max(p[:, 1].max() for p in polys) + 0.2)
     ax.set_aspect("equal")
@@ -222,7 +224,9 @@ def main(argv):
         fr = {"crack": 0.85, **f}
         if summ.get("failure_gauge_strain") is None:
             fr["crack"] = None
-            fr["ridge"] = "false"
+            # the W_c = 0 baseline keeps the ridge on an unfailed run (author 2026-11-02)
+            if _str(fr.get("ridge_always", "false")).lower() != "true":
+                fr["ridge"] = "false"
         pc = draw_run(a, v, fr, lo, hi)
         if _str(fr.get("ridge", "false")).lower() == "true":
             lc = draw_ridge(a, v, fr, _resolve(_str(r["dir"]), deck)) or lc
@@ -241,8 +245,8 @@ def main(argv):
             a.set_xlabel("x (mm), deformed")
     cax = fig.add_subplot(gs[1:, 1])
     cb = fig.colorbar(pc, cax=cax)
-    cb.set_label(r"phase field $d$ (cyan: $d$ = %g)" % float(f.get("crack", 0.85))
-                 if _str(f.get("color", "exx")) == "damage" else r"$E_{xx}$ (Green-Lagrange)")
+    cb.set_label(r"phase field $d$ (dashed: $d$ = %g; line: ridge of max $d$)" % float(f.get("crack", 0.85))
+                 if _str(f.get("color", "exx")) == "damage" else r"$E_{xx}$ (dashed: $d$ = 0.85; line: ridge of max $d$)")
     if lc is not None and _str(f.get("color", "exx")) == "exx":
         cax2 = fig.add_axes([cax.get_position().x1 + 0.09, cax.get_position().y0,
                              0.018, cax.get_position().height])

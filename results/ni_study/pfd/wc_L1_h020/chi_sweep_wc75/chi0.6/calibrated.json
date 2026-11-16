@@ -1,0 +1,11 @@
+[
+ {
+  "l0": 0.6,
+  "Gc": 0.1,
+  "note": "run budget spent; closest run kept",
+  "failure_strain": 0.020551349734374055,
+  "location_fraction": -0.06279085662037032,
+  "angle_to_axis_deg": 90.0,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.6/l0.6/gc0.1"
+ }
+]

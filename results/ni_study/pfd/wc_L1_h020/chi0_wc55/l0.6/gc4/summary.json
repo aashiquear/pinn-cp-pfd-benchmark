@@ -1,0 +1,19 @@
+{
+ "steps": 244,
+ "steps_valid": 244,
+ "run_died": false,
+ "final_gauge_strain": 0.47550750205638204,
+ "final_grip_strain": 0.244,
+ "peak_eng_stress": 237.0812178279284,
+ "strain_at_peak": 0.47550750205638204,
+ "initiation_gauge_strain_node": 0.4270230745384661,
+ "failure_gauge_strain": 0.47550750205638204,
+ "failure_step": 243,
+ "failure_mode": "separation",
+ "damage_threshold": 0.8,
+ "final_max_damage": 0.8610858385816385,
+ "gage_area_mm2": 0.6556399999999999,
+ "mean_thickness_mm": 0.35439999999999994,
+ "newton_iterations": 6466,
+ "alternations": 302
+}

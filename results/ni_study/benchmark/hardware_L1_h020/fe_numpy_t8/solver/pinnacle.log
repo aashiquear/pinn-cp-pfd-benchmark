@@ -1,0 +1,24 @@
+2026-10-25 10:47:44 INFO    pinnacle: Logging to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_numpy_t8/solver/pinnacle.log (level=info, console=False)
+2026-10-25 10:47:44 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
+2026-10-25 10:47:44 INFO    pinnacle.runner.builder: Built backend 'numpy' on device 'cpu' with precision 'float64' (composed path)
+2026-10-25 10:50:06 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.06250, newton, 11 Newton iterations, 142.4 s)
+2026-10-25 10:50:57 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.12500, newton, 5 Newton iterations, 50.5 s)
+2026-10-25 10:51:57 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.18750, newton, 6 Newton iterations, 59.6 s)
+2026-10-25 10:52:56 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.25000, newton, 6 Newton iterations, 59.4 s)
+2026-10-25 10:53:55 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.31250, newton, 6 Newton iterations, 59.5 s)
+2026-10-25 10:54:55 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.37500, newton, 6 Newton iterations, 59.4 s)
+2026-10-25 10:55:54 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.43750, newton, 6 Newton iterations, 59.0 s)
+2026-10-25 10:57:02 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.50000, newton, 7 Newton iterations, 68.2 s)
+2026-10-25 10:58:11 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.56250, newton, 7 Newton iterations, 68.2 s)
+2026-10-25 10:59:19 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.62500, newton, 7 Newton iterations, 68.0 s)
+2026-10-25 11:00:27 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.68750, newton, 7 Newton iterations, 68.0 s)
+2026-10-25 11:01:35 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.75000, newton, 7 Newton iterations, 68.0 s)
+2026-10-25 11:02:53 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.81250, newton, 8 Newton iterations, 78.1 s)
+2026-10-25 11:04:10 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.87500, newton, 8 Newton iterations, 77.3 s)
+2026-10-25 11:05:28 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.93750, newton, 8 Newton iterations, 77.3 s)
+2026-10-25 11:06:45 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 1.00000, newton, 8 Newton iterations, 77.6 s)
+2026-10-25 11:06:45 INFO    pinnacle.runner.runner: Wrote CSV output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_numpy_t8/solver/stress_strain.csv
+2026-10-25 11:06:45 INFO    pinnacle.runner.runner: Wrote per-step solver history to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_numpy_t8/solver/solver_history.csv
+2026-10-25 11:06:45 INFO    pinnacle.runner.runner: Wrote VTK field output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_numpy_t8/solver/fields.vtk
+2026-10-25 11:06:45 INFO    pinnacle.runner.runner: Wrote summary to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_numpy_t8/solver/summary.json
+2026-10-25 11:06:45 INFO    pinnacle.cli.main: Run complete; outputs in /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_numpy_t8/solver

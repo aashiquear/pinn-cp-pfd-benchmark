@@ -1,0 +1,24 @@
+2026-10-25 09:53:50 INFO    pinnacle: Logging to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_torch_cpu_t2/solver/pinnacle.log (level=info, console=False)
+2026-10-25 09:53:50 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
+2026-10-25 09:53:51 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cpu' with precision 'float64' (composed path)
+2026-10-25 09:55:39 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.06250, newton, 11 Newton iterations, 108.3 s)
+2026-10-25 09:56:14 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.12500, newton, 5 Newton iterations, 34.7 s)
+2026-10-25 09:56:55 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.18750, newton, 6 Newton iterations, 41.0 s)
+2026-10-25 09:57:36 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.25000, newton, 6 Newton iterations, 40.9 s)
+2026-10-25 09:58:18 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.31250, newton, 6 Newton iterations, 40.9 s)
+2026-10-25 09:58:59 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.37500, newton, 6 Newton iterations, 41.5 s)
+2026-10-25 09:59:41 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.43750, newton, 6 Newton iterations, 41.3 s)
+2026-10-25 10:00:29 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.50000, newton, 7 Newton iterations, 47.8 s)
+2026-10-25 10:01:17 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.56250, newton, 7 Newton iterations, 47.8 s)
+2026-10-25 10:02:04 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.62500, newton, 7 Newton iterations, 47.1 s)
+2026-10-25 10:02:52 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.68750, newton, 7 Newton iterations, 47.6 s)
+2026-10-25 10:03:40 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.75000, newton, 7 Newton iterations, 47.3 s)
+2026-10-25 10:04:33 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.81250, newton, 8 Newton iterations, 53.6 s)
+2026-10-25 10:05:27 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.87500, newton, 8 Newton iterations, 53.3 s)
+2026-10-25 10:06:21 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 0.93750, newton, 8 Newton iterations, 53.3 s)
+2026-10-25 10:07:14 INFO    pinnacle.system.executioner.cp_quasi_static: cp_quasi_static: step 1/1 accepted (load factor 1.00000, newton, 8 Newton iterations, 53.4 s)
+2026-10-25 10:07:15 INFO    pinnacle.runner.runner: Wrote CSV output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_torch_cpu_t2/solver/stress_strain.csv
+2026-10-25 10:07:15 INFO    pinnacle.runner.runner: Wrote per-step solver history to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_torch_cpu_t2/solver/solver_history.csv
+2026-10-25 10:07:15 INFO    pinnacle.runner.runner: Wrote VTK field output to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_torch_cpu_t2/solver/fields.vtk
+2026-10-25 10:07:15 INFO    pinnacle.runner.runner: Wrote summary to /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_torch_cpu_t2/solver/summary.json
+2026-10-25 10:07:15 INFO    pinnacle.cli.main: Run complete; outputs in /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/benchmark/hardware_L1_h020/fe_torch_cpu_t2/solver

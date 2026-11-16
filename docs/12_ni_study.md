@@ -1087,3 +1087,20 @@ the pipeline, not a surrogate: 29 samples skipped with no FE run started, the S0
 every real-specimen prediction flagged by the ensemble. Output `final/surrogate/pipelinecheck_1of30`.
 Its training data needs the 30 h020 runs, and their W_c is the open question: the carried W_c = 75 is
 L's and does not transfer (§8.2); the synthetic orientations span the whole rotation group.
+
+## 9. Restart of 2026-11-15: single set, total-Lagrangian balance
+
+The first attempt (§3 to §8) is withdrawn (`.claude/FINDINGS.md`, 2026-11-15). The restart and all of its
+results are written in `docs/reports/ni_single_crystal_pinnacle_benchmark_report.md`; runs are the `ni-tl-*`
+rows of `docs/run_ledger.md`, decks under `decks/ni/**/tl/`, results under `results/ni_study/tl/`.
+
+| Stage | Result | Report |
+|---|---|---|
+| CP on L.1, rate 1e-3 /s | RMSE 5.4 MPa | §4 |
+| G_c on L.1 (l0 0.6 mm) | 49.37 MPa mm, failure 0.4635 | §6 |
+| 15 specimens, FEM | RMSE 0.088; L, P, 10: 0.019 | §7 |
+| PINN+FEM, 15 specimens | equal to FEM; 7.5 h against 6.8 h | §8.2 |
+| PINN, L.1 | failure 0.4603; 312 Newton iterations against 712 | §8.3 |
+| Surrogate, 30 synthetic specimens | held out 3.6% RMS; real 15 against FEM 6.7% RMS | §8.4 |
+
+Open, by the author's decision: the brittle-like and ductile-like orientation study (groups 9 and H).

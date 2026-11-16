@@ -1,0 +1,17 @@
+# Restart of Part III (2026-11-15): per-specimen curve and field figures of the FEM route with the
+# single parameter set, on the experiment panel's own color scale. Read by
+# scripts/ni_final_specimen_figures.py.
+[Figures]
+  root      = ../../../results/ni_study/tl/final/fem
+  out_dir   = ../../../figures/ni/final
+  prefix    = fem
+  label     = 'FEM'
+  parity    = ../../../data/digitized/ni_fig4b_failure_strain_parity.csv
+  scales    = ../../../data/digitized/ni_fig5_panel_scales.csv
+  panels    = ../../../data/digitized/ni_fig5_panels
+  cp_only   = ../../../results/ni_study/tl/cal/gn2/base/results.csv
+  specimens = all
+  ridge_always = true
+  strain_max = 70
+  dpi       = 200
+[]

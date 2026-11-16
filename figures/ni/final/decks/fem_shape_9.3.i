@@ -7,13 +7,14 @@
   x_range     = '5.0 20.4'
   crack       = 0.85
   ridge       = true
+  ridge_always = True
   ridge_x     = '8.7 16.7'
   color       = exx
   dpi         = 200
 []
 [Runs]
   [./run]
-    dir   = /mnt/extended/projects/pinn-cp-pfd-benchmark/results/ni_study/final/fem/9.3
+    dir   = /mnt/extended/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/final/fem/9.3
     label = 'specimen 9.3, FEM'
   []
 []

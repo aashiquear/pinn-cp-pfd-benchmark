@@ -1,0 +1,4 @@
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/check_wc75_gc30_chi0.55_fix/l0.6/gc30/pfd.i
+pinnacle run exit 0 -> /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/check_wc75_gc30_chi0.55_fix/l0.6/gc30
+{"steps": 300, "steps_valid": 300, "run_died": false, "final_gauge_strain": 0.5919551235082696, "final_grip_strain": 0.3, "peak_eng_stress": 255.04279937929618, "strain_at_peak": 0.5919551235082696, "initiation_gauge_strain_node": null, "failure_gauge_strain": null, "failure_step": null, "failure_mode": null, "damage_threshold": 0.8, "final_max_damage": 0.5268455781888647, "gage_area_mm2": 0.6556399999999999, "mean_thickness_mm": 0.35439999999999994, "newton_iterations": 6773, "alternations": 362}
+{"separation_damage": 0.85, "separated": false, "mode": null}

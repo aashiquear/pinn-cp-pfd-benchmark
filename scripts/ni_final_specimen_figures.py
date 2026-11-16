@@ -91,7 +91,8 @@ def main(argv):
   failure_target = {exp[spec]}
   hide_experiment = {hide}
   damage         = true
-  strain_max     = 80
+  d_markers      = {_str(f.get('d_markers', 'false'))}
+  strain_max     = {_str(f.get('strain_max', 80))}
   stress_max     = 300
   stress_tick    = 50
   dpi            = {int(f.get('dpi', 200))}
@@ -114,6 +115,7 @@ def main(argv):
   x_range     = '5.0 20.4'
   crack       = 0.85
   ridge       = true
+  ridge_always = {_str(f.get('ridge_always', 'false'))}
   ridge_x     = '8.7 16.7'
   color       = exx
   dpi         = {int(f.get('dpi', 200))}

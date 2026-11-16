@@ -1,0 +1,20 @@
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.3/l0.6/gc0.1/pfd.i
+pinnacle run exit -9 -> /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.3/l0.6/gc0.1
+run died: curve from restart_step0016.pkl
+{"steps": 16, "steps_valid": 16, "run_died": true, "final_gauge_strain": 0.04001487199268842, "final_grip_strain": 0.016, "peak_eng_stress": 95.22963939936831, "strain_at_peak": 0.03793893023342224, "initiation_gauge_strain_node": 0.04001487199268842, "failure_gauge_strain": null, "failure_step": null, "failure_mode": null, "damage_threshold": 0.8, "final_max_damage": 0.9526593484269325, "gage_area_mm2": 0.6556399999999999, "mean_thickness_mm": 0.35439999999999994, "newton_iterations": 204, "alternations": 47}
+Traceback (most recent call last):
+  File "/home/aashiquear/projects/pinn-cp-pfd-benchmark/scripts/ni_specimen.py", line 432, in <module>
+    sys.exit(main(sys.argv))
+             ^^^^^^^^^^^^^^
+  File "/home/aashiquear/projects/pinn-cp-pfd-benchmark/scripts/ni_specimen.py", line 427, in main
+    {"deck": stage_deck, "run": stage_run, "curve": stage_curve, "fracture": stage_fracture}[st](sp, deck)
+  File "/home/aashiquear/projects/pinn-cp-pfd-benchmark/scripts/ni_specimen.py", line 344, in stage_fracture
+    frames = [(float(t), out / "solver" / f) for t, f in re.findall(r'timestep="([^"]+)"[^>]*file="([^"]+)"', pvd.read_text())]
+                                                                                                              ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.3/l0.6/gc0.1/solver/fields.pvd'

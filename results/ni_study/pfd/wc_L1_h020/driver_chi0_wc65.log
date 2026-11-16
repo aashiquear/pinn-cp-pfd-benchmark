@@ -1,0 +1,14 @@
+19:54:06 {'l0': 0.6, 'W_c': 65.0, 'run': 1, 'Gc': 8.0, 'failure_strain': None, 'final_gauge_strain': 0.4839, 'run_died': False, 'failed_pipeline': False, 'location_fraction': None, 'angle_to_axis_deg': None, 'peak_eng_stress': 243.8024, 'wall_h': 9.7109, 'note': ''}
+21:23:10 {'l0': 0.6, 'W_c': 65.0, 'run': 0, 'Gc': 2.0, 'failure_strain': 0.4747, 'final_gauge_strain': 0.4747, 'run_died': False, 'failed_pipeline': False, 'location_fraction': 0.4139, 'angle_to_axis_deg': 58.4366, 'peak_eng_stress': 236.4489, 'wall_h': 11.1951, 'note': ''}
+03:17:56 {'l0': 0.6, 'W_c': 65.0, 'run': 2, 'Gc': 0.6667, 'failure_strain': 0.4399, 'final_gauge_strain': 0.4399, 'run_died': False, 'failed_pipeline': False, 'location_fraction': 0.4047, 'angle_to_axis_deg': 60.1245, 'peak_eng_stress': 234.8205, 'wall_h': 5.9128, 'note': ''}
+09:42:10 {'l0': 0.6, 'W_c': 65.0, 'run': 3, 'Gc': 1.384, 'failure_strain': 0.4594, 'final_gauge_strain': 0.4594, 'run_died': False, 'failed_pipeline': False, 'location_fraction': 0.4106, 'angle_to_axis_deg': 58.0039, 'peak_eng_stress': 234.9321, 'wall_h': 6.4038, 'note': ''}
+[
+ {
+  "l0": 0.6,
+  "Gc": 1.384,
+  "failure_strain": 0.4594201942474314,
+  "location_fraction": 0.41057692307692273,
+  "angle_to_axis_deg": 58.00390852149779,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc1.384"
+ }
+]

@@ -1,0 +1,12 @@
+11:33:49 {'l0': 0.6, 'W_c': 75.0, 'run': 0, 'Gc': 0.1, 'failure_strain': 0.0206, 'final_gauge_strain': 0.0206, 'run_died': False, 'failed_pipeline': False, 'location_fraction': -0.0628, 'angle_to_axis_deg': 90.0, 'peak_eng_stress': 85.9125, 'wall_h': 0.2992, 'note': ''}
+[
+ {
+  "l0": 0.6,
+  "Gc": 0.1,
+  "note": "run budget spent; closest run kept",
+  "failure_strain": 0.020551349734374055,
+  "location_fraction": -0.06279085662037032,
+  "angle_to_axis_deg": 90.0,
+  "dir": "/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.6/l0.6/gc0.1"
+ }
+]

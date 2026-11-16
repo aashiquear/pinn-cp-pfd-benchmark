@@ -1,0 +1,3 @@
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.8/l0.6/gc0.1/pfd.i
+pinnacle run exit -9 -> /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.8/l0.6/gc0.1
+/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.8/l0.6/gc0.1: the run did not finish and left no checkpoint

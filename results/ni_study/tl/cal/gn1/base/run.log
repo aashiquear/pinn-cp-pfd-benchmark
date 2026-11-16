@@ -1,0 +1,4 @@
+/home/aashiquear/projects/pinnacle_tl/src/pinnacle/models/composed_model.py:622: RuntimeWarning: Mean of empty slice
+  payload[key] = arr.reshape(n_elements, n_gauss, *arr.shape[1:]).mean(axis=1)
+/home/aashiquear/venvs/pinnacle/lib/python3.12/site-packages/numpy/_core/_methods.py:134: RuntimeWarning: invalid value encountered in divide
+  ret = um.true_divide(

@@ -1,0 +1,14 @@
+prepared 4 cases under /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/cal/gn2
+02:49:50 started base
+02:49:50 started rho0_p
+02:49:50 started k1_p
+02:49:50 started y_c_p
+02:59:50 finished k1_p exit 0
+03:00:10 finished base exit 0
+03:00:10 finished rho0_p exit 0
+03:00:10 finished y_c_p exit 0
+{'case': 'base', 'steps': 310, 'final_gauge_strain': 0.631, 'peak_eng_stress': 236.6429, 'strain_at_peak': 0.6058, 'newton_iterations': 1268, 'wall_s': 610.0}
+{'case': 'rho0_p', 'steps': 310, 'final_gauge_strain': 0.6375, 'peak_eng_stress': 239.0062, 'strain_at_peak': 0.5997, 'newton_iterations': 1273, 'wall_s': 605.0}
+{'case': 'k1_p', 'steps': 310, 'final_gauge_strain': 0.6183, 'peak_eng_stress': 277.1833, 'strain_at_peak': 0.6133, 'newton_iterations': 1274, 'wall_s': 588.0}
+{'case': 'y_c_p', 'steps': 310, 'final_gauge_strain': 0.6497, 'peak_eng_stress': 218.1633, 'strain_at_peak': 0.573, 'newton_iterations': 1270, 'wall_s': 617.0}
+wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/cal/gn2/cal_gn2_summary.csv

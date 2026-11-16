@@ -1,0 +1,33 @@
+{
+ "markers": [
+  {
+   "d": 0.55,
+   "step": 119,
+   "snapshot": "fields_step0059.vtk",
+   "gauge_strain": 0.2343317621348501,
+   "eng_stress": 185.92584314914086
+  },
+  {
+   "d": 0.65,
+   "step": 165,
+   "snapshot": "fields_step0082.vtk",
+   "gauge_strain": 0.3210145086944331,
+   "eng_stress": 207.36603948725977
+  },
+  {
+   "d": 0.75,
+   "step": 217,
+   "snapshot": "fields_step0108.vtk",
+   "gauge_strain": 0.4285308344895355,
+   "eng_stress": 223.9890457230264
+  },
+  {
+   "d": 0.85,
+   "step": 231,
+   "snapshot": "fields_step0115.vtk",
+   "gauge_strain": 0.46302836501864314,
+   "eng_stress": 93.07268582700188
+  }
+ ],
+ "not_reached": []
+}
