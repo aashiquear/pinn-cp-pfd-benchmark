@@ -1,2 +1,0 @@
-l0,W_c,run,Gc,failure_strain,final_gauge_strain,run_died,failed_pipeline,location_fraction,angle_to_axis_deg,peak_eng_stress,wall_h,dir,note
-0.6,75.0,0,0.1,0.015374094561682549,0.015374094561682549,False,False,-0.036091548124999706,90.0,82.76054177248051,0.7886547754870521,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi_sweep_wc75/chi0.8_cap40/l0.6/gc0.1,

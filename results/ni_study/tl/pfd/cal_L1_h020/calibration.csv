@@ -1,8 +1,0 @@
-l0,W_c,run,Gc,failure_strain,final_gauge_strain,run_died,failed_pipeline,location_fraction,angle_to_axis_deg,peak_eng_stress,wall_h,dir,note
-0.6,0.0,0,30.0,0.3190423064411905,0.3190423064411905,False,False,0.27348484848484866,70.37655361872255,205.23187106105016,0.22687055680486892,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/pfd/cal_L1_h020/l0.6/gc30,
-0.6,0.0,1,120.0,,0.9210297186976873,False,False,,,232.27084124968272,0.517756837076611,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/pfd/cal_L1_h020/l0.6/gc120,
-0.6,0.0,2,60.0,0.5382860658228525,0.5382860658228525,False,False,0.3153846153846154,71.91504982062685,227.52281038523412,0.324290372994211,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/pfd/cal_L1_h020/l0.6/gc60,
-0.6,0.0,3,47.29,0.4506262388227048,0.4506262388227048,False,False,0.29863013698630136,66.79073133338929,222.29117492378143,0.27776216520203484,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/pfd/cal_L1_h020/l0.6/gc47.29,
-0.6,0.0,4,48.91,0.45761828019117534,0.45761828019117534,False,False,0.2946428571428572,71.3289461517297,223.17544164894514,0.2837765269809299,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/pfd/cal_L1_h020/l0.6/gc48.91,
-0.6,0.0,5,49.92,0.4692697101308922,0.4692697101308922,False,False,0.30391156462585056,68.41229968451132,223.69194186887725,0.28468145489692687,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/pfd/cal_L1_h020/l0.6/gc49.92,
-0.6,0.0,6,49.37,0.4634857018915204,0.4634857018915204,False,False,0.2981343283582092,69.80006428999708,223.4528307356145,0.28528633965386285,/home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/pfd/cal_L1_h020/l0.6/gc49.37,

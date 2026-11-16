@@ -14,7 +14,7 @@
 []
 [Runs]
   [./run]
-    dir   = /mnt/extended/projects/pinn-cp-pfd-benchmark/results/ni_study/tl/final/fem/l.4
+    dir   = /mnt/extended/projects/pinn-cp-pfd-benchmark/results/ni_study/bunge/final/fem/l.4
     label = 'specimen L.4, FEM'
   []
 []

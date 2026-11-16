@@ -1,4 +1,0 @@
-wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/cal_L1_h020/l0.8/gc38.18/pfd.i
-pinnacle run exit 0 -> /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/cal_L1_h020/l0.8/gc38.18
-{"steps": 218, "steps_valid": 218, "run_died": false, "final_gauge_strain": 0.4321493741875275, "final_grip_strain": 0.218, "peak_eng_stress": 221.34808302269585, "strain_at_peak": 0.4163735675055366, "initiation_gauge_strain_node": 0.4163735675055366, "failure_gauge_strain": 0.4321493741875275, "failure_step": 217, "damage_threshold": 0.8, "final_max_damage": 0.9876804569025542, "gage_area_mm2": 0.6556399999999999, "mean_thickness_mm": 0.35439999999999994, "newton_iterations": 5471, "alternations": 448}
-{"separation_damage": 0.85, "separated": true, "step": 108, "snapshot": "fields_step0108.vtk", "failure_gauge_strain": 0.21474514922093194, "location_fraction": 0.23873626373626378, "angle_to_axis_deg": 88.49248788761437, "cut_nodes": 182}

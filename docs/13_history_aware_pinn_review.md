@@ -1,8 +1,8 @@
 # 13. History-aware neural routes for crystal plasticity: what the literature offers PINNACLE, and at what cost
 
 Written 2026-10-28 for the author, before any framework change. Sources: the two
-literature syntheses the author placed in `data/literature/` (`ScholarGPT_history_CP`,
-2019-2024 foundations; `SciSpace_history_CP`, 2020-2026 with the recent CP work), read
+literature syntheses the author placed in `docs/literature/` (`ScholarGPT_history_CP.md`,
+2019-2024 foundations; `SciSpace_history_CP.md`, 2020-2026 with the recent CP work), read
 against the PINNACLE branch `feat/pinn_benchmark` (HEAD 9a706ae; ADR 0028, 0029, 0030,
 0033) and the measured costs of the Al2219 plate (report §8, §10, §11, §17, §19) and of the
 Ni specimen (report §8, Table 10). Nothing in the framework was changed by this document

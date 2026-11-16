@@ -1,4 +1,0 @@
-2026-10-16 17:33:17 INFO    pinnacle: Logging to solver/pinnacle.log (level=info, console=False)
-2026-10-16 17:33:17 INFO    pinnacle.cli.main: Starting run from deck 'pfd.i'
-2026-10-16 17:33:18 INFO    pinnacle.runner.builder: Built backend 'torch' on device 'cpu' with precision 'float64' (composed path)
-2026-10-16 17:33:19 INFO    pinnacle.system.problem: [OrientationField] point_file '../../../../../cp_study/cal/gn2/base/orientations_points.csv' resolved on 860 elements: {'n_targets': 860, 'n_source_points': 21012, 'out_of_bounds': 0, 'coverage_fraction': 1.0, 'interpolation': 'nearest', 'fallback': 'uniform'}

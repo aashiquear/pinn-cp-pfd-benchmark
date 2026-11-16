@@ -1,2 +1,0 @@
-run died: curve from restart_step0192.pkl
-{"steps": 192, "steps_valid": 192, "run_died": true, "final_gauge_strain": 0.3634102532451852, "final_grip_strain": 0.192, "peak_eng_stress": 222.65546817381858, "strain_at_peak": 0.3634102532451852, "initiation_gauge_strain_node": null, "failure_gauge_strain": null, "failure_step": null, "failure_mode": null, "damage_threshold": 0.8, "final_max_damage": 0.0, "gage_area_mm2": 0.680356, "mean_thickness_mm": 0.36776, "newton_iterations": 11293, "alternations": 192}

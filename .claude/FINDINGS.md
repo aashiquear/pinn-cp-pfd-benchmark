@@ -874,3 +874,66 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - Trap: the host has no matplotlib; `ni_surrogate_targets.py` and all figure scripts run locally, then rsync.
 - Report §8.4, §8.5, abstract and introduction written. Open by the author's decision: the ductile-like
   orientation study (groups 9, H); network settings of the solver routes stay frozen until then.
+
+## 2026-11-15 (late): Euler-angle convention mismatch; Ni results of the restart are for the wrong crystals
+
+- PINNACLE builds R = Rz(phi2) Rx(Phi) Rz(phi1) (active) and uses it as crystal-to-sample
+  (`materials/schmid.py`, `cp_field_callback.py`, `elasticity.py`). Standard Bunge crystal-to-sample is
+  Rz(phi1) Rx(Phi) Rz(phi2). The two differ by the exchange of phi1 and phi2.
+- Proof: the paper's Table 1 max Schmid factors on x (9 0.44, 10 0.48, H 0.44, L 0.42, P 0.46) are reproduced by
+  standard Bunge (0.436, 0.478, 0.444, 0.417, 0.460) and not by PINNACLE as run (0.393, 0.475, 0.342, 0.402, 0.352).
+  PINNACLE with (phi2, Phi, phi1) gives the paper's values. Our peak stresses rank exactly by the as-run factors.
+- Consequence: every Ni run (first attempt and restart, 15 specimens, surrogate) used crystals other than the tested
+  ones; H and P were run near [111]. CP set, assumed rate 1e-3 /s, G_c 49.37, report §4-§8 and the "two classes"
+  reading of §7.4 are all open. Al2219 parts use the same rotation: check separately.
+- Not yet fixed; no run made. Review and test plan: `docs/literature/ductile_single_crystal_cp_pfd_review.md`
+  (T0 convention fix, T1 material point, T2 CP on L.1, T3 G_c, T4 9.1 and H.1, then fracture-model tests).
+- Also measured: AT2 with W_c = 0 gives homogeneous d = 0.41 at 20% and 0.69 at 40% gauge strain on L.1, while the
+  stress drops only 3% (only the elastic stiffness is degraded, the slip resistance is not). A constant zeta only
+  rescales G_c (the equation holds zeta/G_c); a zeta sweep is not a test of the plastic-contribution hypothesis.
+- 34 references added to bib/references.bib (Crossref verified; vakili-2022-aluminum flagged as preprint).
+- Commit 027d6f0 pushed to origin main (repo public; data/literature left untracked: publisher PDF, chat histories).
+
+## 2026-11-15 (night): convention fixed (PINNACLE ADR 0036, uncommitted); L.1 refit; 9.1 and H.1 now within 3.3 %
+
+- PINNACLE: `materials/rotations.py` is the one rotation (crystal-to-sample Rz(phi1) Rx(Phi) Rz(phi2)); test
+  `tests/unit/materials/test_bunge_convention.py` on the paper's Table 1; ADR 0036, CHANGELOG. NOT committed.
+  Parity goldens with explicit non-symmetric angles (30 45 0, 35 45 60) change and must be regenerated
+  (`python -m tests.parity --regenerate <case>`); nine named so far, full list pending.
+- Host side copy `~/projects/pinnacle_bunge` (copy of pinnacle_tl + the fixed src); runs use it via PYTHONPATH.
+- Paper's Table 3 set, Bunge angles, L.1: RMSE 14.3 MPa at 1e-3/s (33 at 3e-4, 50 at 1e-4). Rate 1e-3/s kept.
+- New single set: rho0 2.4276e6, k_m 0.025547, y_c 4.9059e-7 (x1.033, x0.866, x0.621 of the paper), RMSE 4.1 MPa;
+  G_c 48.67 MPa mm at l0 0.6 (L.1 0.461 against 0.463).
+- Check: 9.1 0.529 (exp 0.546), H.1 0.555 (exp 0.549). With exchanged angles they were 0.444 and 0.427.
+  Flow stress order is now L > 9 > H as in the paper. The "two classes" reading (§7.4) no longer holds for these two.
+- Author's order: no report revision, no threshold study yet; report these results and wait. Likely next: revise
+  the Ni report and recheck Al2219.
+- Trap: `pkill -f PATTERN` over ssh kills its own shell when the remote command line contains the pattern anywhere
+  (also in an rm or mkdir path). Kill by PID.
+
+## 2026-11-16: Ni study rerun with Bunge angles complete; report revised (uncommitted in this repo)
+
+- PINNACLE ADR 0036 committed and pushed as 9548123 (feat/pinn_benchmark), nine parity goldens regenerated.
+- Author's order (2026-11-16): rerun the whole Ni study, revise the report, then revisit Al2219 on the author's word.
+- FEM 15: failure-strain RMSE 0.039 (was 0.088 with exchanged angles; paper's own 0.064), 11 within 5 %.
+  Worst: P.3 +17.4 %, P.4 +14.2 % (late), 9.4 -12.4 %, 9.3 -11.2 % (early). The two-classes reading is withdrawn.
+- PINN+FEM 15: equal to FEM to six digits; trained on 415 of 3,463 steps. Groups 9 and H need 363 more Newton
+  iterations than FEM, on untrained steps (2 in place of 1 on the first solve); cause not investigated.
+- PINN L.1: 0.4579 against 0.4610, 336 Newton iterations against 704. Its run time shared the host; not comparable.
+- Mesh: h010 +1.3 % failure strain, -1.4 % peak. h020 kept.
+- Surrogate: design widened to contain the real specimens (t_mean 0.320-0.400, taper -0.08 to +0.07), network
+  settings unchanged. Against FEM on the real 15: 3.1 % RMS (was 6.7 %), worst 10.4 at +8.2 %.
+- Figure trap: `ni_pfd_curve_figures.py` cut the damage-free curve at its first cutback (step 2 on these runs), so
+  the CP-only line was missing. Now drawn whole unless the deck sets `cut_at_first_cutback = true`. The script also
+  takes a `[Curves]` block of damage-free runs (`decks/ni/figures/bunge/cal_curve.i`).
+- Old material: `results/ni_study/tl/`, `decks/ni/**/tl/`, `archive/figures/ni_exchanged_angles/` are superseded.
+- Al2219 (Parts I and II) used the same exchanged rotation and is not rechecked yet.
+
+## 2026-11-16: shipping rule and next work (author)
+
+- Ship: input decks, figures, analysis pipeline scripts, digitized data, documents. Do NOT ship PINNACLE output
+  (`results/`, `archive/results/` untracked and ignored from this date; files stay on disk) or any published paper.
+- Literature research is evidence and lives in `docs/literature/`; the publisher PDF stays in `data/literature/` (ignored).
+- Al2219 recheck with Bunge angles: reproduce every analysis in order (downstream depends on upstream calibrations);
+  mesh decision kept (h40) for the downstream cases; keep all current parts of the Al2219 report; the exchanged-angle
+  report is archived. Then cleanup: non-current material to `archive/`, docs streamlined.

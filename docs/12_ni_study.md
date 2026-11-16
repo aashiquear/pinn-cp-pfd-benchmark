@@ -1104,3 +1104,21 @@ rows of `docs/run_ledger.md`, decks under `decks/ni/**/tl/`, results under `resu
 | Surrogate, 30 synthetic specimens | held out 3.6% RMS; real 15 against FEM 6.7% RMS | §8.4 |
 
 Open, by the author's decision: the brittle-like and ductile-like orientation study (groups 9 and H).
+
+## 10. Rerun of 2026-11-16 with Bunge angles (PINNACLE ADR 0036)
+
+PINNACLE read the Euler angles in exchanged order, so §1 to §9 simulated crystals other than the measured ones.
+After the fix every stage of §9 was repeated (decks `decks/ni/**/bunge/`, results `results/ni_study/bunge/`,
+ledger rows `ni-bunge-*`). The numbers of §9 are superseded.
+
+| stage | result |
+|---|---|
+| CP on L.1, rate 1e-3 /s | rho0 2.4276e6, k_m 0.025547, y_c 4.9059e-7; RMSE 4.1 MPa (paper's set 14.3 MPa) |
+| G_c at l0 0.6 mm | 48.67 MPa mm; L.1 fails at 0.461 against 0.463 |
+| mesh h010 | failure strain +1.3 %, peak stress -1.4 % against h020 |
+| FEM, 15 specimens | RMSE 0.039 in failure strain; 11 within 5 %; worst P.3 +17.4 %, 9.4 -12.4 % |
+| PINN+FEM, 15 specimens | equal to FEM to six digits; 10,683 Newton iterations against 10,320 |
+| PINN, L.1 | 0.4579 against 0.4610; 336 Newton iterations against 704 |
+| surrogate, 30 synthetic specimens | real 15 against FEM: 3.1 % RMS in failure strain, worst 10.4 at +8.2 % |
+
+The report (`docs/reports/ni_single_crystal_pinnacle_benchmark_report.md`) carries the full tables and figures.

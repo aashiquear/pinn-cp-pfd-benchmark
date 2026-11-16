@@ -32,3 +32,12 @@ results/**/solver/fields*
 results/**/final_field.npz
 # The reference MOOSE outputs stay on disk beside their decks, not in git
 moose/*_out.e
+
+# Shipping rule (author, 2026-11-16): the repository ships what is needed to
+# reproduce the results, figures and analysis (decks, meshes decks, scripts,
+# digitized data, figures, documents). PINNACLE output is not shipped, and no
+# published paper is.
+results/
+archive/results/
+data/literature/
+*.pdf

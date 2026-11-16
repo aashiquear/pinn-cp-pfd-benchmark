@@ -45,6 +45,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import ni_calibration_figures as ncf  # noqa: E402
 from ni_calibration_figures import box, exp_marker, read_curve, read_markers  # noqa: E402
 from report_figures import _resolve, _str  # noqa: E402
 
@@ -58,9 +59,11 @@ def read_deck(path: Path) -> dict:
     from pinnacle.io.translator import Translator
 
     cfg = Translator().translate(InputParser().parse(path.read_text()))
-    for key in ("figures", "runs"):
-        if key not in cfg:
-            raise SystemExit(f"{path}: missing [{key.capitalize()}] block")
+    if "figures" not in cfg:
+        raise SystemExit(f"{path}: missing [Figures] block")
+    if "runs" not in cfg and "curves" not in cfg:
+        raise SystemExit(f"{path}: missing [Runs] or [Curves] block")
+    cfg.setdefault("runs", {})
     return cfg
 
 
@@ -92,7 +95,10 @@ def main(argv):
     deck = Path(argv[1]).resolve()
     cfg = read_deck(deck)
     f, runs = cfg["figures"], cfg["runs"]
-    panels = sorted({int(r.get("panel", 0)) for r in runs.values()})
+    # damage-free curves are cut at their first load cutback only on request (runs made before
+    # PINNACLE ddc76c3 doubled the strain rate after a cutback; later runs are drawn whole)
+    ncf.CUT_AT_CUTBACK = _str(f.get("cut_at_first_cutback", "false")).lower() in ("true", "1", "yes")
+    panels = sorted({int(r.get("panel", 0)) for r in runs.values()}) or [0]
     with_d = _str(f.get("damage", "true")).lower() == "true"
     nrow = 2 if with_d else 1
     fig, axes = plt.subplots(nrow, len(panels), figsize=(4.6 * len(panels), 3.6 + 2.0 * with_d),
@@ -100,7 +106,11 @@ def main(argv):
                              dpi=int(f.get("dpi", 200)), sharex="col")
     ex, ey = read_markers(_resolve(_str(f["markers"]), deck))
     tx, ty = read_experiment(_resolve(_str(f["experiment"]), deck))
-    ce, cs, _ = read_curve(_resolve(_str(f["cp_only"]), deck))
+    # cp_only is optional; a [Curves] block draws runs without damage (results.csv, label, color)
+    has_cp = "cp_only" in f
+    ce, cs = (read_curve(_resolve(_str(f["cp_only"]), deck))[:2] if has_cp
+              else (np.zeros(1), np.zeros(1)))
+    curves = cfg.get("curves", {})
     target = 100.0 * float(f["failure_target"])
     # the experiment is shown only up to the adopted failure strain (author 2026-10-20: the
     # Fig. 3 trace runs on to 51% and its 50% marker confuses the comparison)
@@ -108,12 +118,18 @@ def main(argv):
     ty, tx = ty[tx <= target], tx[tx <= target]
     ymax = max(ty.max(), cs.max())
     data = {k: read_run(_resolve(_str(r["dir"]), deck)) for k, r in runs.items()}
+    plain = {k: read_curve(_resolve(_str(c["path"]), deck))[:2] for k, c in curves.items()}
     for j, p in enumerate(panels):
         ax = axes[0, j]
         if _str(f.get("hide_experiment", "false")).lower() != "true":   # other specimens: no digitized curve
             ax.plot(tx, ty, "-", color="#111111", lw=0.7, alpha=0.6, label="Experiment, Fig. 3 trace to the failure strain")
             exp_marker(ax, ex, ey)
-            ax.plot(ce, cs, "--", color="#9a9a9a", lw=1.3, label="CP only (calibrated, no damage)")
+            if has_cp:
+                ax.plot(ce, cs, "--", color="#9a9a9a", lw=1.3, label="CP only (calibrated, no damage)")
+        for i, (k, (pe, ps)) in enumerate(plain.items()):
+            ax.plot(pe, ps, "-", color=_str(curves[k].get("color", RUN_COLORS[i % len(RUN_COLORS)])),
+                    lw=1.5, label=_str(curves[k].get("label", k)))
+            ymax = max(ymax, ps.max())
         ax.axvline(target, color="#111111", lw=0.9, ls=":",
                    label="experiment failure strain %.1f%% (Fig. 4(b))" % target)
         keys = [k for k, r in runs.items() if int(r.get("panel", 0)) == p]

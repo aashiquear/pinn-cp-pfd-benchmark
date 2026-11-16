@@ -1,9 +1,14 @@
 # Crystal plasticity and phase-field ductile fracture of single-crystal Ni tensile specimens with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, restarted 2026-11-15. Status: complete for the plan of 2026-11-15. The
+Technical report, restarted 2026-11-15 and revised 2026-11-16. The
 finite-element route is in §2 to §7 (model, total-Lagrangian method, crystal plasticity on L.1,
 mesh check, one $G_c$, fifteen specimens); the PINN+FEM, PINN and surrogate routes are in §8.
-The study of the ductile-like orientations (§7.4) is later work and is not part of this report.
+Revision of 2026-11-16: PINNACLE read the three Euler angles in exchanged order, so every
+earlier run simulated crystals other than the measured ones. The angles now follow Bunge's
+convention (PINNACLE ADR 0036), which reproduces the Schmid factors of the paper's Table 1,
+and every run of this report was repeated. The version with the exchanged angles, which read
+groups 9 and H as a separate ductile-like class, is withdrawn; its figures are kept in
+`archive/figures/ni_exchanged_angles/` and its results under `results/ni_study/tl/`.
 The first attempt (draft of 2026-10-23) is withdrawn: PINNACLE's finite-strain force was
 the Cauchy stress over the undeformed section, so the reported engineering stress was the
 true stress and no specimen could neck, and the assumed strain rate was not quasi-static
@@ -19,25 +24,25 @@ are simulated with PINNACLE: dislocation-density crystal plasticity coupled to
 an AT2 phase field driven by the elastic energy and the plastic work, in a
 total-Lagrangian finite-strain balance. One parameter set serves every run.
 Three crystal-plasticity values are fitted to the stress-strain curve of
-specimen L at an assumed gauge strain rate of $10^{-3}$ s$^{-1}$ (RMSE 5.4 MPa
-over thirteen markers), and one fracture energy, $G_c = 49.37$ MPa mm at
-$\ell_0 = 0.6$ mm, is fitted to the failure strain of specimen L.1. On the
-finite-element route the nine specimens of groups L, P and 10 are predicted
-within 6.3%, with an RMSE of 0.019 in failure strain. The six specimens of
-groups 9 and H fail 19 to 26% too early; over all fifteen the RMSE is 0.088.
-These two orientations fail in a ductile-like manner that one parameter set
-does not reach together with the others.
+specimen L at an assumed gauge strain rate of $10^{-3}$ s$^{-1}$ (RMSE 4.1 MPa
+over thirteen markers), and one fracture energy, $G_c = 48.67$ MPa mm at
+$\ell_0 = 0.6$ mm, is fitted to the failure strain of specimen L.1. The Euler
+angles follow Bunge's convention, which reproduces the Schmid factors the
+paper reports. On the finite-element route the RMSE in failure strain over the
+fifteen specimens is 0.039, and eleven specimens are within 5%. The largest
+errors are P.3 and P.4, predicted 14 to 17% late, and 9.3 and 9.4, predicted
+11 to 12% early.
 
 Three network routes are measured against that reference. A network proposal
 for each Newton solve, trained on the finite-element residual (PINN+FEM),
-reproduces the finite-element result on all fifteen specimens to seven digits
-and costs 11% more time, because a linear extrapolation already meets the
-residual target on 89% of the load steps. Accepting proposals without a Newton
-solve (PINN) shifts the failure strain of L.1 by 0.7% and removes 56% of the
+reproduces the finite-element result on all fifteen specimens to six digits
+and costs 25% more time, because a linear extrapolation already meets the
+residual target on 88% of the load steps. Accepting proposals without a Newton
+solve (PINN) shifts the failure strain of L.1 by 0.7% and removes 52% of the
 Newton iterations; the accepted fields are mostly the extrapolation. A
 surrogate trained on thirty synthetic specimens predicts the finite-element
 failure strain of the fifteen real specimens, none of them training data, with
-an RMS difference of 6.7%, in under one second per specimen, after 15.3 hours
+an RMS difference of 3.1%, in under one second per specimen, after 15.0 hours
 of training runs.
 
 ## 1. Introduction
@@ -63,7 +68,7 @@ directly to the stress-strain curve and the failure descriptors.
 §2 states the model and §3 the numerical method. §4 fixes the crystal
 plasticity on specimen L.1, §5 checks the mesh, and §6 fits the one fracture
 energy. §7 gives the fifteen specimens on the finite-element route and reads
-the result as two classes of orientation. §8 gives the three network routes and
+the remaining errors. §8 gives the three network routes and
 compares them in accuracy and time. Every run comes from a deck under
 `decks/ni/` and has a row in `docs/run_ledger.md`.
 
@@ -89,7 +94,10 @@ slip-plane normal of system $\alpha$ in the sample frame and
 $\dot{\gamma}^\alpha$ its slip rate. The twelve $\{111\}\langle 110\rangle$
 systems of the FCC lattice are used. The crystal frame of a specimen is set by
 the Bunge triple $(\varphi_1, \Phi, \varphi_2)$ of its orientation group,
-which rotates both the slip systems and the elastic stiffness.
+which rotates both the slip systems and the elastic stiffness. The
+crystal-to-sample rotation is $\mathbf{R} = \mathbf{R}_z(\varphi_1)\,
+\mathbf{R}_x(\Phi)\, \mathbf{R}_z(\varphi_2)$, the transpose of Bunge's
+orientation matrix (PINNACLE ADR 0036).
 
 ### 2.2 Elasticity
 
@@ -246,7 +254,10 @@ the thickness profiles of the fifteen specimens.
 **Orientation.** One orientation per specimen, the Bunge triple of its
 group, given to the crystal block of the material (`euler_angles`); the
 sample frame is $x$ = loading direction, $y$ = transverse, $z$ = thickness,
-as in the paper.
+as in the paper. The convention is checked on the paper's Table 1: the maximum
+Schmid factors on the loading axis are 0.436, 0.478, 0.444, 0.417 and 0.460
+for groups 9, 10, H, L and P, against the published 0.44, 0.48, 0.44, 0.42 and
+0.46.
 
 **Boundary conditions and loading.** The grip end $x = 0$ is clamped
 ($\mathbf{u} = 0$ on node set `x-`); the grip end $x = 25.4$ mm is clamped
@@ -290,11 +301,11 @@ as the calibration geometry.
 
 ## 3. Numerical method (PINNACLE)
 
-All runs use PINNACLE (branch `feat/pinn_benchmark`, revision 53966d4 with the
-total-Lagrangian balance of ADR 0035), torch backend on the CPU, double
+All runs use PINNACLE (branch `feat/pinn_benchmark`, revision 9548123 with the
+total-Lagrangian balance of ADR 0035 and the Euler convention of ADR 0036), torch backend on the CPU, double
 precision, four threads per run on the compute host. A run is fully described
-by one specimen deck (`decks/ni/cp/tl/*.i`, `decks/ni/pfd/tl/*.i`,
-`decks/ni/final/tl/*.i`), rendered by `scripts/ni_specimen.py` into a PINNACLE
+by one specimen deck (`decks/ni/cp/bunge/*.i`, `decks/ni/pfd/bunge/*.i`,
+`decks/ni/final/bunge/*.i`), rendered by `scripts/ni_specimen.py` into a PINNACLE
 deck from the templates under `decks/ni/templates/`.
 
 ### 3.1 Finite-strain balance
@@ -384,7 +395,7 @@ increment), with $d = 0$ held on the grip faces.
 ### 3.5 Reproducibility
 
 Each run is reproducible from its specimen deck, the mesh deck and the data
-files it names. The run ledger (`docs/run_ledger.md`, rows `ni-tl-*`) gives the
+files it names. The run ledger (`docs/run_ledger.md`, rows `ni-bunge-*`) gives the
 deck, scripts, framework revision, host, cores and wall time of every run of
 this report.
 
@@ -396,54 +407,54 @@ strain) with specimen L.1 on the h020 mesh and no damage.
 
 **Strain rate.** The paper does not state the test rate. With the rate
 sensitivity $m_s = 0.12$ the flow stress depends on it: the paper's Table 3
-gives 144 / 166 / 169 MPa at 20 / 40 / 50% gauge strain at $10^{-4}$ s$^{-1}$,
-163 / 189 / 191 MPa at $3 \times 10^{-4}$ s$^{-1}$ and 187 / 216 / 219 MPa at
-$10^{-3}$ s$^{-1}$, against 180 / 233 / 238 MPa in the experiment. A gauge
+gives 137 / 161 / 163 MPa at 20 / 40 / 50% gauge strain at $10^{-4}$ s$^{-1}$,
+155 / 183 / 185 MPa at $3 \times 10^{-4}$ s$^{-1}$ and 178 / 210 / 212 MPa at
+$10^{-3}$ s$^{-1}$, against 180 / 233 / 238 MPa in the experiment (RMSE over
+the thirteen markers 49.7, 33.2 and 14.3 MPa). A gauge
 strain rate of $10^{-3}$ s$^{-1}$, a common quasi-static test rate, is assumed
 from here on (provenance: assumed).
 
-**Calibration.** At that rate the paper's set has an RMSE of 12.2 MPa over the
-thirteen markers: it hardens too fast below 20% strain and saturates too low.
-One damped Gauss-Newton step on $\rho_0$, $k_m$ and $y_c$, from one-at-a-time
-perturbations of a factor 1.2, gives the carried set (Table 2) with an RMSE of
-5.4 MPa (Fig. 2, Table 3). The lattice friction is held at the paper's value: its
-sensitivity is below 0.1 MPa at every marker, so the curve cannot identify it.
-The search stops there. The sensitivities at the carried set show that a
-further step would trade $k_m$ against $y_c$, which the curve separates only
-through the saturation stress, and would move the stress maximum to larger
-strain.
+**Calibration.** At that rate the paper's set has an RMSE of 14.3 MPa over the
+thirteen markers: it follows the experiment up to 25% strain and saturates too
+low, at 212 MPa against 239 MPa. One damped Gauss-Newton step on $\rho_0$,
+$k_m$ and $y_c$, from one-at-a-time perturbations of a factor 1.2, gives the
+carried set (Table 2) with an RMSE of 4.1 MPa (Fig. 2, Table 3). The step
+lowers the recovery terms and leaves the initial density at the paper's value
+within 3%. The lattice friction is held at the paper's value. A second
+candidate with a weaker damping was run and is worse (5.7 MPa); the search
+stops there.
 
 **Table 2.** Crystal-plasticity parameters fitted on L.1 (gauge strain rate
 $10^{-3}$ s$^{-1}$); all other parameters as Table 1.
 
 | parameter | paper, Table 3 | carried set | ratio |
 |---|---|---|---|
-| $\rho_0$ (mm$^{-2}$) | $2.35 \times 10^6$ | $2.026 \times 10^6$ | 0.86 |
-| $k_m$ | 0.0295 | 0.02434 | 0.83 |
-| $y_c$ (mm) | $7.9 \times 10^{-7}$ | $4.67 \times 10^{-7}$ | 0.59 |
-| RMSE, 13 markers (MPa) | 12.2 | 5.4 | |
+| $\rho_0$ (mm$^{-2}$) | $2.35 \times 10^6$ | $2.428 \times 10^6$ | 1.03 |
+| $k_m$ | 0.0295 | 0.02555 | 0.87 |
+| $y_c$ (mm) | $7.9 \times 10^{-7}$ | $4.91 \times 10^{-7}$ | 0.62 |
+| RMSE, 13 markers (MPa) | 14.3 | 4.1 | |
 
 **Table 3.** Engineering stress (MPa) of L.1 without damage against the
 experiment.
 
 | gauge strain | experiment | paper's set | carried set |
 |---|---|---|---|
-| 1% | 85 | 84 | 78 |
-| 5% | 98 | 113 | 104 |
-| 10% | 129 | 145 | 135 |
-| 20% | 180 | 187 | 184 |
-| 30% | 212 | 208 | 214 |
-| 40% | 233 | 216 | 229 |
-| 50% | 238 | 219 | 235 |
+| 1% | 85 | 80 | 81 |
+| 5% | 98 | 106 | 105 |
+| 10% | 129 | 136 | 134 |
+| 20% | 180 | 178 | 181 |
+| 30% | 212 | 200 | 213 |
+| 40% | 233 | 209 | 229 |
+| 50% | 238 | 212 | 236 |
 
-**Figure 2.** L.1 without damage: the carried set against the experimental
-markers.
+**Figure 2.** L.1 without damage: the paper's set and the carried set against
+the experimental markers.
 
 ![cal](../../figures/ni/cal/cal_curve.png)
 
-The largest remaining error is at yield, where the carried set gives 75 to
-78 MPa against 85 MPa below 1% strain. Without damage the engineering stress of
-the carried set reaches its maximum, 237 MPa, at 61% gauge strain: the
+The largest remaining error is at yield, where the carried set gives 78 to
+81 MPa against 85 MPa below 1% strain. Without damage the engineering stress of
+the carried set reaches its maximum, 237 MPa, at 59% gauge strain: the
 geometric softening of the section alone does not end the test at the observed
 46%. That is the role of the fracture model of §6.
 
@@ -458,16 +469,16 @@ same parameters.
 
 | mesh | elements | failure strain | peak stress (MPa) | fracture location (of the gage) | wall time |
 |---|---|---|---|---|---|
-| h020 | 792 | 0.4635 | 223.5 | 0.30 | 29 min, 4 threads |
-| h010 | 3,168 | 0.4697 | 220.1 | 0.23 | 2 h 05 min, 8 threads |
-| difference | | +1.3% | -1.5% | -0.07 | |
+| h020 | 792 | 0.4610 | 224.1 | 0.29 | 27 min, 4 threads |
+| h010 | 3,168 | 0.4671 | 221.0 | 0.23 | 2 h 26 min, 4 threads |
+| difference | | +1.3% | -1.4% | -0.06 | |
 
 **Figure 3.** L.1 on the h020 and h010 meshes: engineering stress and maximum
 phase field against the gauge strain.
 
 ![mesh](../../figures/ni/pfd/curves_L1_mesh.png)
 
-The failure strain and the peak stress change by 1.3% and 1.5%, inside the
+The failure strain and the peak stress change by 1.3% and 1.4%, inside the
 5% acceptance of the study, and the fracture stays in the same quarter of the
 gage. h020 is kept for every run that follows.
 
@@ -503,35 +514,31 @@ load steps.
 
 The search runs in $\ln G_c$: a first pair brackets the target, then the
 interval is closed by regula falsi (`scripts/ni_pfd_calibrate.py`,
-`decks/ni/pfd/tl/cal_L1_h020.i`). Seven runs give Table 5 and Fig. 4.
+`decks/ni/pfd/bunge/cal_L1_h020.i`). Three runs give Table 5 and Fig. 4.
 
 **Table 5.** $G_c$ search on L.1 ($\ell_0 = 0.6$ mm).
 
 | $G_c$ (MPa mm) | failure strain | peak stress (MPa) |
 |---|---|---|
-| 30 | 0.319 | 205 |
-| 47.29 | 0.451 | 222 |
-| 48.91 | 0.458 | 223 |
-| **49.37** | **0.4635** | **223.5** |
-| 49.92 | 0.469 | 224 |
-| 60 | 0.538 | 228 |
-| 120 | none by 0.921 | 232 |
+| 42.5 | 0.414 | 220 |
+| **48.67** | **0.461** | **224** |
+| 57.5 | 0.523 | 228 |
 
 **Figure 4.** L.1 with crystal plasticity and fracture: engineering stress and
-maximum phase field for four values of $G_c$, against the experiment up to its
+maximum phase field for three values of $G_c$, against the experiment up to its
 failure strain.
 
 ![curves](../../figures/ni/pfd/curves_L1_cal.png)
 
-The calibrated value is $G_c = 49.37$ MPa mm, with failure at 0.4635 against
+The calibrated value is $G_c = 48.67$ MPa mm, with failure at 0.461 against
 0.463. The paper reports $G_c = 125$ MPa mm without its length scale; in AT2 a
 failure strain fixes $G_c$ only together with $\ell_0$, and the two frameworks
 differ in the crystal-plasticity set and in the rate, so the values are not
 expected to coincide. The failure strain is steep in $G_c$ near the target:
-1% in $G_c$ moves it by about 0.006.
+1% in $G_c$ moves it by about 0.004.
 
-**Fracture location.** The simulated fracture crosses the gage at 0.30 of its
-length, at 70° to the loading axis; the experiment fails at 0.20, on the same
+**Fracture location.** The simulated fracture crosses the gage at 0.29 of its
+length, at 76° to the loading axis; the experiment fails at 0.20, on the same
 side, on an inclined plane (Fig. 5).
 
 **Figure 5.** L.1 at failure: DIC axial strain of the experiment (top) and the
@@ -542,10 +549,10 @@ the ridge of maximum $d$ across the width.
 
 **What the model does not reproduce.** Without a threshold the plastic work
 drives damage from the first load step, so $d$ grows over the whole gage
-before it localizes (maximum $d$ 0.6 at 35% strain). The degraded stiffness
-lowers the curve: the peak stress is 223.5 MPa against 239 MPa in the
+before it localizes (maximum $d$ 0.62 at 35% strain). The degraded stiffness
+lowers the curve: the peak stress is 224 MPa against 239 MPa in the
 experiment at 45% strain, 6% low, where the undamaged curve of §4 is within
-2%. A refit of the crystal-plasticity set with damage active would remove this
+3%. A refit of the crystal-plasticity set with damage active would remove this
 offset; it is not done here.
 
 ## 7. The fifteen specimens on the finite-element route
@@ -554,10 +561,10 @@ offset; it is not done here.
 
 The fifteen specimens (five orientation groups, three thickness variants each)
 are run with the single set: Table 1 with the three fitted values of Table 2,
-$G_c = 49.37$ MPa mm, $\ell_0 = 0.6$ mm, each on its own h020 mesh with its
-measured thickness profile (`decks/ni/final/tl/fem_15_h020.i`). Only L.1
-entered the calibration. Every run ends by separation; a run takes 21 to 32
-minutes on four threads, 6.8 hours of summed run time for the fifteen.
+$G_c = 48.67$ MPa mm, $\ell_0 = 0.6$ mm, each on its own h020 mesh with its
+measured thickness profile (`decks/ni/final/bunge/fem_15_h020.i`). Only L.1
+entered the calibration. Every run ends by separation; a run takes 19 to 33
+minutes on four threads, 6.7 hours of summed run time for the fifteen.
 The results are compared with the paper's experiments only: the failure
 strains of its Fig. 4(b) and the fracture locations read from its Fig. 5
 (reading uncertainty $\pm 0.08$ of the gage).
@@ -569,34 +576,41 @@ location (fraction of the gage length) of the fifteen specimens.
 
 | specimen | failure strain, experiment | failure strain, FEM | error (%) | location, experiment | location, FEM | peak stress (MPa) |
 |---|---|---|---|---|---|---|
-| 9.1 | 0.546 | 0.444 | -18.7 | 0.15 | 0.29 | 224 |
-| 9.3 | 0.616 | 0.460 | -25.4 | 0.85 | 0.66 | 225 |
-| 9.4 | 0.626 | 0.465 | -25.7 | 0.60 | 0.37 | 224 |
-| 10.1 | 0.540 | 0.564 | +4.4 | 0.20 | 0.33 | 159 |
-| 10.3 | 0.528 | 0.562 | +6.3 | 0.30 | 0.35 | 159 |
-| 10.4 | 0.530 | 0.531 | +0.2 | 0.25 | 0.31 | 157 |
-| H.1 | 0.549 | 0.427 | -22.2 | 0.75 | 0.56 | 248 |
-| H.3 | 0.566 | 0.428 | -24.3 | 0.75 | 0.52 | 247 |
-| H.4 | 0.568 | 0.429 | -24.4 | 0.80 | 0.57 | 247 |
-| L.1 | 0.463 | 0.463 | +0.0 | 0.20 | 0.30 | 223 |
-| L.3 | 0.481 | 0.468 | -2.9 | 0.65 | 0.66 | 225 |
-| L.4 | 0.461 | 0.452 | -2.0 | 0.75 | 0.74 | 220 |
-| P.1 | 0.466 | 0.438 | -5.9 | 0.20 | 0.51 | 236 |
-| P.3 | 0.378 | 0.396 | +4.8 | 0.75 | 0.84 | 232 |
-| P.4 | 0.406 | 0.420 | +3.6 | 0.78 | 0.76 | 234 |
+| 9.1 | 0.546 | 0.529 | -3.3 | 0.15 | 0.31 | 199 |
+| 9.3 | 0.616 | 0.547 | -11.2 | 0.85 | 0.65 | 204 |
+| 9.4 | 0.626 | 0.548 | -12.4 | 0.60 | 0.38 | 200 |
+| 10.1 | 0.540 | 0.515 | -4.6 | 0.20 | 0.33 | 173 |
+| 10.3 | 0.528 | 0.513 | -3.0 | 0.30 | 0.35 | 174 |
+| 10.4 | 0.530 | 0.485 | -8.4 | 0.25 | 0.30 | 171 |
+| H.1 | 0.549 | 0.555 | +1.0 | 0.75 | 0.56 | 184 |
+| H.3 | 0.566 | 0.558 | -1.3 | 0.75 | 0.53 | 183 |
+| H.4 | 0.568 | 0.560 | -1.4 | 0.80 | 0.58 | 183 |
+| L.1 | 0.463 | 0.461 | -0.5 | 0.20 | 0.29 | 224 |
+| L.3 | 0.481 | 0.466 | -3.3 | 0.65 | 0.67 | 225 |
+| L.4 | 0.461 | 0.449 | -2.5 | 0.75 | 0.75 | 220 |
+| P.1 | 0.466 | 0.482 | +3.4 | 0.20 | 0.50 | 186 |
+| P.3 | 0.378 | 0.443 | +17.4 | 0.75 | 0.79 | 184 |
+| P.4 | 0.406 | 0.463 | +14.2 | 0.78 | 0.71 | 184 |
 
 **Figure 6.** Experimental against predicted strain to failure of the fifteen
 specimens, with the $\pm 10$% band.
 
 ![parity](../../figures/ni/final/fem_parity.png)
 
-Nine specimens, the groups L, P and 10, are predicted within 6.3% with an
-RMSE of 0.019 in strain. The model follows the orientation there: group 10,
-the soft orientation with a peak stress near 158 MPa, fails latest (0.53 to
-0.56 against 0.53 to 0.54), and it follows the thickness variants of group P
-(P.3 earliest in both). The six specimens of groups 9 and H fail 19 to 26% too
-early, at 0.43 to 0.47 against 0.55 to 0.63. Over all fifteen the RMSE is
-0.088 in strain; the paper reports 0.064 for its own simulations.
+Eleven of the fifteen specimens are predicted within 5% and thirteen within
+12.5%. Over all fifteen the RMSE is 0.039 in strain, 7.9% relative; the paper
+reports 0.064 for its own simulations. The model follows the orientation: the
+flow stress ranks L, 9, P, H, 10 from 224 to 173 MPa at the peak, and the
+softer crystals strain further, as in the experiment. Groups H and L are
+within 3.3%, group 10 within 8.4%. Specimen 9.1 is within 3.3%, while 9.3 and
+9.4 fail 11 to 12% early, at 0.55 against 0.62 to 0.63.
+
+The largest errors are P.3 and P.4, predicted 17% and 14% late. The model
+gives the three specimens of group P failure strains of 0.44 to 0.48, where
+the experiment spreads them from 0.38 to 0.47 with the thickness profile: P.3
+and P.4 carry the steepest tapers of the set, $-0.073$ and $-0.054$ mm over
+the gage. The model responds to the taper in the right direction and too
+weakly.
 
 ### 7.3 Fracture location
 
@@ -605,10 +619,10 @@ early, at 0.43 to 0.47 against 0.55 to 0.63. Over all fifteen the RMSE is
 ![location](../../figures/ni/final/fem_location.png)
 
 Thirteen of the fifteen fractures are on the experiment's side of the gage
-center and five are within the $\pm 0.08$ reading uncertainty; the RMSE is
+center and six are within the $\pm 0.08$ reading uncertainty; the RMSE is
 0.16 of the gage length. The predicted locations are drawn toward
 the center compared with the experiment, most clearly in group H, where the
-experiment breaks at the fillet (0.75 to 0.80) and the model at 0.52 to 0.57
+experiment breaks at the fillet (0.75 to 0.80) and the model at 0.53 to 0.58
 (Fig. 8).
 
 **Figure 8.** The fifteen specimens at failure, in the order L, P, 10, 9, H. Each
@@ -647,29 +661,30 @@ ridge of maximum $d$ across the width (solid line).
 
 ![H.4](../../figures/ni/final/fem_shape_H.4.png)
 
-### 7.4 Reading of the result: two classes of orientation
+### 7.4 Reading of the result
 
-The fifteen specimens fall into two classes under one parameter set. Groups L,
-P and 10 are predicted within 6.3% by the set calibrated on L.1. Groups 9 and
-H are not: they carry more ductility than the others, straining to 0.55 to
-0.63 where the set predicts 0.43 to 0.47.
-
-The mechanism in the model is direct. The driving force of Eq. (13) is the
+One crystal-plasticity and phase-field parameter set, fitted on one specimen,
+predicts the strain to failure of all five orientation groups with an RMSE of
+0.039. The mechanism is direct. The driving force of Eq. (13) is the
 accumulated plastic work, close to the area under the stress-strain curve, and
-the gage fails when that work reaches a level set by $G_c / \ell_0$. Groups 9
-and H carry the same or a higher stress than group L (224 and 247 MPa against
-223 MPa), so with the same $G_c$ they reach that level at the same or a smaller
-strain. In the experiment these two orientations instead strain further and
-break in a localized band near a fillet, at a local axial strain near 1.0
-(Fig. 8).
+the gage fails when that work reaches a level set by $G_c / \ell_0$. A crystal
+with a lower flow stress reaches that level at a larger strain. Groups H and
+10, near the [101] pole, carry 173 to 184 MPa at the peak and fail at 0.49 to
+0.56; group L, toward [111], carries 224 MPa and fails at 0.45 to 0.47. This
+is the ordering of the experiment, and it follows from the orientation alone.
 
-The result is kept as it stands, because it is well posed: one
-crystal-plasticity and phase-field parameter set cannot predict both the
-orientations that fail early, in a brittle-like manner, and those that fail
-late, in a ductile-like manner. The orientation moves the specimen from one
-class to the other. Which parameter set predicts the ductile-like orientations,
-and how one combined model can serve both classes, is the subject of a later
-section; the routes of §8 use the single set of this section unchanged.
+Two limits remain. The fracture location is predicted closer to the gage
+center than observed, and the fracture plane is steeper: the simulated
+fractures cross the gage at 67° to 90° to the loading axis, where groups 9, L
+and P break on planes near 45°. And the sensitivity to the thickness taper is
+too weak in group P. Both concern the localization stage, in which the phase
+field of this model is spread over the gage before it concentrates (§6.2).
+
+A first version of this study applied the Euler angles with $\varphi_1$ and
+$\varphi_2$ exchanged. It simulated groups H and P as hard crystals near
+[111], predicted groups 9 and H 19 to 26% early, and read that as two classes
+of orientation that one parameter set cannot serve. That reading is withdrawn;
+its figures are kept in `archive/figures/ni_exchanged_angles/`.
 
 ## 8. PINN+FEM, PINN and surrogate routes
 
@@ -708,11 +723,11 @@ target no epoch is run.
 
 - **PINN+FEM**: the proposal $\mathbf{u}^{\ast}$ is the starting field of the
   Newton solve, which runs to the tolerance of §3.2
-  (`decks/ni/final/tl/hybrid_base_h020.i`).
+  (`decks/ni/final/bunge/hybrid_base_h020.i`).
 - **PINN**: the proposal is accepted as the solution of the mechanics solve,
   with no Newton iteration, when $\lVert \mathbf{R}_f \rVert \le 0.05\,
   \lVert \mathbf{R}_d \rVert$; otherwise Newton corrects it
-  (`decks/ni/final/tl/pinn_base_h020.i`).
+  (`decks/ni/final/bunge/pinn_base_h020.i`).
 
 The finite-element route of §7 starts every mechanics solve from the same
 linear extrapolation without a network.
@@ -720,25 +735,25 @@ linear extrapolation without a network.
 ### 8.2 PINN+FEM on the fifteen specimens
 
 The fifteen specimens were run with the single set of §7
-(`decks/ni/final/tl/hybrid_15_h020.i`). All fifteen end by separation.
+(`decks/ni/final/bunge/hybrid_15_h020.i`). All fifteen end by separation.
 
 | Specimen | Experiment | FEM | PINN+FEM | Location, FEM | Location, PINN+FEM | Newton iterations, FEM | Newton iterations, PINN+FEM | Load steps with training |
 |---|---|---|---|---|---|---|---|---|
-| L.1 | 0.463 | 0.4635 | 0.4635 | 0.30 | 0.30 | 712 | 712 | 31 of 224 |
-| L.3 | 0.481 | 0.4675 | 0.4675 | 0.66 | 0.66 | 689 | 689 | 23 of 216 |
-| L.4 | 0.461 | 0.4515 | 0.4515 | 0.74 | 0.74 | 702 | 702 | 24 of 220 |
-| P.1 | 0.466 | 0.4380 | 0.4380 | 0.51 | 0.51 | 653 | 653 | 21 of 206 |
-| P.3 | 0.378 | 0.3961 | 0.3961 | 0.84 | 0.84 | 613 | 614 | 24 of 190 |
-| P.4 | 0.406 | 0.4202 | 0.4202 | 0.76 | 0.76 | 651 | 652 | 22 of 203 |
-| 10.1 | 0.540 | 0.5640 | 0.5640 | 0.33 | 0.33 | 780 | 780 | 37 of 249 |
-| 10.3 | 0.528 | 0.5619 | 0.5619 | 0.35 | 0.35 | 753 | 753 | 42 of 240 |
-| 10.4 | 0.530 | 0.5308 | 0.5308 | 0.31 | 0.31 | 736 | 736 | 37 of 234 |
-| 9.1 | 0.546 | 0.4445 | 0.4445 | 0.29 | 0.29 | 663 | 663 | 22 of 206 |
-| 9.3 | 0.616 | 0.4597 | 0.4597 | 0.66 | 0.66 | 666 | 666 | 20 of 209 |
-| 9.4 | 0.626 | 0.4651 | 0.4651 | 0.37 | 0.37 | 722 | 722 | 14 of 227 |
-| H.1 | 0.549 | 0.4273 | 0.4273 | 0.56 | 0.56 | 653 | 653 | 21 of 204 |
-| H.3 | 0.566 | 0.4283 | 0.4283 | 0.52 | 0.52 | 663 | 663 | 15 of 207 |
-| H.4 | 0.568 | 0.4295 | 0.4295 | 0.57 | 0.57 | 676 | 676 | 12 of 212 |
+| L.1 | 0.463 | 0.4610 | 0.4610 | 0.29 | 0.29 | 704 | 704 | 26 of 222 |
+| L.3 | 0.481 | 0.4656 | 0.4656 | 0.67 | 0.67 | 679 | 679 | 27 of 214 |
+| L.4 | 0.461 | 0.4492 | 0.4492 | 0.75 | 0.75 | 695 | 695 | 25 of 218 |
+| P.1 | 0.466 | 0.4817 | 0.4817 | 0.50 | 0.50 | 675 | 675 | 29 of 213 |
+| P.3 | 0.378 | 0.4434 | 0.4434 | 0.79 | 0.79 | 637 | 637 | 28 of 198 |
+| P.4 | 0.406 | 0.4629 | 0.4629 | 0.71 | 0.71 | 665 | 665 | 26 of 209 |
+| 10.1 | 0.540 | 0.5153 | 0.5153 | 0.33 | 0.33 | 727 | 727 | 34 of 231 |
+| 10.3 | 0.528 | 0.5128 | 0.5128 | 0.35 | 0.35 | 696 | 696 | 34 of 221 |
+| 10.4 | 0.530 | 0.4851 | 0.4851 | 0.30 | 0.30 | 687 | 687 | 34 of 217 |
+| 9.1 | 0.546 | 0.5287 | 0.5287 | 0.31 | 0.31 | 615 | 690 | 28 of 241 |
+| 9.3 | 0.616 | 0.5471 | 0.5471 | 0.65 | 0.65 | 624 | 635 | 30 of 247 |
+| 9.4 | 0.626 | 0.5485 | 0.5485 | 0.38 | 0.38 | 716 | 782 | 23 of 265 |
+| H.1 | 0.549 | 0.5547 | 0.5547 | 0.56 | 0.56 | 712 | 798 | 29 of 251 |
+| H.3 | 0.566 | 0.5583 | 0.5583 | 0.53 | 0.53 | 733 | 799 | 23 of 255 |
+| H.4 | 0.568 | 0.5604 | 0.5604 | 0.58 | 0.58 | 755 | 814 | 19 of 261 |
 
 **Table 7.** Strain to failure, fracture location (fraction of the gage) and
 Newton iterations of the fifteen specimens on the finite-element and PINN+FEM
@@ -751,54 +766,53 @@ out of the steps with a proposal.
 specimens on the finite-element route (left) and the PINN+FEM route (right).
 
 The PINN+FEM route reproduces the finite-element route: the failure strains
-agree to seven digits, the fracture locations are the same, and the Newton
-iterations sum to 10,334 against 10,332. The error against the experiment is
-therefore that of §7, a root-mean-square error of 0.088 in strain over the
-fifteen specimens and 0.019 over groups L, P and 10. The per-specimen curves
-and fields (`figures/ni/final/hybrid_curve_*.png`, `hybrid_shape_*.png`) are
+agree to six digits and the fracture locations are the same. The error against
+the experiment is therefore that of §7, a root-mean-square error of 0.039 in
+strain over the fifteen specimens. The per-specimen curves and fields
+(`figures/ni/final/hybrid_curve_*.png`, `hybrid_shape_*.png`) are
 indistinguishable from those of Figure 8.
 
 The reason is in the last column of Table 7. Over the fifteen runs the linear
-extrapolation alone meets the 5 % residual target on 2,881 of 3,247 load steps,
-so the network is trained on 365 steps only. On those steps four L-BFGS epochs
-lower the residual ratio by 0.1 % at the median and by 27 % at the ninetieth
+extrapolation alone meets the 5 % residual target on 3,048 of 3,463 load steps,
+so the network is trained on 415 steps only. On those steps four L-BFGS epochs
+lower the residual ratio by 0.1 % at the median and by 20 % at the ninetieth
 percentile. The Newton solve then starts from a field that is, for practical
-purposes, the extrapolation the finite-element route also starts from, and it
-needs the same iterations. With 0.1 % of bar strain per step the load path is
-smooth enough that the extrapolation leaves the network little to correct.
+purposes, the extrapolation the finite-element route also starts from. With
+0.1 % of bar strain per step the load path is smooth enough that the
+extrapolation leaves the network little to correct. No training trial was
+refused by the constitutive update in this campaign.
 
-The route costs more than it saves. The fifteen runs take 7.5 hours of summed
-run time against 6.8 hours for the finite-element route, on the same host with
-seven runs at a time on four threads each; the proposals account for 1.4 hours
-of that. The two campaigns did not share the host with the same other jobs, so
-the difference of 11 % is indicative.
+The route does not save Newton iterations. Groups L, P and 10 need the same
+iterations on both routes, 6,165 in total. Groups 9 and H need 4,518 on the
+PINN+FEM route against 4,155, so the fifteen runs sum to 10,683 against
+10,320. The additional iterations fall on load steps without training, where
+the first mechanics solve of the step takes two iterations in place of one from
+a starting field that differs only in the last digits. The cause was not
+investigated; a residual that lies at the convergence tolerance after the first
+iteration would show this pattern.
 
-One run exposed a defect of the route. Specimen 9.1 first ended at 42.4 % gauge
-strain: one L-BFGS trial of the training at load factor 0.5175 was a field the
-constitutive update could not integrate, it was passed to the explicit
-sub-stepper, which spent its budget, and the error ended the run. Training
-fields are now evaluated as trials the material may refuse, as the Newton line
-search evaluates its own; on a refusal the weights are restored and the best
-field so far is proposed (PINNACLE ADR 0029, addendum of 2026-11-15). The
-repeated run refuses one iterate at that load factor, continues, and fails at
-44.4 % as the finite-element run does. Table 7 carries the repeated run; the
-other fourteen runs were made before the change and never met a refusal.
+The route costs more than it saves. The fifteen runs take 8.4 hours of summed
+run time against 6.7 hours for the finite-element route, on the same host with
+seven runs at a time on four threads each; the proposals account for 1.5 hours
+of that. The PINN+FEM campaign shared the host with the PINN run of §8.3, so
+the difference of 25 % is indicative.
 
 ### 8.3 PINN on specimen L.1
 
-The PINN route was run on L.1, the calibration specimen.
+The PINN route was run on L.1, the calibration specimen
+(`decks/ni/final/bunge/pinn_base_h020.i`).
 
 | Route | Strain to failure | Peak stress (MPa) | Fracture location | Newton iterations | Mechanics solves without Newton | Run time (min) |
 |---|---|---|---|---|---|---|
 | Experiment | 0.463 | 239 | 0.20 | | | |
-| FEM | 0.4635 | 223.5 | 0.30 | 712 | 0 of 466 | 29 |
-| PINN+FEM | 0.4635 | 223.5 | 0.30 | 712 | 0 of 466 | 33 |
-| PINN | 0.4603 | 223.5 | 0.30 | 312 | 193 of 458 | 21 |
+| FEM | 0.4610 | 224.1 | 0.29 | 704 | 0 of 462 | 27 |
+| PINN+FEM | 0.4610 | 224.1 | 0.29 | 704 | 0 of 462 | 32 |
+| PINN | 0.4579 | 224.1 | 0.29 | 336 | 195 of 454 | 31 |
 
 **Table 8.** Specimen L.1 on the three solver routes with the single set. The
 run times of the first two rows are from the fifteen-specimen campaigns (seven
-runs at a time), that of the PINN row from a run with one other job on the
-host; they are not a like-for-like timing.
+runs at a time); the PINN run shared the host with the seven runs of the
+PINN+FEM campaign. They are not a like-for-like timing.
 
 ![L.1 on the three routes](../../figures/ni/final/routes_curves_L1.png)
 
@@ -811,15 +825,17 @@ phase field against gauge strain, with the experiment up to its failure strain.
 experiment (top) and the simulated axial strain with the $d = 0.85$ outline
 (dashed) and the ridge line of the phase field.
 
-The PINN route fails at 46.0 % gauge strain against 46.3 % on the
+The PINN route fails at 45.8 % gauge strain against 46.1 % on the
 finite-element route, a difference of 0.7 %, with the same peak stress and the
-same fracture location. It accepts 193 of 458 mechanics solves without a Newton
-iteration and needs 312 Newton iterations in place of 712.
+same fracture location. It accepts 195 of 454 mechanics solves without a Newton
+iteration and needs 336 Newton iterations in place of 704. The run times of
+Table 8 do not show this saving, because the three runs did not have the same
+share of the host.
 
 What is accepted must be stated precisely. The accepted fields are those whose
 out-of-balance force is within 5 % of the reaction, and on this load path that
-is in most cases the linear extrapolation itself: the network was trained on 31
-of the 223 load steps. The saving of the PINN route on this specimen is thus
+is in most cases the linear extrapolation itself: the network was trained on 26
+of the 221 load steps. The saving of the PINN route on this specimen is thus
 the saving of accepting a verified extrapolation at a looser equilibrium
 tolerance than the Newton solve, not the gain of a trained field. The
 accumulated effect of that looser tolerance is the 0.7 % shift of the failure
@@ -831,17 +847,18 @@ itself; neither was run here.
 **Design.** The surrogate maps a specimen, its orientation and its thickness
 profile, to the result of the finite-element route without a solve. Its
 training data are thirty synthetic specimens
-(`decks/ni/final/tl/surrogate_design_h020.i`): a Latin hypercube over the three
-Euler angles, uniform over the rotation group, and over the thickness, entered
-as a mean of 0.325 to 0.400 mm and a linear taper of $-0.04$ to $+0.06$ mm over
-the five gage stations. Each is meshed at h020 and run on the finite-element
-route with the single set of §7. All thirty end by separation, at failure
-strains of 0.465 to 0.599, peak stresses of 143 to 243 MPa and fracture
-locations of 0.24 to 0.69 of the gage. The fifteen real specimens are never
-training data.
+(`decks/ni/final/bunge/surrogate_design_h020.i`): a Latin hypercube over the
+three Euler angles, uniform over the rotation group, and over the thickness,
+entered as a mean of 0.320 to 0.400 mm and a linear taper of $-0.08$ to
+$+0.07$ mm over the five gage stations. These ranges contain the fifteen
+measured profiles. Each synthetic specimen is meshed at h020 and run on the
+finite-element route with the single set of §7. All thirty end by separation,
+at failure strains of 0.415 to 0.558, peak stresses of 150 to 257 MPa and
+fracture locations of 0.23 to 0.81 of the gage. The fifteen real specimens are
+never training data.
 
 **Network.** The surrogate is PINNACLE's `parametric_surrogate`
-(`decks/ni/final/tl/surrogate/surrogate_h020.i`). Its inputs are the twelve
+(`decks/ni/final/bunge/surrogate/surrogate_h020.i`). Its inputs are the twelve
 Schmid factors of the loading axis, sorted, and the five station thicknesses.
 A shared trunk of two layers of 32 units feeds four heads: the engineering
 stress-strain curve, learned as the ratio to the material-point curve of the
@@ -852,10 +869,10 @@ their spread flags a query above 0.1. Six of the thirty specimens are held
 out.
 
 **Held-out synthetic specimens.** Figure 12 shows the six held-out curves and
-Figure 13 the three scalars. The curve error is 4.3% on average and 7.1% at
-most. The failure strain has an RMS error of 3.6%, with five specimens within
-4% and one at 6.8%; the peak stress has 3.3%, and the fracture location 0.023
-of the gage. The training specimens are reproduced within 0.1% on the scalar
+Figure 13 the three scalars. The curve error is 5.8% on average and 9.6% at
+most. The failure strain has an RMS error of 2.2%, with five specimens within
+2.3% and one at 4.4%; the peak stress has 3.2%, and the fracture location 0.040
+of the gage. The training specimens are reproduced within 0.2% on the scalar
 heads, so with 24 specimens the networks interpolate, and the held-out error
 is the measure of the surrogate.
 
@@ -877,21 +894,21 @@ experiment.
 
 | specimen | failure strain, experiment | FEM | surrogate | surrogate against FEM (%) | location, experiment | FEM | surrogate | peak stress, FEM (MPa) | surrogate (MPa) | ensemble spread |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 9.1 | 0.546 | 0.444 | 0.393 | -11.5 | 0.15 | 0.29 | 0.35 | 224 | 218 | 0.039 |
-| 9.3 | 0.616 | 0.460 | 0.444 | -3.5 | 0.85 | 0.66 | 0.65 | 225 | 221 | 0.026 |
-| 9.4 | 0.626 | 0.465 | 0.444 | -4.5 | 0.60 | 0.37 | 0.41 | 224 | 243 | 0.023 |
-| 10.1 | 0.540 | 0.564 | 0.562 | -0.4 | 0.20 | 0.33 | 0.36 | 159 | 161 | 0.019 |
-| 10.3 | 0.528 | 0.562 | 0.549 | -2.3 | 0.30 | 0.35 | 0.39 | 159 | 167 | 0.019 |
-| 10.4 | 0.530 | 0.531 | 0.539 | +1.6 | 0.25 | 0.31 | 0.27 | 157 | 155 | 0.042 |
-| H.1 | 0.549 | 0.427 | 0.447 | +4.6 | 0.75 | 0.56 | 0.64 | 248 | 218 | 0.051 |
-| H.3 | 0.566 | 0.428 | 0.444 | +3.6 | 0.75 | 0.52 | 0.53 | 247 | 223 | 0.047 |
-| H.4 | 0.568 | 0.429 | 0.445 | +3.6 | 0.80 | 0.57 | 0.56 | 247 | 226 | 0.048 |
-| L.1 | 0.463 | 0.463 | 0.422 | -9.0 | 0.20 | 0.30 | 0.40 | 223 | 230 | 0.034 |
-| L.3 | 0.481 | 0.468 | 0.447 | -4.3 | 0.65 | 0.66 | 0.66 | 225 | 227 | 0.023 |
-| L.4 | 0.461 | 0.452 | 0.474 | +4.9 | 0.75 | 0.74 | 0.87 | 220 | 217 | 0.026 |
-| P.1 | 0.466 | 0.438 | 0.462 | +5.4 | 0.20 | 0.51 | 0.65 | 236 | 216 | 0.061 |
-| P.3 | 0.378 | 0.396 | 0.452 | +14.2 | 0.75 | 0.84 | 0.98 | 232 | 193 | 0.080 |
-| P.4 | 0.406 | 0.420 | 0.462 | +9.9 | 0.78 | 0.76 | 0.88 | 234 | 200 | 0.065 |
+| 9.1 | 0.546 | 0.529 | 0.522 | -1.2 | 0.15 | 0.31 | 0.32 | 199 | 209 | 0.027 |
+| 9.3 | 0.616 | 0.547 | 0.520 | -4.9 | 0.85 | 0.65 | 0.61 | 204 | 211 | 0.016 |
+| 9.4 | 0.626 | 0.548 | 0.544 | -0.8 | 0.60 | 0.38 | 0.52 | 200 | 202 | 0.031 |
+| 10.1 | 0.540 | 0.515 | 0.533 | +3.4 | 0.20 | 0.33 | 0.33 | 173 | 165 | 0.027 |
+| 10.3 | 0.528 | 0.513 | 0.536 | +4.5 | 0.30 | 0.35 | 0.33 | 174 | 168 | 0.038 |
+| 10.4 | 0.530 | 0.485 | 0.525 | +8.2 | 0.25 | 0.30 | 0.20 | 171 | 161 | 0.043 |
+| H.1 | 0.549 | 0.555 | 0.549 | -1.1 | 0.75 | 0.56 | 0.64 | 184 | 190 | 0.021 |
+| H.3 | 0.566 | 0.558 | 0.551 | -1.2 | 0.75 | 0.53 | 0.58 | 183 | 191 | 0.025 |
+| H.4 | 0.568 | 0.560 | 0.556 | -0.8 | 0.80 | 0.58 | 0.61 | 183 | 189 | 0.022 |
+| L.1 | 0.463 | 0.461 | 0.454 | -1.6 | 0.20 | 0.29 | 0.36 | 224 | 232 | 0.036 |
+| L.3 | 0.481 | 0.466 | 0.453 | -2.8 | 0.65 | 0.67 | 0.63 | 225 | 223 | 0.046 |
+| L.4 | 0.461 | 0.449 | 0.443 | -1.4 | 0.75 | 0.75 | 0.79 | 220 | 228 | 0.039 |
+| P.1 | 0.466 | 0.482 | 0.485 | +0.6 | 0.20 | 0.50 | 0.51 | 186 | 179 | 0.066 |
+| P.3 | 0.378 | 0.443 | 0.439 | -1.0 | 0.75 | 0.79 | 0.74 | 184 | 180 | 0.038 |
+| P.4 | 0.406 | 0.463 | 0.466 | +0.6 | 0.78 | 0.71 | 0.69 | 184 | 178 | 0.047 |
 
 **Table 9.** The fifteen real specimens on the surrogate, against the
 finite-element route it was trained to reproduce and against the experiment.
@@ -903,24 +920,22 @@ finite-element failure strain (left), against the experimental failure strain
 (middle) and against the experimental fracture location (right).
 
 Against the finite-element route the surrogate's failure strain has an RMS
-difference of 6.7%, 0.029 in strain, about twice the held-out error. Ten
-specimens are within 5%. The largest differences are P.3 at $+14.1$%, 9.1 at
-$-11.5$%, P.4 at $+9.9$% and L.1 at $-9.0$%. The peak stress differs by 8.2% RMS
-and the fracture location by 0.08 of the gage.
+difference of 3.1%, 0.015 in strain, somewhat above the held-out error of
+2.2%. Fourteen specimens are within 5% and ten within 2%. The largest
+differences are 10.4 at $+8.2$%, 9.3 at $-4.9$% and 10.3 at $+4.5$%. The peak
+stress differs by 3.6% RMS and the fracture location by 0.06 of the gage, with
+9.4 the largest at 0.15.
 
-Part of the excess is extrapolation. The measured tapers of P.3, P.4, L.4 and
-10.4 ($-0.073$, $-0.054$, $-0.056$ and $+0.067$ mm) lie outside the designed
-range, and the finite-element failure strain of P.3, 0.396, lies below every
-training specimen. Group P also has the largest ensemble spread, 0.06 to 0.08.
-No query reaches the flag level of 0.1, so the flag as set does not separate
-these cases. 9.1 and L.1 lie inside the designed ranges, and their differences
-are not explained by the design.
+All fifteen queries lie inside the designed ranges, and the ensemble spread is
+0.02 to 0.07, below the flag level of 0.1. The spread does not single out 10.4:
+its value of 0.043 is exceeded by three specimens that the surrogate predicts
+within 3%.
 
 Against the experiment the surrogate inherits the finite-element result and
-adds its own error: the RMSE in failure strain is 0.096 over the fifteen
-specimens against 0.088 for the finite-element route, and 0.038 against 0.019
-over groups L, P and 10. Groups 9 and H are predicted early by the surrogate as
-by the model it learned.
+adds little of its own: the RMSE in failure strain is 0.042 over the fifteen
+specimens against 0.039 for the finite-element route. P.3 and P.4 are
+predicted late and 9.3 and 9.4 early by the surrogate, as by the model it
+learned.
 
 The surrogate does not write a curve for a queried specimen, only the curve's
 peak and the three scalars, so no stress-strain curve of a real specimen is
@@ -930,30 +945,31 @@ shown for this route.
 
 | Route | Scope | Failure strain against FEM | Time |
 |---|---|---|---|
-| FEM | 15 specimens | reference | 6.8 h summed, 21 to 32 min per specimen |
-| PINN+FEM | 15 specimens | equal to seven digits | 7.5 h summed |
-| PINN | L.1 | $-0.7$% | 21 min, against 29 min for FEM |
-| Surrogate | 15 specimens, none in training | 6.7% RMS, 14.1% at most | 0.93 s per specimen, after 15.3 h of training runs and 78 s of training |
+| FEM | 15 specimens | reference | 6.7 h summed, 19 to 33 min per specimen |
+| PINN+FEM | 15 specimens | equal to six digits | 8.4 h summed |
+| PINN | L.1 | $-0.7$% | 336 Newton iterations against 704; run times not comparable |
+| Surrogate | 15 specimens, none in training | 3.1% RMS, 8.2% at most | 0.9 s per specimen, after 15.0 h of training runs and 92 s of training |
 
 **Table 10.** The four routes with the single parameter set. Run times are
 summed over the runs, each on four threads of the same host; the surrogate was
 trained and queried on eight threads.
 
-The thirty training runs take 2 h 29 min of wall time with seven at a time,
-and 15.3 hours summed, 22 to 44 minutes each. The baseline curves take 27 s and
-the training of the five networks 37 s. A query takes 0.93 s, most of it the
+The thirty training runs take 2 h 22 min of wall time with seven at a time,
+and 15.0 hours summed, 20 to 44 minutes each. The surrogate deck runs in 92 s:
+28 s for the baseline curves, 48 s for the training of the five networks and
+the rest, 0.9 s per specimen, for the fifteen queries, most of it the
 material-point curve of the queried orientation. The surrogate therefore
-costs about as much as 34 finite-element runs before its first answer, and
+costs about as much as 33 finite-element runs before its first answer, and
 about 1,700 times less than a run for each answer after that.
 
 On this problem the two solver routes do not improve on the finite-element
 route. The load path is smooth at 0.1% bar strain per step, the linear
 extrapolation meets the residual target on most steps, and the network has
 little left to correct; the network settings were kept as they are. The PINN
-route is faster on L.1 at a small cost in accuracy, and its saving is that of
-a looser equilibrium tolerance. The surrogate is the one route that changes
-the cost of a prediction, by three orders of magnitude, and its accuracy of 4
-to 7% in failure strain is set by the thirty training specimens and by how far
-a query lies from them.
+route halves the Newton iterations on L.1 at a small cost in accuracy, and its
+saving is that of a looser equilibrium tolerance. The surrogate is the one
+route that changes the cost of a prediction, by three orders of magnitude, and
+its accuracy of 2 to 3% in failure strain is set by the thirty training
+specimens.
 
 Memory use was not recorded on any route.

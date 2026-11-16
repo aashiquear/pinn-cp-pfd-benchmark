@@ -1,2 +1,0 @@
-pinnacle run exit 0 -> /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/cp/check_L1_h040_implicit_host
-{"steps": 50, "final_gauge_strain": 0.09601970884848796, "final_grip_strain": 0.05, "gauge_to_grip_ratio": 1.920394176969759, "peak_eng_stress": 209.3917779305968, "strain_at_peak": 0.09601970884848796, "gage_area_mm2": 0.6556399999999999, "mean_thickness_mm": 0.35439999999999994, "newton_iterations": 407}

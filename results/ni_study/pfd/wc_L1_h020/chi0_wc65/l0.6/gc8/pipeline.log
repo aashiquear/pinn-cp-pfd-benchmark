@@ -1,4 +1,0 @@
-wrote /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc8/pfd.i
-pinnacle run exit 0 -> /home/aashiquear/projects/pinn-cp-pfd-benchmark/results/ni_study/pfd/wc_L1_h020/chi0_wc65/l0.6/gc8
-{"steps": 252, "steps_valid": 251, "run_died": false, "final_gauge_strain": 0.4839444432960296, "final_grip_strain": 0.251, "peak_eng_stress": 243.80238508676703, "strain_at_peak": 0.4839444432960296, "initiation_gauge_strain_node": null, "failure_gauge_strain": null, "failure_step": null, "failure_mode": null, "damage_threshold": 0.8, "final_max_damage": 0.7007910263582094, "gage_area_mm2": 0.6556399999999999, "mean_thickness_mm": 0.35439999999999994, "newton_iterations": 9716, "alternations": 291}
-{"separation_damage": 0.85, "separated": false}
