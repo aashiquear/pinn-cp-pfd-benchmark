@@ -1034,3 +1034,29 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   classifier (multi-run campaign without the author's agreement); the 20 seed runs required by
   PROJECT_GUIDELINES section 7 were run in the foreground.
 
+## 2026-11-17 (afternoon): Part IV stage B done; author's decisions
+
+- Author: network routes over the whole undercooling family (done); step by step: B, then the
+  report for A and B, then C; noise-driven cases stay FE-only and the report says why (§4.2);
+  this repo is committed LOCALLY and pushed only after the author's review.
+- Stage A additions: PINN / hybrid at all 9 undercoolings reach the nucleus from the classical
+  droplet; guess scan: FE Newton only from 0.85-1.3 classical radii, network routes from 0.4-2.0.
+- B1 (review Fig. 6): reproduced within 0.008. The Ni data are in the ORIGINAL paper (arXiv
+  cond-mat/0608375, footnote 16), not in the review; the published ratio is matched only with
+  the cap at gamma(T_m) (neither paper says so; `derived`). phi = 0 is SOLID in that paper.
+- B2: p = 2.89 +/- 0.05 for one realization (seed 20261117); no seed study.
+- PINNACLE cd2d3d3 (ADR 0038, pushed): `pf_fem_saddle`, `pf_contact_angle phase_values /
+  flux_form = young`, `wall_free_energy`, `langevin_noise scaling = white / state_factor`,
+  `fem_operators_sparse`. Suite: phase-field + framework subset 1,633 passed (the weak-form
+  PINN test is flaky under CPU load, passes alone), parity 72 passed.
+- Traps: (1) plain Newton cannot find the 2-D wall saddle (0.97 R -> layer, 1.00 R -> crystal);
+  use `pf_fem_saddle`. (2) Its constraint must be localized: total amount -> the droplet
+  evaporates in a large domain, or the wall film thickens uniformly (that film saddle has 2-2.5
+  times the energy and looks like a valid result). (3) Noise inside the crystal: phi runs away
+  (standard p unbounded for phi > 1); use `state_factor = 1-p`. (4) Deck values with operators
+  must be unquoted without blanks (a quoted one is tokenised); `maximum` is not available in
+  parsed functions (use 1-(1-a)*(1-b)). (5) I first wrote B2 reference numbers into the report
+  from memory (wrong by 2.5x); they are now the computed ones: compute before writing.
+- `tests/integration/framework/test_executioner_coverage.py` needs an entry for every new
+  executioner; it was missing after ddaeb91 and is fixed in cd2d3d3.
+

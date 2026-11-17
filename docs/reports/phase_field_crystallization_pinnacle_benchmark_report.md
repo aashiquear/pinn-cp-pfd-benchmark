@@ -1,14 +1,15 @@
 # Phase-field crystallization benchmark of PINNACLE (Part IV)
 
-Status 2026-11-17: stage A (single-field model, cases A1 to A5) is complete on the FE route;
-the stationary cases A1 and A3 are also done on the PINN and PINN+FEM routes. Stages B to D
-(walls and noise, binary and orientation-field models, phase-field crystal) are planned in
-`docs/14_phase_field_crystallization_plan.md` and have no results yet. Abstract and
-introduction are written when all stages are done.
+Status 2026-11-17: stage A (single-field model, cases A1 to A5) and stage B (walls and
+noise, cases B1 and B2) are complete on the FE route; the stationary cases A1 and A3 are also
+done on the PINN and PINN+FEM routes. Stages C and D (binary and orientation-field models,
+phase-field crystal) are planned in `docs/14_phase_field_crystallization_plan.md` and have no
+results yet. Abstract and introduction are written when all stages are done.
 
 Guide papers: (granasy 2019 nucleation), cited below as "the review", and
-(granasy 2005 spherulites). PINNACLE revision of every result: `ddaeb91` on
-`feat/pinn_benchmark` (ADR 0037). Reproduction: `docs/reproduce_crystallization.md`.
+(granasy 2005 spherulites); for case B1 also (granasy 2007 heterogeneous). PINNACLE revision:
+`ddaeb91` (ADR 0037) for sections 3.2 to 3.5, `cd2d3d3` (ADR 0038) for section 3.1's family and
+scan and for stage B, both on `feat/pinn_benchmark`. Reproduction: `docs/reproduce_crystallization.md`.
 Every deck named here is a complete input: `pinnacle run <deck>`.
 
 ## 1. The single-field model
@@ -180,14 +181,36 @@ reference $W^* = 0.913705$ aJ $= 47.865\,kT$):
 - The PINN+FEM result equals the FE result to all printed digits because the corrector is
   the same Newton solve; the network's field was within $1.0$ to $7.1\times10^{-4}$ (relative
   L2) of it and the corrector took 3 iterations on every seed.
-- The network routes do not beat the FE route here in accuracy or time. Their measured
-  property is the range of starts: with deflation the stationary network reached the nucleus
-  from droplets of 0.36 to 1.56 classical radii (PINNACLE test deck, scaled units); without
-  deflation the smallest start was lost (relative residual 0.13, reported by the run).
-- Not yet measured on the Ni decks: the same scan for the plain FE Newton solve. One check
-  was made: from the classical droplet (amplitude 1, radius 0.981 nm) the FE solve of the
-  0.20 case converges in 5 iterations, so at this undercooling the FE route does not need
-  the fitted guess. The GL-fcc cases of section 3.2 did need it.
+- In accuracy and time the network routes do not beat the FE route on this case.
+
+All nine undercoolings on the network routes (decks `a3_ni_nucleus_x<...>_{pinn,hybrid}.i`,
+seed 0, every run started from the classical droplet $R = 2\gamma/|\Delta f|$ with full
+amplitude, which needs no reference solution):
+
+| $\Delta T/T_f$ | 0.100 | 0.125 | 0.150 | 0.175 | 0.200 | 0.225 | 0.250 | 0.275 | 0.300 |
+|---|---|---|---|---|---|---|---|---|---|
+| PINN, error of $W^*$ ($10^{-5}$) | 15.1 | 1.6 | 1.5 | 7.5 | 4.9 | 23.7 | 4.3 | 8.1 | 5.9 |
+| PINN+FEM, error of $W^*$ ($10^{-5}$) | 1.4 | 1.2 | 1.5 | 1.3 | 1.6 | 1.4 | 1.8 | 1.6 | 2.0 |
+| PINN+FEM, corrector iterations | 3 | 4 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+
+All 18 runs reach the nucleus. The PINN+FEM errors are the FE mesh errors of the first table.
+
+Range of initial guesses (`scripts/cryst_guess_scan.py`): the three decks of the 0.20 case
+were started from full-amplitude droplets of 0.4 to 2.0 classical radii.
+
+| guess radius / classical radius | 0.40 | 0.55 | 0.70 | 0.85 | 1.00 | 1.15 | 1.30 | 1.60 | 2.00 |
+|---|---|---|---|---|---|---|---|---|---|
+| FE (stationary Newton) | no convergence | liquid | liquid | nucleus | nucleus | nucleus | nucleus | no convergence | no convergence |
+| PINN (deflated residual) | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus |
+| PINN+FEM | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus | nucleus |
+
+This is where the routes differ. Newton's method on the stationary equation reaches the
+saddle only from 0.85 to 1.3 classical radii; from smaller droplets it converges to the
+liquid (a stationary state as well), from larger ones it does not converge. The stationary
+network reaches the nucleus from every start tested (errors $2\times10^{-5}$ to
+$1.9\times10^{-4}$, 8 to 16 s), and with the FE corrector behind it the result has FE accuracy
+from every start (9 to 16 s). A third answer to the same problem, on the FE route alone, is
+the constrained saddle search of section 4.1 (`pf_fem_saddle`).
 
 ### 3.2 A4: other double-well and interpolation functions (review Fig. 5)
 
@@ -270,17 +293,195 @@ Consistency check of A3 by an independent route in the same code (tier 1).
 `a5_seed_subcritical.gif`, `a5_seed_supercritical.gif`: the profile over time from the
 `fields_step*.vtk` series every run writes (`snapshots_every`).
 
-## 4. Limits of stage A
+## 4. Stage B: a wall, and thermal noise
 
-- Network routes cover the stationary cases A1 and A3 at one undercooling. A2 and A5 are
-  time dependent; they need `pf_pinn`, which does not yet carry the spherical term (A5), and
-  a per-step predictor for the hybrid. Not run.
-- The PINN and PINN+FEM routes were not run over the nine undercoolings or the other
-  functions (one case first; the family awaits the author).
-- The range of starts of the three routes (guess scan) is measured for the stationary PINN
-  on the scaled test deck only.
-- Neural results are reported over 5 seeds; the cost of the development runs behind
-  `pf_pinn_stationary` (about 15 exploratory trainings of 5 to 15 s) is not in the wall
-  times of the tables.
-- Hardware of every number: Intel Core i9-9980HK, 4 threads, float64, numpy backend for FE
-  and torch 2.13.0 (CPU) for the network routes; no GPU on this machine.
+### 4.1 B1: heterogeneous nucleation on a wall (review Fig. 6)
+
+Model. A foreign wall adds a surface term to the free energy (review Eq. 17),
+
+$$
+F = \int \Bigl\{ \frac{\epsilon^2}{2}|\nabla\phi|^2 + w g(\phi) + p(\phi)\Delta f \Bigr\}\,dV
+  + \int_{\text{wall}} Z(\phi)\,dS , \qquad
+  \epsilon^2\,\mathbf n\!\cdot\!\nabla\phi = -Z'(\phi) \ \text{on the wall}
+$$
+
+($\mathbf n$ outward). The two realizations of (granasy 2007 heterogeneous):
+
+- Model I: the wall leaves the planar interface profile undisturbed. With the first integral
+  $|\nabla\phi| = \phi(1-\phi)/\delta$ at the melting point and
+  $\mathbf n\cdot\nabla\phi = |\nabla\phi|\cos\Psi$ this gives
+  $\epsilon^2\,\mathbf n\cdot\nabla\phi = 6\gamma\cos\Psi\,\phi(1-\phi)$, i.e.
+  $Z = -\gamma\cos\Psi\,(3\phi^2 - 2\phi^3)$ and Young's equation
+  $\gamma_{WL} - \gamma_{WS} = \gamma\cos\Psi$ with sharp wall interfaces.
+  The barrier is $W_I = F$ including the wall term.
+- Model II: the order parameter is prescribed on the wall, $\phi = \phi_0$, which orders the
+  liquid next to it; $\cos\Psi = -1 + 6\phi_0^2 - 4\phi_0^3$ ($\phi_0 = 2/3$:
+  $\Psi = 61.2^\circ$). The barrier is the free energy of the nucleus on the wall minus that
+  of the wall layer alone. The layer exists while $w g + p\Delta f > 0$ on $(0, \phi_0]$; at
+  $\Delta f = -w\,g(\phi_0)/p(\phi_0) = -w/64$ it loses stability and the barrier vanishes.
+
+The sharp-interface counterpart in two dimensions is the circular cap,
+$W_{cap} = (\gamma^2/|\Delta f|)\,(\Psi - \sin\Psi\cos\Psi)$.
+
+Parameters. The review does not give the data behind its Fig. 6. They are in the original
+paper (arXiv cond-mat/0608375, footnote 16; `reported_text`): $\gamma_{SL} = 0.364$ J m$^{-2}$,
+interface thickness 2 nm, $L = 2.666\times10^9$ J m$^{-3}$, $T_m = 1728$ K, with $\epsilon^2$
+and $w$ multiplied by $T$. The decks are in scaled units (lengths in
+$\delta = \sqrt{2\epsilon^2/w} = 0.4551$ nm, $\epsilon^2 = 0.5$, $w = 1$, $\gamma = 1/12$), in
+which the undercooling enters only through
+$D = \Delta f/w(T) = -0.27778\,\Delta T/(T_m - \Delta T)$. Check of the parameters: $D = -1/64$
+at $\Delta T = 92.0$ K, the critical undercooling of Model II that both papers state.
+
+How it is solved. Half of the symmetric nucleus, wall at $y = 0$, $h = 0.25\,\delta$ ($0.4\,\delta$
+at 10 K), 14 to 38 thousand nodes. The plain stationary Newton solve of stage A fails here:
+for Model II at 40 K a circular cap of 0.97 classical radii falls onto the wall layer and one
+of 1.00 runs to a grown crystal. The decks use `pf_fem_saddle` (ADR 0038): at a fixed amount
+of crystal $V = \int\omega\phi\,dV$ the nucleus is a minimum, which Newton finds; the
+multiplier $\lambda$ of that constraint is the force along the unstable direction, and the
+amount is moved until $\lambda = 0$; a plain Newton step then removes the constraint. Every
+deck starts from the classical cap. Two findings on the constraint: with the total amount
+($\omega = 1$) the Model II search converged to the saddle of a uniformly thickened wall film
+(a real stationary state of the box, with 2 to 2.5 times the energy), and in a large domain
+the constrained droplet evaporates into a dilute uniform field; a weight $\omega$ that is 1
+around the nucleus removes both, and is the default.
+
+![B1 nuclei](../../figures/crystallization/b1_wall_nuclei.png)
+
+*Critical nuclei on the wall ($y = 0$), contour lines at $\phi = 1/6 \ldots 5/6$ as in the
+review's Fig. 6. Model I: a cap meeting a bare wall. Model II: the nucleus merges into the
+ordered wall layer and flattens toward the critical undercooling.*
+
+![B1 barriers](../../figures/crystallization/b1_wall_barriers.png)
+
+| $\Delta T$ (K) | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 |
+|---|---|---|---|---|---|---|---|---|---|
+| Model I, FE, cap with $\gamma(T_m)$ | 0.991 | 0.975 | 0.960 | 0.943 | 0.924 | 0.903 | 0.880 | 0.854 | 0.827 |
+| Model I, published | | | 0.967 | 0.950 | 0.930 | 0.911 | 0.885 | 0.861 | 0.833 |
+| Model II, FE, cap with $\gamma(T_m)$ | 0.909 | 0.810 | 0.709 | 0.600 | 0.483 | 0.359 | 0.233 | 0.112 | |
+| Model II, published | | 0.816 | 0.714 | 0.604 | 0.488 | 0.362 | 0.235 | 0.118 | |
+| Model I, wall angle measured (deg) | 62.4 | 61.9 | 61.8 | 61.6 | 61.5 | 61.3 | 61.2 | 60.8 | 60.7 |
+
+- Agreement with the published curves (tier 3): within 0.008 for Model I and 0.006 for
+  Model II at every undercooling, against a digitization half-stroke of 0.004
+  (`data/digitized/cryst_review_fig6_barriers.csv`, `scripts/cryst_digitize_fig6.py`). The
+  FE values are systematically 0.002 to 0.008 lower.
+- This agreement requires the cap to be evaluated with the melting-point interface energy.
+  Neither paper states which $\gamma$ the normalization uses. With the model's own
+  $\gamma(T) = \gamma\,T/T_m$ the ratio is higher by $(T_m/T)^2$ (crosses in the figure:
+  Model I 0.92 instead of 0.83 at 90 K) and does not match the published line. Recorded as
+  `derived`.
+- Model I keeps the prescribed contact angle within 1.2 degrees; the angle of Model II is
+  not constant (the papers say it falls toward complete wetting at the critical undercooling).
+- Cost: 25 runs, 184 s in total on 2 threads; 3 to 8 volume iterations and 14 to 32 constrained
+  Newton iterations per nucleus.
+- Not obtained: Model I at 100 K (the constrained solve at the classical cap's amount does not
+  converge) and Model II at 90 K, 2 K below the critical undercooling, where the nucleus and
+  the bare layer nearly coincide and the search cannot separate the two zeros of $\lambda$.
+- Network routes: not run. `pf_pinn_stationary` imposes Dirichlet values only; the Model I
+  wall is a nonlinear flux condition, and for Model II the trivial state to be deflated is
+  the non-uniform wall layer. Both are extensions of the executioner, not done here.
+
+### 4.2 B2: noise-induced nucleation and transformation kinetics
+
+Model. The Allen-Cahn equation with a Langevin term (review Eq. 16),
+
+$$
+\dot\phi = M_\phi\{\epsilon^2\nabla^2\phi - w g'(\phi) - p'(\phi)\Delta f\} + \zeta, \qquad
+\langle\zeta(\mathbf r,t)\,\zeta(\mathbf r',t')\rangle = 2kTM_\phi\,\delta(\mathbf r-\mathbf r')\,\delta(t-t') .
+$$
+
+The noise produces crystal-like fluctuations in the undercooled liquid; those beyond the
+critical size grow at the front velocity and impinge. For constant nucleation and growth
+rates in $d$ dimensions the transformed fraction follows the Johnson-Mehl-Avrami-Kolmogorov
+law (review Eq. 6),
+
+$$
+X(t) = 1 - \exp\{-[(t - t_0)/\tau]^p\}, \qquad p = 1 + d = 3 \ \text{in two dimensions} ,
+$$
+
+and the review reports $p = 2.9$ to $3.0$ for phase-field runs of this kind (its section
+3.1.1.3 and Fig. 10); the orientation-field run of (granasy 2005 spherulites) gives
+$3.04 \pm 0.02$.
+
+Deck `decks/crystallization/noise/b2_jmak_2d_fem.i`: a generic single-field case in scaled
+units ($\epsilon^2 = 0.5$, $w = 1$, $M_\phi = 1$; all parameters `assumed`, no material),
+$\Delta f/w = -0.20$, $160 \times 160\,\delta$ on $320 \times 320$ elements (103,041 nodes),
+no-flux boundaries, backward Euler with $\Delta t = 0.1$, 350 steps. Two properties of the
+noise term had to be added to PINNACLE (ADR 0038):
+
+- strength: the draw at a quadrature point of volume $w_q$ over a step $\Delta t$ has the
+  variance $A^2/(w_q\Delta t)$ with $A^2 = 2kTM_\phi = 0.0064$ (`scaling = white`), so the
+  discrete noise represents the correlator above on any mesh and step;
+- where it acts: in the liquid only, amplitude $\propto 1 - p(\phi)$ (`state_factor`), the
+  form $\zeta = \zeta_s + (\zeta_l - \zeta_s)\,p$ of the guide papers with $\zeta_s = 0$. This
+  is required, not cosmetic: with the standard $p$ the free energy is unbounded below for
+  $\phi > 1$ under a driving force, and a noise acting inside the crystal kicked the field
+  past the barrier above 1 in every trial run ($\phi$ reached 16 before Newton failed).
+
+![B2 snapshots](../../figures/crystallization/b2_jmak_snapshots.png)
+
+![B2 kinetics](../../figures/crystallization/b2_jmak_kinetics.png)
+
+*Left: transformed fraction (area with $\phi > 0.5$) and the fitted law. Middle: Avrami plot.
+Right: number of separate crystal regions; it rises with nucleation and falls with
+impingement.*
+
+| quantity | value |
+|---|---|
+| fit window | $0.01 < X < 0.95$, 24 snapshots |
+| Avrami exponent $p$ | $2.89 \pm 0.05$ (standard error of the fit) |
+| $t_0$, $\tau$ | $6.85 \pm 0.13$, $8.93 \pm 0.13$ |
+| rms residual of the fit | 0.003 in $X$ |
+| largest number of separate crystals | 95 |
+| reference values of the run | front velocity 0.821 $\delta$ per time unit (travelling wave); 2-D nucleus $W^* = 0.0251\,w\delta^2 = 7.8\,kT$ (shooting solution) |
+
+- The exponent is 2.2 standard errors below the theoretical 3 and inside the 2.9 to 3.0
+  range the review quotes (tier 3, statistical). It is one realization: the spread over
+  seeds is not measured, so the standard error of the fit understates the uncertainty.
+- The first two points of the Avrami plot lie above the line: before $t_0$ the area with
+  $\phi > 0.5$ already counts subcritical fluctuations.
+- Wall time 30 min on 6 threads (the direct sparse solve of 103,041 unknowns at every Newton
+  iteration; 3 to 4 iterations per step, no cutback).
+- Animation: `figures/crystallization/b2_jmak.gif` (71 frames).
+
+Why the noise-driven cases have no PINN route. A physics-informed network represents the
+solution as a deterministic function $\phi_\theta(\mathbf x, t)$ and is trained to make the
+residual of the equation vanish at collocation points. In a Langevin equation the forcing
+$\zeta$ is not a function but a realization of a random field with no correlation in space
+or time:
+
+1. there is nothing smooth to fit: on a grid the forcing has variance $A^2/(w_q\Delta t)$,
+   which grows without bound under refinement, and the pattern (where and when each
+   nucleus appears) is set by those individual draws. A network of $(\mathbf x, t)$ has no
+   input that carries them; to reproduce one realization it would have to store the
+   $10^5 \times 350$ independent numbers of this run in its weights;
+2. the residual cannot be evaluated pointwise: $\zeta$ exists only as increments over cells
+   and steps (the equation is meaningful in its integrated, Ito form), while a strong-form
+   loss differentiates $\phi_\theta$ at points;
+3. without the noise the problem has the trivial solution $\phi \equiv 0$: the metastable
+   liquid never nucleates, so dropping the term removes the phenomenon.
+
+What a network can do for such a model is a different task from solving this equation:
+learn statistics of the ensemble (for example $X(t)$ as a function of the parameters, the
+surrogate route of the earlier parts), or solve the deterministic pieces around the noise
+(the critical nucleus of section 3.1, the growth of one seed). PINNACLE refuses
+`langevin_noise` on the PINN path for the first two reasons. The cases of
+(granasy 2005 spherulites) are all noise driven (growth-front nucleation) and are therefore
+FE-only in stage C.
+
+## 5. Limits
+
+- Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
+  need `pf_pinn`, which does not yet carry the spherical term (A5), and a per-step predictor
+  for the hybrid; not run. B1 needs a flux boundary condition and a non-uniform deflation
+  state in `pf_pinn_stationary`; not run. B2 has no PINN route (section 4.2).
+- A4 was run on the FE route only.
+- B1: two end points not obtained (Model I at 100 K, Model II at 90 K). The agreement with
+  the published curves rests on two inferences recorded as `derived`: the cap normalized with
+  $\gamma(T_m)$, and for A3 the proportional temperature scaling of $\epsilon^2$ and $w$.
+- B2 is one realization on one mesh and one step; no seed, mesh or step study.
+- Neural results are over 5 seeds at $\Delta T/T_f = 0.20$ and one seed elsewhere. The cost
+  of the development runs behind `pf_pinn_stationary` and `pf_fem_saddle` (about 40
+  exploratory runs of 1 to 90 s) is not in the wall times of the tables.
+- Hardware of every number: Intel Core i9-9980HK, 2 to 6 threads, float64, numpy backend for
+  FE and torch 2.13.0 (CPU) for the network routes; no GPU on this machine.

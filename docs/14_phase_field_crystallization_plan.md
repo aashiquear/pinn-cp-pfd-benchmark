@@ -118,3 +118,9 @@ stored sparse; their build is still dense). Open in stage A, awaiting the author
 routes over the undercooling family, the guess scan of the three routes, and the network
 routes of the transient cases A2 and A5 (spherical term in `pf_pinn`, per-step predictor).
 
+Update (afternoon): stage B done on the FE route (B1 Models I and II against the digitized
+Fig. 6; B2 kinetics). Gaps closed in PINNACLE `cd2d3d3` (ADR 0038): G5 for `time_derivative`
+and `ac_interface` (sparse build), G7 (`flux_form = young`, `wall_free_energy`), G8 (`scaling =
+white`, `state_factor`); a new one found and closed: plain Newton cannot find wall saddles
+(`pf_fem_saddle`). Stage A network family and guess scan done. Next: stage C (G9-G11).
+

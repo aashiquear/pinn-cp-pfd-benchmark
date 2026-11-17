@@ -1,8 +1,9 @@
-# Reproducing Part IV (phase-field crystallization), stage A
+# Reproducing Part IV (phase-field crystallization), stages A and B
 
-PINNACLE `ddaeb91` or later on `feat/pinn_benchmark` (ADR 0037). Python 3.11 with numpy,
+PINNACLE `cd2d3d3` or later on `feat/pinn_benchmark` (ADR 0037, ADR 0038). Python 3.11 with numpy,
 scipy and torch for PINNACLE; matplotlib and Pillow for the figures. All commands from the
-repository root. Nothing here needs a GPU; the whole stage takes about 5 minutes on 4 threads.
+repository root. Nothing here needs a GPU. Stage A takes about 10 minutes on 4 threads with
+the guess scan, stage B about 35 minutes (30 of them the noise run).
 
 ## 1. A single case
 
@@ -60,3 +61,38 @@ Outputs: `results/crystallization/single_field/nucleus_fem_table.csv`, `front_fe
   profile; at 0.200 the classical droplet also works).
 - The digitized curve `data/digitized/cryst_review_fig3c_standard_pf.csv` is shipped; the
   raster it was read from is not.
+
+## 4. Stage B
+
+| case | decks | expected |
+|---|---|---|
+| B1 wall nucleus, Model I | `decks/crystallization/walls/b1_wall_model1_dT<010 ... 090>_fem.i` | W = 2 (free_energy + wall_energy); W / W_cap in the report's table |
+| B1 wall nucleus, Model II | `b1_wall_model2_dT<010 ... 080>_{nucleus,layer}_fem.i` | W = 2 (F_nucleus - F_layer) |
+| B2 noise and kinetics | `decks/crystallization/noise/b2_jmak_2d_fem.i` | Avrami exponent close to 3 (2.89 +/- 0.05 for the deck's seed) |
+
+```
+# stage A additions
+python3 scripts/cryst_nucleus_collect.py pinn
+python3 scripts/cryst_nucleus_collect.py hybrid
+python3 scripts/cryst_guess_scan.py              # 27 runs, about 4 minutes
+
+# B1: decks other than the hand-written Model I 40 K base (already in the repository)
+python3 scripts/cryst_wall_decks.py
+for d in decks/crystallization/walls/*.i; do
+  OMP_NUM_THREADS=2 python3.11 -m pinnacle run $d
+done
+pdfimages -png -f 11 -l 11 data/literature/crystallization_review.pdf results/crystallization/digitize/p11
+python3 scripts/cryst_digitize_fig6.py           # needs the review PDF (not shipped)
+python3 scripts/cryst_wall_collect.py            # results/crystallization/walls/wall_table.csv
+python3 scripts/cryst_wall_figures.py
+
+# B2
+OMP_NUM_THREADS=6 python3.11 -m pinnacle run decks/crystallization/noise/b2_jmak_2d_fem.i
+python3 scripts/cryst_noise_figures.py           # kinetics csv, fit json, figures, GIF
+```
+
+Notes for stage B: the wall decks use `pf_fem_saddle` and start from the classical circular
+cap; the Model II nucleus decks name a window function as `constraint_weight` (the wall layer
+would otherwise be counted). The noise run writes 71 field files of 103,041 nodes (about
+400 MB under `results/`).
+
