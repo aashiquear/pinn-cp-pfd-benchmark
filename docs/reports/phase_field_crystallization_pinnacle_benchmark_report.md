@@ -429,15 +429,20 @@ impingement.*
 | quantity | value |
 |---|---|
 | fit window | $0.01 < X < 0.95$, 24 snapshots |
-| Avrami exponent $p$ | $2.89 \pm 0.05$ (standard error of the fit) |
+| Avrami exponent $p$ (the deck's seed) | $2.89 \pm 0.05$ (standard error of the fit); five seeds: $3.14 \pm 0.29$ |
 | $t_0$, $\tau$ | $6.85 \pm 0.13$, $8.93 \pm 0.13$ |
 | rms residual of the fit | 0.003 in $X$ |
 | largest number of separate crystals | 95 |
 | reference values of the run | front velocity 0.821 $\delta$ per time unit (travelling wave); 2-D nucleus $W^* = 0.0251\,w\delta^2 = 7.8\,kT$ (shooting solution) |
 
-- The exponent is 2.2 standard errors below the theoretical 3 and inside the 2.9 to 3.0
-  range the review quotes (tier 3, statistical). It is one realization: the spread over
-  seeds is not measured, so the standard error of the fit understates the uncertainty.
+- Five realizations (the deck and `b2_jmak_2d_seed{1..4}_fem.i`, noise seeds 20261117 to
+  20261121): $p$ = 2.89, 3.09, 3.65, 3.03, 3.06; mean 3.14, standard deviation 0.29, extremes
+  2.89 and 3.65; 84 to 95 crystals each. The fitted $p$ and $t_0$ are strongly correlated
+  (the 3.65 run has the smallest $t_0$, 5.14); with one common $t_0 = 6.3$ for the five runs
+  the exponents are 3.10, 3.04, 3.19, 3.06, 3.35: mean 3.15, standard deviation 0.13. Both
+  are consistent with the theoretical $p = 3$ and with the 2.9 to 3.0 the review quotes
+  (tier 3, statistical). The standard error of a single fit (0.03 to 0.08) understates the
+  spread between realizations. Table: `results/crystallization/noise/b2_seed_table.csv`.
 - The first two points of the Avrami plot lie above the line: before $t_0$ the area with
   $\phi > 0.5$ already counts subcritical fluctuations.
 - Wall time 30 min on 6 threads (the direct sparse solve of 103,041 unknowns at every Newton
@@ -587,7 +592,7 @@ four-fold $s_0 = 0.1$, $S = 0.8$, (d) isotropic $S = 1.0$, (e) four-fold $S = 1.
 - B1: two end points not obtained (Model I at 100 K, Model II at 90 K). The agreement with
   the published curves rests on two inferences recorded as `derived`: the cap normalized with
   $\gamma(T_m)$, and for A3 the proportional temperature scaling of $\epsilon^2$ and $w$.
-- B2 is one realization on one mesh and one step; no seed, mesh or step study.
+- B2: five realizations on one mesh and one step; no mesh or step study.
 - C2: the seed, the run length and the meaning of the noise amplitude are assumptions; each
   case is one realization; panel (a) differs from the published one in the scale of the
   cells. The orientation field (C3 to C6) and the phase-field crystal (D) are not started.
