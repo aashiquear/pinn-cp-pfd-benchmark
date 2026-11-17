@@ -21,7 +21,7 @@
 # UNITS. micrometer, megapascal, second (the MOOSE deck's unit system).
 
 [Global]
-  backend    = numpy
+  backend    = @BACKEND@   # numpy (runs before 2026-11-16) | torch (consistent tangent of the implicit update)
   use_gpu    = false
   precision  = float64
   seed       = 0
@@ -85,6 +85,8 @@
     material      = cp
     dim           = 3
     finite_strain = true
+    kinematics    = @KINEMATICS@    # legacy (runs before 2026-11-16) | total_lagrangian (PINNACLE ADR 0035)
+    state_update  = @STATEUPDATE@   # explicit (runs before 2026-11-16) | implicit (PINNACLE ADR 0033)
     gnd           = false
   []
 []
@@ -148,6 +150,9 @@
   # Per-step field snapshots (0 = final state only); N writes
   # fields_step{NNNN}.vtk + fields.pvd every N accepted steps.
   snapshots_every  = @SNAPSHOTS@
+  # reaction on the pulled face per step: force over the original section is the
+  # engineering stress of a total-Lagrangian run
+  reaction_node_set = xmax
   # newton (default) corrects every step; none accepts a [Utilities]
   # predictor's proposal as the solution (PINN as solver, ADR 0028).
   corrector        = @CORRECTOR@

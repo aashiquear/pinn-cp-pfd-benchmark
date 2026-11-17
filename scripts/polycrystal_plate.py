@@ -289,6 +289,9 @@ def stage_deck(cfg: dict, deck: Path, out: Path) -> Path:
            "CORRECTOR": str(mech.get("corrector", "newton")),
            "CORRECTORTOL": f"{float(mech.get('corrector_tol', 0.05)):.12g}",
            "REJECTRATIO": f"{float(mech.get('predictor_reject_ratio', 10.0)):.12g}",
+           "KINEMATICS": str(mech.get("kinematics", "legacy")),
+           "BACKEND": str(mech.get("backend", "numpy")),
+           "STATEUPDATE": str(mech.get("state_update", "explicit")),
            "UTILITIES": _utilities_block(cfg)}
     for key, ph in MECH_KEYS.items():
         if key not in mech:
@@ -319,6 +322,10 @@ def stage_curve(cfg: dict, deck: Path, out: Path) -> dict:
     strain_max = float(mech["strain"])
     axis = str(mech.get("load_axis", "y")).lower()
     comp = {"x": "00", "y": "11"}[axis]
+    tl = str(mech.get("kinematics", "legacy")) == "total_lagrangian"
+    reac = {"x": "reaction_x", "y": "reaction_y"}[axis]
+    # original section normal to the load: plate 100 x 50 x thickness (um)
+    section = {"x": 50.0, "y": 100.0}[axis] * float(mech["thickness"])
     recs = []
     for r in rows:
         conv = str(r.get("converged", "1")).strip().lower()
@@ -339,10 +346,14 @@ def stage_curve(cfg: dict, deck: Path, out: Path) -> dict:
         area_ratio = 1.0
         for c in trans:
             area_ratio *= 1.0 + float(r.get(f"mean_strain_{c}", 0.0) or 0.0)
+        eng = float(r[f"mean_stress_{comp}"]) * area_ratio
+        if tl and r.get(reac) not in (None, ""):
+            # total-Lagrangian balance: the reaction is the force, so force / A0 is exact
+            eng = abs(float(r[reac])) / section
         rec = {"step": int(float(r["step"])), "load_factor": lam,
                "nominal_strain": lam * strain_max, "load_axis": axis,
                "axial_stress": float(r[f"mean_stress_{comp}"]),
-               "eng_stress": float(r[f"mean_stress_{comp}"]) * area_ratio,
+               "eng_stress": eng,
                "cutbacks": int(float(r.get("cutbacks", 0) or 0))}
         for k, v in r.items():
             if k.startswith("mean_stress") or k.startswith("mean_strain") or k == "time":

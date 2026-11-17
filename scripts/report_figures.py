@@ -370,8 +370,14 @@ def main(argv):
     cfg = read_deck(deck)
     out = _resolve(cfg["figures"]["out_dir"], deck)
     out.mkdir(parents=True, exist_ok=True)
+    # A stage whose block is not in the deck yet is skipped, so the figures can be
+    # drawn stage by stage as the pipeline advances.
+    needs = {fig_mesh: "mesh", fig_sensitivity_study: "sensitivity", fig_instances: "instances"}
     for fn in (fig_final, fig_oat, fig_error, fig_sensitivity, fig_grains, fig_mesh,
                fig_sensitivity_study, fig_instances):
+        if fn in needs and needs[fn] not in cfg:
+            print("skipped", fn.__name__, "(no block", needs[fn] + ")")
+            continue
         fn(cfg, deck, out)
     print("wrote", sorted(p.name for p in out.glob("*.png")))
     return 0

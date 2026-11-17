@@ -1,8 +1,9 @@
 # Workflow: phase-field polycrystal plate to a CPFE run
 
 How a pseudo-3D polycrystal plate is built and run in this study. The
-companion documents are `reproduce_polycrystal_plate.md` (the exact commands
-and inputs) and `06_polycrystal_plate_results.md` (what came out). This one
+companion documents are `reproduce_al2219_plate.md` (the exact commands
+and inputs) and the report `reports/cp_pfd_pinnacle_benchmark_report.md`
+(what came out). This one
 explains the *why* of each stage and what each stage owes the next.
 
 ## Reference geometry
@@ -87,13 +88,28 @@ writes a growth deck identical to the pilot's except for a new uniform
 Voronoi seeding drawn with `default_rng(S)`; the coordinates are written into
 the new deck, so the instance is reproducible from the deck alone. A pipeline
 deck then points `[Growth] run_dir` at that run and `[Orientations] seed` at a
-new draw (`decks/cp_study/grain_s{A,B}.i`).
+new draw (`decks/cp_study/bunge/grain_s{B,C}.i`).
 
 `pinnacle run cpfe.i`. The `cp_quasi_static` executioner records, per
 accepted load step, the ramp time and the quadrature-point mean stress and
 strain tensors (PINNACLE commit 14dd45c), so `solver_history.csv` is the
 stress-strain curve. `polycrystal_plate.py ... curve` turns it into
 `results.csv` with the nominal strain from the prescribed displacement.
+
+## Framework keys of the 2026-11-16 recheck
+
+The pipeline deck's `[Mechanics]` block takes three optional keys, copied into
+the generated deck: `kinematics = total_lagrangian` (PINNACLE ADR 0035; the
+default `legacy` is the balance of the first study), `state_update = implicit`
+(ADR 0033; default `explicit`) and `backend = torch` (the consistent tangent of
+the implicit update exists on torch only). With the total-Lagrangian balance
+the curve stage takes the engineering stress from the reaction on the pulled
+face over the original section. Euler angles are read in Bunge's order
+(ADR 0036). Every deck under `decks/cp_study/bunge/` sets the three keys.
+
+The geometry of this document's first section is the y-loaded reference plate
+of the first runs; the study plate is x-loaded to 20% strain at 1e-3 /s
+(`decks/polycrystal_plate/cpfe_plate_x_template.i`, report §2.6).
 
 ## What is deliberately not done here
 

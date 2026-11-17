@@ -156,7 +156,11 @@ def main(argv):
             axes[-1].set_xticks([0, 50, 100]); axes[-1].set_yticks([0, 25, 50]); fig.colorbar(pc, ax=axes[-1], shrink=0.9, pad=0.02)
         fig.tight_layout(); fig.savefig(fig_dir / f"{prefix}_fields_{eps:g}pct.png"); plt.close(fig)
     if rows_out:
-        with (fig_dir.parent.parent / "results" / "cp_study" / "hybrid" / f"{prefix}_field_errors.csv").open("w", newline="") as fh:
+        # [Compare] out_dir (optional): where the error table goes; default the first study's folder.
+        out_dir = (_resolve(str(comp["out_dir"]), deck) if comp.get("out_dir") is not None
+                   else fig_dir.parent.parent / "results" / "cp_study" / "hybrid")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        with (out_dir / f"{prefix}_field_errors.csv").open("w", newline="") as fh:
             w = csv.DictWriter(fh, fieldnames=list(rows_out[0])); w.writeheader(); w.writerows(rows_out)
         for r in rows_out:
             print({k: (round(v, 4) if isinstance(v, float) else v) for k, v in r.items()})

@@ -7,11 +7,7 @@ runs/
 out/
 .jf/
 
-# Large or binary simulation artifacts stay out of git by default. The ones the
-# report presents (field series behind its figures and animations, meshes,
-# trained networks) are force-added by `scripts/ship_results.py
-# decks/report/ship_results.i` and listed in results/SHIPPED.md (author's
-# decision 2026-10-15).
+# Large or binary simulation artifacts stay out of git.
 *.e
 *.exo
 *.g

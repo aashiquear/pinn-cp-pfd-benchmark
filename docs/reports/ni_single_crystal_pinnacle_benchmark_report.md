@@ -43,33 +43,76 @@ Newton iterations; the accepted fields are mostly the extrapolation. A
 surrogate trained on thirty synthetic specimens predicts the finite-element
 failure strain of the fifteen real specimens, none of them training data, with
 an RMS difference of 3.1%, in under one second per specimen, after 15.0 hours
-of training runs.
+of training runs. The takeaway is that one parameter set carries the
+orientation and thickness dependence of failure, and that of the network
+routes only the surrogate changes the cost of a prediction.
 
 ## 1. Introduction
 
-Rezwan and co-workers tested fifteen single-crystal nickel dog-bone specimens,
-five crystal orientations with three thickness profiles each, and predicted
-their strain to failure with crystal plasticity coupled to a phase-field
-fracture model, one parameter set for all (rezwan 2026 predicting). The data
-set is small, well documented and discriminating: the orientation changes the
-failure strain from 0.38 to 0.63, and the thickness profile moves the fracture
-along the gage. It is used here as the single-crystal benchmark of PINNACLE.
+Single crystals are the cleanest test of a crystal-plasticity fracture
+model. There are no grain boundaries and no texture to average over, so
+the orientation of the one crystal sets the active slip systems, the
+hardening, the place where strain localizes and the strain at which the
+specimen fails. Nickel single crystals matter in their own right as the
+base of turbine-blade alloys, and a model that cannot predict the
+orientation dependence of failure in a single crystal has no claim on a
+polycrystal. Rezwan and co-workers tested fifteen single-crystal nickel
+dog-bone specimens, five crystal orientations with three thickness
+profiles each, and predicted their strain to failure with crystal
+plasticity coupled to a phase-field fracture model, one parameter set for
+all (rezwan 2026 predicting). The data set is small, well documented and
+discriminating: the orientation changes the failure strain from 0.38 to
+0.63, and the thickness profile moves the fracture along the gage. It is
+used here as the single-crystal benchmark of PINNACLE.
 
-The report has two aims. The first is a finite-element reference made with
-PINNACLE alone: the same constitutive and fracture model, fitted with as few
-free quantities as the paper uses, and compared with the paper's experiments
-only. The paper's own simulation results are not used as targets. The second is
-a measurement of what neural networks add on this problem, on three routes that
-PINNACLE offers: a network that proposes the start of each Newton solve
-(PINN+FEM), the same network with its proposal accepted when the residual is
-small enough (PINN), and a surrogate that maps orientation and thickness
-directly to the stress-strain curve and the failure descriptors.
+**Previous work.** The localization of deformation in ductile single
+crystals was analyzed with finite-strain crystal plasticity in (asaro 1979
+geometrical) and (peirce 1982 localized), and the dislocation-density
+hardening used here rests on (kocks 2003 hardening). Phase-field fracture
+was coupled with single-crystal plasticity in (delorenzis 2016 crystal)
+and (hernandezpadilla 2017 crystal), extended to anisotropic cleavage in
+(shanthraj 2017 cleavage), and applied to the competition of pore shape
+and orientation around a void in (diehl 2017 void). Direct comparison of
+crystal-plasticity simulations with experiments on specimens of known
+orientation is the subject of (lim 2025 quantitative). On the network
+side, physics-informed networks (raissi 2019 involving) have been
+constrained to the crystal-plasticity response of FCC metals (zhou 2024
+constrained), joined to a crystal-plasticity finite-element code
+(keshavarz 2025 advancing) and trained without labeled data on the
+hardening of Ni-based single-crystal alloys (weng 2025 unsupervised), and
+networks trained on simulation data predict localized deformation
+(ibragimova 2022 convolutional).
 
-§2 states the model and §3 the numerical method. §4 fixes the crystal
-plasticity on specimen L.1, §5 checks the mesh, and §6 fits the one fracture
-energy. §7 gives the fifteen specimens on the finite-element route and reads
-the remaining errors. §8 gives the three network routes and
-compares them in accuracy and time. Every run comes from a deck under
+**Research gap.** These works establish the coupled model and several
+network forms, each on its own problem. Two things are missing. The
+coupled model has not been reproduced on the fifteen specimens by an
+independent code that uses the experiments alone as targets, which is the
+test of whether the published agreement belongs to the model or to its
+implementation. And the network routes have not been measured against the
+finite-element solution of the same fracture problem, in the same code,
+for accuracy and time, on specimens that the fit never saw.
+
+**Hypotheses.** Two hypotheses are tested.
+
+1. One parameter set, with three crystal-plasticity values fitted to the
+   curve of specimen L and one fracture energy fitted to the failure
+   strain of specimen L.1, predicts the failure strain of all fifteen
+   specimens across orientation and thickness profile.
+2. Networks lower the cost of that prediction, as a proposal for each
+   Newton solve (PINN+FEM), as an accepted proposal without a Newton
+   solve (PINN), or as a surrogate that maps orientation and thickness
+   directly to the stress-strain curve and the failure descriptors.
+
+The results support the first within an RMSE of 0.039 in failure strain,
+with the errors concentrated in four specimens (§7). They reject the
+second for the two solver routes and support it for the surrogate (§8).
+The paper's own simulation results are not used as targets anywhere.
+
+**Outline.** §2 states the model and §3 the numerical method. §4 fixes the
+crystal plasticity on specimen L.1, §5 checks the mesh, and §6 fits the
+one fracture energy. §7 gives the fifteen specimens on the finite-element
+route and reads the remaining errors. §8 gives the three network routes
+and compares them in accuracy and time. Every run comes from a deck under
 `decks/ni/` and has a row in `docs/run_ledger.md`.
 
 ## 2. Crystal-plasticity finite-element methodology
@@ -186,7 +229,7 @@ its provenance tag (PROJECT_GUIDELINES §4) and its role in the study. Units
 are millimeter, megapascal and second throughout, the paper's system, so
 Table 3 of (rezwan 2026 predicting) enters the decks unchanged. PINNACLE's
 law has no built-in length unit: the same specimen run in micrometers and in
-millimeters gives the same stress (`docs/12_ni_study.md` §1).
+millimeters gives the same stress (`archive/docs/notebooks/12_ni_study.md` §1).
 
 **Table 1.** Crystal-plasticity parameters for single-crystal Ni.
 
@@ -973,3 +1016,22 @@ its accuracy of 2 to 3% in failure strain is set by the thirty training
 specimens.
 
 Memory use was not recorded on any route.
+
+## References
+
+- (asaro 1979 geometrical) R. Asaro, "Geometrical effects in the inhomogeneous deformation of ductile single crystals", Acta Metallurgica 27 (1979) 445-453. doi:10.1016/0001-6160(79)90036-1
+- (delorenzis 2016 crystal) L. De Lorenzis, A. McBride, B. Reddy, "Phase-field modelling of fracture in single crystal plasticity", GAMM-Mitteilungen 39 (2016) 7-34. doi:10.1002/gamm.201610002
+- (diehl 2017 void) M. Diehl, M. Wicke, P. Shanthraj, F. Roters, A. Brueckner-Foit, D. Raabe, "Coupled Crystal Plasticity-Phase Field Fracture Simulation Study on Damage Evolution Around a Void: Pore Shape Versus Crystallographic Orientation", JOM 69 (2017) 872-878. doi:10.1007/s11837-017-2308-8
+- (hernandezpadilla 2017 crystal) C. Hernandez Padilla, B. Markert, "A coupled ductile fracture phase-field model for crystal plasticity", Continuum Mechanics and Thermodynamics 29 (2017) 1017-1026. doi:10.1007/s00161-015-0471-0
+- (ibragimova 2022 convolutional) O. Ibragimova, A. Brahme, W. Muhammad, D. Connolly, J. Lévesque, K. Inal, "A convolutional neural network based crystal plasticity finite element framework to predict localised deformation in metals", International Journal of Plasticity 157 (2022) 103374. doi:10.1016/j.ijplas.2022.103374
+- (keshavarz 2025 advancing) S. Keshavarz, Y. Mao, A. Reid, A. Agrawal, "Advancing material simulations: Physics-Informed Neural Networks and Object-Oriented Crystal Plasticity Finite Element Methods", International Journal of Plasticity 185 (2025) 104221. doi:10.1016/j.ijplas.2024.104221
+- (kocks 2003 hardening) U. Kocks, H. Mecking, "Physics and phenomenology of strain hardening: the FCC case", Progress in Materials Science 48 (2003) 171-273. doi:10.1016/s0079-6425(02)00003-8
+- (lim 2025 quantitative) H. Lim, K. Fitzgerald, T. Ruggles, W. Gilliland, N. Aragon, J. Carroll, "Quantitative comparison between experiments and crystal plasticity simulations using microstructural clones", International Journal of Plasticity 184 (2025) 104186. doi:10.1016/j.ijplas.2024.104186
+- (peirce 1982 localized) D. Peirce, R. Asaro, A. Needleman, "An analysis of nonuniform and localized deformation in ductile single crystals", Acta Metallurgica 30 (1982) 1087-1119. doi:10.1016/0001-6160(82)90005-0
+- (raissi 2019 involving) M. Raissi, P. Perdikaris, G. Karniadakis, "Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations", Journal of Computational Physics 378 (2019) 686-707. doi:10.1016/j.jcp.2018.10.045
+- (rezwan 2026 predicting) A. Rezwan, K. Fitzgerald, T. Ruggles, W. Gilliland, J. Carroll, H. Lim, "Predicting fracture behavior in single crystal nickel using a coupled crystal plasticity phase field damage approach", Computational Materials Science 272 (2026) 114872. doi:10.1016/j.commatsci.2026.114872
+- (shanthraj 2017 cleavage) P. Shanthraj, B. Svendsen, L. Sharma, F. Roters, D. Raabe, "Elasto-viscoplastic phase field modelling of anisotropic cleavage fracture", Journal of the Mechanics and Physics of Solids 99 (2017) 19-34. doi:10.1016/j.jmps.2016.10.012
+- (weng 2025 unsupervised) H. Weng, C. Luo, H. Yuan, "Unsupervised mechanism-informed neural network modeling of plastic hardening in rafted Ni-based single crystal alloys", International Journal of Plasticity 195 (2025) 104507. doi:10.1016/j.ijplas.2025.104507
+- (zhou 2024 constrained) G. Zhou, Y. Hu, Z. Cao, M. Lee, D. Li, "A physics-constrained neural network for crystal plasticity modelling of FCC materials", Scripta Materialia 241 (2024) 115861. doi:10.1016/j.scriptamat.2023.115861
+
+Every entry is in `bib/references.bib`.

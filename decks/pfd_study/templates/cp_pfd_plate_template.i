@@ -89,6 +89,7 @@
     material      = cp
     dim           = 3
     finite_strain = true
+    kinematics    = @KINEMATICS@   # legacy (runs before 2026-11-16) | total_lagrangian (PINNACLE ADR 0035)
     gnd           = false
     state_update  = @STATEUPDATE@   # explicit (Parts I-II) | implicit (PINNACLE ADR 0033, backward-Euler slip update)
     degradation   = degradation

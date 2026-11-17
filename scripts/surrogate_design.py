@@ -86,7 +86,8 @@ def stage_design(cfg: dict, deck: Path) -> Path:
     lines = [f"# Surrogate design of {deck.name}: {len(rows)} {d.get('sampler', 'lhs')} samples, seed {d.get('seed', 0)}.",
              "[Study]", f"  base       = {rel(base)}", "  out_root   = cases",
              *([f"  markers    = {rel(STUDY_ROOT / 'data/digitized/al2219_fig3_experiment_markers.csv')}"] if driver == "cp" else []),
-             f"  concurrent = {int(d.get('concurrent', 4))}", "[]", "[Cases]"]
+             f"  concurrent = {int(d.get('concurrent', 4))}",
+             *([f"  threads    = {int(d['threads'])}"] if d.get("threads") is not None else []), "[]", "[Cases]"]
     for i, r in enumerate(rows):
         lines.append(f"  [./s{i:04d}]")
         for name, path, v in zip(space.names, space.paths, r, strict=True):

@@ -937,3 +937,69 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - Al2219 recheck with Bunge angles: reproduce every analysis in order (downstream depends on upstream calibrations);
   mesh decision kept (h40) for the downstream cases; keep all current parts of the Al2219 report; the exchanged-angle
   report is archived. Then cleanup: non-current material to `archive/`, docs streamlined.
+
+## 2026-11-16: Al2219 check before the recheck (one case, calibrated h40 plate)
+
+- The 30 grain orientations are uniform random draws (seed 20261009), not measured. The exchange of phi1 and phi2
+  inverts each rotation, which is again a uniform random texture: the old Parts I-II are valid runs of another
+  random grain set. They are reproduced to all digits by the fixed PINNACLE with the exchanged triples
+  (`decks/cp_study/bunge/grains_seed20261009_exchanged.csv`).
+- Bunge angles alone (legacy balance, explicit update): curve within -0.9 to +0.6 % of the old one.
+- Bunge + total-Lagrangian (ADR 0035) + implicit update (ADR 0033), the Ni framework: 1 to 6 % lower
+  (586 against 603 MPa at 20 %); the calibration would move. 32 min at 2 threads (stencil tangent) against 8 min.
+- `polycrystal_plate.py` has optional `[Mechanics] kinematics` and `state_update` (defaults legacy, explicit); the
+  x template records the reaction on xmax; a total-Lagrangian curve uses reaction / A0 (equal to mean Cauchy x
+  area ratio within 0.3 %).
+- J2+PFD (Part II) has no orientations and no total-Lagrangian kernel: not affected by either change.
+- The configuration of the Al2219 recheck is the author's decision (asked 2026-11-16).
+
+## 2026-11-16: Al2219 recheck, decisions and Part I recalibration
+
+- Author's answers: every CP stage of Parts I and II is redone with the full Ni framework (Bunge angles,
+  total-Lagrangian balance, implicit update); the J2+PFD stages and their report sections stay as they are;
+  mesh h40 is kept for the downstream cases; the exchanged-angle report is archived
+  (`archive/docs/al2219_report_exchanged_angles_2026-11-16.md`, figures `archive/figures/al2219_exchanged_angles/`).
+- New decks live in `bunge/` subfolders, results in `results/cp_study/bunge/`.
+- Use `backend = torch` for the implicit update: consistent tangent, about 1.1 s per step at h40 with 2 threads;
+  numpy falls back to the stencil tangent (7.7 s per step).
+- TRAP: a torch run without a thread cap opens one thread per core. Five uncapped runs took 4 h 53 min instead of
+  6 min. `cp_parameter_study.py` has `[Study] threads`; single runs need `OMP_NUM_THREADS` and `MKL_NUM_THREADS`.
+- `cp_gauss_newton.py` writes the next decks beside the study deck; `report_figures.py` skips a stage whose block
+  is not in the figure deck.
+- Recalibrated set (`decks/cp_study/bunge/cal_center2.i`, two Gauss-Newton iterations, RMSE 20.1 then 14.2 MPa,
+  next predicted 14.1): rho0 53.9306, k1 0.176771, y_c 0.00271423, tau_c0 5.38956. Seven markers from 0.57 %
+  within -0.3 to +0.9 %; the 0.14 % marker stays at -28.7 % as before.
+- Mesh recheck: h40 is +5.3 % at 17 % and +6.0 % at 20 % above h160 (was +4.2 %). Author's decision 2026-11-16:
+  h40 is kept as an exception; the report states that it passes the 5 % limit at 17 % strain. All sections that
+  depend on the parameter set are rerun on h40.
+
+## 2026-11-17: Al2219 recheck, stage results and repository cleanup
+
+- Part I at h40 with the recalibrated set (all `results/cp_study/bunge/`): sensitivity 17/17, grain instances
+  within -0.5 to +3.4 %, cold FE 765 Newton iterations (consistent tangent; the first study needed 1,506),
+  linear extrapolation 329 (-57 %), verified grain solver 240 with 137 steps without Newton and the curve within
+  4.3 MPa at 3,844 s against 344 s. Surrogate break-even 23 cold FE runs (was 14: the FE run got cheaper).
+- Part II CP+PFD (`results/pfd_study/cp/bunge/`): Gc 1122.66 / 1973.55 / 2990.70 at l0 5 / 10 / 20; base fracture
+  17.11 %, peak 547.7 MPa at 15.5 %. The perforated curve is 2 to 7 % BELOW the plain-specimen markers (hole
+  about 2 %, the threshold-free AT2 damage the rest: mean d 0.39 at 15 %). The first study's match (peak 596)
+  rested on the legacy balance. Not refitted: the fracture model inherits the Part I set (pipeline order).
+- In the staggered loop the verified solver no longer pays: 2,034 s against 1,366 s FE (first study 25 % faster).
+- TRAP: `decks/benchmark/bunge/hardware_h40.i` first ran its three neural cases on numpy (copied from the first
+  study): 1,551 s for 16 steps. Neural cases must use `backend = torch` with the implicit update.
+- TRAP: `field_compare.py` wrote its error table to `results/cp_study/hybrid/` whatever the deck; it now takes
+  `[Compare] out_dir`. `pfd_fields.py` writes `results/pfd_study/<prefix>_fields.csv` (same name as the first study).
+- Cleanup: first-study decks in `archive/decks/al2219_exchanged_angles/` (relative paths inside refer to the old
+  places), notebooks 00, 06-12 in `archive/docs/notebooks/`, `ship_results.py` and two Ni diagnostics in
+  `archive/scripts/`. `docs/PROJECT_GUIDELINES.md` was a copy of the root file with one more section (damage
+  evidence); the section is merged into the root file and the copy removed. Current reproduction document:
+  `docs/reproduce_al2219_plate.md`. `decks/cp_study/taylor_screen.i` stays in place.
+- Part II hardware (`results/pfd_study/cp/bunge/hardware/`): torch CPU 3.21 s per coupled step at 8 threads, numpy
+  19.46 s, GPU 4.63 s. Linear extrapolation: 37 first-alternation iterations against 54 and NO time saved (3.24 s
+  per step; full path 1,399 against 1,366 s). The log time stamps show an alternation takes 1.5 to 2 s whether it
+  needs two or four Newton iterations; the fixed cost was not profiled. Grain solver 8.5 s per step.
+- TRAP: `newton_time_s` in the staggered `solver_history.csv` is the LAST alternation's solve only (same value for
+  FE and linear). `hardware_benchmark.py` reports `newton_iterations` and `newton_s_per_iteration` from that
+  alternation; first / all counts are `first_mech_iterations` / `mech_iterations_total`. The first report's "Newton
+  is 17 % of a coupled step" was that partial time. Report Table 25 column renamed accordingly.
+- Part II surrogate (`results/pfd_study/cp/bunge/surrogate/`): 17 of 24 samples initiate; held-out curve 5.9 % mean
+  (16.6 % on sample 1, low Gc and high l0), field 11.1 % mean (first study 5.8 %); break-even 14 FE runs.

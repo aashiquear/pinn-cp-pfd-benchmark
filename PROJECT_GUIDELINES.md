@@ -87,6 +87,29 @@ restriction, so both targets are now in scope.* Prefer PyTorch on the GPU at
 `float64`, falling back to CPU only when the GPU is unavailable — with one
 measured exception recorded below.
 
+### Evidence required for every phase-field damage run
+
+Any simulation with phase-field damage must ship **visual evidence of damage
+initiation and propagation**, not only end-state scalars:
+
+1. an **image** of the damage field, at minimum at initiation and at the final
+   state; and
+2. an **animation** over the load path.
+
+If an animation cannot be produced, that is not a waiver: emit a **damage
+history CSV** — one row per load step with the step index, load factor, and the
+nodal or elemental damage values (plus the node/element coordinates or an
+identifier that resolves to them) — so another agent can build the animation
+without re-running the simulation. State in the run record which of the two was
+produced and, if the CSV, why the animation was not.
+
+The reason is that a converged scalar cannot distinguish void-initiated
+localized fracture from diffuse damage across the whole domain, and the two have
+been confused in this study already: a run reporting a plausible peak damage
+turned out to have its damage maximum at a far corner, 32.9 um from the void
+surface, with 74.8% of nodes past the initiation threshold. A single image would
+have shown that immediately.
+
 Independent runs (mesh refinement levels, orientations, parameter samples)
 should be dispatched as **separate concurrent containers**, one per case, so
 the wall time of a family is the cost of its largest member rather than the

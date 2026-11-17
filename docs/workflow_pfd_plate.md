@@ -1,8 +1,8 @@
 # Workflow: perforated polycrystal plate for the PFD and CP-PFD stages
 
 How a plate with a stress concentrator is meshed and handed to PINNACLE in
-Part II of the benchmark. Companion documents: `09_pfd_benchmark_plan.md`
-(the plan and the reasoning), `workflow_polycrystal_plate.md` (Part I:
+Part II of the benchmark. Companion documents: `reproduce_al2219_plate.md`
+(the commands), `workflow_polycrystal_plate.md` (Part I:
 grain growth, labelling, orientations, which are reused unchanged).
 
 ## Stage 1 -- mesh (hexaform `plate`)
@@ -52,8 +52,11 @@ mesh, so every mesh level and every hole shape sees the same grains.
 executioner over the mechanics sub-solve (`fem_quasi_static` for J2,
 `cp_quasi_static` for CP) and `pfd_steady` for the damage; damage
 Dirichlet d = 0 on `x-` and `x+` only (the loaded faces); the engineering
-stress is the reaction on `x+` over the gross section. The deck template
-and its pipeline script are written with the first J2+PFD case.
+stress is the reaction on `x+` over the gross section. The templates are
+under `decks/pfd_study/templates/` and the pipeline script is
+`scripts/pfd_plate.py`; the CP+PFD decks of the 2026-11-16 recheck
+(`decks/pfd_study/cp/bunge/`) set `kinematics = total_lagrangian` and
+`state_update = implicit` in `[Plate]`.
 
 ## Surrogate comparison (Part II)
 
@@ -62,8 +65,8 @@ After the surrogate decks have run on the host, pull `h40_curve/`, `h40_field/`
 then from the study root:
 
 ```
-python3 scripts/surrogate_compare.py decks/pfd_study/cp/surrogate/compare_h40.i
+python3 scripts/surrogate_compare.py decks/pfd_study/cp/bunge/surrogate/compare_h40.i
 ```
 
-It writes `results/pfd_study/cp/surrogate/cp_surrogate_h40_summary.csv` and the
+It writes `results/pfd_study/cp/bunge/surrogate/cp_surrogate_h40_summary.csv` and the
 held-out curve, held-out field-map and cost-per-query figures under `figures/pfd/`.

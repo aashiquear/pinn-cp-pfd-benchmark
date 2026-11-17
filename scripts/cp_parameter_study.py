@@ -9,7 +9,8 @@ what one parameter does to the stress-strain response:
     base      = ../cp_study/h40_base.i     # pipeline deck with the base [Mechanics]
     out_root  = ../../results/cp_study     # cases land in <out_root>/<name>
     markers   = ../../data/digitized/al2219_fig3_experiment_markers.csv
-    concurrent = 4                          # runs at a time (each is single-threaded)
+    concurrent = 4                          # runs at a time
+    threads    = 2                          # OMP/MKL threads per run (optional; unset = inherited environment)
   [Sweep]
     rho0 = '55 110 440'                     # levels; the base value is the reference case
     k1   = '0.1716 0.6864'
@@ -109,6 +110,10 @@ def stage_prepare(cfg: dict, study: Path) -> list[Path]:
 def stage_run(cfg: dict, study: Path) -> None:
     out_root = _resolve(str(cfg["study"]["out_root"]), study)
     n_conc = int(cfg["study"].get("concurrent", 4))
+    env = dict(os.environ)
+    if cfg["study"].get("threads") is not None:
+        nthr = str(int(cfg["study"]["threads"]))
+        env.update(OMP_NUM_THREADS=nthr, MKL_NUM_THREADS=nthr)
     todo = []
     for name, _ in cases_of(cfg):
         d = out_root / name
@@ -122,7 +127,7 @@ def stage_run(cfg: dict, study: Path) -> None:
         while todo and len(running) < n_conc:
             d = todo.pop(0)
             log = (d / "run.log").open("w")
-            p = subprocess.Popen([PINNACLE, "run", "cpfe.i"], cwd=d, stdout=log, stderr=subprocess.STDOUT)
+            p = subprocess.Popen([PINNACLE, "run", "cpfe.i"], cwd=d, stdout=log, stderr=subprocess.STDOUT, env=env)
             running.append((d, p))
             print(time.strftime("%H:%M:%S"), "started", d.name)
         time.sleep(20)

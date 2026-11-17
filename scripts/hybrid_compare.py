@@ -120,6 +120,8 @@ def main(argv):
         rr0 = np.array([r.get("predictor_residual_ratio_initial", np.nan) for r in h])
         rr1 = np.array([r.get("predictor_residual_ratio", np.nan) for r in h])
         used = [str(r.get("corrector_used", "")) for r in h]
+        if not any(used):  # histories of PINNACLE 9548123 carry no corrector_used column: 0 iterations = no Newton
+            used = ["none" if float(r.get("iterations", 1)) == 0 else "newton" for r in h]
         pred_t = np.nan_to_num(pred_t); train_t = np.nan_to_num(train_t)
         curve_dev = np.nan
         if curves[n] is not None and curves[ref] is not None:

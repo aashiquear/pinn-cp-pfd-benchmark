@@ -1,21 +1,176 @@
 # Crystal plasticity and phase-field ductile fracture of Al2219 polycrystal plates with PINNACLE: finite-element calibration and the PINN+FEM, PINN and surrogate routes
 
-Technical report, draft of 2026-10-15. Status: Part I (crystal plasticity,
-§2-§11) complete; Part II (phase-field ductile fracture on J2 plasticity and
-coupled with crystal plasticity, §12-§20) complete after the author's revision
-round of 2026-10-14; abstract and introduction are held until the study is
-closed. Every number here traces to a run in `docs/run_ledger.md` and to a
-deck under `decks/`. Part I figures are produced by `scripts/report_figures.py`
-from `decks/report/cp_calibration_figures.i`; Part II figures by the
-deck-driven scripts named in each section, under `figures/pfd/`.
+Technical report, revision of 2026-11-17. Status: Part I (crystal plasticity,
+§2-§11) and Part II (phase-field ductile fracture on J2 plasticity and
+coupled with crystal plasticity, §12-§20) complete. Every number here traces to a run in
+`docs/run_ledger.md` (rows `al-bunge-*` for the crystal-plasticity runs) and
+to a deck under `decks/`. Part I figures are produced by
+`scripts/report_figures.py` from `decks/report/bunge/cp_calibration_figures.i`;
+Part II figures by the deck-driven scripts named in each section, under
+`figures/pfd/`.
+
+Revision of 2026-11-16/17. Every crystal-plasticity run of this report was
+repeated with the framework of the Ni single-crystal study
+(`docs/reports/ni_single_crystal_pinnacle_benchmark_report.md`): the Euler
+angles follow Bunge's convention (PINNACLE ADR 0036; the earlier reader took
+$\varphi_1$ and $\varphi_2$ in exchanged order), the balance of linear
+momentum is total Lagrangian (ADR 0035), and the constitutive update is
+implicit (ADR 0033). The four free parameters were recalibrated and every
+study that depends on them was rerun in the order of the report: §4 to §11
+and §14 to §19. The J2 sections (§12, §13) have no orientations and no
+crystal kernel and are unchanged. The thirty orientations are uniform random
+draws, so the exchanged reading was a valid run of another random grain set;
+that version of the report is kept as
+`archive/docs/al2219_report_exchanged_angles_2026-11-16.md` with its figures
+under `archive/figures/al2219_exchanged_angles/`. The mesh level h40 is kept
+for every downstream study by the author's decision, as an exception to the
+5% criterion of the first study: with the recalibrated set h40 is 5.3% above
+h160 at 17% strain and 6.0% at 20% (§5.3).
 
 ## Abstract
 
-*(to be written after all studies are complete)*
+A thirty-grain Al2219 plate, 100 x 50 x 1 um, is simulated with PINNACLE to
+20% tensile strain on four routes: finite elements (FE), a network or
+extrapolation that proposes the start of each Newton solve (PINN+FEM), a
+network whose proposal is accepted when its residual is small (PINN as
+solver), and a parametric surrogate. Part I is dislocation-density crystal
+plasticity on the plain plate. Four parameters are fitted to the tensile
+curve of (vaughan 2024 mechanistic); the fit is within 1% of the experiment
+from 0.6% to 17% strain, and mesh, parameter and grain-instance studies
+bound it. Part II adds a 5 um hole and an AT2 phase field driven by the
+plastic work, on J2 plasticity and on the crystal plasticity of Part I,
+with the fracture energy fitted to the experimental failure strain of
+17.2%, followed by length-scale, mesh, grain-instance and hole-shape
+studies.
+
+The key results are these. The FE route with a consistent tangent is the
+reference and is hard to beat: the full path takes 765 Newton iterations
+and 344 s. A linear extrapolation of the preceding steps removes 57% of the
+iterations at no cost. A network trained on the FE residual adds 1 to 2%
+to that saving and loses time. As a verified solver the grain-aware
+network skips Newton on 137 of 256 steps and stays within 4.3 MPa of the
+FE curve, at eleven times the FE cost. In the coupled fracture problem no
+predictor saves time, because the cost of a mechanics solve does not fall
+with its iteration count. The surrogates are the one route that changes
+the cost of an answer: 0.1 to 0.7 ms per query, 1 to 4% held-out error on
+the plain plate and 6 to 11% on the fracture plate, paid back after 14 to
+23 FE runs. With the crystal-plasticity set carried unchanged into Part
+II, one fracture energy meets the failure strain, and the perforated plate
+lies 2 to 7% below the plain-specimen curve. The report documents each
+route with its deck, cost and limit, so that a user can judge where each
+one is worth using.
 
 ## 1. Introduction
 
-*(to be written after all studies are complete)*
+Ductile failure of structural aluminum alloys starts in the microstructure.
+Voids grow at different rates in neighboring grains, and the local crystal
+orientation decides where strain concentrates and where a crack starts
+(vaughan 2024 mechanistic). A model that is to predict this must resolve
+the grains, carry the slip history of each material point, and let a crack
+form and grow. Crystal plasticity coupled with a phase-field description
+of fracture does all three, and (rezwan 2025 intragranular) used that
+coupling to relate intragranular fracture to orientation and voids. The
+price is computing time. A calibration, a sensitivity study or an
+uncertainty estimate needs tens to hundreds of solves of a history-dependent
+problem, which is why neural networks are proposed as predictors, solvers
+or surrogates for it. Whether they pay on such a problem, and by how much,
+is the question of this report.
+
+**Crystal plasticity.** The finite-strain single-crystal framework with
+rate-dependent slip goes back to (asaro 1979 geometrical) and (peirce 1982
+localized), and the dislocation-density hardening laws used here follow
+the physics collected in (kocks 2003 hardening). For polycrystals the
+practical questions are numerical and statistical: how fine the mesh and
+how many grains a volume element needs (lim 2019 sensitivity), and how
+unique a fitted parameter set is. Recent work treats the fit itself as an
+object of study, with derivative-free optimizers and the non-uniqueness
+they expose (ni 2026 derivative) and with Bayesian calibration on Gaussian
+process surrogates (engel 2026 gaussian).
+
+**Phase-field fracture.** The regularized variational model of brittle
+fracture and its staggered finite-element solution are given in (miehe
+2010 thermodynamically). Ductile fracture needs a coupling with
+plasticity: a degradation that depends on the plastic strain (ambati 2015
+ductile), a plastic-work contribution to the driving force with a
+threshold (borden 2016 triaxiality), or a gradient-extended
+plasticity-damage theory (miehe 2016 gradient); (alessi 2018 comparison)
+and (marengo 2023 review) compare these choices. The coupling with crystal
+plasticity was formulated for single crystals in (delorenzis 2016 crystal)
+and (hernandezpadilla 2017 crystal) and for elasto-viscoplastic
+polycrystals in (shanthraj 2016 viscoplastic). It has since been applied
+to damage around a void as a function of pore shape and orientation
+(diehl 2017 void), to crack evolution in the microstructure of 7000-series
+aluminum alloys (tu 2020 series) and to ductile cracks crossing grain
+boundaries (louisaauth 2025 boundaries).
+
+**Neural networks in solid mechanics.** Physics-informed neural networks
+train a network on the residual of the governing equations (raissi 2019
+involving); the deep energy method minimizes the potential instead
+(samaniego 2020 concepts). Both have been applied to phase-field fracture
+(goswami 2020 transfer), including a staggered scheme with one network per
+field (wang 2024 staggered), to heterogeneous microstructures (henkes 2022
+micromechanics), to finite-strain plasticity with an assessment of the
+network's performance (niu 2023 performance) and to history-dependent
+constitutive models (rezaei 2024 thermodynamics). For crystal plasticity
+there are physics-constrained networks of the constitutive response (zhou
+2024 constrained), a combination of a network with an object-oriented
+crystal-plasticity finite-element code (keshavarz 2025 advancing) and a
+dual-channel network (wang 2026 channel). A second line trains on the
+discrete finite-element residual instead of the strong form (liu 2026
+aligned; wurth 2024 meshgraphnets), and a third learns the map from
+inputs to solution from simulation data, as for localized deformation in
+crystal plasticity (ibragimova 2022 convolutional) and for phase-field
+fracture (hamdi 2026 expediting). The reviews (sanjalawe 2026 critical)
+and (thawon 2026 current) list stability, generalization and cost against
+classical solvers as the open issues of the field.
+
+**Research gap.** The works above report each method on its own problem
+and mostly on its accuracy. Three things are missing for a user who has to
+choose. First, a comparison of the network routes against a converged
+finite-element solution of the same model, in the same code, with the
+same tolerances, in wall time and on stated hardware. Second, such a
+comparison on a problem with the full difficulty: a polycrystal with
+history-dependent crystal plasticity, finite strain and a fracture field
+coupled to it. Third, the cost side of the surrogate route, namely the
+number of solver runs after which the training data are paid back. The
+study also keeps one calibration chain from the tensile curve to the
+fracture strain, so that every downstream number depends on a documented
+upstream fit.
+
+**Hypotheses.** Three hypotheses are tested on the Al2219 plate.
+
+1. A crystal-plasticity set fitted to the plain-plate tensile curve can be
+   carried unchanged into the fracture problem, where one fracture energy
+   then reproduces the measured failure strain.
+2. A network that serves the mechanics solve of a finite-element code, as
+   a predictor of the Newton start or as a verified replacement of the
+   Newton solve, lowers the cost of a run at the accuracy of the
+   finite-element result.
+3. A surrogate trained on a few tens of finite-element runs predicts
+   curves and fields at unseen parameters within a few percent and pays
+   back its data after a number of queries that is small against a
+   calibration or sensitivity study.
+
+The results support the first with a stated limit (§14.1), reject the
+second on this problem with the measured reasons (§8.3, §17, §18), and
+support the third for curves and less so for damage fields (§11, §19).
+The purpose is a demonstration: the report shows what PINNACLE does on
+each route, how each study is set up from a deck, and what each route
+costs, and it is not an optimization of the networks.
+
+**Outline.** Part I treats crystal plasticity on the plain plate. §2
+states the model and §3 the numerical method. §4 calibrates the four
+parameters, §5 studies the mesh, §6 the parameter sensitivity and §7 the
+grain instances. §8 measures the PINN+FEM and PINN-as-solver routes on the
+calibrated problem and §9 their sensitivity to the parameters; §10 is the
+hardware and time benchmark and §11 the parametric surrogate. Part II
+treats phase-field ductile fracture on the perforated plate. §12 states
+the problem and the fracture model. §13 gives the J2 coupling and §14 the
+crystal-plasticity coupling, each with calibration, parameter and mesh
+sensitivity; §15 compares how the two fail and §16 varies the shape of the
+stress concentrator. §17 to §19 repeat the neural routes, the hardware
+benchmark and the surrogate on the coupled problem, and §20 lists what the
+fracture part required of the framework.
 
 ## 2. Crystal-plasticity finite-element methodology
 
@@ -34,8 +189,10 @@ where $\mathbf{s}^\alpha$ and $\mathbf{n}^\alpha$ are the slip direction and
 slip-plane normal of system $\alpha$ in the sample frame and
 $\dot{\gamma}^\alpha$ its slip rate. The twelve $\{111\}\langle 110\rangle$
 systems of the FCC lattice are used. The crystal frame of each grain is set by
-a Bunge triple $(\varphi_1, \Phi, \varphi_2)$, which rotates both the slip
-systems and the elastic stiffness.
+a Bunge triple $(\varphi_1, \Phi, \varphi_2)$ (rotation
+$\mathbf{R}_z(\varphi_1)\, \mathbf{R}_x(\Phi)\, \mathbf{R}_z(\varphi_2)$ from
+the crystal to the sample frame), which rotates both the slip systems and the
+elastic stiffness.
 
 ### 2.2 Elasticity
 
@@ -138,10 +295,10 @@ are micrometer, megapascal and second throughout.
 | $\alpha_0$ | Taylor prefactor | 0.4 | - | reported_table | fixed |
 | $\dot{\gamma}_0$ | reference slip rate | $10^{-5}$ | s$^{-1}$ | reported_table | fixed |
 | $m$ ($n = 1/m$) | rate sensitivity | 0.12 (8.333) | - | reported_table | fixed |
-| $\rho_0$ | initial SSD density per system | 47.99 | $\mu$m$^{-2}$ | calibrated (§4) | free |
-| $k_1$ | storage coefficient | 0.1988 | - | calibrated (§4) | free |
-| $y_c$ | annihilation distance | 0.00344 | $\mu$m | calibrated (§4) | free |
-| $\tau_{c0}$ | lattice friction | 5.29 | MPa | calibrated (§4) | free |
+| $\rho_0$ | initial SSD density per system | 53.93 | $\mu$m$^{-2}$ | calibrated (§4) | free |
+| $k_1$ | storage coefficient | 0.1768 | - | calibrated (§4) | free |
+| $y_c$ | annihilation distance | 0.00271 | $\mu$m | calibrated (§4) | free |
+| $\tau_{c0}$ | lattice friction | 5.39 | MPa | calibrated (§4) | free |
 | $\dot{\varepsilon}$ | applied strain rate | $10^{-3}$ | s$^{-1}$ | assumed (not reported with the test) | fixed |
 
 The fixed set is the author's decision: elastic constants, $b$, $\mu$, $q$
@@ -150,12 +307,12 @@ reserved by the author for convergence questions only. The
 four free parameters are fit in the order $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$.
 
 Derived quantities of the calibrated set (Eqs. 5 and 7): initial slip
-resistance $\tau_c(\rho_0) = 87.8$ MPa, saturation density
-$\rho_{sat} = 836\ \mu$m$^{-2}$, saturation resistance $\tau_{c,sat} = 350$
+resistance $\tau_c(\rho_0) = 92.8$ MPa, saturation density
+$\rho_{sat} = 1{,}060\ \mu$m$^{-2}$, saturation resistance $\tau_{c,sat} = 393$
 MPa. With a Taylor factor near 3 the initial resistance corresponds to about
-260 MPa of rate-independent yield; the rate term of Eq. (4) at the applied
-rate raises it to the 364 MPa 0.2%-offset yield of §4.3. The hardening rate
-of the calibrated plate is still 0.33 GPa at 20% strain (§4.3), so the
+280 MPa of rate-independent yield; the rate term of Eq. (4) at the applied
+rate raises it to the 368 MPa 0.2%-offset yield of §4.3. The hardening rate
+of the calibrated plate is still 0.36 GPa at 20% strain (§4.3), so the
 densities are well below $\rho_{sat}$ at the end of the test, as the
 experiment's unsaturated curve requires.
 
@@ -180,7 +337,10 @@ average and in the median (range 5.2 to 23.9 $\mu$m), so a 2.5 $\mu$m element
 puts about 5.5 elements across a grain.
 
 **Orientations.** One Bunge triple per grain, drawn uniformly on SO(3) from a
-recorded seed (20261009), so the plate is untextured. The orientation reaches
+recorded seed (20261009), so the plate is untextured. The triples are read in
+Bunge's order (PINNACLE ADR 0036); the first version of this report read
+$\varphi_1$ and $\varphi_2$ exchanged, which is another untextured draw of
+thirty crystals on the same grain structure. The orientation reaches
 every quadrature point of a grain through a point file read by the deck
 (PINNACLE `[OrientationField]`, §3.5). The same structure and the same thirty
 orientations are used by every run of this report; only the four free
@@ -199,16 +359,19 @@ loading axis.
 
 **Stress and strain measures.** The reported strain is the nominal strain
 $\varepsilon = u_x(100\ \mu\text{m}) / 100\ \mu$m. The reported stress is the
-engineering axial stress, i.e. the quadrature-point mean of the Cauchy stress
-$\bar{\sigma}_{xx}$ converted to force over the original cross-section with the
-mean transverse stretches,
+engineering axial stress, i.e. the reaction force on the pulled face over
+the original cross-section,
 
 $$
-\sigma = \bar{\sigma}_{xx} \left(1 + \bar{H}_{yy}\right)\left(1 + \bar{H}_{zz}\right),
+\sigma = \frac{R_x}{A_0}, \qquad A_0 = 50\ \mu\text{m}^2 ,
 \tag{8}
 $$
 
-where $\bar{H}$ is the mean displacement gradient. Engineering stress is used
+where $R_x$ is the sum of the nodal reactions on the $x = 100\ \mu$m face.
+With the total-Lagrangian balance of §3.1 the reaction is the true force on
+the face, so Eq. (8) carries the thinning of the section; it agrees within
+0.3% with the mean Cauchy stress multiplied by the mean transverse stretches,
+the measure of the first version of this report. Engineering stress is used
 on both sides of every comparison because the experimental curve is a tensile
 test record. At 20% strain the two transverse stretches are each about 0.91,
 so the engineering stress is 16% below the mean Cauchy stress there.
@@ -223,32 +386,49 @@ targets.
 
 ## 3. Numerical method (PINNACLE)
 
-All runs use PINNACLE (branch `feat/pinn_benchmark`, revision 47a41e0),
-numpy backend, double precision, one CPU core per run. A run is fully
-described by one input deck (`cpfe.i`) plus the orientation point file; the
-deck is generated from a pipeline deck by `scripts/polycrystal_plate.py`, and
-the study decks that set the parameters are under `decks/cp_study/`.
+All crystal-plasticity runs use PINNACLE (branch `feat/pinn_benchmark`,
+revision 9548123 with the total-Lagrangian balance of ADR 0035, the implicit
+update of ADR 0033 and the Euler convention of ADR 0036), torch backend on
+the CPU, double precision, two threads per finite-element run and four per
+neural-route run on the compute host. A run is fully described by one input
+deck (`cpfe.i`) plus the orientation point file; the deck is generated from a
+pipeline deck by `scripts/polycrystal_plate.py`
+(`kinematics = total_lagrangian`, `state_update = implicit`,
+`backend = torch`), and the study decks that set the parameters are under
+`decks/cp_study/bunge/`.
 
 ### 3.1 Finite-element discretization
 
 Trilinear HEX8 elements with 2 x 2 x 2 Gauss quadrature carry the displacement
-field. The finite-strain problem is posed on the displacement gradient
-$\mathbf{H} = \nabla \mathbf{u}$ at each quadrature point, from which
-$\mathbf{F} = \mathbf{I} + \mathbf{H}$; the material returns the Cauchy stress
-of Eq. (2) and the assembler forms the residual of the balance of linear
-momentum (`stress_divergence_cp` kernel, finite-strain mode) with Dirichlet
-conditions imposed on node sets. Orientations are supplied per element and
-broadcast to its quadrature points.
+field. The balance of linear momentum is written on the reference
+configuration (total Lagrangian). At each quadrature point the displacement
+gradient $H_{iJ} = \partial u_i / \partial X_J$ gives
+$\mathbf{F} = \mathbf{I} + \mathbf{H}$, the material returns the Cauchy stress
+of Eq. (2), and the internal force is the reference-volume integral of the
+first Piola-Kirchhoff stress
+$\mathbf{P} = J\, \boldsymbol{\sigma}\, \mathbf{F}^{-T}$ against the reference
+shape-function gradients (`stress_divergence_cp` kernel,
+`kinematics = total_lagrangian`), with Dirichlet conditions imposed on node
+sets. The reaction of Eq. (8) is therefore the true force on the pulled
+face. Orientations are supplied per element and broadcast to its quadrature
+points. The first version of this report used the earlier balance of
+PINNACLE, which integrated the Cauchy stress with the reference gradients and
+weights (`kinematics = legacy`), with the explicit update; on this plate the
+present framework gives an engineering stress 1 to 6% lower for the same
+parameters, the largest difference at 20% strain, which is why the
+parameters were recalibrated (§4).
 
 ### 3.2 Load stepping
 
 The quasi-static load program (`cp_quasi_static` executioner) divides the 200
 s ramp into 256 equal steps of $\Delta t = 0.78$ s, i.e. $7.8 \times 10^{-4}$
-nominal strain per step, below the framework's $8 \times 10^{-4}$ per-step
-strain-increment limit for the explicit constitutive update. A step that
-fails to converge is halved and retried up to ten times (none was needed in
-the runs of §4 and §5: 256 of 256 steps converged with zero cutbacks on
-every case). Every run records the field series every four load steps
+nominal strain per step. The step count is that of the first version of this
+report, where it was set by the strain-increment limit of the explicit
+constitutive update; the implicit update of §3.4 has no such limit, and the
+count is kept so that the load path and the field series are the same. A
+step that fails to converge is halved and retried up to ten times (none was
+needed in the runs of §4 to §7: 256 of 256 steps converged with zero cutbacks
+on every case). Every run records the field series every four load steps
 (every 0.3125% strain): displacement, Cauchy stress, strain, equivalent
 plastic strain, slip activity and mean dislocation density per element.
 
@@ -259,31 +439,41 @@ absolute residual norm of $10^{-3}$ MPa $\mu$m$^2$ over the free degrees of
 freedom, about $3 \times 10^{-7}$ of the nodal force scale at h40, with no
 relative criterion, so that every step of every route of this study
 (FE, hybrid, PINN) is held to the same test whatever its starting point
-(at most 50 iterations; the calibrated run used 5.9 on average, 8 at most). The algorithmic tangent
-$\partial \boldsymbol{\sigma} / \partial \mathbf{H}$ is formed at every
-quadrature point by one-sided finite differences of the constitutive response
-at the frozen state (perturbation $10^{-7}$, ten batched evaluations per
-tangent) and assembled sparse. The linear systems are solved with a sparse LU
-factorization (`linear_method = direct`): the finite-strain crystal-plasticity
-tangent is non-symmetric and loses positive definiteness as slip localizes,
-so an iterative solver has to be a non-symmetric one (GMRES with ILU
+(at most 50 iterations; the calibrated run used 3 on every step but three,
+765 in all). The tangent is the exact derivative of the total-Lagrangian
+residual: the consistent material tangent
+$\partial \boldsymbol{\sigma} / \partial \mathbf{F}$ of the implicit update
+(§3.4) plus the two geometric terms from $J$ and $\mathbf{F}^{-T}$, assembled
+sparse. The linear systems are solved with a sparse LU factorization
+(`linear_method = direct`): the finite-strain crystal-plasticity tangent is
+non-symmetric and loses positive definiteness as slip localizes, so an
+iterative solver has to be a non-symmetric one (GMRES with ILU
 preconditioning is available for larger meshes); at the sizes used here the
-direct solve is cheap.
+direct solve is cheap. The consistent tangent is available on the torch
+backend; the numpy backend falls back to a finite-difference tangent that
+costs about six times more per load step (§10).
 
 ### 3.4 Constitutive integration
 
-Within a converged step the state $\{\mathbf{F}^p, \rho^\alpha\}$ at each
-quadrature point is advanced by explicit forward Euler with adaptive
-sub-stepping: the sub-increment is chosen so that the largest slip increment
-on the point obeys $\max_\alpha |\dot{\gamma}^\alpha| \, \delta t \le 10^{-3}$,
-with a budget of $10^5$ sub-steps per load step. The plastic deformation
-gradient is updated as $\mathbf{F}^p_{n+1} = (\mathbf{I} + \delta t\,
-\mathbf{L}^p)\, \mathbf{F}^p_n$ and the densities by Eq. (6), clipped at zero.
-The slip rates of Eq. (4) are evaluated at the step's converged stress with
-the state frozen (the trial stress inside Newton does not advance the state),
-which is what makes the per-step strain limit of §3.2 necessary. Every
-quadrature point that is still active is advanced in one batched call, so the
-cost is independent of the number of grains.
+The state $\{\mathbf{F}^p, \rho^\alpha\}$ at each quadrature point is
+integrated over the load step inside every residual evaluation by a
+backward-Euler update of the slip increments (`state_update = implicit`):
+for the trial deformation $\mathbf{F}_{n+1}$ the increments
+$\Delta\gamma^\alpha$ solve
+
+$$
+\Delta\gamma^\alpha = \Delta t\, \dot{\gamma}^\alpha\!\left(\tau^\alpha(\mathbf{F}_{n+1}, \Delta\boldsymbol{\gamma}),\ \tau_c^\alpha(\rho_{n+1}(\Delta\boldsymbol{\gamma}))\right), \qquad
+\mathbf{F}^p_{n+1} = \Big(\mathbf{I} + \sum_\alpha \Delta\gamma^\alpha\, \mathbf{s}^\alpha \otimes \mathbf{n}^\alpha\Big)\mathbf{F}^p_n ,
+$$
+
+with $\rho_{n+1}$ advanced by Eq. (6). A local Newton iteration per point
+solves this system to $10^{-10}$; the stress of the step is the stress of the
+integrated end state, and its consistent tangent follows from the
+implicit-function theorem. The state is committed when the load step
+converges. Every quadrature point is advanced in one batched call, so the
+cost is independent of the number of grains. The first version of this
+report used explicit forward Euler with adaptive sub-stepping at the
+converged stress of the step.
 
 ### 3.5 Orientation field
 
@@ -311,8 +501,8 @@ dropped, and diffuse-boundary nodes are assigned to the nearest labeled node.
 ### 3.7 Homogenized output
 
 The executioner records, for every accepted load step, the time and the
-quadrature-point means of the Cauchy stress and of the displacement gradient.
-Eq. (8) is applied to these means. Field output (displacement, stress, strain,
+quadrature-point means of the Cauchy stress and of the displacement gradient,
+and the reaction on the pulled face that enters Eq. (8). Field output (displacement, stress, strain,
 equivalent plastic strain, slip activity and mean density per element) is
 written at the end of the run.
 
@@ -323,8 +513,8 @@ deck records the growth run, labeling thresholds, orientation seed, mesh,
 loading and every material value. The commands are in
 `docs/reproduce_polycrystal_plate.md`; the run ledger `docs/run_ledger.md`
 gives the deck, scripts, framework revision, host, cores and wall time of
-every run cited here. A calibrated-set run at h40 takes about 14 min of one
-core (3.3 s per load step, of which the Newton solves are 838 s).
+every run cited here. A calibrated-set run at h40 takes about 6 min on two
+threads (1.3 s per load step, of which the Newton solves are 344 s).
 
 ## 4. Results: parameter calibration
 
@@ -344,36 +534,41 @@ $y_c \in [0.001, 0.006]\ \mu$m, $\tau_{c0} \in [0, 50]$ MPa.
 
 ### 4.2 Procedure
 
-1. A Taylor (isostrain) material-point aggregate of thirty random grains was
-   used as a surrogate to locate a starting point inside the bounds
-   (`scripts/taylor_surrogate.py`, deck `decks/cp_study/taylor_screen.i`).
+1. In the first version of this report a Taylor (isostrain) material-point
+   aggregate of thirty random grains located a starting point inside the
+   bounds (`scripts/taylor_surrogate.py`, deck
+   `decks/cp_study/taylor_screen.i`), and two FE iterations gave the set
+   $\rho_0 = 47.99$, $k_1 = 0.1988$, $y_c = 0.00344$, $\tau_{c0} = 5.29$. The
+   recalibration starts from that set.
 2. At the FE level, each iteration ran the center and one multiplicative
    perturbation per parameter ($\rho_0$, $k_1$, $y_c$ x 1.2; $\tau_{c0}$ x
-   1.5) as five concurrent plate runs to 20% strain (`decks/cp_study/cal_gn*.i`,
-   driver `scripts/cp_parameter_study.py`). The finite-difference Jacobian
-   $\partial \sigma_i / \partial \ln p_j$ at the marker strains gave a
-   bounded Levenberg-Marquardt step in log parameters
-   (`scripts/cp_gauss_newton.py`).
+   1.5) as five concurrent plate runs to 20% strain
+   (`decks/cp_study/bunge/cal_gn*.i`, driver `scripts/cp_parameter_study.py`).
+   The finite-difference Jacobian $\partial \sigma_i / \partial \ln p_j$ at
+   the marker strains gave a bounded Levenberg-Marquardt step in log
+   parameters (`scripts/cp_gauss_newton.py`).
 3. The iteration stopped when the predicted step moved no parameter by more
    than a few percent and predicted no gain in the objective. Two FE
-   iterations were needed: the first center (RMSE 48.2 MPa) stepped to the
-   final set with a predicted 14.2 MPa; the second center measured 14.4 MPa
-   and its own step (1.1% on $\rho_0$, 1.4% on $k_1$, 0.6% on $y_c$, 5% on
-   $\tau_{c0}$) predicted 14.2 MPa.
+   iterations were needed. The first center, the earlier set in the present
+   framework, measured an RMSE of 20.1 MPa with the plastic branch 2 to 4%
+   low, and stepped to the final set ($+12$% on $\rho_0$, $-11$% on $k_1$,
+   $-21$% on $y_c$, $+2$% on $\tau_{c0}$) with a predicted 14.1 MPa. The
+   second center measured 14.2 MPa and its own step (0.7% on $\rho_0$, 3.1%
+   on $k_1$, 4.5% on $y_c$, 0.2% on $\tau_{c0}$) predicted 14.1 MPa.
 
 ### 4.3 Calibrated parameter set
 
-**Table 2.** Calibrated set at mesh h40 (deck `decks/cp_study/cal_center2.i`,
-run `results/cp_study/cal/gn2/base`), with the linearized one-standard-
-deviation uncertainty from the residual beyond 0.5% strain and the FE
-Jacobian.
+**Table 2.** Calibrated set at mesh h40 (deck
+`decks/cp_study/bunge/cal_center2.i`, run `results/cp_study/bunge/cal/gn2/base`),
+with the linearized one-standard-deviation uncertainty from the residual
+beyond 0.5% strain and the FE Jacobian.
 
 | parameter | value | unit | relative 1$\sigma$ |
 |---|---|---|---|
-| $\rho_0$ | 47.99 | $\mu$m$^{-2}$ | $\pm 57$% |
-| $k_1$ | 0.1988 | - | $\pm 11$% |
-| $y_c$ | 0.00344 | $\mu$m | $\pm 20$% |
-| $\tau_{c0}$ | 5.29 | MPa | $\pm 358$% |
+| $\rho_0$ | 53.93 | $\mu$m$^{-2}$ | $\pm 67$% |
+| $k_1$ | 0.1768 | - | $\pm 12$% |
+| $y_c$ | 0.00271 | $\mu$m | $\pm 19$% |
+| $\tau_{c0}$ | 5.39 | MPa | $\pm 448$% |
 
 The uncertainties say how tightly eight markers pin each value, not how far
 the curve would move: $k_1$ is the best-determined parameter because it
@@ -385,11 +580,11 @@ change of $\rho_0$ at the yield point.
 
 ![calibrated curve](../../figures/report/cal_final_curve.png)
 
-Characteristics of the calibrated curve: elastic modulus 71.2 GPa (the
-untextured aluminum polycrystal value), 0.2%-offset yield stress 364 MPa,
-engineering stress 404 / 503 / 592 / 603 MPa at 2 / 7 / 17 / 20% strain, and
-a hardening rate $d\sigma/d\varepsilon$ falling from 2.4 GPa at 2% to 0.46
-GPa at 17% and 0.33 GPa at 20%.
+Characteristics of the calibrated curve: elastic modulus 70.3 GPa (the
+untextured aluminum polycrystal value), 0.2%-offset yield stress 368 MPa,
+engineering stress 411 / 506 / 598 / 610 MPa at 2 / 7 / 17 / 20% strain, and
+a hardening rate $d\sigma/d\varepsilon$ falling from 2.4 GPa at 2% to 0.49
+GPa at 17% and 0.36 GPa at 20%.
 
 ### 4.4 Error analysis
 
@@ -398,26 +593,29 @@ stress).
 
 | strain (%) | experiment (MPa) | FE (MPa) | difference (MPa) | relative error |
 |---|---|---|---|---|
-| 0.14 | 137.7 | 99.1 | -38.6 | -28.0% |
-| 0.57 | 344.9 | 351.3 | +6.4 | +1.9% |
-| 2.02 | 411.9 | 404.3 | -7.5 | -1.8% |
-| 7.01 | 502.5 | 502.9 | +0.5 | +0.1% |
-| 11.02 | 552.5 | 551.2 | -1.3 | -0.2% |
-| 13.05 | 573.6 | 568.1 | -5.5 | -1.0% |
-| 15.06 | 588.3 | 581.3 | -7.0 | -1.2% |
-| 16.98 | 592.6 | 591.4 | -1.2 | -0.2% |
+| 0.14 | 137.7 | 98.2 | -39.5 | -28.7% |
+| 0.57 | 344.9 | 344.0 | -0.9 | -0.3% |
+| 2.02 | 411.9 | 411.0 | -0.9 | -0.2% |
+| 7.01 | 502.5 | 506.4 | +4.0 | +0.8% |
+| 11.02 | 552.5 | 555.7 | +3.1 | +0.6% |
+| 13.05 | 573.6 | 573.5 | -0.1 | -0.0% |
+| 15.06 | 588.3 | 587.5 | -0.9 | -0.1% |
+| 16.98 | 592.6 | 598.1 | +5.5 | +0.9% |
 
-Root-mean-square deviation over the eight markers: 14.4 MPa; over the seven
-markers from 0.5% strain: 5.1 MPa, with a largest deviation of 7.5 MPa (1.8%).
+Root-mean-square deviation over the eight markers: 14.2 MPa; over the seven
+markers from 0.5% strain: 2.9 MPa, with a largest deviation of 5.5 MPa (0.9%).
 From 0.5% strain the plate reproduces the experimental curve within the
-digitization uncertainty budget plus a few MPa; the error is of uniform sign
-and small on the plastic branch, so the shape of the curve (yield, hardening
-rate, approach to the plateau) is captured, not only its level. This is a
+digitization uncertainty budget plus a few MPa; the error changes sign along
+the plastic branch and stays below 1%, so the shape of the curve (yield,
+hardening rate, approach to the plateau) is captured, not only its level.
+The last marker is the largest miss: the experimental curve flattens between
+15 and 17% strain (4 MPa in 2% strain) faster than the storage-recovery law
+of Eq. (6) does. This is a
 tier-4 agreement (PROJECT_GUIDELINES §5: agreement with experiment).
 
-The one miss is the 0.14% marker, 28% below the experiment. That marker lies
+The one miss is the 0.14% marker, 29% below the experiment. That marker lies
 on the digitized record's initial slope of about 99 GPa, whereas the
-untextured plate's modulus is 71 GPa and aluminum's polycrystal modulus is
+untextured plate's modulus is 70 GPa and aluminum's polycrystal modulus is
 about 70 GPa. The elastic constants are fixed and no parameter of Eqs. (4)-(6)
 acts below yield, so the point reflects the test record or its digitization
 rather than the calibration, and it is retained in the objective rather than
@@ -435,31 +633,31 @@ information as a sensitivity $\partial \sigma / \partial \ln p$, i.e. the
 stress change per e-fold change of the parameter, along the curve (Fig. 6).
 
 **Table 4.** One-at-a-time perturbations of the calibrated set at h40
-(`decks/cp_study/cal_gn2.i`): engineering stress at the marker strains and
-the sensitivity $\partial\sigma/\partial\ln p$.
+(`decks/cp_study/bunge/cal_gn2.i`): engineering stress at the marker strains
+and the sensitivity $\partial\sigma/\partial\ln p$.
 
 | case | 0.57% | 2% | 7% | 11% | 17% | RMSE (MPa) | $\partial\sigma/\partial\ln p$ at 2 / 7 / 17% (MPa) |
 |---|---|---|---|---|---|---|---|
-| calibrated | 352 | 404 | 503 | 551 | 591 | 14.4 | |
-| $\rho_0$ x 1.2 = 57.58 $\mu$m$^{-2}$ | 372 | 433 | 526 | 571 | 608 | 22.6 | 160 / 127 / 92 |
-| $k_1$ x 1.2 = 0.2386 | 352 | 413 | 546 | 612 | 668 | 50.9 | 52 / 238 / 418 |
-| $y_c$ x 1.2 = 0.00413 $\mu$m | 352 | 401 | 484 | 520 | 547 | 33.6 | -15 / -103 / -241 |
-| $\tau_{c0}$ x 1.5 = 7.94 MPa | 359 | 414 | 513 | 561 | 601 | 15.7 | 25 / 25 / 24 |
+| calibrated | 345 | 411 | 506 | 555 | 598 | 14.2 | |
+| $\rho_0$ x 1.2 = 64.72 $\mu$m$^{-2}$ | 362 | 442 | 532 | 578 | 617 | 26.4 | 171 / 141 / 101 |
+| $k_1$ x 1.2 = 0.2121 | 345 | 419 | 546 | 613 | 673 | 53.3 | 48 / 220 / 409 |
+| $y_c$ x 1.2 = 0.00326 $\mu$m | 345 | 408 | 491 | 529 | 559 | 26.9 | -13 / -86 / -217 |
+| $\tau_{c0}$ x 1.5 = 8.08 MPa | 351 | 421 | 517 | 566 | 608 | 17.5 | 26 / 25 / 24 |
 
 What each parameter does to the curve, in this framework and with this law:
 
 - **$\rho_0$ sets the yield level.** Raising the initial density raises
   $\tau_c$ through Eq. (5) from the first slip onward, so the whole curve
-  moves up, most at yield (160 MPa per e-fold at 2%) and less with strain (92
+  moves up, most at yield (171 MPa per e-fold at 2%) and less with strain (101
   MPa at 17%) as the stored density overtakes the initial one. It is the
   parameter that places the knee of the curve.
-- **$k_1$ sets the hardening rate.** Its effect is near zero at yield (52 MPa
-  per e-fold at 2%) and grows monotonically with strain (418 MPa at 17%): a
+- **$k_1$ sets the hardening rate.** Its effect is near zero at yield (48 MPa
+  per e-fold at 2%) and grows monotonically with strain (409 MPa at 17%): a
   larger storage coefficient makes the curve climb faster after yield and
   raises the plateau through Eq. (7). It is the parameter that sets the slope
   of the plastic branch.
 - **$y_c$ sets the saturation.** Recovery is negligible at low density and
-  grows with it, so a larger $y_c$ lowers the late curve (-241 MPa per e-fold
+  grows with it, so a larger $y_c$ lowers the late curve (-217 MPa per e-fold
   at 17%) and leaves yield unchanged. It bends the curve toward its plateau
   and, with $k_1$, fixes the plateau height.
 - **$\tau_{c0}$ is a uniform offset.** It shifts the curve by about 25 MPa per
@@ -504,7 +702,7 @@ there.
 The calibrated set of Table 2 was run on four meshes of the same plate, grain
 structure, orientations, loading and solver criterion, changing only the
 element count: h20, h40, h80 and h160 (Table 5; decks
-`decks/cp_study/mesh_h{20,80,160}.i`, h40 being the calibrated run). All
+`decks/cp_study/bunge/mesh_h{20,80,160}.i`, h40 being the calibrated run). All
 four completed the 256 load steps to 20% strain without a cutback and wrote
 the field series every four steps.
 
@@ -513,12 +711,12 @@ four strains; the sixth column is the change from the next coarser mesh at
 2 / 7 / 17 / 20% strain, the seventh the distance to h160 at the same
 strains.
 
-| mesh | elements | $h$ ($\mu$m) | elements across a grain | 2% | 7% | 17% | 20% | change from coarser mesh | distance to h160 | wall time (one core) |
+| mesh | elements | $h$ ($\mu$m) | elements across a grain | 2% | 7% | 17% | 20% | change from coarser mesh | distance to h160 | wall time (threads) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| h20 | 200 | 5.0 | 2.7 | 413.1 | 518.7 | 616.0 | 629.8 | | +3.8 / +5.7 / +8.2 / +8.8% | 5 min |
-| h40 | 800 | 2.5 | 5.5 | 403.9 | 502.8 | 591.5 | 603.3 | -2.2 / -3.1 / -4.0 / -4.2% | +1.5 / +2.5 / +3.9 / +4.2% | 14 min |
-| h80 | 3,200 | 1.25 | 11 | 400.2 | 495.4 | 578.6 | 589.3 | -0.9 / -1.5 / -2.2 / -2.3% | +0.6 / +1.0 / +1.7 / +1.8% | 1.8 h |
-| h160 | 12,800 | 0.625 | 22 | 397.9 | 490.6 | 569.2 | 578.9 | -0.6 / -1.0 / -1.6 / -1.8% | | 4 h |
+| h20 | 200 | 5.0 | 2.7 | 422.5 | 525.3 | 628.1 | 642.9 | | +5.0 / +7.1 / +10.6 / +11.6% | under 2 min (2) |
+| h40 | 800 | 2.5 | 5.5 | 410.5 | 506.3 | 598.2 | 610.5 | -2.8 / -3.6 / -4.8 / -5.0% | +2.1 / +3.2 / +5.3 / +6.0% | 6 min (2) |
+| h80 | 3,200 | 1.25 | 11 | 405.1 | 496.2 | 579.2 | 589.1 | -1.3 / -2.0 / -3.2 / -3.5% | +0.7 / +1.1 / +2.0 / +2.3% | 26 min (4) |
+| h160 | 12,800 | 0.625 | 22 | 402.2 | 490.6 | 568.0 | 576.1 | -0.7 / -1.1 / -1.9 / -2.2% | | 1.9 h (8) |
 
 ### 5.2 Results
 
@@ -534,15 +732,16 @@ set.
 The response softens monotonically with refinement at every strain (Figs. 7
 and 8). The coarse mesh is the stiff one, as a displacement-based
 discretization with fewer than three elements across a grain must be, and
-the change per halving of $h$ decreases: 4.2%, 2.3% and 1.8% at 20% strain.
-The convergence is close to first order at yield, where the ratio of
-successive changes is 0.62 (apparent order 0.7), and slower on the plastic
-branch, where the ratio rises to 0.75 at 20% strain (apparent order 0.4):
+the change per halving of $h$ decreases: 5.0%, 3.5% and 2.2% at 20% strain.
+The convergence is close to first order at 2% strain, where the ratio of
+successive changes is 0.45 to 0.54 (apparent order 0.9 to 1.2), and slower
+on the plastic branch, where the ratio rises to 0.61 to 0.66 at 20% strain
+(apparent order 0.6 to 0.7):
 the finer meshes keep resolving sharper slip bands at grain boundaries and
 triple junctions, and the constitutive law of §2 has no internal length, so
 localized slip remains mesh-dependent within the range studied. The
-root-mean-square deviation from the markers rises away from h40 (20.1 /
-14.4 / 18.2 / 22.6 MPa for h20 / h40 / h80 / h160) only because the set was
+root-mean-square deviation from the markers rises away from h40 (26.4 /
+14.2 / 17.7 / 22.8 MPa for h20 / h40 / h80 / h160) only because the set was
 calibrated at h40; a transfer to another mesh is a small correction of the
 size of the mesh shift, mostly on $\rho_0$ and $k_1$ (Table 4).
 
@@ -568,9 +767,17 @@ convergence of the plastic branch.
 ### 5.3 Mesh selection
 
 The choice of the working mesh for the parameter sensitivity, the
-grain-instance check and the neural routes is the author's, against the
-cost column of Table 5: h40 is within 4.2% of h160 at every strain for 14
-min per run, h80 within 1.8% for 1.8 h.
+grain-instance check, the neural routes and Part II is the author's. In the
+first version of this report h40 was chosen because it stayed within 5% of
+h160 at every strain (4.2% at 20%). With the recalibrated set and the
+total-Lagrangian balance the mesh effect is larger: h40 is within 5% of h160
+up to about 15% strain, 5.3% above it at 17% and 6.0% at 20%; h80 is within
+2.3% at 26 min per run. The author kept h40 for every downstream study as an
+exception to the 5% criterion (decision of 2026-11-16), so that Parts I and
+II stay on the mesh the set is calibrated on. Every stress of §6 to §11 and
+§14 to §19 beyond 15% strain carries this mesh effect; the calibrated set
+absorbs it at h40 and a transfer to a finer mesh needs the correction of
+§5.2.
 
 ## 6. Parameter sensitivity at the chosen mesh
 
@@ -578,7 +785,7 @@ min per run, h80 within 1.8% for 1.8 h.
 
 Each free parameter of Table 2 was varied one at a time over a factor of
 four, at 0.5, 0.8, 1.25 and 2 times its calibrated value, with the other
-three held at their calibrated values (study deck `decks/cp_study/sens_h40.i`,
+three held at their calibrated values (study deck `decks/cp_study/bunge/sens_h40.i`,
 sixteen cases plus the calibrated base, all at h40 on the plate of §2.6,
 field series included). Every case completed the 256 load steps to 20%
 strain without a cutback. Table 6 reports the 0.2%-offset yield stress, the
@@ -592,23 +799,23 @@ yield stress; $\theta_{17}$ the hardening rate $d\sigma/d\varepsilon$ at
 
 | case | $\sigma_y$ (MPa) | 2% | 7% | 17% | 20% | $\theta_{17}$ (GPa) | RMSE (MPa) |
 |---|---|---|---|---|---|---|---|
-| calibrated | 364 | 404 | 503 | 591 | 603 | 0.46 | 14.4 |
-| $\rho_0$ x 0.5 | 271 | 316 | 436 | 544 | 560 | 0.59 | 63.9 |
-| $\rho_0$ x 0.8 | 330 | 372 | 478 | 574 | 587 | 0.51 | 28.0 |
-| $\rho_0$ x 1.25 | 402 | 440 | 532 | 612 | 623 | 0.41 | 26.3 |
-| $\rho_0$ x 2 | 496 | 531 | 607 | 668 | 675 | 0.28 | 82.9 |
-| $k_1$ x 0.5 | 362 | 381 | 402 | 411 | 411 | -0.01 | 124.6 |
-| $k_1$ x 0.8 | 363 | 395 | 461 | 517 | 524 | 0.28 | 54.8 |
-| $k_1$ x 1.25 | 365 | 416 | 557 | 687 | 705 | 0.70 | 63.5 |
-| $k_1$ x 2 | 368 | 452 | 724 | 978 | 1,015 | 1.41 | 259.1 |
-| $y_c$ x 0.5 | 364 | 411 | 563 | 763 | 801 | 1.39 | 101.9 |
-| $y_c$ x 0.8 | 364 | 407 | 524 | 647 | 666 | 0.72 | 34.8 |
-| $y_c$ x 1.25 | 364 | 401 | 480 | 538 | 544 | 0.25 | 39.2 |
-| $y_c$ x 2 | 363 | 391 | 429 | 439 | 437 | -0.04 | 102.8 |
-| $\tau_{c0}$ x 0.5 | 354 | 394 | 493 | 582 | 594 | 0.47 | 18.2 |
-| $\tau_{c0}$ x 0.8 | 360 | 400 | 499 | 588 | 600 | 0.47 | 15.4 |
-| $\tau_{c0}$ x 1.25 | 369 | 409 | 508 | 596 | 608 | 0.46 | 14.4 |
-| $\tau_{c0}$ x 2 | 384 | 424 | 523 | 611 | 622 | 0.45 | 21.1 |
+| calibrated | 368 | 411 | 506 | 598 | 610 | 0.49 | 14.2 |
+| $\rho_0$ x 0.5 | 270 | 316 | 431 | 546 | 563 | 0.64 | 65.0 |
+| $\rho_0$ x 0.8 | 333 | 376 | 479 | 579 | 592 | 0.55 | 26.3 |
+| $\rho_0$ x 1.25 | 408 | 449 | 538 | 621 | 631 | 0.43 | 30.8 |
+| $\rho_0$ x 2 | 505 | 546 | 621 | 682 | 688 | 0.27 | 94.1 |
+| $k_1$ x 0.5 | 366 | 390 | 413 | 422 | 420 | -0.03 | 115.8 |
+| $k_1$ x 0.8 | 367 | 402 | 468 | 525 | 532 | 0.28 | 48.7 |
+| $k_1$ x 1.25 | 369 | 421 | 557 | 692 | 711 | 0.75 | 65.4 |
+| $k_1$ x 2 | 373 | 454 | 712 | 977 | 1,016 | 1.53 | 254.7 |
+| $y_c$ x 0.5 | 369 | 417 | 554 | 744 | 780 | 1.34 | 89.5 |
+| $y_c$ x 0.8 | 368 | 413 | 524 | 647 | 666 | 0.74 | 34.3 |
+| $y_c$ x 1.25 | 368 | 408 | 487 | 550 | 556 | 0.28 | 31.7 |
+| $y_c$ x 2 | 367 | 400 | 442 | 456 | 454 | -0.05 | 90.0 |
+| $\tau_{c0}$ x 0.5 | 358 | 400 | 496 | 589 | 601 | 0.50 | 16.0 |
+| $\tau_{c0}$ x 0.8 | 364 | 406 | 502 | 594 | 607 | 0.49 | 14.3 |
+| $\tau_{c0}$ x 1.25 | 373 | 416 | 511 | 603 | 615 | 0.49 | 15.3 |
+| $\tau_{c0}$ x 2 | 389 | 431 | 527 | 617 | 629 | 0.48 | 23.9 |
 
 **Figure 10.** One parameter varied at a time over a factor of four (top
 left to bottom right: $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$); the calibrated
@@ -624,48 +831,49 @@ each parameter.
 ### 6.2 Results
 
 **$\rho_0$ sets the yield level.** The yield stress follows the initial
-density closely, from 271 MPa at half the calibrated value to 496 MPa at
-twice it, i.e. $\sigma_y$ scales as about $\rho_0^{0.44}$, close to the
+density closely, from 270 MPa at half the calibrated value to 505 MPa at
+twice it, i.e. $\sigma_y$ scales as about $\rho_0^{0.45}$, close to the
 square root of Eq. (5) softened by the rate term. The offset it produces
 fades with strain as the stored density overtakes the initial one (from
-127 to 183 MPa per e-fold at 2% down to 62 to 104 MPa per e-fold at 20%),
+136 to 196 MPa per e-fold at 2% down to 69 to 112 MPa per e-fold at 20%),
 and a higher $\rho_0$ also lowers the late hardening rate because the
 density starts closer to saturation. Over the factor of four the curves
 keep their shape; the parameter positions the knee.
 
-**$k_1$ sets the hardening rate and the plateau.** Yield is unchanged (362
-to 368 MPa across the factor of four), while the stress at 20% strain spans
-411 to 1,015 MPa and the hardening rate at 17% strain spans zero to 1.41
-GPa. The sensitivity grows monotonically with strain (33 to 70 MPa per
-e-fold at 2%, 277 to 594 at 20%) and is itself larger at larger $k_1$: the
+**$k_1$ sets the hardening rate and the plateau.** Yield is unchanged (366
+to 373 MPa across the factor of four), while the stress at 20% strain spans
+420 to 1,016 MPa and the hardening rate at 17% strain spans zero to 1.53
+GPa. The sensitivity grows monotonically with strain (30 to 63 MPa per
+e-fold at 2%, 274 to 585 at 20%) and is itself larger at larger $k_1$: the
 response is strongly nonlinear in $k_1$ because the saturation density of
 Eq. (7) scales as $k_1^2$. At half the calibrated value the plate stops
-hardening by 10% strain; at twice it the plate is still hardening at 1.4 GPa
-at 20%. The experiment's slope is matched only within about $\pm 20$% of the
+hardening before 17% strain; at twice it the plate is still hardening at
+1.2 GPa at 20%. The experiment's slope is matched only within about $\pm 20$% of the
 calibrated value.
 
-**$y_c$ sets the saturation.** Yield is unchanged (363 to 364 MPa) and the
-early curve nearly so (391 to 411 MPa at 2%), while the stress at 20%
-strain spans 437 to 801 MPa in the opposite sense to $k_1$: a larger
+**$y_c$ sets the saturation.** Yield is unchanged (367 to 369 MPa) and the
+early curve nearly so (400 to 417 MPa at 2%), while the stress at 20%
+strain spans 454 to 780 MPa in the opposite sense to $k_1$: a larger
 annihilation distance saturates the density earlier and lower. At twice the
 calibrated value the hardening rate is zero by 17% strain; at half it the
-plate hardens at 1.39 GPa at 20%. The sensitivity is about $-240$ to $-285$
+plate hardens at 1.1 GPa at 20%. The sensitivity is about $-225$ to $-250$
 MPa per e-fold at 20% and nearly independent of the multiple, i.e. the
 response is close to logarithmic in $y_c$ over this range. $k_1$ and $y_c$
 act on the same branch of the curve with opposite sign; their ratio fixes
 the plateau through Eq. (7) and their product the rate at which the plateau
 is approached, which is why the calibration determines $k_1$ and $y_c$
-jointly ($\pm 11$% and $\pm 20$% in Table 2) rather than each alone.
+jointly ($\pm 12$% and $\pm 19$% in Table 2) rather than each alone.
 
-**$\tau_{c0}$ is a uniform offset.** It shifts the whole curve by 13 to 30
-MPa per e-fold with no change of shape (the hardening rate stays at 0.45 to
-0.47 GPa) and moves the yield stress by only 30 MPa over the factor of four.
-At the calibrated 5.29 MPa it is a minor term against the 82 MPa density
+**$\tau_{c0}$ is a uniform offset.** It shifts the whole curve by 14 to 30
+MPa per e-fold with no change of shape (the hardening rate stays at 0.48 to
+0.50 GPa) and moves the yield stress by only 31 MPa over the factor of four.
+At the calibrated 5.39 MPa it is a minor term against the 87 MPa density
 contribution to the initial slip resistance, which is why it is the least
 determined parameter and the last in the calibration order.
 
-**Order of influence.** On the whole curve the ranking is $k_1$, $y_c$,
-$\rho_0$, $\tau_{c0}$ (RMSE at the x2 case 259, 103, 83 and 21 MPa); at
+**Order of influence.** On the whole curve $k_1$ is first, $y_c$ and
+$\rho_0$ follow close to each other and $\tau_{c0}$ is last (RMSE at the x2
+case 255, 90, 94 and 24 MPa; at the x0.5 case 116, 90, 65 and 16 MPa); at
 yield it is $\rho_0$ first and $\tau_{c0}$ second, with $k_1$ and $y_c$
 inert. The calibration order $\rho_0$, $k_1$, $y_c$, $\tau_{c0}$ follows
 this separation: yield is fixed first by the parameter that alone controls
@@ -680,7 +888,7 @@ The calibrated set and the plate of §2.6 were run on two further grain
 structures, each a new uniform Voronoi seeding of the plate grown with the
 phase-field settings of §3.6 and given its own orientation draw (Table 7;
 growth decks `decks/graingrowth/instances/n32_bdf1_h40_s{C,B}.i`, pipeline
-decks `decks/cp_study/grain_s{C,B}.i`). Mesh (h40), loading, solver
+decks `decks/cp_study/bunge/grain_s{C,B}.i`). Mesh (h40), loading, solver
 criterion, field series and parameters are those of the calibrated run. The
 purpose is to show that the set of Table 2 describes the material rather
 than one realization of thirty grains.
@@ -693,9 +901,9 @@ and largest relative deviation from the calibrated structure's curve beyond
 
 | instance | seeds (Voronoi / orientations) | grains | $d_{med}$ ($\mu$m) | $E$ (GPa) | $\sigma_y$ (MPa) | 2% | 7% | 17% | 20% | RMSE (MPa) | deviation, mean / max |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 (calibrated) | 20260914 / 20261009 | 30 | 13.7 | 71.2 | 364 | 404 | 503 | 591 | 603 | 14.4 | |
-| 2 | 20261013 / 20261013 | 31 | 13.7 | 71.5 | 369 | 412 | 519 | 616 | 630 | 20.4 | +3.5% / 4.4% |
-| 3 | 20261012 / 20261012 | 30 | 13.4 | 70.8 | 361 | 399 | 495 | 584 | 597 | 17.1 | -1.4% / 1.6% |
+| 1 (calibrated) | 20260914 / 20261009 | 30 | 13.7 | 70.3 | 368 | 411 | 506 | 598 | 610 | 14.2 | |
+| 2 | 20261013 / 20261013 | 31 | 13.7 | 71.8 | 379 | 424 | 521 | 605 | 615 | 17.8 | +2.3% / 3.4% |
+| 3 | 20261012 / 20261012 | 30 | 13.4 | 71.4 | 370 | 414 | 509 | 596 | 607 | 13.8 | +0.2% / 1.0% |
 
 **Figure 12.** The three grain structures.
 
@@ -708,14 +916,16 @@ calibrated set.
 
 ### 7.2 Results
 
-The three realizations give the same elastic modulus within 1%, the same
-yield stress within $\pm 1.5$% and the same hardening branch within $-1.4$%
-to $+3.5$% (Fig. 13); all three completed the 256 load steps without a
-cutback. The spread is of the size of the mesh effect between h40 and h80
-(§5) and smaller than the effect of a 20% change of any free parameter but
-$\tau_{c0}$ (§6), so the calibrated set is not an artifact of the structure
-it was fitted on. The instance-to-instance spread, about $\pm 2.5$% on the
-flow stress, is the statistical resolution of a thirty-grain,
+The three realizations give the same elastic modulus within 2%, a yield
+stress within 3% (368 to 379 MPa) and the same hardening branch within
+$-0.5$% to $+3.4$% (Fig. 13); all three completed the 256 load steps without
+a cutback. The largest difference is at yield (instance 2, $+3.4$% at 2%
+strain) and closes with strain: at 20% the two new structures are at
+$+0.8$% and $-0.5$% of the calibrated one. The spread is of the size of the
+mesh effect between h40 and h80 (§5) and smaller than the effect of a 20%
+change of any free parameter but $\tau_{c0}$ (§6), so the calibrated set is
+not an artifact of the structure it was fitted on. The instance-to-instance
+spread, about $\pm 2$% on the flow stress, is the statistical resolution of a thirty-grain,
 one-element-thick plate and should be read as the uncertainty attached to
 any single-realization result of this report.
 
@@ -768,9 +978,9 @@ loss $r^2$ of Eq. (9): the residual is assembled by the finite-element arm
 at the frozen state, and its gradient with respect to the nodal values is
 the transpose of the consistent tangent $\mathbf{K} = \partial\mathbf{R}/\partial\mathbf{u}$
 the Newton solver already forms. Every loss evaluation therefore costs
-one residual-and-tangent assembly on the FE arm (numpy, CPU) while the
-network itself is evaluated and differentiated on the GPU (torch); the
-weights are carried from step to step. Training uses L-BFGS with a
+one residual-and-tangent assembly on the FE arm (torch, CPU); the network
+is evaluated and differentiated on the CPU as well, since the GPU gives no
+advantage at this size (§10); the weights are carried from step to step. Training uses L-BFGS with a
 strong-Wolfe line search (two L-BFGS steps per load step, at most 40 inner
 iterations, for the PINN+FEM route; four, at most 80, for the solver route,
 which stops early as soon as $r \le r_{\mathrm{tol}}$), and the best
@@ -790,14 +1000,15 @@ ten extra inputs it can. Architecture, loss, optimizer and budgets are
 otherwise identical to the coordinate-only runs.
 
 This weak-form training replaces the strong-form collocation of the
-balance of momentum, which was found unreachable on this problem: a
+balance of momentum, which was found unreachable on this problem in the
+first version of this study: a
 network regressed to within 0.55% (L2) of the finite-element displacement
 of a step still carries $r = 0.73$ and a strong-form residual of order one
 on the $\mu / L$ scale, because the equilibrium of a thirty-grain plate
 lives in the strain kinks at the grain boundaries that a smooth global
 network cannot represent. The weak-form loss is the quantity the corrector
 drives to zero, so an accepted network field is verifiable by
-construction. Decks: `decks/cp_study/hybrid/h40_linear.i`,
+construction. Decks: `decks/cp_study/bunge/hybrid/h40_linear.i`,
 `h40_fem_residual.i`, `h40_fem_solver.i`, `h40_fem_residual_grain.i`,
 `h40_fem_solver_grain.i`; the framework pieces are PINNACLE ADR 0028 and
 ADR 0029.
@@ -808,79 +1019,90 @@ Table 8 summarises the six runs of the same deck family at h40, all to
 20% strain in 256 steps under the criterion of §3 with no cutback.
 
 **Table 8.** Cost and outcome of the neural routes against the FE
-reference at h40. Newton iterations are the cost measure that does not
-depend on host load; the Newton time per iteration varied between runs
-with the machine's occupancy (0.41 to 0.70 s) and is given for
-completeness. The predictor time of the two network runs includes the
-assemblies of the training loss (0.28 s each) and the GPU evaluation of
-the network. $r$ is the equilibrium error of Eq. (9), median over the
-predicted steps.
+reference at h40. Newton iterations and assemblies are the cost measures
+that do not depend on host load; the runs shared the host (four threads
+each, the h160 mesh run alongside), so the Newton time per iteration
+varied between runs (0.45 to 0.75 s) and the times are given for
+completeness. The predictor time of the network runs includes the
+assemblies of the training loss (0.2 to 0.3 s each). $r$ is the equilibrium
+error of Eq. (9), median over the predicted steps.
 
 | run | Newton iterations | steps solved without Newton | Newton time (s) | predictor time (s) | assemblies for training | $r$ before training (median) | $r$ after training (median) | max $\lvert\Delta\sigma\rvert$ vs FE (MPa) |
 |---|---|---|---|---|---|---|---|---|
-| FE, cold start (§4) | 1,506 | 0 | 838 | 0 | 0 | -- | -- | 0 |
-| PINN+FEM, linear extrapolation | 948 | 0 | 667 | 0.005 | 0 | -- | -- | 0.000 |
-| PINN+FEM, FE-residual-trained network | 945 | 0 | 409 | 349 | 1,574 | 0.0008 | 0.0008 | 0.000 |
-| PINN as solver, verified ($r_{\mathrm{tol}} = 0.05$) | 650 | 132 of 256 | 264 | 4,964 | 16,264 | 0.098 | 0.049 | 5.14 |
-| PINN+FEM, grain-aware network | 923 | 0 | 403 | 716 | 2,696 | 0.0005 | 0.0005 | 0.000 |
-| PINN as solver, verified, grain-aware network | 635 | 131 of 256 | 264 | 4,279 | 13,865 | 0.076 | 0.050 | 0.33 |
+| FE, cold start (§4) | 765 | 0 | 344 | 0 | 0 | -- | -- | 0 |
+| PINN+FEM, linear extrapolation | 329 | 0 | 247 | 0.007 | 0 | -- | -- | 0.000 |
+| PINN+FEM, FE-residual-trained network | 327 | 0 | 233 | 403 | 1,860 | 0.0008 | 0.0008 | 0.000 |
+| PINN as solver, verified ($r_{\mathrm{tol}} = 0.05$) | 246 | 140 of 256 | 171 | 8,297 | 13,310 | 0.090 | 0.048 | 8.82 |
+| PINN+FEM, grain-aware network | 322 | 0 | 228 | 707 | 3,066 | 0.0005 | 0.0005 | 0.000 |
+| PINN as solver, verified, grain-aware network | 240 | 137 of 256 | 158 | 3,686 | 14,347 | 0.078 | 0.049 | 4.30 |
+
+**The reference.** With the consistent tangent of §3.3 the cold
+finite-element run needs three Newton iterations on nearly every step, 765
+in all, where the finite-difference tangent of the first version of this
+study needed 1,506. Every route below is measured against this cheaper
+reference.
 
 **PINN+FEM.** The linear extrapolation alone is already a good predictor
 on this load path: beyond 1% strain its proposal is within 0.03% of the
 step's increment (median) and carries an equilibrium error $r$ of about
-$10^{-3}$, and it removes 37% of the Newton iterations of the cold start.
-The network trained on the assembled residual does not improve on it: the
-L-BFGS line search finds no descent worth taking from a proposal that is
-already that close (a median of four assemblies per step), the iteration
-count is the same as with the extrapolation alone (945 against 948; 251
-steps identical, four steps one iteration fewer, one step one more), the
-curve and the fields are identical to the FE reference (Fig. 14, Fig. 15),
-and the training adds 349 s to the run. Where the extrapolation is poor,
-in the first 1% of strain when grains yield one after another and $r$ of
-the extrapolation is 0.03 to 0.4, the network lowers $r$ by about 20%,
-which does not remove a Newton iteration.
+$10^{-3}$, and it removes 57% of the Newton iterations of the cold start:
+one iteration per step is enough from the extrapolated field where three
+are needed from the previous one. The network trained on the assembled
+residual does not improve on it: the L-BFGS line search finds no descent
+worth taking from a proposal that is already that close (a median of five
+assemblies per step), the iteration count is the same as with the
+extrapolation alone (327 against 329; 254 steps identical, two steps one
+iteration fewer), the curve and the fields are identical to the FE
+reference (Fig. 14, Fig. 15), and the training adds 403 s to the run.
+Where the extrapolation is poor, in the first 1% of strain when grains
+yield one after another and $r$ of the extrapolation is 0.008 to 0.24, the
+network lowers $r$ by about 10%, which does not remove a Newton iteration.
 
 **PINN as solver.** With the tolerance $r_{\mathrm{tol}} = 0.05$ the
-network solves 132 of the 256 steps on its own (about every other step,
-evenly from 1% to 20% strain) and the Newton corrector solves the rest,
-so the run needs 650 Newton iterations instead of 1,506. Every accepted
+network solves 140 of the 256 steps on its own (about every other step,
+evenly from 0.2% to 20% strain) and the Newton corrector solves the rest,
+so the run needs 246 Newton iterations instead of 765. Every accepted
 field is a finite-element solution to $r \le 0.05$ by construction, and
 the price of that tolerance is visible but small: the engineering stress
-is within 5.1 MPa (0.85%) of the reference along the whole curve
+is within 8.8 MPa (1.5%) of the reference along the whole curve
 (Fig. 14), and at 2, 8, 15 and 20% strain the displacement, the
-equivalent plastic strain and $\sigma_{xx}$ are within 0.1%, 0.3% and 0.6%
+equivalent plastic strain and $\sigma_{xx}$ are within 0.05%, 0.2% and 0.5%
 of the reference fields in relative L2 norm, element by element (Fig. 15,
-Table 9). The cost is the training: a median of 20 s and up to 35 s per
-step, 16,264 assemblies in all, against a Newton solve of 1 to 3 s per
-step, so the run takes 5,228 s where the cold FE run takes 838 s and the
-extrapolation-started run 667 s. The alternation of accepted and corrected
-steps is the mechanism: a step accepted at $r = 0.05$ leaves a slightly
-worse starting point for the next extrapolation, which the network cannot
-bring below the tolerance within its budget, and the following Newton
-solve resets it.
+Table 9). The cost is the training: a median of 11 s per step, 13,310
+assemblies in all, against a Newton solve of 1.3 s per step, so the run
+takes 8,468 s where the cold FE run takes 344 s and the
+extrapolation-started run 247 s (one step of this run spent 1,653 s in a
+single training call while the host was shared; without it the run is
+about 6,800 s). The alternation of accepted and corrected steps is the
+mechanism: a step accepted at $r = 0.05$ leaves a slightly worse starting
+point for the next extrapolation, which the network cannot bring below the
+tolerance within its budget, and the following Newton solve resets it.
 
 **Grain-aware inputs.** The ten extra inputs lift the representational
-limit of the coordinate-only network. In the capacity check (8 steps
-through the yield onset, up to 450 assemblies per step) the grain-aware
-network reaches $r$ = 0.009, 0.043, 0.099 and 0.076 at the four plastic
-steps where the coordinate-only network stalls at 0.034, 0.108, 0.287 and
-0.198: three to four times lower, and below the tolerance at one of them.
-Over the full load path, at the same budgets as before, the effect is
-visible in quality more than in cost. As a predictor the grain-aware
-network removes a further 2.5% of the Newton iterations (923 against 945
-and 948) and keeps the fields identical, for twice the training time of
-the coordinate-only network (716 s). As a verified solver it accepts the
-same number of steps (131 of 256) with 14% less training (4,279 s, 13,865
-assemblies) and 15 fewer Newton iterations, and the accepted fields are
-much closer to the reference at the same $r \le 0.05$: the curve is within
-0.33 MPa (0.05%) instead of 5.1 MPa, and the plastic-strain and stress
-fields within 0.3% and 0.5% at the worst strain and within 0.01% and 0.04%
-at 20% (Table 9, Fig. 15). The network corrects the extrapolation in the
-right places, the grain boundaries, so a field accepted at the tolerance
-carries a smaller error in the quantities of interest. Its baseline before
-training is also better (median $r$ 0.076 against 0.098), the mark of
-weights that transfer from step to step. The remaining cost gap is the
-training itself: 16 s per step, against 1 to 3 s of Newton.
+limit of the coordinate-only network. In the capacity check of the first
+version of this study (8 steps through the yield onset, up to 450
+assemblies per step) the grain-aware network reached $r$ = 0.009, 0.043,
+0.099 and 0.076 at the four plastic steps where the coordinate-only
+network stalled at 0.034, 0.108, 0.287 and 0.198: three to four times
+lower, and below the tolerance at one of them. Over the full load path,
+at the same budgets as before, the effect is visible in quality more than
+in cost. As a predictor the grain-aware network removes a further 2% of
+the Newton iterations (322 against 327 and 329) and keeps the fields
+identical, for nearly twice the training time of the coordinate-only
+network (707 s). As a verified solver it accepts about the same number of
+steps (137 of 256) with about the same number of assemblies (14,347) and
+six fewer Newton iterations, and the accepted fields are closer to the
+reference at the same $r \le 0.05$: the curve is within 4.3 MPa (0.8%)
+instead of 8.8 MPa, and the plastic-strain field within 0.12% at the worst
+strain and 0.01% from 8% strain on, two to nine times closer than with the
+coordinates alone (Table 9, Fig. 15). The stress field is closer at 20%
+(0.01% against 0.54%) and not at 8% (0.30% against 0.04%). Its baseline
+before training is also better (median $r$ 0.078 against 0.090), the mark
+of weights that transfer from step to step. In the first version of this
+study the grain-aware solver stayed within 0.33 MPa of the reference; the
+gain from the grain-aware inputs is smaller here, a factor of two on the
+curve. The remaining cost gap is the training itself: 12 s per step
+against 1.3 s of Newton.
 
 **Table 9.** Relative L2 difference of the fields of the two verified
 PINN-as-solver runs from the FE reference on the same mesh, element by
@@ -889,14 +1111,14 @@ printed precision at every strain.
 
 | strain | network inputs | displacement | $\bar\varepsilon^p$ | $\sigma_{xx}$ | max $\lvert\Delta\bar\varepsilon^p\rvert$ |
 |---|---|---|---|---|---|
-| 1.9% | coordinates | 0.04% | 0.26% | 0.05% | 0.0001 |
-| 8.1% | coordinates | 0.07% | 0.07% | 0.39% | 0.0001 |
-| 15.0% | coordinates | 0.09% | 0.12% | 0.57% | 0.0004 |
-| 20.0% | coordinates | 0.06% | 0.12% | 0.54% | 0.0006 |
-| 1.9% | grain-aware | 0.05% | 0.32% | 0.37% | 0.0002 |
-| 8.1% | grain-aware | 0.00% | 0.01% | 0.04% | 0.0000 |
-| 15.0% | grain-aware | 0.01% | 0.01% | 0.46% | 0.0001 |
-| 20.0% | grain-aware | 0.00% | 0.01% | 0.02% | 0.0001 |
+| 1.9% | coordinates | 0.04% | 0.20% | 0.02% | 0.0001 |
+| 8.1% | coordinates | 0.02% | 0.06% | 0.04% | 0.0001 |
+| 15.0% | coordinates | 0.03% | 0.05% | 0.35% | 0.0002 |
+| 20.0% | coordinates | 0.05% | 0.05% | 0.54% | 0.0002 |
+| 1.9% | grain-aware | 0.02% | 0.12% | 0.04% | 0.0001 |
+| 8.1% | grain-aware | 0.01% | 0.01% | 0.30% | 0.0000 |
+| 15.0% | grain-aware | 0.00% | 0.01% | 0.28% | 0.0000 |
+| 20.0% | grain-aware | 0.00% | 0.01% | 0.01% | 0.0000 |
 
 **Figure 14.** Engineering stress-strain response of the FE reference,
 the three PINN+FEM runs and the two verified PINN-as-solver runs at h40,
@@ -931,14 +1153,19 @@ grains as they yield, is as sharply structured at the grain boundaries as
 the field itself, and neither the strong-form nor the weak-form loss
 changes that. Grain-aware inputs remove this representational limit: the
 same network then reaches three to four times lower equilibrium errors
-per step, and as a verified solver it returns fields fifteen times closer
-to the reference at the same tolerance. What they do not remove is the
-cost of training on the assembled residual, 10 to 20 s per step against 1
-to 3 s for the Newton solve it replaces, so on this problem the verified
-PINN-as-solver route is a correct and accurate solver at five to six
-times the cost of the finite-element one, and the PINN+FEM route is a
-predictor that improves on the linear extrapolation by a few percent of
-the Newton iterations at a net loss of wall time. Trained on the strong
+per step, and as a verified solver it returns a curve twice as close and
+a plastic-strain field two to nine times closer to the reference at the
+same tolerance. What they do not remove is the cost of training on the
+assembled residual, about 12 s per step against 1.3 s for the Newton
+solve it replaces, so on this problem the verified PINN-as-solver route
+is a correct and accurate solver at eleven times the cost of the
+finite-element one (3,844 against 344 s), and the trained PINN+FEM route
+is a predictor that improves on the linear extrapolation by one to two
+percent of the Newton iterations at a net loss of wall time. The
+consistent tangent halved the cost of the finite-element reference, which
+widens the gap to the trained routes; the linear extrapolation is the one
+predictor that pays, 57% of the Newton iterations and 28% of the solve
+time for nothing. Trained on the strong
 form the same network solved no step at all.
 
 ## 9. Parameter sensitivity of the neural routes
@@ -954,56 +1181,62 @@ of §8 otherwise unchanged. The question is whether a route's accuracy and
 cost depend on the material constants, that is, whether the figures of
 Table 8 hold away from the calibrated set. The finite-element case of §6
 is the reference for every case. Decks:
-`decks/cp_study/sens_h40_linear.i`, `decks/cp_study/sens_h40_grain_solver.i`;
-analysis: `decks/report/neural_sensitivity.i` with
+`decks/cp_study/bunge/sens_h40_linear.i`,
+`decks/cp_study/bunge/sens_h40_grain_solver.i`;
+analysis: `decks/report/bunge/neural_sensitivity.i` with
 `scripts/neural_sensitivity.py`.
 
 ### 9.2 Results
 
 **PINN+FEM, linear extrapolation.** Every one of the sixteen cases
 reproduces its finite-element curve to the solver tolerance (the largest
-stress difference over all cases and strains is $3 \times 10^{-6}$ MPa),
-while the finite-element effect being tracked ranges from $-32$% to
-$+68$% of the flow stress at 20% strain. The Newton iteration count is
-941 to 974 per case against 1,468 to 1,536 for the corresponding
-finite-element cases: a saving of 37% (median) that does not vary with the
-parameter or its level (Fig. 17). The predictor's benefit is a property of
-the load path, not of the material constants.
+stress difference over all cases and strains is $4 \times 10^{-6}$ MPa),
+while the finite-element effect being tracked ranges from $-31$% to
+$+66$% of the flow stress at 20% strain. The Newton iteration count is
+304 to 371 per case against 763 to 771 for the corresponding
+finite-element cases: a saving of 57% (median), between 52 and 60%
+(Fig. 17). The saving is smallest where the plate stops hardening
+($k_1 \times 0.5$ and $y_c \times 2$, 371 and 359 iterations) and largest
+where it hardens most ($k_1 \times 2$, 304): a flat curve leaves more
+steps in which slip redistributes between grains and the extrapolated
+field needs a second iteration. The predictor's benefit is mainly a
+property of the load path, with this weak dependence on the hardening
+rate.
 
 **PINN as solver, grain-aware, verified.** On all sixteen cases the
-route behaves exactly as on the calibrated set: the engineering stress
-stays within 0.3 to 1.3 MPa (at most 0.2%) of the finite-element case at
-every strain, 129 to 138 of the 256 steps are solved by the network
-without Newton, and the Newton count is 611 to 647, with no trend against
-the parameter or its level while the finite-element flow stress moves by
-$-32$% to $+68$%. The acceptance rate of about one step in two and the
+route behaves as on the calibrated set: the engineering stress stays
+within 2.2 to 7.3 MPa (at most 1%) of the finite-element case at every
+strain, 131 to 144 of the 256 steps are solved by the network without
+Newton, and the Newton count is 226 to 252, with no trend against the
+parameter or its level while the finite-element flow stress moves by
+$-31$% to $+66$%. The acceptance rate of about one step in two and the
 accuracy of the accepted steps are properties of the tolerance and of the
-network's inputs, not of the material constants; the cost per run (4,370
-to 4,780 s, two runs sharing the host) is likewise unchanged.
+network's inputs, not of the material constants; the cost per run (4,190
+to 4,770 s, runs sharing the host) is likewise unchanged.
 
 **Table 11.** Parameter sensitivity of the two neural routes: deviation of
 the route from the finite-element case and its cost, per case (full table
-in `results/cp_study/sens_neural/sens_neural_h40.csv`).
+in `results/cp_study/bunge/sens_neural/sens_neural_h40.csv`).
 
 | case | FE effect at 20% | PINN+FEM linear: max $\lvert\Delta\sigma\rvert$ (MPa), Newton iterations | grain-aware solver: max $\lvert\Delta\sigma\rvert$ (MPa), steps without Newton, Newton iterations |
 |---|---|---|---|
-| base | 0 | 0.000, 948 | 0.33, 131, 635 |
-| $\rho_0 \times 0.5$ | $-7.2$% | 0.000, 952 | 0.60, 129, 634 |
-| $\rho_0 \times 0.8$ | $-2.7$% | 0.000, 949 | 0.83, 134, 634 |
-| $\rho_0 \times 1.25$ | $+3.2$% | 0.000, 948 | 0.77, 132, 637 |
-| $\rho_0 \times 2$ | $+11.8$% | 0.000, 957 | 1.32, 132, 628 |
-| $k_1 \times 0.5$ | $-31.9$% | 0.000, 974 | 0.36, 137, 611 |
-| $k_1 \times 0.8$ | $-13.2$% | 0.000, 953 | 0.38, 131, 626 |
-| $k_1 \times 1.25$ | $+16.9$% | 0.000, 947 | 0.77, 138, 615 |
-| $k_1 \times 2$ | $+68.2$% | 0.000, 944 | 0.79, 131, 647 |
-| $y_c \times 0.5$ | $+32.8$% | 0.000, 941 | 0.43, 131, 640 |
-| $y_c \times 0.8$ | $+10.4$% | 0.000, 947 | 0.49, 131, 637 |
-| $y_c \times 1.25$ | $-9.8$% | 0.000, 952 | 0.38, 131, 628 |
-| $y_c \times 2$ | $-27.5$% | 0.000, 965 | 0.32, 131, 624 |
-| $\tau_{c0} \times 0.5$ | $-1.6$% | 0.000, 948 | 0.32, 131, 633 |
-| $\tau_{c0} \times 0.8$ | $-0.6$% | 0.000, 948 | 0.39, 131, 634 |
-| $\tau_{c0} \times 1.25$ | $+0.8$% | 0.000, 949 | 0.80, 135, 615 |
-| $\tau_{c0} \times 2$ | $+3.2$% | 0.000, 948 | 1.23, 132, 634 |
+| base | 0 | 0.000, 329 | 4.30, 137, 240 |
+| $\rho_0 \times 0.5$ | $-7.8$% | 0.000, 317 | 4.72, 134, 248 |
+| $\rho_0 \times 0.8$ | $-3.0$% | 0.000, 324 | 2.22, 132, 250 |
+| $\rho_0 \times 1.25$ | $+3.4$% | 0.000, 333 | 3.85, 135, 244 |
+| $\rho_0 \times 2$ | $+12.7$% | 0.000, 337 | 4.47, 139, 237 |
+| $k_1 \times 0.5$ | $-31.2$% | 0.000, 371 | 2.83, 135, 245 |
+| $k_1 \times 0.8$ | $-12.9$% | 0.000, 340 | 3.71, 136, 243 |
+| $k_1 \times 1.25$ | $+16.4$% | 0.000, 319 | 6.39, 144, 226 |
+| $k_1 \times 2$ | $+66.5$% | 0.000, 304 | 5.89, 137, 240 |
+| $y_c \times 0.5$ | $+27.9$% | 0.000, 326 | 7.33, 135, 245 |
+| $y_c \times 0.8$ | $+9.1$% | 0.000, 327 | 4.51, 131, 252 |
+| $y_c \times 1.25$ | $-8.9$% | 0.000, 333 | 4.18, 132, 251 |
+| $y_c \times 2$ | $-25.7$% | 0.000, 359 | 3.82, 134, 247 |
+| $\tau_{c0} \times 0.5$ | $-1.5$% | 0.000, 327 | 3.81, 134, 245 |
+| $\tau_{c0} \times 0.8$ | $-0.6$% | 0.000, 328 | 2.81, 138, 238 |
+| $\tau_{c0} \times 1.25$ | $+0.8$% | 0.000, 330 | 3.36, 132, 251 |
+| $\tau_{c0} \times 2$ | $+3.1$% | 0.000, 330 | 4.41, 138, 239 |
 
 **Figure 17.** Deviation from the finite-element case and solve time per
 case for the two routes.
@@ -1020,75 +1253,79 @@ they measure iterations and assemblies reliably and wall time only
 roughly. This section measures wall time under controlled conditions:
 each case is the first 16 load steps of the calibrated h40 deck (the
 strain per step of §3 unchanged, so the steps are those of the cold
-start, the elastic rise and the first yield), run alone on the host (8
-CPU cores, one GPU), with the thread count pinned. Nine cases: the cold
-finite-element arm on numpy at 1, 2, 4 and 8 threads, on torch CPU at 8
-threads, on torch CPU at 1, 2, 4 and 8 threads and on the torch GPU; the PINN+FEM route with the linear
-extrapolation; and the verified grain-aware PINN-as-solver route with its
-network on the GPU and on the CPU. For each case: wall time per load
-step, Newton time per iteration, predictor time per step, the number of
-assemblies, the peak resident memory of the process and the peak GPU
-memory. Deck `decks/benchmark/hardware_h40.i`; script
+start, the elastic rise and the first yield), run alone on the host with
+the thread count pinned. Twelve cases: the cold finite-element arm on
+numpy at 1, 2, 4 and 8 threads, on torch CPU at 1, 2, 4 and 8 threads and
+on the torch GPU; the PINN+FEM route with the linear extrapolation; and
+the verified grain-aware PINN-as-solver route with its network on the GPU
+and on the CPU. The three neural-route cases use the torch CPU arm at 8
+threads. For each case: wall time per load step, Newton time per
+iteration, predictor time per step, the number of assemblies, the peak
+resident memory of the process and the peak GPU memory. Deck
+`decks/benchmark/bunge/hardware_h40.i`; script
 `scripts/hardware_benchmark.py`.
 
 ### 10.2 Results
 
-All twelve cases converged in the same 16 steps; the three cold
-finite-element cases on numpy, torch CPU and torch GPU took the same 46
+All twelve cases converged in the same 16 steps; the nine cold
+finite-element cases on numpy, torch CPU and torch GPU took the same 45
 Newton iterations, so they are timed on identical work. Table 12 gives
 the measurements; Fig. 20 the time per step.
 
 **Table 12.** Hardware and time benchmark, first 16 load steps of the
-calibrated h40 deck, one case at a time on the host (8 cores, one GPU);
-the three torch CPU rows at 1, 2 and 4 threads were added on 2026-10-13 to
-size the concurrency of the following campaigns.
-The peak resident memory is that of the process; the GPU memory poll did
-not capture a value on this host (its tool prints no per-process figure)
-and is omitted.
+calibrated h40 deck, one case at a time on the host. The peak resident
+memory is that of the process; the GPU memory poll did not capture a
+value on this host (its tool prints no per-process figure) and is
+omitted.
 
 | case | FE arm | threads | network device | Newton iterations | Newton time per iteration | predictor time per step | steps without Newton | time per step | peak memory |
 |---|---|---|---|---|---|---|---|---|---|
-| cold FE | numpy | 1 | -- | 46 | 0.45 s | -- | 0 | 1.35 s | 173 MB |
-| cold FE | numpy | 2 | -- | 46 | 0.47 s | -- | 0 | 1.41 s | 174 MB |
-| cold FE | numpy | 4 | -- | 46 | 0.45 s | -- | 0 | 1.34 s | 175 MB |
-| cold FE | numpy | 8 | -- | 46 | 0.45 s | -- | 0 | 1.35 s | 175 MB |
-| cold FE | torch CPU | 1 | -- | 46 | 0.142 s | -- | 0 | 0.63 s | 1,179 MB |
-| cold FE | torch CPU | 2 | -- | 46 | 0.092 s | -- | 0 | 0.42 s | 1,186 MB |
-| cold FE | torch CPU | 4 | -- | 46 | 0.076 s | -- | 0 | 0.38 s | 1,201 MB |
-| cold FE | torch CPU | 8 | -- | 46 | 0.067 s | -- | 0 | 0.36 s | 1,203 MB |
-| cold FE | torch GPU | 8 | -- | 46 | 0.079 s | -- | 0 | 0.50 s | 1,610 MB |
-| PINN+FEM, linear extrapolation | numpy | 8 | -- | 37 | 0.48 s | 0.00 s | 0 | 1.19 s | 1,610 MB (shared poll) |
-| PINN as solver, grain-aware, verified | numpy | 8 | GPU | 22 | 0.48 s | 12.9 s | 8 of 16 | 13.8 s | 1,959 MB |
-| PINN as solver, grain-aware, verified | numpy | 8 | CPU | 22 | 0.47 s | 12.6 s | 8 of 16 | 13.4 s | 1,959 MB |
+| cold FE | numpy | 1 | -- | 45 | 2.64 s | -- | 0 | 7.53 s | 228 MB |
+| cold FE | numpy | 2 | -- | 45 | 2.66 s | -- | 0 | 7.56 s | 233 MB |
+| cold FE | numpy | 4 | -- | 45 | 2.66 s | -- | 0 | 7.57 s | 233 MB |
+| cold FE | numpy | 8 | -- | 45 | 2.64 s | -- | 0 | 7.51 s | 237 MB |
+| cold FE | torch CPU | 1 | -- | 45 | 0.47 s | -- | 0 | 1.55 s | 1,212 MB |
+| cold FE | torch CPU | 2 | -- | 45 | 0.39 s | -- | 0 | 1.33 s | 1,216 MB |
+| cold FE | torch CPU | 4 | -- | 45 | 0.37 s | -- | 0 | 1.27 s | 1,216 MB |
+| cold FE | torch CPU | 8 | -- | 45 | 0.41 s | -- | 0 | 1.38 s | 1,216 MB |
+| cold FE | torch GPU | 8 | -- | 45 | 0.56 s | -- | 0 | 2.00 s | 1,623 MB |
+| PINN+FEM, linear extrapolation | torch CPU | 8 | -- | 34 | 0.37 s | 0.00 s | 0 | 1.23 s | 1,212 MB |
+| PINN as solver, grain-aware, verified | torch CPU | 8 | GPU | 20 | 0.45 s | 8.4 s | 7 of 16 | 9.5 s | 2,074 MB |
+| PINN as solver, grain-aware, verified | torch CPU | 8 | CPU | 15 | 0.51 s | 7.6 s | 10 of 16 | 8.5 s | 2,074 MB |
 
-**The finite-element arm.** On numpy the thread count does not matter:
-the crystal-plasticity assembly is a sequence of small vectorised
-operations that do not use the threaded BLAS, so one core does the work
-of eight (0.45 s per Newton iteration in every case). On torch the same
-batched path is 3.2 times faster on a single thread (0.142 s per
-iteration), 4.9 times at two threads (0.092 s), 5.9 times at four
-(0.076 s) and 6.7 times at eight (0.067 s): the gain is mostly the
-batched kernel itself, the threads add a further factor of two with
-diminishing returns, so the host's 16 cores are best used as several
-two-thread runs side by side. The GPU is 5.7 times faster than numpy
-(0.079 s): at 800 elements the GPU is slightly slower than the CPU,
-as the first measurement of the batched kernel also found, and both
-torch arms cost 7 to 9 times the memory of numpy. The absolute times of
-§8 and §9, which were measured with the numpy arm, therefore overstate
-every route's cost by the same factor of about 6 relative to what the
-torch CPU arm delivers; the ratios between routes are unchanged, because
-every route is made of the same assemblies.
+**The finite-element arm.** On numpy the thread count does not matter
+(2.64 s per Newton iteration in every case): the implicit update has no
+analytic tangent on that arm, so every Newton iteration differentiates
+the constitutive update by finite differences, a sequence of small
+vectorised operations that do not use the threaded BLAS. On torch the
+consistent tangent comes from the same batched pass as the stress, and an
+iteration costs 0.47 s on a single thread, 0.39 s at two, 0.37 s at four
+and 0.41 s at eight: 5.6 to 7.1 times faster than numpy. The gain is the
+tangent and the batched kernel; threads add 25% at most and nothing
+beyond four, so the host's cores are best used as several two-thread
+runs side by side, which is how every campaign of this report was run.
+The GPU is slower than every CPU case (0.56 s): at 800 elements the
+launch overhead of the many small operations of the local Newton
+iteration outweighs the device, as the first measurement of the batched
+kernel also found. Both torch arms cost five to seven times the memory of
+numpy. The absolute times of §8 and §9 were measured with the torch CPU
+arm at four threads on a shared host (0.45 to 0.75 s per iteration), so
+they overstate every route's cost by up to a factor of two relative to
+the idle host; the ratios between routes hold in iterations and
+assemblies, because every route is made of the same assemblies.
 
 **The neural routes.** The linear-extrapolation predictor costs nothing
-measurable and removes a fifth of the Newton iterations over these 16
-steps (37 against 46; 37% over the full path, §8). The verified
-grain-aware solver solves 8 of the 16 steps without Newton, but its
-training costs 12.6 to 12.9 s per step, 42 assemblies per step on the
-numpy arm, against 1.35 s for the cold solve. Placing the network on the
-GPU or on the CPU makes no difference (12.9 against 12.6 s): the network
-is small, and the cost of the route is the finite-element assemblies of
-its training loss, not the network. The same conclusion as §8, now under
-controlled timing.
+measurable and removes a quarter of the Newton iterations over these 16
+steps (34 against 45; 57% over the full path, §8: the first steps are the
+elastic rise and the first yield, where the extrapolation is poorest).
+The verified grain-aware solver solves 7 to 10 of the 16 steps without
+Newton, but its training costs 7.6 to 8.4 s per step, 41 to 48 assemblies
+per step, against 1.4 s for the cold solve. Placing the network on the
+GPU or on the CPU makes no difference beyond the variation between the
+two runs (8.4 against 7.6 s; the two devices round differently, so the
+runs accept different steps): the network is small, and the cost of the
+route is the finite-element assemblies of its training loss, not the
+network. The same conclusion as §8, now under controlled timing.
 
 **Figure 20.** Time per load step of the twelve cases, split into the
 Newton solve and the predictor (log scale).
@@ -1112,7 +1349,7 @@ unreachable on a polycrystal in any case), so the surrogate learns the
 $(\rho_0, k_1, y_c, \tau_{c0})$ over the range of §6 ($\times 0.5$ to
 $\times 2$ of the calibrated values, log-uniform). Twenty-four
 Latin-hypercube samples are run through the pipeline of §2 on the
-calibrated structure (deck `decks/cp_study/surrogate/design_h40.i`); six
+calibrated structure (deck `decks/cp_study/bunge/surrogate/design_h40.i`); six
 are held out. The curve surrogate is a network
 $\sigma(\mathbf{p}, \varepsilon)$ with five inputs and one output, the
 field surrogate $\mathbf{u}(\mathbf{p}, \mathbf{x})$ with seven inputs and
@@ -1124,50 +1361,56 @@ samples), the training time, the time per query on the GPU and on the
 CPU (1,000 random parameter rows), and the break-even number of queries
 against the finite-element run, the PINN+FEM run and the verified
 PINN-as-solver run of §8. Decks
-`decks/cp_study/surrogate/plate_h40_surrogate_curve.i` and
+`decks/cp_study/bunge/surrogate/plate_h40_surrogate_curve.i` and
 `plate_h40_surrogate_field.i`.
 
 ### 11.2 Results
 
-The twenty-four samples cost 14,961 s of finite-element time (623 s each
-on average at two threads, four at a time); the eighteen training samples
-account for 11,270 s. Table 10 summarises the three surrogate runs.
+The twenty-four samples cost 10,212 s of finite-element time (426 s each
+on average at two threads, eight at a time); the eighteen training samples
+account for 7,792 s. Table 10 summarises the three surrogate runs.
 
 **Table 10.** Plate surrogates over $(\rho_0, k_1, y_c, \tau_{c0})$ at h40,
 eighteen training samples, six held out. The held-out error is the mean
 relative L2 difference from the finite-element result at parameters the
 network has not seen; the query time is for 1,000 random parameter rows
 after training. Break-even is the number of queries after which data
-plus training is cheaper than one solver run per query (cold FE 838 s;
-PINN+FEM 667 s; verified grain-aware solver 4,543 s).
+plus training is cheaper than one solver run per query (cold FE 344 s;
+PINN+FEM 247 s; verified grain-aware solver 3,844 s).
 
 | surrogate | network | training device | held-out error, mean (max) | training time | time per query | break-even vs cold FE |
 |---|---|---|---|---|---|---|
-| stress-strain curve $\sigma(\mathbf{p}, \varepsilon)$ | 5 in, 1 out, 8,769 weights | GPU | 3.3% (6.6%) | 28 s | 0.38 ms | 14 runs |
-| stress-strain curve, same deck | same | CPU | 2.0% (5.2%) | 52 s | 0.18 ms | 14 runs |
-| displacement field $\mathbf{u}(\mathbf{p}, \mathbf{x})$ at 20% | 7 in, 3 out, 9,027 weights | GPU | 0.97% (1.04%) | 121 s | 0.60 ms (1,722 nodes per query) | 14 runs |
+| stress-strain curve $\sigma(\mathbf{p}, \varepsilon)$ | 5 in, 1 out, 8,769 weights | GPU | 3.5% (5.6%) | 19 s | 0.30 ms | 23 runs |
+| stress-strain curve, same deck | same | CPU | 2.2% (4.8%) | 17 s | 0.13 ms | 23 runs |
+| displacement field $\mathbf{u}(\mathbf{p}, \mathbf{x})$ at 20% | 7 in, 3 out, 9,027 weights | GPU | 0.91% (1.01%) | 118 s | 0.74 ms (1,722 nodes per query) | 23 runs |
 
 **Accuracy.** The field surrogate reproduces the 20% displacement field
 of every held-out sample to about 1%: the displacement of a plate in
 tension varies smoothly with the parameters and the network has little
-to learn beyond the amplitude. The curve surrogate is coarser, 2 to 3% on
-average and 5 to 7% at worst (Fig. 18): the elastic knee is smoothed, and
-the held-out sample with the lowest hardening (sample 21, saturating at
-420 MPa) is overshot at small strain and under-resolved afterwards, the
-signature of a four-dimensional log space sampled by eighteen points. The
-accuracy is limited by the data, not by the network; doubling the design
-costs another 15,000 s of finite-element time and is the lever if the
-curve surrogate is to be used quantitatively.
+to learn beyond the amplitude. The curve surrogate is coarser, 2 to 4% on
+average and 5 to 6% at worst (Fig. 18): the elastic knee is smoothed, and
+the worst held-out samples are at the edges of the hardening range (on
+the GPU run sample 7, with a high $k_1$, at 5.6% and sample 21, with the
+largest $y_c$ and the flattest curve, at 4.9%; on the CPU run sample 1 at
+4.8%), the signature of a four-dimensional log space sampled by eighteen
+points. The two devices train to different minima from the same seed, so
+the worst sample differs. The accuracy is limited by the data, not by the
+network; doubling the design costs another 10,000 s of finite-element
+time and is the lever if the curve surrogate is to be used
+quantitatively.
 
-**Cost.** The training is negligible next to the data: 28 to 121 s
-against 11,270 s of finite-element runs. The network is small, so a curve query
-costs 0.2 to 0.4 ms on either device and a field query (1,722 nodes) 0.6
+**Cost.** The training is negligible next to the data: 17 to 118 s
+against 7,792 s of finite-element runs. The network is small, so a curve query
+costs 0.1 to 0.3 ms on either device and a field query (1,722 nodes) 0.7
 ms, and the GPU gives no advantage at this size (it is slower per query than the CPU because of the launch
 overhead); training on the GPU is faster for the field surrogate only.
 Against the finite-element run of §4 the surrogate pays for itself after
-14 queries, against the verified PINN-as-solver run after 3 (Fig. 19);
-beyond that every query is four to five orders of magnitude cheaper than
-a solve. The two neural solver routes of §8 never reach this regime
+23 queries, against the PINN+FEM run after 32 and against the verified
+PINN-as-solver run after 3 (Fig. 19); beyond that every query is six
+orders of magnitude cheaper than a solve. The break-even against the
+finite-element run was 14 queries in the first version of this study: the
+data now cost a third less, but one finite-element run costs less than
+half, so the surrogate needs more queries to pay. The two neural solver routes of §8 never reach this regime
 because they are trained per trajectory; the surrogate does because it is
 trained once over the parameter space and verified on held-out
 finite-element runs, which is the only verification available for a
@@ -1239,8 +1482,13 @@ O-grid ring around the hole (bottom): 4 layers, hole-arc element 0.65 um.*
 ### 12.4 Hardware
 
 Every run of Part II uses the torch CPU arm (the Part I hardware
-benchmark's best arm), two threads per run and up to seven runs side by
-side on the 16-core host, except the hardware comparison of §18.
+benchmark's best arm), two threads per run and several runs side by side
+on the host, except the hardware comparison of §18. The crystal-plasticity
+runs of §14 to §19 use the framework of §3 (Bunge angles, total-Lagrangian
+balance, implicit update; decks under `decks/pfd_study/cp/bunge/`), and
+their engineering stress is the reaction on the pulled face over the
+original gross section. The J2 runs of §13 are those of the first version
+of this report.
 
 ## 13. J2 plasticity with phase-field ductile fracture
 
@@ -1394,21 +1642,21 @@ one.
 
 The Part I calibrated crystal-plasticity set and grain structure, the AT2
 model with $W_c = 0$ and $\eta = 0$, $G_c$ calibrated by log-bisection
-at each $\ell_0$ (`decks/pfd_study/cp/cal_h40.i`):
+at each $\ell_0$ (`decks/pfd_study/cp/bunge/cal_h40.i`; 9, 7 and 2 trials):
 
 | $\ell_0$ (um) | $\ell_0/h$ | calibrated $G_c$ (MPa um) | fracture strain | peak (MPa) at strain |
 |---|---|---|---|---|
-| 5 | 2 | 1,106 | 17.19% | 596 at 16.6% |
-| 10 | 4 | 1,832 | 17.11% | 577 at 15.5% |
-| 20 | 8 | 2,818 | 17.27% | 569 at 15.1% |
+| 5 | 2 | 1,123 | 17.11% | 548 at 15.5% |
+| 10 | 4 | 1,974 | 17.19% | 543 at 14.8% |
+| 20 | 8 | 2,991 | 17.19% | 537 at 14.1% |
 
 *Table 18. CP+PFD calibration at h40.*
 
-| $\ell_0$ at $G_c = 1,106$ (um) | 2.5 (= h) | 5 | 10 | 20 | 40 |
+| $\ell_0$ at $G_c = 1,123$ (um) | 2.5 (= h) | 5 | 10 | 20 | 40 |
 |---|---|---|---|---|---|
-| fracture strain | none | 17.2% | 10.5% | 7.1% | 6.9% |
-| peak (MPa) | 658 | 596 | 486 | 418 | 407 |
-| fracture energy (MPa) | 103 | 85.0 | 43.7 | 26.7 | 25.4 |
+| fracture strain | none | 17.1% | 10.0% | 6.8% | 6.6% |
+| peak (MPa) | 589 | 548 | 479 | 431 | 424 |
+| fracture energy (MPa) | 101 | 83.2 | 43.2 | 27.1 | 25.8 |
 
 *Table 19. CP+PFD length-scale sweep at fixed G_c.*
 
@@ -1421,40 +1669,58 @@ the experiment markers.*
 
 *Figure 28. CP+PFD at fixed G_c, l0 from h to 16h.*
 
-The crystal-plasticity plate needs no threshold: its gross-section stress
-follows the plain-specimen markers within 1 to 2% from 0.6% to 17% (peak
-596 MPa at 16.6% against 593 at 17%) and loses its load in 0.6% of strain
-after initiation. This agreement is recorded as a coincidence of a
-different specimen, not a validation: the perforated gross section is 10%
-smaller and the Part I plain plate matched the same markers, so the net-
-section loss and the different hardening of the polycrystal under the
-hole's stress state cancel on this geometry. The calibrated $G_c$ is
-1,106 MPa um at $\ell_0 = 5$ um, 2.9x the J2 value at the same length
-scale, and it rises with $\ell_0$ to the J2 $W_c = 0$ value at 20 um,
-where the band averages over the four grains at the hole. At fixed
-$G_c$ the sweep gives the clean (chakraborty 2016 multiscale) Fig. 8 form:
-peak, fracture strain and energy all fall monotonically with $\ell_0$
-and saturate between 8h and 16h; at $\ell_0 = h$ nothing initiates.
+The crystal-plasticity plate needs no threshold to initiate at the target:
+the calibrated $G_c$ is 1,123 MPa um at $\ell_0 = 5$ um, 2.9x the J2 value
+at the same length scale, and it rises with $\ell_0$ to 2,991 MPa um at 20
+um, where the band averages over the four grains at the hole. The three
+values are within 2 to 8% of those of the first version of this report
+(1,106, 1,832 and 2,818). The load drops by a third within 0.2% of strain
+after initiation.
+
+The gross-section stress of the perforated plate lies below the
+plain-specimen markers: 2% low at 2% strain, 3% at 7%, 4% at 11% and 7% at
+15%, with the peak of 548 MPa at 15.5% against the markers' 593 MPa at
+17%. Against the plain plate of Part I with the same parameters the
+difference is 1.7% at 2% strain, 3.5% at 7%, 4.9% at 11% and 6.8% at 15%.
+Two effects add up: the hole (the sweep case without initiation, at
+$\ell_0 = h$, peaks at 589 MPa where the plain plate reaches 610 MPa), and
+the AT2 damage, which has no threshold and degrades the whole section
+from the first plastic step (mean $d$ 0.27 at 10% strain and 0.39 at 15%,
+§15). In the first version of this report the same plate followed the
+markers within 1 to 2% up to a peak of 596 MPa; that agreement was
+recorded as a coincidence, and it rested on the earlier balance, which
+did not carry the thinning of the section into the force. With the true
+force the coupled plate is softer than the plain specimen, as a perforated
+and diffusely damaged plate must be, and matching the markers on this
+geometry would need the crystal-plasticity set refitted on the coupled
+model or a threshold $W_c$ (§14.2: $W_c = 40$ MPa raises the peak to 573
+MPa). That is outside the pipeline order of this study, in which the
+fracture model inherits the Part I set.
+
+At fixed $G_c$ the sweep gives the clean (chakraborty 2016 multiscale)
+Fig. 8 form: peak, fracture strain and energy all fall monotonically with
+$\ell_0$ and saturate between 8h and 16h; at $\ell_0 = h$ nothing
+initiates.
 
 ### 14.2 Parameter sensitivity
 
 | parameter | values | fracture strain | peak (MPa) |
 |---|---|---|---|
-| base | $G_c$ 1,106, $\ell_0$ 5, $\eta$ 0, $W_c$ 0 | 17.19% | 596 |
-| $G_c$ x 0.25, 0.5, 2, 4 | 277, 553, 2,212, 4,424 | 4.22, 8.59%, none, none | 381, 472, 657, 666 |
-| $\ell_0$ (um) | 2.5, 3.75, 7.5, 10 | none, none, 12.89, 10.47% | 658, 641, 529, 486 |
-| $\eta$ (MPa s) | 1, 3, 10, 30 | 17.19% (all) | 596 (all) |
-| $W_c$ (MPa) | 5, 10, 20, 40 | 17.66, 18.13, 19.06%, none | 602, 608, 619, 641 |
-| alternations | 5 | 17.11% | 595 |
+| base | $G_c$ 1,123, $\ell_0$ 5, $\eta$ 0, $W_c$ 0 | 17.11% | 548 |
+| $G_c$ x 0.25, 0.5, 2, 4 | 281, 561, 2,245, 4,491 | 4.22, 8.67%, none, none | 403, 470, 590, 599 |
+| $\ell_0$ (um) | 2.5, 3.75, 7.5, 10 | none, none, 12.34, 10.00% | 589, 572, 507, 479 |
+| $\eta$ (MPa s) | 1, 3, 10, 30 | 17.11% (all) | 548 (all) |
+| $W_c$ (MPa) | 5, 10, 20, 40 | 17.58, 18.05, 18.98%, none | 551, 555, 561, 573 |
+| alternations | 5 | 17.03% | 548 |
 
-*Table 20. CP+PFD sensitivity at h40.*
+*Table 20. CP+PFD sensitivity at h40 (`decks/pfd_study/cp/bunge/sens_h40.i`).*
 
 ![CP sensitivity](../../figures/pfd/cp_sens_h40_curves.png)
 
 *Figure 29. CP+PFD sensitivity curves.*
 
 $G_c$ and $\ell_0$ govern initiation monotonically; the viscosity is
-immaterial at the quasi-static rate (peak within 0.06 MPa over 1 to 30
+immaterial at the quasi-static rate (peak within 0.05 MPa over 1 to 30
 MPa s); the threshold moves initiation by about +0.1% strain per MPa and
 removes it at 40 MPa, because the intragranular plastic work at the
 initiation site is spent in a narrower range than in J2. Five alternations
@@ -1464,9 +1730,9 @@ against three change the fracture strain by one load step.
 
 | mesh | h (um) | $\ell_0/h$ | fracture strain | peak (MPa) | fracture energy (MPa) |
 |---|---|---|---|---|---|
-| h20 | 5 | 1 | 16.09% | 609 | 81.0 |
-| h40 | 2.5 | 2 | 17.19% | 596 | 85.0 |
-| h80 | 1.25 | 4 | 17.58% | 587 | 86.3 |
+| h20 | 5 | 1 | 16.17% | 560 | 80.1 |
+| h40 | 2.5 | 2 | 17.11% | 548 | 83.2 |
+| h80 | 1.25 | 4 | 17.50% | 537 | 83.5 |
 
 *Table 21. CP+PFD at l0 = 5 um, three mesh levels.*
 
@@ -1475,18 +1741,19 @@ against three change the fracture strain by one load step.
 *Figure 30. CP+PFD mesh sensitivity.*
 
 The sequence converges from below in the initiation strain and from above
-in the peak: h20 ($\ell_0 = h$) initiates 1.1% early and 2% too stiff,
-h40 and h80 differ by five load steps (0.4%) and 1.4% in the peak, within
-the 2% the Part I grain-instance check accepted. h40 with
-$\ell_0 = 5$ um ($\ell_0 = 2h$) is the production configuration.
+in the peak: h20 ($\ell_0 = h$) initiates 0.9% early and 2% too stiff,
+h40 and h80 differ by five load steps (0.4%) and 1.9% in the peak, within
+the 2% the Part I grain-instance check accepted. The peak carries the
+mesh effect of the plain plate (§5.3). h40 with $\ell_0 = 5$ um
+($\ell_0 = 2h$) is the production configuration.
 
 ### 14.4 Grain-instance check
 
-| instance | fracture strain | peak (MPa) | fracture energy (MPa) | max d at 20% |
-|---|---|---|---|---|
-| A (calibration) | 17.19% | 596 | 85.0 | -- |
-| B | none by 20% | 613 | 99.8 | 0.73 |
-| C | 16.09% | 612 | 83.4 | -- |
+| instance | fracture strain | peak (MPa) | fracture energy (MPa) |
+|---|---|---|---|
+| A (calibration) | 17.11% | 548 | 83.2 |
+| B | 19.14% | 548 | 95.3 |
+| C | 17.19% | 556 | 85.6 |
 
 *Table 22. The calibrated CP+PFD case on the three Part I grain structures.*
 
@@ -1494,23 +1761,25 @@ $\ell_0 = 5$ um ($\ell_0 = 2h$) is the production configuration.
 
 *Figure 31. CP+PFD on the three grain instances.*
 
-With the same $G_c$ and $\ell_0$, instance C initiates 1.1% earlier and
-instance B not at all within the path, while the gross-section curves
-agree within 3% to 15%: the grain configuration at the hole governs the
-initiation strain, as the plastic zone smaller than a grain implies. A
-$G_c$ calibrated on one instance is an instance-specific number.
+With the same $G_c$ and $\ell_0$, instance C initiates one load step
+after the calibration structure and instance B 2.0% of strain later,
+while the gross-section curves agree within 0.7% (B) and 3.0% (C) up to
+15% strain: the grain configuration at the hole governs the initiation
+strain, as the plastic zone smaller than a grain implies. A $G_c$
+calibrated on one instance is an instance-specific number. The spread is
+smaller than in the first version of this report, where B did not
+initiate within the path and C initiated 1.1% early.
 
 ## 15. Fields: how the two couplings fail
 
-`decks/pfd_study/report/fields_cal_h40.i`, `scripts/pfd_fields.py`
+`decks/pfd_study/report/bunge/fields_cal_h40.i`, `scripts/pfd_fields.py`
 (damage and equivalent plastic strain at fixed nominal strains, the
 cracked elements $d \ge 0.8$ solid over the plastic strain, and the
 animation `figures/pfd/cal_h40_evolution.gif`).
 
 | run | strain | max d | mean d | elements with d >= 0.8 | max equivalent plastic strain |
 |---|---|---|---|---|---|
-| CP | 5 / 10 / 15 / 17.2% | 0.22 / 0.42 / 0.61 / 0.81 | 0.14 / 0.27 / 0.39 / 0.44 | 0 / 0 / 0 / 2 | 0.16 / 0.30 / 0.42 / 0.46 |
-| CP | 17.5% (end) | 0.97 | 0.47 | 40 | 0.46 |
+| CP | 5 / 10 / 15 / 17.2% (last frame) | 0.21 / 0.39 / 0.56 / 0.91 | 0.14 / 0.27 / 0.39 / 0.46 | 0 / 0 / 0 / 37 | 0.15 / 0.27 / 0.40 / 0.45 |
 | J2 | 5 / 10 / 15 / 17.2% | 0.05 / 0.07 / 0.37 / 0.78 | 0.03 / 0.05 / 0.08 / 0.14 | 0 / 0 / 0 / 0 | 0.17 / 0.31 / 0.62 / 1.02 |
 | J2 | 18.1% (end) | 0.91 | 0.19 | 28 | 1.31 |
 
@@ -1520,7 +1789,7 @@ animation `figures/pfd/cal_h40_evolution.gif`).
 
 *Figure 32. Damage (element mean) on the deformed plates at 5, 10, 15 and
 17.2% and at the end of the path; CP+PFD (top), J2+PFD at W_c = 200
-(bottom).*
+(bottom). The CP path ends at 17.3%, one frame after initiation.*
 
 ![plastic strain](../../figures/pfd/cal_h40_equivalent_plastic_strain.png)
 
@@ -1533,16 +1802,16 @@ plastic strain at the end of each path.*
 
 The two plates reach $d = 0.8$ at the root at the same nominal strain by
 construction, by different routes. The CP plate damages diffusely from the
-first steps (mean $d$ 0.14 at 5%, 0.44 at initiation) because every grain
+first steps (mean $d$ 0.14 at 5%, 0.46 at initiation) because every grain
 accumulates plastic work and the source has no threshold; the hot spot sits
-at the root in the grain below the hole, and the cracked elements extend
-above and below the hole with a tilt toward the lower-right grain
-boundary, while the plastic strain stays below 0.46 in a grain-wise
-pattern. The J2 plate holds its section until the plastic work at the root
+at the root in the grain below the hole, and within one frame of
+initiation the 37 cracked elements run from the hole to the lower edge of
+the plate, with a step toward the lower-right grain, while the plastic
+strain stays below 0.45 in a grain-wise pattern. The J2 plate holds its section until the plastic work at the root
 passes the threshold (max $d$ 0.07 at 10%), then a transverse band of
 damage grows across the ligament in a few percent of strain, with the
-plastic strain localised in the same band (1.0 at initiation, three times
-the CP maximum) and the plate necking at the top edge; the 28 cracked
+plastic strain localised in the same band (1.0 at initiation, more than
+twice the CP maximum) and the plate necking at the top edge; the 28 cracked
 elements form a straight transverse crack. This is the J2 limitation: with
 a homogeneous flow stress the model matches the curve's hardening and its
 fracture strain only through a threshold and a five-fold lower toughness,
@@ -1554,25 +1823,26 @@ structure, not a J2 parameter.
 ## 16. Stress-concentrator shape study (CP+PFD)
 
 The calibrated CP+PFD set on six elliptical holes (hexaform ellipse holes,
-h40 background, the same ring rule; `decks/pfd_study/cp/shape_h40.i`,
+h40 background, the same ring rule; `decks/pfd_study/cp/bunge/shape_h40.i`,
 `decks/pfd_study/mesh/h40_ell_*.i`), in three series: A holds the
 transverse half-extent $a = 2.5$ um and sharpens the root (Inglis
 $K_t = 1 + 2a/b$ = 5 and 9); B holds the hole area and lengthens the
 transverse extent (7.07 and 10 um); C rotates the 5 x 2.5 um ellipse by 45
 and 90 degrees.
 
-| series | case | $K_t$ | fracture strain | peak (MPa) | fracture energy (MPa) | cracked elements at the end |
+| series | case | $K_t$ | fracture strain | peak (MPa) | fracture energy (MPa) | cracked elements in the last frame |
 |---|---|---|---|---|---|---|
-| -- | circle 5 um | 3 | 17.19% | 596 | 85.0 | 40 |
-| A | 5 x 2.5 | 5 | 17.81% | 602 | 89.1 | 61 |
-| A | 5 x 1.25 | 9 | 18.36% | 606 | 92.2 | 7 |
-| B | 7.07 x 3.54 | 5 | 16.33% | 590 | 79.0 | 45 |
-| B | 10 x 2.5 | 9 | 15.47% | 572 | 74.1 | 11 |
-| C | 5 x 2.5 at 45 deg | -- | 18.52% | 606 | 93.0 | 82 |
-| C | 5 x 2.5 at 90 deg | 2 | 18.91% | 610 | 95.2 | 56 |
+| -- | circle 5 um | 3 | 17.11% | 548 | 83.2 | 37 |
+| A | 5 x 2.5 | 5 | 17.66% | 551 | 86.5 | 49 |
+| A | 5 x 1.25 | 9 | 17.89% | 552 | 88.0 | 0 (frame before initiation) |
+| B | 7.07 x 3.54 | 5 | 15.78% | 542 | 76.1 | 14 |
+| B | 10 x 2.5 | 9 | 14.53% | 534 | 68.8 | 10 |
+| C | 5 x 2.5 at 45 deg | -- | 17.66% | 551 | 86.5 | 46 |
+| C | 5 x 2.5 at 90 deg | 2 | 17.97% | 552 | 88.4 | 38 |
 
-*Table 24. The shape study (the 7.07 x 3.54 peak is the value before its
-last-step spike).*
+*Table 24. The shape study. Field frames are stored every four load
+steps, so the last frame is up to 0.3% of strain before the end of a
+path.*
 
 ![shape curves](../../figures/pfd/cp_shape_h40_curves.png)
 
@@ -1580,119 +1850,151 @@ last-step spike).*
 
 ![shape crack](../../figures/pfd/cp_shape_h40_crack.png)
 
-*Figure 36. Cracked elements over the plastic strain at the end of each
-path (`figures/pfd/cp_shape_h40_evolution.gif` animates the seven cases).*
+*Figure 36. Cracked elements over the plastic strain in the last frame of
+each path (`figures/pfd/cp_shape_h40_evolution.gif` animates the seven
+cases).*
 
 Series A contradicts the elastic expectation: at fixed transverse extent a
-sharper root initiates later, not earlier, because the plastic-work source
-of the CP plate is concentrated into a smaller root volume (7 cracked
-elements for the sharpest root against 40 for the circle) and because the
-0.45 um hole-arc element under-resolves a 0.16 um root radius (the case is
-reported with that caveat; the h80 ring would be needed to make it
-quantitative). Series B follows the Irwin scaling: the larger transverse
-extent ($r_p$ proportional to $a$) initiates earlier with a lower energy
-and the crack leaves the root transversely. Series C delays initiation as
-$K_t$ falls with the rotation and the 45-degree case tilts the crack along
-the grain boundary below the hole into the lower-right grain, the path the
-circle's crack also turns into. Every case initiates at the root or the
-grain boundary adjacent to it, and the peak varies by only 2% because the
-gross section is 95% intact until initiation.
+sharper root initiates later, not earlier (17.11, 17.66 and 17.89% for
+$K_t$ = 3, 5 and 9), because a narrower hole removes less of the section
+and the plastic-work source of the CP plate is concentrated into a smaller
+root volume; the 0.45 um hole-arc element also under-resolves a 0.16 um
+root radius (the sharpest case is reported with that caveat; the h80 ring
+would be needed to make it quantitative). Series B follows the Irwin
+scaling: the larger transverse extent ($r_p$ proportional to $a$)
+initiates earlier with a lower energy (15.78 and 14.53%). Series C delays
+initiation as $K_t$ falls with the rotation: the 45-degree case initiates
+at the same load step as the unrotated ellipse and the 90-degree case
+four steps later. In every case the crack starts at the root below the
+hole and runs to the lower edge of the plate through the same grains,
+with the step toward the lower-right grain that the circle's crack also
+takes, and the peak varies by only 3.5% across the seven cases because the damage that sets it is diffuse over the whole
+section.
 
 ## 17. Neural routes inside the staggered loop
 
 The two Part I routes serve the mechanics sub-solve of every staggered
-step of the calibrated CP+PFD plate (`decks/pfd_study/cp/neural_h40.i`):
-the linear extrapolation predictor (PINN+FEM) and the grain-aware
-FE-residual-trained network as the verified solver (network on the GPU,
-Newton correction when the proposal's residual exceeds 5% of the step's).
+step of the calibrated CP+PFD plate
+(`decks/pfd_study/cp/bunge/neural_h40.i`): the linear extrapolation
+predictor (PINN+FEM) and the grain-aware FE-residual-trained network as
+the verified solver (network on the CPU, Newton correction when the
+proposal's residual exceeds 5% of the step's).
 
-| route | fracture strain | peak (MPa) | Newton iterations (last alternation of each step) | Newton time (s) | predictor time (s) | wall (s) |
+| route | fracture strain | peak (MPa) | Newton iterations, first alternations / all | Newton time, last alternation (s) | predictor time (s) | wall (s) |
 |---|---|---|---|---|---|---|
-| FE (cold Newton start) | 17.19% | 595.8 | 1,008 | 147 | -- | 642 |
-| PINN+FEM, linear extrapolation | 17.19% | 595.8 | 1,008 | 145 | 0.0 | 609 |
-| PINN as solver, grain-aware, verified | 17.11% | 595.6 | 955 | 122 | 43.5 | 481 |
+| FE (cold Newton start) | 17.11% | 547.7 | 670 / 1,167 | 399 | -- | 1,366 |
+| PINN+FEM, linear extrapolation | 17.11% | 547.7 | 450 / 947 | 400 | 0.0 | 1,399 |
+| PINN as solver, grain-aware, verified | 17.03% | 547.5 | 16 / 480 | 361 | 1,087 | 2,034 |
 
-*Table 25. The neural routes on the coupled problem (torch CPU, 2 threads).*
+*Table 25. The neural routes on the coupled problem (torch CPU, 2 threads,
+two runs side by side).*
 
 ![neural curves](../../figures/pfd/cp_neural_h40_curves.png)
 
 *Figure 37. The three routes coincide on the curve.*
 
 The linear extrapolation reproduces the FE run to the printed digits with
-a median proposal error of 0.6% of the step increment. The verified solver
-accepts its proposal at 216 of 222 first alternations (two cold-start
-steps without history and four early steps corrected by Newton; median
-residual of the accepted proposals 0.4% of the step) and reproduces the
-curve within one load step of initiation. The staggered scheme then
-re-solves the mechanics once or twice per step against the updated damage
-with ordinary warm-started Newton, so the predictor replaces only the first
-alternation: the route's saving is 25% of the wall time (481 against
-642 s, the predictor's 43.5 s included), not the 37% of the uncoupled
-plate. A predictor of the re-solves (a network of the damage increment)
-is the next step and outside this study.
+a median proposal error of 0.7% of the step increment, and removes a third
+of the first-alternation Newton iterations (450 against 670; 19% of all
+mechanics iterations). The verified solver accepts its proposal at 213 of
+219 first alternations (the two cold-start steps without history, three
+early steps and the last step are corrected by Newton; median residual of
+the accepted proposals 4% of the step) and reproduces the curve within
+one load step of initiation and 0.2 MPa in the peak. The staggered scheme
+then re-solves the mechanics once or twice per step against the updated
+damage with ordinary warm-started Newton, so the predictor replaces only
+the first alternation: the solver route needs 480 mechanics iterations
+where the FE route needs 1,167. That saving does not reach the wall time.
+The 740 assemblies of the training loss cost 1,087 s, and the run takes
+2,034 s against 1,366 s. In the
+first version of this report the same route was 25% faster than FE,
+because the FE run then needed two to three times more Newton iterations
+per step; with the consistent tangent the Newton solve is cheap enough
+that a trained predictor no longer pays on this problem, and the linear
+extrapolation, which costs nothing, leaves the wall time unchanged:
+the cost of a mechanics solve in the coupled loop does not fall with its
+iteration count (§18). A
+predictor of the re-solves (a network of the damage increment) is the
+next step and outside this study.
 
 ## 18. Hardware and time benchmark of the coupled routes
 
 Seven cases, each the first 16 staggered steps of the calibrated CP+PFD
-plate, one at a time on the host (`decks/benchmark/hardware_pfd_h40.i`,
+plate, one at a time on the host
+(`decks/benchmark/bunge/hardware_pfd_h40.i`,
 `scripts/hardware_benchmark.py`):
 
 | case | backend / threads | wall per step (s) | Newton s per iteration | Newton iterations, first alternations / all | predictor s per step | peak memory (MB) |
 |---|---|---|---|---|---|---|
-| FE, numpy | numpy / 8 | 2.68 | 0.450 | 49 / 80 | -- | 264 |
-| FE, torch CPU | torch / 2 | 1.64 | 0.150 | 49 / 80 | -- | 1,328 |
-| FE, torch CPU | torch / 8 | 1.47 | 0.117 | 49 / 80 | -- | 1,328 |
-| FE, torch GPU | torch GPU / 8 | 2.50 | 0.141 | 49 / 80 | -- | 1,718 |
-| PINN+FEM, linear extrapolation | torch / 8 | 1.46 | 0.117 | 43 / 74 | 0.000 | 1,718 |
-| PINN as solver, verified, network on GPU | torch / 8 | 2.75 | 0.116 | 16 / 51 | 1.22 | 2,124 |
-| PINN as solver, verified, network on CPU | torch / 8 | 2.60 | 0.116 | 16 / 51 | 1.17 | 2,124 |
+| FE, numpy | numpy / 8 | 19.46 | 4.21 | 53 / 79 | -- | 311 |
+| FE, torch CPU | torch / 2 | 3.48 | 0.542 | 54 / 80 | -- | 1,338 |
+| FE, torch CPU | torch / 8 | 3.21 | 0.489 | 54 / 80 | -- | 1,338 |
+| FE, torch GPU | torch GPU / 8 | 4.63 | 0.584 | 54 / 80 | -- | 1,766 |
+| PINN+FEM, linear extrapolation | torch / 8 | 3.24 | 0.489 | 37 / 63 | 0.000 | 1,766 |
+| PINN as solver, verified, network on GPU | torch / 8 | 8.63 | 0.478 | 12 / 42 | 5.75 | 2,273 |
+| PINN as solver, verified, network on CPU | torch / 8 | 8.51 | 0.473 | 12 / 42 | 5.74 | 2,273 |
 
-*Table 26. Time per coupled load step by route and hardware.*
+*Table 26. Time per coupled load step by route and hardware. The Newton
+time per iteration is measured on the last alternation of each step, the
+only one whose solve time the staggered loop records. The peak memory is a
+running maximum over the cases in the order of the table, so the value of
+the linear case is an upper bound.*
 
 ![hardware](../../figures/pfd/hardware_pfd_h40_time_per_step.png)
 
-*Figure 38. Time per load step: Newton and predictor shares.*
+*Figure 38. Time per load step: Newton time of the last alternation and
+predictor time.*
 
-The Part I backend ranking holds for the coupled problem: torch CPU is 3.0
-to 3.9x faster per Newton iteration than numpy, and the GPU no faster than
-the CPU at this size. The mechanics Newton is only 17% of a coupled step on
-torch (37% on numpy): the damage assembly and solve, the CP state handling
-and the reaction and field evaluations of the staggered loop take the rest
-and are not sped up by the backend. The linear extrapolation saves 12% of
-the first-alternation iterations at no cost; the verified solver removes
-the first-alternation Newton on 10 of the 16 steps at 1.2 s of training per
-step, the same on the GPU and the CPU (the cost is the numpy assemblies of
-the FE residual). Over the full path (§17) the retraining is cheaper per
-step and the route ends 25% faster than FE.
+The Part I backend ranking holds for the coupled problem: torch CPU is 7.8
+to 8.6x faster per Newton iteration than numpy and 6.1x faster per coupled
+step, and the GPU is slower than the CPU at this size (4.63 against 3.21 s
+per step). The last-alternation Newton solve is 29% of a coupled step on
+torch and 41% on numpy; the time of the first-alternation solve is not
+recorded separately, so the full mechanics share of a step is not known
+from this benchmark. The linear extrapolation removes 31% of the
+first-alternation iterations (37 against 54) and leaves the time per step
+unchanged within 1% (3.24 against 3.21 s): the log time stamps show that an
+alternation takes the same 1.5 to 2 s with two Newton iterations as with
+four, so the cost of a mechanics solve in the coupled loop is set per solve
+and not per iteration. Which part of the solve carries that fixed cost was
+not profiled. The verified solver removes the first-alternation Newton on
+11 of the 16 steps (12 iterations against 54) at 5.7 s of training per
+step, 97% of it the assemblies of the FE residual and the same with the
+network on the GPU and on the CPU, and a step takes 2.7 times the FE step.
+Over the full path (§17) the ratio is 1.5, because the retraining becomes
+cheaper per step.
 
 ## 19. The parametric surrogate of the coupled plate
 
-24 LHS samples of ($G_c$ 553 to 2,212 MPa um, $\ell_0$ 4 to 10 um,
-$\rho_0$ 24 to 96, $\tau_{c0}$ 2.6 to 10.6 MPa; log scale) on the
-calibrated CP+PFD deck, 17 of which initiate (5.9 to 17.9%); two
+24 LHS samples of ($G_c$ 561 to 2,245 MPa um, $\ell_0$ 4 to 10 um,
+$\rho_0$ 27 to 108, $\tau_{c0}$ 2.7 to 10.8 MPa; log scale) on the
+calibrated CP+PFD deck, 17 of which initiate (5.5 to 17.2%); two
 surrogates trained on 18 and held out on 6 (3 x 64 tanh, Adam 4,000 +
 L-BFGS 50): the engineering stress and the maximum damage along the path,
 and the nodal damage field at the end of the path
-(`decks/pfd_study/cp/surrogate/`, `scripts/surrogate_compare.py`).
+(`decks/pfd_study/cp/bunge/surrogate/`, `scripts/surrogate_compare.py`).
 
 | surrogate | held-out rel. L2 mean / max | training (s) | query (ms) | data cost (s) | break-even vs FE / linear / verified solver (runs) |
 |---|---|---|---|---|---|
-| curve (stress, max damage vs strain) | 14.7% / 69.8% (one sample; 1.6-4.9% on the other five) | 10.3 | 0.1 | 12,987 | 20 / 21 / 27 |
-| damage field at the end of the path | 5.8% / 7.1% | 198 | 0.4 | 12,987 | 21 / 22 / 27 |
+| curve (stress, max damage vs strain) | 5.9% / 16.6% (one sample; 2.4-6.0% on the other five) | 11.5 | 0.1 | 19,205 | 14 / 14 / 9 |
+| damage field at the end of the path | 11.1% / 15.6% | 200 | 0.4 | 19,205 | 14 / 14 / 10 |
 
-*Table 27. Surrogate accuracy and cost.*
+*Table 27. Surrogate accuracy and cost. The data cost is the FE time of
+the 18 training samples; the 24 samples took 23,847 s of FE time in all,
+62 min on the host at eight side by side.*
 
-| held-out sample | $G_c$ | $\ell_0$ | fracture strain FE -> surrogate |
-|---|---|---|---|
-| 1 | 702 | 9.0 | 5.86% -> 5.31% |
-| 7 | 828 | 8.6 | 8.52% -> 8.44% |
-| 16 | 1,205 | 8.1 | 12.66% -> 12.89% |
-| 17 | 872 | 8.0 | 10.31% -> 10.31% |
-| 21 | 947 | 6.0 | 10.78% -> none predicted (the stress drop is predicted at 10.9%) |
-| 23 | 1,341 | 7.3 | 14.92% -> 14.84% |
+| held-out sample | $G_c$ | $\ell_0$ | fracture strain, FE | fracture strain, surrogate | curve rel. L2 | field rel. L2 |
+|---|---|---|---|---|---|---|
+| 1 | 712 | 9.0 | 5.47% | 5.31% | 16.6% | 15.6% |
+| 7 | 840 | 8.6 | 8.05% | 7.81% | 4.7% | 10.7% |
+| 16 | 1,223 | 8.1 | 12.03% | 12.03% | 2.7% | 7.6% |
+| 17 | 885 | 8.0 | 9.92% | 9.84% | 3.1% | 10.0% |
+| 21 | 962 | 6.0 | 10.31% | none predicted (maximum damage 0.74) | 6.0% | 9.8% |
+| 23 | 1,361 | 7.3 | 14.22% | 14.22% | 2.4% | 12.8% |
 
 *Table 28. Fracture strain of the held-out samples from the curve
-surrogate (first crossing of d = 0.8).*
+surrogate (first crossing of d = 0.8) and the errors of the two
+surrogates.*
 
 ![surrogate curves](../../figures/pfd/cp_surrogate_h40_curve_holdout.png)
 
@@ -1703,13 +2005,19 @@ surrogate (first crossing of d = 0.8).*
 *Figure 40. Held-out damage fields: FE, surrogate and their difference.*
 
 The curve surrogate predicts the fracture strain within 0.25% strain on
-four of the six held-out samples and the stress drop on five; its mean
-error is set by the sample at the low-$G_c$, high-$\ell_0$ corner of the
-box, where the drop comes 0.55% early and the whole error of a curve that
-ends at 6% is paid by the shifted collapse. The field surrogate is
-uniformly accurate, with the error in the band below the hole where the
-crack grows. Data cost 3.6 h of host time against 10 and 198 s of training,
-0.1 to 0.4 ms per query, break-even after about 20 FE runs.
+five of the six held-out samples and misses the crossing on the sixth,
+where its maximum damage stops at 0.74. Its mean error is set by the
+sample at the low-$G_c$, high-$\ell_0$ corner of the box, the earliest
+fracture of the held-out set: the predicted peak is 577 MPa against 494
+MPa, and the error of a curve that ends at 5.5% is paid over a short
+path. The field surrogate is less accurate than in the first study (11.1%
+against 5.8% mean): it places the damage band below the hole correctly in
+all six samples and misses its level by 0.12 to 0.26 in damage, too low
+on two samples and too high on four. With 18 training samples, of which
+11 initiate, the end-of-path field of a plate that is either cracked or
+not is sparsely sampled; more samples are the remedy and were not run.
+Data cost 5.3 h of FE time against 12 and 200 s of training, 0.1 to 0.4
+ms per query, break-even after about 14 FE runs.
 
 ## 20. PINNACLE: what Part II required of the framework
 
@@ -1742,50 +2050,82 @@ against 40 s sparsely), and h160 does not fit in memory.
 
 ## References
 
-- (rezwan 2025 intragranular) A. Rezwan, N. Aragon, D. de Oca Zapiain, H. Lim,
-  "Coupled phase field damage and crystal plasticity analysis of intragranular
-  fracture: The role of crystallographic orientation and voids", International
-  Journal of Plasticity 191 (2025) 104372. doi:10.1016/j.ijplas.2025.104372
-- (vaughan 2024 mechanistic) M. Vaughan, H. Lim, B. Pham, R. Seede, A.
-  Polonsky, K. Johnson et al., "The mechanistic origins of heterogeneous void
-  growth during ductile failure", Acta Materialia 274 (2024) 119977.
-  doi:10.1016/j.actamat.2024.119977
+- (alessi 2018 comparison) R. Alessi, M. Ambati, T. Gerasimov, S. Vidoli, L. De Lorenzis, "Comparison of Phase-Field Models of Fracture Coupled with Plasticity", Computational Methods in Applied Sciences (2018) 1-21. doi:10.1007/978-3-319-60885-3_1
+- (ambati 2015 ductile) M. Ambati, T. Gerasimov, L. De Lorenzis, "Phase-field modeling of ductile fracture", Computational Mechanics 55 (2015) 1017-1040. doi:10.1007/s00466-015-1151-4
+- (asaro 1979 geometrical) R. Asaro, "Geometrical effects in the inhomogeneous deformation of ductile single crystals", Acta Metallurgica 27 (1979) 445-453. doi:10.1016/0001-6160(79)90036-1
+- (borden 2016 triaxiality) M. Borden, T. Hughes, C. Landis, A. Anvari, I. Lee, "A phase-field formulation for fracture in ductile materials: Finite deformation balance law derivation, plastic degradation, and stress triaxiality effects", Computer Methods in Applied Mechanics and Engineering 312 (2016) 130-166. doi:10.1016/j.cma.2016.09.005
+- (chakraborty 2016 multiscale) P. Chakraborty, Y. Zhang, M. R. Tonks, "Multi-scale modeling of microstructure dependent intergranular brittle fracture using a quantitative phase-field based method", Computational Materials Science 113 (2016) 38-52. doi:10.1016/j.commatsci.2015.11.010
+- (delorenzis 2016 crystal) L. De Lorenzis, A. McBride, B. Reddy, "Phase-field modelling of fracture in single crystal plasticity", GAMM-Mitteilungen 39 (2016) 7-34. doi:10.1002/gamm.201610002
+- (diehl 2017 void) M. Diehl, M. Wicke, P. Shanthraj, F. Roters, A. Brueckner-Foit, D. Raabe, "Coupled Crystal Plasticity-Phase Field Fracture Simulation Study on Damage Evolution Around a Void: Pore Shape Versus Crystallographic Orientation", JOM 69 (2017) 872-878. doi:10.1007/s11837-017-2308-8
+- (engel 2026 gaussian) S. Engel, P. Shanthraj, J. Quinta da Fonseca, "Bayesian calibration and sensitivity analysis of crystal plasticity models using Gaussian process surrogates", Computational Materials Science 272 (2026) 114770. doi:10.1016/j.commatsci.2026.114770
+- (goswami 2020 transfer) S. Goswami, C. Anitescu, S. Chakraborty, T. Rabczuk, "Transfer learning enhanced physics informed neural network for phase-field modeling of fracture", Theoretical and Applied Fracture Mechanics 106 (2020) 102447. doi:10.1016/j.tafmec.2019.102447
+- (hamdi 2026 expediting) E. Hamdi, E. Lejeune, "Towards robust surrogate models: Benchmarking machine learning approaches to expediting phase field simulations of brittle fracture", Computer Methods in Applied Mechanics and Engineering 449 (2026) 118526. doi:10.1016/j.cma.2025.118526
+- (henkes 2022 micromechanics) A. Henkes, H. Wessels, R. Mahnken, "Physics informed neural networks for continuum micromechanics", Computer Methods in Applied Mechanics and Engineering 393 (2022) 114790. doi:10.1016/j.cma.2022.114790
+- (hernandezpadilla 2017 crystal) C. Hernandez Padilla, B. Markert, "A coupled ductile fracture phase-field model for crystal plasticity", Continuum Mechanics and Thermodynamics 29 (2017) 1017-1026. doi:10.1007/s00161-015-0471-0
+- (ibragimova 2022 convolutional) O. Ibragimova, A. Brahme, W. Muhammad, D. Connolly, J. Lévesque, K. Inal, "A convolutional neural network based crystal plasticity finite element framework to predict localised deformation in metals", International Journal of Plasticity 157 (2022) 103374. doi:10.1016/j.ijplas.2022.103374
+- (keshavarz 2025 advancing) S. Keshavarz, Y. Mao, A. Reid, A. Agrawal, "Advancing material simulations: Physics-Informed Neural Networks and Object-Oriented Crystal Plasticity Finite Element Methods", International Journal of Plasticity 185 (2025) 104221. doi:10.1016/j.ijplas.2024.104221
+- (kocks 2003 hardening) U. Kocks, H. Mecking, "Physics and phenomenology of strain hardening: the FCC case", Progress in Materials Science 48 (2003) 171-273. doi:10.1016/s0079-6425(02)00003-8
+- (lim 2019 sensitivity) H. Lim, C. Battaile, J. Bishop, J. Foulk, "Investigating mesh sensitivity and polycrystalline RVEs in crystal plasticity finite element simulations", International Journal of Plasticity 121 (2019) 101-115. doi:10.1016/j.ijplas.2019.06.001
+- (liu 2026 aligned) C. Liu, A. Abushaikha, "FEM-aligned weak-form physics-informed neural networks with Laplace-Beltrami geometry encoding for linear elastic surrogate modeling", Applied Computing and Geosciences 30 (2026) 100354. doi:10.1016/j.acags.2026.100354
+- (louisaauth 2025 boundaries) K. Louisa Auth, J. Brouzoulis, M. Ekh, "Phase-Field Modeling of Ductile Fracture Across Grain Boundaries in Polycrystals", International Journal for Numerical Methods in Engineering 126 (2025). doi:10.1002/nme.70056
+- (marengo 2023 review) A. Marengo, U. Perego, "A concise review of small-strain phase-field modeling of ductile fracture", European Journal of Mechanics - A/Solids 101 (2023) 105058. doi:10.1016/j.euromechsol.2023.105058
+- (miehe 2010 thermodynamically) C. Miehe, F. Welschinger, M. Hofacker, "Thermodynamically consistent phase-field models of fracture: Variational principles and multi-field FE implementations", International Journal for Numerical Methods in Engineering 83 (2010) 1273-1311. doi:10.1002/nme.2861
+- (miehe 2016 gradient) C. Miehe, F. Aldakheel, A. Raina, "Phase field modeling of ductile fracture at finite strains: A variational gradient-extended plasticity-damage theory", International Journal of Plasticity 84 (2016) 1-32. doi:10.1016/j.ijplas.2016.04.011
+- (ni 2026 derivative) Z. Ni, M. Guo, Z. Chen, J. Dong, H. Jiang, "Derivative-free optimization for crystal plasticity parameter calibration: benchmarking, non-uniqueness, and transferability", Materials & Design 268 (2026) 116512. doi:10.1016/j.matdes.2026.116512
+- (niu 2023 performance) S. Niu, E. Zhang, Y. Bazilevs, V. Srivastava, "Modeling finite-strain plasticity using physics-informed neural network and assessment of the network performance", Journal of the Mechanics and Physics of Solids 172 (2023) 105177. doi:10.1016/j.jmps.2022.105177
+- (peirce 1982 localized) D. Peirce, R. Asaro, A. Needleman, "An analysis of nonuniform and localized deformation in ductile single crystals", Acta Metallurgica 30 (1982) 1087-1119. doi:10.1016/0001-6160(82)90005-0
+- (raissi 2019 involving) M. Raissi, P. Perdikaris, G. Karniadakis, "Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations", Journal of Computational Physics 378 (2019) 686-707. doi:10.1016/j.jcp.2018.10.045
+- (rezaei 2024 thermodynamics) S. Rezaei, A. Moeineddin, A. Harandi, "Learning solutions of thermodynamics-based nonlinear constitutive material models using physics-informed neural networks", Computational Mechanics 74 (2024) 333-366. doi:10.1007/s00466-023-02435-3
+- (rezwan 2025 intragranular) A. Rezwan, N. Aragon, D. de Oca Zapiain, H. Lim, "Coupled phase field damage and crystal plasticity analysis of intragranular fracture: The role of crystallographic orientation and voids", International Journal of Plasticity 191 (2025) 104372. doi:10.1016/j.ijplas.2025.104372
+- (samaniego 2020 concepts) E. Samaniego, C. Anitescu, S. Goswami, V. Nguyen-Thanh, H. Guo, K. Hamdia et al., "An energy approach to the solution of partial differential equations in computational mechanics via machine learning: Concepts, implementation and applications", Computer Methods in Applied Mechanics and Engineering 362 (2020) 112790. doi:10.1016/j.cma.2019.112790
+- (sanjalawe 2026 critical) Y. Sanjalawe, S. Al-E'mari, S. Makhadmeh, "Physics-Informed Neural Networks in Computational Mechanics: A Critical Review of Stability, Generalization, and Multi-Scale Applications", Archives of Computational Methods in Engineering (2026). doi:10.1007/s11831-026-10747-9
+- (shanthraj 2016 viscoplastic) P. Shanthraj, L. Sharma, B. Svendsen, F. Roters, D. Raabe, "A phase field model for damage in elasto-viscoplastic materials", Computer Methods in Applied Mechanics and Engineering 312 (2016) 167-185. doi:10.1016/j.cma.2016.05.006
+- (thawon 2026 current) I. Thawon, D. Vo, T. Bui, K. Rattanamongkhonkun, C. Chamroon, N. Tippayawong et al., "Physics-Informed Neural Networks: Current Progress and Challenges in Computational Solid and Structural Mechanics", Computer Modeling in Engineering & Sciences 146 (2026) 1-10. doi:10.32604/cmes.2026.077044
+- (tu 2020 series) X. Tu, A. Ray, S. Ghosh, "A coupled crystal plasticity FEM and phase-field model for crack evolution in microstructures of 7000 series aluminum alloys", Engineering Fracture Mechanics 230 (2020) 106970. doi:10.1016/j.engfracmech.2020.106970
+- (vaughan 2024 mechanistic) M. Vaughan, H. Lim, B. Pham, R. Seede, A. Polonsky, K. Johnson et al., "The mechanistic origins of heterogeneous void growth during ductile failure", Acta Materialia 274 (2024) 119977. doi:10.1016/j.actamat.2024.119977
+- (wang 2024 staggered) X. Wang, W. Wu, H. Zhu, "Physics-Informed Multi-Network for Phase-Field Fracture Modeling with a Staggered Solution Scheme", Springer Series in Geomechanics and Geoengineering (2024) 317-322. doi:10.1007/978-3-031-76528-5_31
+- (wang 2026 channel) X. Wang, X. Li, Y. Ji, L. Gao, Z. Liang, "DC-PINN: Dual channel physics-informed neural network for crystal plasticity modeling", Engineering Analysis with Boundary Elements 191 (2026) 106960. doi:10.1016/j.enganabound.2026.106960
+- (wurth 2024 meshgraphnets) T. Würth, N. Freymuth, C. Zimmerling, G. Neumann, L. Kärger, "Physics-informed MeshGraphNets (PI-MGNs): Neural finite element solvers for non-stationary and nonlinear simulations on arbitrary meshes", Computer Methods in Applied Mechanics and Engineering 429 (2024) 117102. doi:10.1016/j.cma.2024.117102
+- (zhou 2024 constrained) G. Zhou, Y. Hu, Z. Cao, M. Lee, D. Li, "A physics-constrained neural network for crystal plasticity modelling of FCC materials", Scripta Materialia 241 (2024) 115861. doi:10.1016/j.scriptamat.2023.115861
 
-Both entries are in `bib/references.bib`.
+Every entry is in `bib/references.bib`.
 
 ## Appendix A. Artifacts behind this report
 
+Solver output under `results/` is not shipped; the commands of
+`docs/reproduce_al2219_plate.md` regenerate it.
+
 | item | path |
 |---|---|
-| calibrated run deck (generated) | `results/cp_study/cal/gn2/base/cpfe.i` |
-| pipeline deck of the calibrated run | `decks/cp_study/cal_center2.i` |
-| study deck of the perturbations | `decks/cp_study/cal_gn2.i` |
+| calibrated run deck (generated) | `results/cp_study/bunge/cal/gn2/base/cpfe.i` |
+| pipeline deck of the calibrated run | `decks/cp_study/bunge/cal_center2.i` |
+| study decks of the two iterations | `decks/cp_study/bunge/cal_gn1.i`, `cal_gn2.i` |
 | grain-growth deck | `decks/graingrowth/pilot/n32_bdf1_h40.i` |
-| orientations (per grain) | `results/cp_study/cal/gn2/base/grains.csv` |
-| curves | `results/cp_study/cal/gn2/{base,rho0_p,k1_p,y_c_p,tau_c0_p}/results.csv` |
-| Jacobian, per-marker errors, step | `results/cp_study/cal/gn2/gauss_newton.json` |
+| orientations (per grain) | `results/cp_study/bunge/cal/gn2/base/grains.csv` |
+| Jacobian, per-marker errors, step | `results/cp_study/bunge/cal/gn2/gauss_newton.json` |
 | experimental markers | `data/digitized/al2219_fig3_experiment_markers.csv` |
-| figure deck and script | `decks/report/cp_calibration_figures.i`, `scripts/report_figures.py` |
-| run ledger rows | `cal-gn1`, `cal-gn2` in `docs/run_ledger.md` |
-| neural routes (§8): pipeline decks | `decks/cp_study/hybrid/h40_linear.i`, `h40_fem_residual.i`, `h40_fem_solver.i`; checks `check_fem_h40*.i` |
-| neural routes: histories, curves, field series | `results/cp_study/hybrid/{h40_linear,h40_fem_residual,h40_fem_solver}/` |
-| hardware benchmark (§10) | `decks/benchmark/hardware_h40.i` + `scripts/hardware_benchmark.py`; `results/cp_study/hardware/hardware_h40.csv` |
-| surrogate (§11): design, samples, decks, runs | `decks/cp_study/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_curve_cpu,plate_h40_surrogate_field}.i`; `results/cp_study/surrogate/h40_data/{design,samples}.csv`, `h40_{curve,curve_cpu,field}/`; `decks/report/surrogate_compare.i` + `scripts/surrogate_compare.py` |
-| neural routes: comparison decks and scripts | `decks/report/hybrid_compare.i` + `scripts/hybrid_compare.py`; `decks/report/neural_compare.i` + `scripts/field_compare.py`; `results/cp_study/hybrid/hybrid_h40_{summary,steps}.csv`, `neural_h40_field_errors.csv` |
+| mesh, sensitivity, grain instances | `decks/cp_study/bunge/{mesh_h20,mesh_h80,mesh_h160,sens_h40,grain_sB,grain_sC}.i` |
+| figure decks and scripts | `decks/report/bunge/cp_calibration_figures.i` + `scripts/report_figures.py`; `plastic_strain_animation.i` + `scripts/plastic_strain_animation.py` |
+| neural routes (§8) | `decks/cp_study/bunge/hybrid/h40_{linear,fem_residual,fem_solver,fem_residual_grain,fem_solver_grain}.i`; `decks/report/bunge/hybrid_compare.i` + `scripts/hybrid_compare.py`; `neural_compare.i` + `scripts/field_compare.py` |
+| neural sensitivity (§9) | `decks/cp_study/bunge/sens_h40_{linear,grain_solver}.i`; `decks/report/bunge/neural_sensitivity.i` + `scripts/neural_sensitivity.py` |
+| hardware benchmark (§10) | `decks/benchmark/bunge/hardware_h40.i` + `scripts/hardware_benchmark.py` |
+| surrogate (§11) | `decks/cp_study/bunge/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_curve_cpu,plate_h40_surrogate_field}.i`; `decks/report/bunge/surrogate_compare.i` + `scripts/surrogate_compare.py` |
+| run ledger rows | `al-bunge-*` in `docs/run_ledger.md` |
+| first version of this report | `archive/docs/al2219_report_exchanged_angles_2026-11-16.md`, decks `archive/decks/al2219_exchanged_angles/` |
 
 ## Appendix B. Artifacts behind Part II
 
 | item | path |
 |---|---|
-| meshes | `decks/pfd_study/mesh/{h20,h40,h80}_hole5.i`, `h40_ell_*.i`; `results/pfd_study/mesh/*/mesh.e`; `scripts/plate_hole_mesh.py` |
-| J2 law | `decks/pfd_study/j2_fit.i`, `scripts/j2_fit.py`, `results/pfd_study/j2_fit/` |
-| J2 W_c scan and calibration | `decks/pfd_study/j2/cal_h40_wc{200,400,600,800}.i`, `scripts/pfd_calibrate.py`, `results/pfd_study/j2/cal_h40_wc*/`; figure `decks/pfd_study/j2/wc_scan_h40_figures.i` |
-| J2 sweeps and sensitivity (W_c 200) | `decks/pfd_study/j2/{sweep_l_h40,sens_h40,sweep_h_l5}.i`, `results/pfd_study/j2/*_wc200/` |
-| CP calibration, sweeps, sensitivity, instances | `decks/pfd_study/cp/{cal_h40,sweep_l_h40,sens_h40,sweep_h_l5,grains_h40}.i`, `results/pfd_study/cp/` |
-| fields and animation | `decks/pfd_study/report/fields_cal_h40.i`, `scripts/pfd_fields.py`, `results/pfd_study/cal_h40_fields.csv` |
-| shape study | `decks/pfd_study/cp/shape_h40.i`, `decks/pfd_study/report/fields_shape_h40.i`, `results/pfd_study/cp/shape_h40/` |
-| neural routes | `decks/pfd_study/cp/neural_h40.i`, `results/pfd_study/cp/neural_h40/` |
-| hardware | `decks/benchmark/hardware_pfd_h40.i`, `results/pfd_study/cp/hardware/hardware_pfd_h40.csv` |
-| surrogate | `decks/pfd_study/cp/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_field,compare_h40}.i`, `results/pfd_study/cp/surrogate/` |
-| PINNACLE | `docs/adr/0031-pfd-plate-readiness.md` on `feat/pinn_benchmark`; the damage-solve benchmark `scripts/tools/damage_solve_benchmark.py`, `results/pfd_study/damage_solve/dense_vs_sparse.csv` |
-| study notebook and ledger | `docs/10_pfd_study.md`, `docs/run_ledger.md` (rows `pfd-*`) |
+| meshes | `decks/pfd_study/mesh/{h20,h40,h80}_hole5.i`, `h40_ell_*.i`; `scripts/plate_hole_mesh.py` |
+| J2 law | `decks/pfd_study/j2_fit.i`, `scripts/j2_fit.py` |
+| J2 W_c scan and calibration | `decks/pfd_study/j2/cal_h40_wc{200,400,600,800}.i`, `scripts/pfd_calibrate.py`; figure `decks/pfd_study/j2/wc_scan_h40_figures.i` |
+| J2 sweeps and sensitivity (W_c 200) | `decks/pfd_study/j2/{sweep_l_h40,sens_h40,sweep_h_l5}.i` |
+| CP calibration, sweeps, sensitivity, instances | `decks/pfd_study/cp/bunge/{cal_h40,sweep_l_h40,sens_h40,sweep_h_l5,grains_h40}.i` and their `*_figures.i` |
+| fields and animation | `decks/pfd_study/report/bunge/fields_cal_h40.i`, `scripts/pfd_fields.py` |
+| shape study | `decks/pfd_study/cp/bunge/shape_h40.i`, `decks/pfd_study/report/bunge/fields_shape_h40.i` |
+| neural routes | `decks/pfd_study/cp/bunge/neural_h40.i` |
+| hardware | `decks/benchmark/bunge/hardware_pfd_h40.i` |
+| surrogate | `decks/pfd_study/cp/bunge/surrogate/{design_h40,plate_h40_surrogate_curve,plate_h40_surrogate_field,compare_h40}.i` |
+| J2 notebook and ledger | `archive/docs/notebooks/10_pfd_study.md`, `docs/run_ledger.md` (rows `pfd-*` for J2, `al-bunge-pfd-*` for CP) |
+| PINNACLE | `docs/adr/0031-pfd-plate-readiness.md` on `feat/pinn_benchmark`; the damage-solve benchmark `scripts/tools/damage_solve_benchmark.py` |

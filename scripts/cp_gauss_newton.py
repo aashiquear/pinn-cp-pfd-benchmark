@@ -107,19 +107,23 @@ def main(argv):
     center_text = base_text
     for k, v in zip(names, p1):
         center_text = re.sub(rf"^(\s*{re.escape(k)}\s*=\s*)\S+", rf"\g<1>{v:.6g}", center_text, count=1, flags=re.M)
-    center_text = re.sub(r"^(\s*out_dir\s*=\s*)\S+", rf"\g<1>../../results/cp_study/cal/center{n+1}", center_text, count=1, flags=re.M)
+    # the next decks are written beside this one; result paths keep this study's roots
+    root_txt = str(cfg["study"]["out_root"])
+    next_root = re.sub(r"gn\d+$", f"gn{n+1}", root_txt)
+    center_dir = re.sub(r"gn\d+$", f"center{n+1}", root_txt)
+    center_text = re.sub(r"^(\s*out_dir\s*=\s*)\S+", rf"\g<1>{center_dir}", center_text, count=1, flags=re.M)
     center_text = re.sub(r"CENTER \(iteration \d+\)", f"CENTER (iteration {n+1})", center_text)
-    (STUDY / f"decks/cp_study/cal_center{n+1}.i").write_text(center_text)
+    (deck.parent / f"cal_center{n+1}.i").write_text(center_text)
     gn = ["# FE Gauss-Newton iteration %d at h40: center from iteration %d's step and one" % (n + 1, n),
           "# multiplicative perturbation per free parameter.", "[Study]",
-          f"  base       = cal_center{n+1}.i", f"  out_root   = ../../results/cp_study/cal/gn{n+1}",
-          "  markers    = ../../data/digitized/al2219_fig3_experiment_markers.csv", "  concurrent = 5", "[]", "[Cases]"]
+          f"  base       = cal_center{n+1}.i", f"  out_root   = {next_root}",
+          f"  markers    = {cfg['study']['markers']}", "  concurrent = 5", "[]", "[Cases]"]
     for k, v in zip(names, p1):
         f = 1.5 if k == "tau_c0" else factor
         gn += [f"  [./{k}_p]", f"    {k} = {v * f:.6g}", "  []"]
     gn += ["[]", ""]
-    (STUDY / f"decks/cp_study/cal_gn{n+1}.i").write_text("\n".join(gn))
-    print(f"wrote decks/cp_study/cal_center{n+1}.i and cal_gn{n+1}.i")
+    (deck.parent / f"cal_gn{n+1}.i").write_text("\n".join(gn))
+    print(f"wrote {deck.parent}/cal_center{n+1}.i and cal_gn{n+1}.i")
     return 0
 
 

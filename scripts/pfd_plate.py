@@ -166,6 +166,7 @@ def stage_deck(pl: dict, pipe: Path) -> Path:
         "FINITESTRAIN": _bool(pl.get("finite_strain", True)),
         "SPLITSMOOTHING": _num(pl.get("split_smoothing", 0.0)),
         "STATEUPDATE": str(pl.get("state_update", "explicit")),
+        "KINEMATICS": str(pl.get("kinematics", "legacy")),
         "CHECKPOINT": str(int(pl.get("checkpoint_every", 8))),
     }
     # Neural routes on the mechanics sub-solve (Part I ADR 0028/0029): the
