@@ -186,3 +186,68 @@ forms); gaps G9 (binary kernels) and G11 (explicit scheme, periodic boundaries) 
 0039. Open: G10, the orientation field, with the assumptions of section 7.2 for H and for the
 singular term; cases C3 to C6.
 
+
+## 8. Additional sources, GPU estimate and the extended case list (2026-11-17, author's fourth message)
+
+### 8.1 What the three supplied papers settle
+
+Read as text (`pdftotext`, kept under `results/crystallization/lit/`, not shipped):
+(granasy 2004 modelling) appendix A.2-A.3, the 2006 J. Mater. Res. review, and the 2021 JACS Au
+paper on biomineralization.
+
+| item of section 7.2 | finding |
+|---|---|
+| H (orientational energy scale) | NOT given numerically in any of the three. It enters the theta equation only through chi = M_theta xi H T / D_l (given: 360) and the phi equation through xi^2 H / (2 xi_0 eps^2). Stays `unavailable`: assumed, with a sensitivity run. |
+| theta sub-step | "about 1/20 of the time step" (2004 review, A.2 remark ii); the spherulite paper says 1/50. Both are timed below. |
+| singular term | not described beyond the equations of A.3 (F0~, F1~ with sign and cosine). `assumed` discretization as planned. |
+| noise | "Gaussian noises of amplitude zeta = zeta_s + (zeta_l - zeta_s) p(phi) ... random concentration fluxes"; "Gaussian white noise" (2021). What the amplitude multiplies is not stated. |
+| second term of the theta equation | omitted with a broad interface (A.2 remark i), as in the spherulite paper. |
+| interface thickness | the 2021 paper's Table 5 gives delta = 4.15e-8 m with the same xi, dx, dt; PRL02 used 41.6 nm; the spherulite paper says "factor of 20.8" and also "about 40 times". UNRESOLVED: our C2 runs use 20.8 nm (10-90 % width 9.9 cells); 41.5 nm would give 19.7 cells. To be checked by a C2 run at 41.5 nm. |
+| the 2021 model PF1 | the same binary + orientation model with f_ori = p H T |grad theta|; its Table 2 (Delta g_A = -0.1184, Delta g_B = 0.1554, T_r = 0.911, T_r,B = 0.786) is the Cu-Ni data of section 7.2 under other names; m_phi = 3.75, m_theta,M = 120. |
+
+### 8.2 Measured step times on rocm-server (Radeon 8060S), `scripts/cryst_gpu_benchmark.py`
+
+A Torch finite-difference step of the model (phi and c) and one theta sub-step, float64 on the
+GPU: 0.0066 + 0.0027 s at 1000^2, 0.194 + 0.101 s at 4000^2 (float32: 0.0022 + 0.0011 and
+0.093 + 0.050; CPU float64 at 4000^2: 1.39 + 0.89). Full table:
+`results/crystallization/gpu_benchmark_rocm.txt`. This times the arithmetic of the model, not
+PINNACLE: `pf_fem_explicit` has no Torch path yet (NumPy: about 1.5 s per step for two fields at
+1000^2), and the bilinear-element residual needs more operations than the stencil.
+
+Estimates from those times (GPU, float64, 20 / 50 theta sub-steps per step):
+
+| case | grid, steps | estimate |
+|---|---|---|
+| Fig. 5 of the spherulite paper | 4000^2, 13,500 (stated) | 8 h / 20 h |
+| the same at 1000^2 | 1000^2, 13,500 | 14 min / 32 min |
+| Fig. 8 (kinetics) | 5000^2, about 16,300 (10,000 pre-heat + t = 0.03) | 16 h / 37 h |
+| the same at 1000^2 | 1000^2, 16,300 | 17 min / 39 min |
+| Fig. 10 gallery (Table II: N = 500 to 3000; steps not stated, assumed 4 N) | ten runs | 500: 1 min; 1000: 4-10 min; 2000: 1.2-3 h; 3000: 4-10 h; all ten about 10-25 h |
+| 2021 paper, Fig. 9, 16, 17 | 1000 x 2000, 2.4e5 to 5e5 (stated) | 8-17 h / 19-40 h each |
+
+If the PINNACLE Torch residual is five times slower than the stencil (to be measured once
+written), every entry is five times longer: the 4000^2 and 5000^2 cases are then 2 to 8 days,
+the 1000^2 versions one to three hours.
+
+### 8.3 Cases added from the two additional papers
+
+| id | case | source | model | needs |
+|---|---|---|---|---|
+| E1 | band formation: from diffusionless growth to partitioning with decreasing driving force | 2021 Fig. 8(a) | binary model (existing kernels) | a planar-front deck with a supersaturation ramp |
+| E2 | mollusk shell: granular, columnar prismatic and sheet-nacre domains along a composition gradient c(x) = c_min + (c_max - c_min)(1 - exp(-9x/L)), nucleation on the periostracum | 2021 Fig. 9 | binary + orientation (f_ori = p H T |grad theta|) | orientation field, GPU path; 1000 x 2000 |
+| E3 | coral skeleton (plumose spherulite with "sprinkles") and its temperature series | 2021 Fig. 16, 17 | as E2 | as E2 |
+| E4 | dendrite-to-seaweed transition by reduced orientational mobility or by orientation-pinning particles; "dizzy" dendrites | 2006 Fig. 5, 6 (also spherulite Fig. 11) | binary + orientation + pinning centers | orientation field |
+| E5 | heterogeneous nucleation on rough walls, in porous matter, orientation selector (2-D) | 2006 Fig. 3 | single-field or binary with walls | wall geometry inside the domain |
+
+Not taken (other models than the ones this part builds): the regular-solution eutectic model
+PF2 (2021 Fig. 10), the 3-D ternary model PF3 (Fig. 12-15), the hard-sphere density-coupled
+barrier (2006 Fig. 2), 3-D cases with quaternion orientation (2006 Fig. 4, 8).
+
+### 8.4 Order of work from here
+
+1. Orientation-field kernels in PINNACLE (model C of the 2004 appendix; model B as its x = 0,
+   single-minimum limit), with the assumed H and discretization, checked against an extended
+   independent reference.
+2. Torch (GPU) residual path of `pf_fem_explicit`; measure it on rocm-server.
+3. Runs on rocm-server: 500^2 cases (Fig. 4 c/f, 6, 7), then Fig. 5 and Fig. 8 at 1000^2, the
+   Fig. 10 gallery, E1-E4; 4000^2 / 5000^2 only if step 2 puts them within days.
