@@ -1060,3 +1060,25 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - `tests/integration/framework/test_executioner_coverage.py` needs an entry for every new
   executioner; it was missing after ddaeb91 and is fixed in cd2d3d3.
 
+## 2026-11-17 (evening): Part IV stage C, first part (binary model, case C2)
+
+- Convention of (granasy 2005 spherulites): phi = 1 LIQUID. Equations, every parameter and its
+  provenance: `docs/14_phase_field_crystallization_plan.md` §7. v_m = 7.4 cm^3/mol (the only value
+  giving the published c_L, c_S); delta = 20.8 nm is the tanh parameter (d_10-90 = 6.21 delta).
+  Unavailable in every free source: H, the discretization of grad(theta)/|grad(theta)|, the
+  seed, what the noise amplitudes multiply. The literature texts used were only in the session
+  scratchpad (arXiv cond-mat/0204143, 0412630, 0703676, 0502594).
+- Independent reference `scripts/cryst_binary_reference.py` and PINNACLE (`pf_fem_explicit` +
+  `wb_phase_bulk`, `ac_interface_anisotropic`, `wb_solute_flux`, ADR 0039) both give the four
+  Fig. 4 forms. At the paper's grid the front velocity has a discretization error: FD -5.5 %,
+  PINNACLE lumped Q1 +1.8 % against the Richardson value. The FD isotropic crystal is diamond
+  shaped (grid imprint), PINNACLE's is circular. Panel (a): many narrow cells here, a few broad
+  lobes in the paper (seed / noise / run length assumed).
+- Cost: 0.4 to 1 s per step on 500 x 500 with four runs side by side (26-42 min per case).
+- Traps: `pkill -f` with a pattern that also occurs later in the same command line killed the
+  shell again (exit 144) and silently skipped a patch that followed it; `ruff format docs`
+  rewrites markdown under docs/research; switching the shared `evaluate_point_state` to BLAS
+  contractions changed round-off and broke a 1e-12 energy test, so the fast contraction lives
+  in the explicit executioner only; VTK series files are numbered by frame, not by step.
+- Open in stage C: the orientation field (C3-C6). Network routes: none (noise driven).
+

@@ -2,14 +2,14 @@
 
 Status 2026-11-17: stage A (single-field model, cases A1 to A5) and stage B (walls and
 noise, cases B1 and B2) are complete on the FE route; the stationary cases A1 and A3 are also
-done on the PINN and PINN+FEM routes. Stages C and D (binary and orientation-field models,
-phase-field crystal) are planned in `docs/14_phase_field_crystallization_plan.md` and have no
-results yet. Abstract and introduction are written when all stages are done.
+done on the PINN and PINN+FEM routes. Of stage C (binary and orientation-field models) the single-crystal growth forms of the binary
+model are done (C1, C2); the orientation field (C3 to C6) and stage D (phase-field crystal)
+have no results yet. Plan: `docs/14_phase_field_crystallization_plan.md`. Abstract and introduction are written when all stages are done.
 
 Guide papers: (granasy 2019 nucleation), cited below as "the review", and
 (granasy 2005 spherulites); for case B1 also (granasy 2007 heterogeneous). PINNACLE revision:
 `ddaeb91` (ADR 0037) for sections 3.2 to 3.5, `cd2d3d3` (ADR 0038) for section 3.1's family and
-scan and for stage B, both on `feat/pinn_benchmark`. Reproduction: `docs/reproduce_crystallization.md`.
+scan and for stage B, `cd2288f` (ADR 0039) for stage C, all on `feat/pinn_benchmark`. Reproduction: `docs/reproduce_crystallization.md`.
 Every deck named here is a complete input: `pinnacle run <deck>`.
 
 ## 1. The single-field model
@@ -469,7 +469,115 @@ surrogate route of the earlier parts), or solve the deterministic pieces around 
 (granasy 2005 spherulites) are all noise driven (growth-front nucleation) and are therefore
 FE-only in stage C.
 
-## 5. Limits
+## 5. Stage C, first part: the binary model and single-crystal growth forms
+
+Stage C follows (granasy 2005 spherulites). This part covers the two-field (phase and
+composition) model with one crystal orientation, case C2 (the paper's Fig. 4 a, b, d, e), and
+the orientational free energy by itself (C1). The orientation field and the polycrystalline
+cases (C3 to C6) are not done yet.
+
+### 5.1 Model
+
+Convention of that paper: $\phi = 1$ liquid, $\phi = 0$ crystal; $c$ is the Cu fraction of a
+Cu-Ni ideal solution at 1574 K. The free-energy density is
+$f = w(c)\,T g(\phi) + [1 - p(\phi)]\,f_S(c) + p(\phi)\,f_L(c)$ with
+$f_{S,L} = (1-c) f^{Ni}_{S,L} + c f^{Cu}_{S,L} + \tfrac{RT}{v_m}[c\ln c + (1-c)\ln(1-c)]$, and
+the interface energy $\gamma = \gamma_0\,s(\vartheta)$, $s = 1 + s_0\cos[k(\vartheta - \vartheta_0)]$,
+$\vartheta = \operatorname{atan2}(\phi_y, \phi_x)$. In the paper's dimensionless form (lengths in
+$\xi = 2.1\times10^{-4}$ cm, time in $\xi^2/D_l$; its Eq. 2.3 and 2.4):
+
+$$
+\dot\phi = m_\phi\bigl\{\nabla\!\cdot\![\,s^2\nabla\phi + s\,s'\,\nabla^{\perp}\phi\,]
+           - a_w(c)\,g'(\phi) - p'(\phi)\,b(c)\bigr\} + \zeta_\phi ,
+$$
+
+$$
+\dot c = \nabla\!\cdot\!\bigl\{\lambda(\phi)\,[\,\nabla c - c(1-c)\,(q_f\,p'(\phi) + q_w\,g'(\phi))\,\nabla\phi\,]\bigr\},
+\qquad \lambda = p(\phi)\ (D_s = 0) ,
+$$
+
+with $a_w = \xi^2 w/\epsilon^2$, $b = \xi^2 (f_L - f_S)/(\epsilon^2 T)$ (both linear in $c$),
+$q_f = v_m(\Delta f_{Ni} - \Delta f_{Cu})/RT$ and $q_w = v_m(w_{Ni} - w_{Cu})/R$. The composition
+equation needs no logarithm: with the mobility $\tfrac{v_m}{RT}D\,c(1-c)$ of the paper,
+$c(1-c)\nabla\ln\tfrac{c}{1-c} = \nabla c$. At zero flux
+$\ln\tfrac{c}{1-c} - q_f\,p(\phi) - q_w\,g(\phi)$ is uniform, which is the common tangent:
+$c_L = 0.466219$, $c_S = 0.399112$. The supersaturation is $S = (c_L - c_\infty)/(c_L - c_S)$.
+
+Parameters and their provenance are tabulated in `docs/14_phase_field_crystallization_plan.md`,
+section 7.2. In short: Table I of the paper and its stated rescaling give
+$a_w = 1.020\times10^4$, $b = 1.096\times10^5\,(1-c) - 1.438\times10^5\,c$, $q_f = 0.27384$,
+$q_w = 2.5\times10^{-5}$ (`derived`); $v_m = 7.4$ cm$^3$ mol$^{-1}$ is the one value that returns
+the published $c_L$ and $c_S$ to six digits (`derived`); grid and step are the paper's
+($\Delta x = 6.25\times10^{-3}$, $\Delta t = 4.75\times10^{-6}$, $500\times500$, periodic). Not given
+in any source read and `assumed` here: the seed (a disc of 12 cells at the solidus
+composition), the number of steps, and what the noise amplitude 0.0025 multiplies (taken as
+the standard deviation of the nodal increment per step, in the liquid only). The composition
+noise of the paper is not applied.
+
+### 5.2 C1: orientational free energy (paper Fig. 3)
+
+$f_{ori} \propto x F_0 + (1-x) F_1$ with $F_0 = |\sin(2\pi m u)|$ for $u < 3/(4m)$ and
+$F_1 = |\sin(2\pi n u)|$ for $u < 1/(4n)$, both 1 beyond, $u = \xi_0|\nabla\theta|$.
+For $k = 2$, $m = 3$, $n = 1/2$, $x = 0.2$ (`scripts/cryst_orientation_energy.py`): local maximum
+at 21.4 degrees of misorientation (caption: "about 20"), metastable minimum at 30.0 degrees
+with $f_{ori} = 0.400$, value 1 at 90 degrees, as in the paper's Fig. 3. This is the function
+only; no PINNACLE component uses it yet.
+
+![C1](../../figures/crystallization/c1_orientation_energy.png)
+
+### 5.3 C2: single-crystal growth forms (paper Fig. 4 a, b, d, e)
+
+Two implementations of the same equations:
+
+- an independent reference, explicit finite differences on the paper's grid
+  (`scripts/cryst_binary_reference.py`, five-point Laplacian, face-centred solute flux);
+- PINNACLE: decks `decks/crystallization/binary/c2_fig4{a,b,d,e}_*_fem.i`, kernels
+  `wb_phase_bulk`, `ac_interface_anisotropic`, `wb_solute_flux` under `pf_fem_explicit`
+  (forward Euler, lumped mass, bilinear elements, periodic in both directions; ADR 0039).
+
+Check of the two against each other (single crystal, $S = 1.0$, no noise, $200\times200$ cells,
+equivalent radius after 500 steps): PINNACLE 100.2 cells, reference 93.0 cells, reference at
+half the spacing 97.1 cells, Richardson estimate of the converged value 98.4 cells. At the
+paper's resolution (the 10-90 % interface width is 9.9 cells) the front velocity carries a
+discretization error of $-5.5$ % in the finite-difference code and $+1.8$ % in PINNACLE
+(tier 2 for the trend, not a converged number: PINNACLE was not run at half the spacing).
+
+![C2 PINNACLE](../../figures/crystallization/c2_pinnacle_maps.png)
+
+*PINNACLE. Top: composition; bottom: crystal. Columns: Fig. 4(a) isotropic $S = 0.8$, (b)
+four-fold $s_0 = 0.1$, $S = 0.8$, (d) isotropic $S = 1.0$, (e) four-fold $S = 1.0$.*
+
+![C2 reference](../../figures/crystallization/c2_reference_maps.png)
+
+*The independent reference, same columns.*
+
+| case | published form (Fig. 4) | PINNACLE | steps, wall time | solute drift |
+|---|---|---|---|---|
+| (a) isotropic, $S = 0.8$ | "seaweed": fingered front, liquid channels | circular envelope, front broken into about 60 cells, radial solute-rich channels | 2400, 42 min | $-2.3\times10^{-12}$ |
+| (b) four-fold, $S = 0.8$ | symmetric dendrite | four arms with side branches, trapped liquid pockets at $c \approx c_L$ | 2000, 38 min | $-3.1\times10^{-12}$ |
+| (d) isotropic, $S = 1.0$ | compact disc (solute trapping) | compact disc, $c \approx c_\infty$ inside | 1300, 27 min | $-1.9\times10^{-12}$ |
+| (e) four-fold, $S = 1.0$ | rounded square with a cross | rounded square, cross along the arms | 1250, 26 min | $-1.6\times10^{-12}$ |
+
+- Agreement with the published figure is of form (tier 3, qualitative): which cases are
+  compact and which are fingered or dendritic, the four-fold symmetry, and the composition
+  pattern (channels and pockets at the liquidus composition for $S = 0.8$, nearly uniform
+  composition for $S = 1.0$). No number of Fig. 4 is available to compare.
+- Difference from the published panel (a): the paper shows a few broad lobes, PINNACLE and
+  the reference many narrow cells. Seed, noise amplitude and run length are assumed, and the
+  scale of the instability depends on them; not resolved.
+- The reference's isotropic crystal has a diamond-shaped outline, PINNACLE's is circular:
+  the five-point stencil imprints the grid on an interface this thin, the bilinear elements
+  do so less.
+- Growth law: the equivalent radius grows as $t^{0.71}$ to $t^{0.80}$ in the four runs,
+  between the diffusion-controlled $t^{1/2}$ and the interface-controlled $t^{1}$ the paper
+  describes for small and large driving force.
+- The four runs ran side by side (3 threads each). Animations:
+  `figures/crystallization/c2_pinnacle_c2_fig4*_fem.gif` (composition over time) and the
+  reference's `c2_reference_fig4*.gif`.
+- Routes: FE only. These runs are driven by noise (section 4.2); the alloy kernels state
+  that they have no PINN form.
+
+## 6. Limits
 
 - Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
   need `pf_pinn`, which does not yet carry the spherical term (A5), and a per-step predictor
@@ -480,6 +588,9 @@ FE-only in stage C.
   the published curves rests on two inferences recorded as `derived`: the cap normalized with
   $\gamma(T_m)$, and for A3 the proportional temperature scaling of $\epsilon^2$ and $w$.
 - B2 is one realization on one mesh and one step; no seed, mesh or step study.
+- C2: the seed, the run length and the meaning of the noise amplitude are assumptions; each
+  case is one realization; panel (a) differs from the published one in the scale of the
+  cells. The orientation field (C3 to C6) and the phase-field crystal (D) are not started.
 - Neural results are over 5 seeds at $\Delta T/T_f = 0.20$ and one seed elsewhere. The cost
   of the development runs behind `pf_pinn_stationary` and `pf_fem_saddle` (about 40
   exploratory runs of 1 to 90 s) is not in the wall times of the tables.

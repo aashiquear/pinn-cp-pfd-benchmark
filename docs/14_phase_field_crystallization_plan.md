@@ -178,3 +178,11 @@ c (1-c) grad ln[c/(1-c)] = grad c.
    kernels (G9), the orientation kernels (G10); compared with the reference field by field on a
    small grid without noise (tier 2), then the published morphologies (tier 3, qualitative).
 3. Cases C2 (Fig. 4 a, b, d, e), C3 (Fig. 4 c, f), C4 (Fig. 6, 7), reduced C5 (Fig. 8).
+
+### 7.4 Status (2026-11-17, evening)
+
+Done: the independent reference and PINNACLE for the binary model (C1 function, C2 four growth
+forms); gaps G9 (binary kernels) and G11 (explicit scheme, periodic boundaries) closed in ADR
+0039. Open: G10, the orientation field, with the assumptions of section 7.2 for H and for the
+singular term; cases C3 to C6.
+

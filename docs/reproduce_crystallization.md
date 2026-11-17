@@ -1,6 +1,6 @@
-# Reproducing Part IV (phase-field crystallization), stages A and B
+# Reproducing Part IV (phase-field crystallization), stages A, B and C (first part)
 
-PINNACLE `cd2d3d3` or later on `feat/pinn_benchmark` (ADR 0037, ADR 0038). Python 3.11 with numpy,
+PINNACLE `cd2288f` or later on `feat/pinn_benchmark` (ADR 0037 to 0039). Python 3.11 with numpy,
 scipy and torch for PINNACLE; matplotlib and Pillow for the figures. All commands from the
 repository root. Nothing here needs a GPU. Stage A takes about 10 minutes on 4 threads with
 the guess scan, stage B about 35 minutes (30 of them the noise run).
@@ -95,4 +95,37 @@ Notes for stage B: the wall decks use `pf_fem_saddle` and start from the classic
 cap; the Model II nucleus decks name a window function as `constraint_weight` (the wall layer
 would otherwise be counted). The noise run writes 71 field files of 103,041 nodes (about
 400 MB under `results/`).
+
+## 5. Stage C, first part (binary model)
+
+| case | decks | expected |
+|---|---|---|
+| C1 orientational free energy | none (`scripts/cryst_orientation_energy.py`) | maximum at 21.4 deg, minimum at 30.0 deg |
+| C2 check | `decks/crystallization/binary/c2_check_iso_s1.0_fem.i` (200 x 200, 500 steps, about 1 min) | equivalent radius 100 cells (reference 93.0; 97.1 at half the spacing) |
+| C2 Fig. 4 a, b, d, e | `decks/crystallization/binary/c2_fig4{a,b,d,e}_*_fem.i` (500 x 500; 26 to 42 min each) | growth forms of the report's section 5.3 |
+
+```
+python3 scripts/cryst_orientation_energy.py
+
+# independent finite-difference reference (no PINNACLE), 2 to 8 min each
+for d in decks/crystallization/reference/c2_*.i; do python3 scripts/cryst_binary_reference.py $d; done
+
+# PINNACLE
+for d in decks/crystallization/binary/c2_*_fem.i; do
+  OMP_NUM_THREADS=3 python3.11 -m pinnacle run $d &
+done; wait
+for r in c2_fig4a_iso_s0.8_fem c2_fig4b_aniso_s0.8_fem c2_fig4d_iso_s1.0_fem c2_fig4e_aniso_s1.0_fem; do
+  python3 scripts/cryst_binary_collect.py $r          # fields_step*.vtk -> frames.npz, history.csv
+done
+R=results/crystallization/binary
+python3 scripts/cryst_binary_figures.py c2_pinnacle $R/c2_fig4a_iso_s0.8_fem $R/c2_fig4b_aniso_s0.8_fem \
+    $R/c2_fig4d_iso_s1.0_fem $R/c2_fig4e_aniso_s1.0_fem
+R=results/crystallization/binary_reference
+python3 scripts/cryst_binary_figures.py c2_reference $R/fig4a_iso_s0.8 $R/fig4b_aniso_s0.8 \
+    $R/fig4d_iso_s1.0 $R/fig4e_aniso_s1.0
+```
+
+Each 500 x 500 run writes 21 field files of 251,001 nodes (about 500 MB under `results/`).
+The four C2 decks differ from the check deck in mesh size, supersaturation, anisotropy, noise
+and step count only.
 
