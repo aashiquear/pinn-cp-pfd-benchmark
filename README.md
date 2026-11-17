@@ -28,6 +28,7 @@ give the commands that regenerate the output.
 |---|---|
 | `docs/reports/cp_pfd_pinnacle_benchmark_report.md` | Al2219 plate. Part I: crystal plasticity, calibration, mesh and parameter sensitivity, grain instances, neural routes, hardware benchmark, surrogate (§2-§11). Part II: phase-field ductile fracture on J2 and on crystal plasticity, shape study, neural routes, hardware benchmark, surrogate (§12-§20) |
 | `docs/reports/ni_single_crystal_pinnacle_benchmark_report.md` | Ni single crystal: one parameter set, 15 specimens on four routes against the experiment |
+| `docs/reports/phase_field_crystallization_pinnacle_benchmark_report.md` | Phase-field crystallization (Part IV, in progress): single-field model of nucleation in Ni on the FE, PINN and PINN+FEM routes against closed forms, an independent shooting solution and the published barrier curve; plan in `docs/14_phase_field_crystallization_plan.md`, reproduction in `docs/reproduce_crystallization.md` |
 
 ## Layout
 
