@@ -3,7 +3,9 @@
 
 Usage: python3 scripts/cryst_ternary_figures.py [long]   (long: only the long runs)
 Reads results/crystallization/ternary/f3_ternary_fs*_fem/; writes summary.csv there and
-figures/crystallization/f3_maps.png, f3_measures.png, f3_<run>.gif. The long runs
+figures/crystallization/f3_maps.png, f3_measures.png, f3_<run>.gif (series at an initial
+spacing of 16 cells) and f3_spacing.png, spacing_summary.csv (initial spacings 8 to 64 cells at
+f_s = -0.84 and -0.9). The long runs
 (f3_long_fs*_fem, 600,000 steps) give f3_long.png and long_summary.csv: maps at the end, the
 front position against time with the fitted growth exponent (front - seed ~ t^n over the last
 80 % of the run; n = 1 is steady growth, n = 1/2 is growth limited by diffusion), and the
@@ -14,7 +16,7 @@ Measures per run (dx = 1, dt = 0.0025, as in the paper's dimensionless units):
                        length (cells per unit time); "steady": relative change between the last
                        two fifths
   lamella pairs        number of pairs across the box in the solid 12 cells behind the front
-                       (sign changes of c1 - c2 divided by two); spacing = width / pairs
+                       (sign changes of c1 - c2 divided by two, nodes with |c1 - c2| < 0.05 left out); spacing = width / pairs
   contrast             mean |c1 - c2| of the solid grown in the run (0.735 for the two solid
                        solutions of the start, 0 for a homogeneous solid)
   c3 in the solid      mean of the solid grown in the run, and its ratio to the liquid value
@@ -77,7 +79,8 @@ def analyse(run: Path) -> dict:
     grown = (ys[:, None] > SEED + 15.0) & (ys[:, None] < front - 12.0) & (phi < 0.05)
     row = int(np.clip(np.searchsorted(ys, front - 12.0), 0, len(ys) - 1))
     diff = (c1 - c2)[row, :-1]
-    pairs = int(np.sum(np.sign(diff) != np.sign(np.roll(diff, 1))) // 2)
+    sign = np.sign(diff[np.abs(diff) > 0.05])  # nodes on a lamella boundary (zero by symmetry) do not count
+    pairs = int(np.sum(sign != np.roll(sign, 1)) // 2) if sign.size else 0
     liquid = phi > 0.5
     return {"f_s": fs, "t_end": float(t[min(n_eff, n) - 1]), "front": front, "reached_top": bool(full < n),
             "speed": slope(0.6, 1.0), "steady": abs(slope(0.8, 1.0) / slope(0.6, 0.8) - 1.0),
@@ -136,13 +139,51 @@ def long_runs() -> None:
     print("wrote figures/crystallization/f3_long.png")
 
 
+def spacing_series() -> None:
+    """Initial spacings of 8 to 64 cells at two driving forces: maps and spacing_summary.csv."""
+    forces, lams = (-0.84, -0.9), (8, 16, 32, 64)
+    found = {(f, lam): RES / f"f3_ternary_fs{f:g}_c30.09_lam{lam}_fem" for f in forces for lam in lams}
+    found = {k: v for k, v in found.items() if (v / "solver_history.csv").exists()}
+    if len(found) < 3:
+        return
+    fig, axes = plt.subplots(len(forces), len(lams), figsize=(1.9 * len(lams) + 0.8, 3.6 * len(forces)), squeeze=False)
+    rows = []
+    for i, f in enumerate(forces):
+        for j, lam in enumerate(lams):
+            ax = axes[i, j]
+            ax.set_xticks([]); ax.set_yticks([])
+            if (f, lam) not in found:
+                ax.set_frame_on(False)
+                continue
+            r = analyse(found[(f, lam)])
+            xs, ys, phi, c1, c2 = r["_fields"]
+            top = min(float(ys[-1]), r["front"] + 25.0)
+            im = ax.imshow(np.where(phi < 0.5, c1 - c2, np.nan), origin="lower", cmap="RdBu_r", vmin=-0.8, vmax=0.8,
+                           extent=[0, xs[-1], 0, ys[-1]])
+            ax.set_ylim(0, top)
+            ax.set_title(f"$f_s$ = {f:g}, $\\lambda_0$ = {lam}", fontsize=8)
+            rows.append({"f_s": f, "initial_spacing": lam, "front": r["front"], "speed": r["speed"],
+                         "lamella_pairs": r["lamella_pairs"], "spacing": r["spacing"], "c3_peak": r["c3_peak"]})
+    fig.colorbar(im, ax=axes, shrink=0.6, pad=0.02, label="$c_1 - c_2$ in the solid")
+    fig.savefig(FIG / "f3_spacing.png", bbox_inches="tight")
+    plt.close(fig)
+    with (RES / "spacing_summary.csv").open("w", newline="") as fh:
+        wr = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        wr.writeheader()
+        wr.writerows(rows)
+    for r in rows:
+        print("spacing", " ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in r.items()))
+    print("wrote figures/crystallization/f3_spacing.png")
+
+
 def main() -> None:
     if "long" in sys.argv[1:]:
         plt.rcParams.update({"font.size": 9, "savefig.dpi": 200, "axes.linewidth": 0.8, "mathtext.fontset": "cm"})
         long_runs()
         return
     plt.rcParams.update({"font.size": 9, "savefig.dpi": 200, "axes.linewidth": 0.8, "mathtext.fontset": "cm"})
-    runs = sorted((p for p in RES.glob("f3_ternary_fs*_fem") if (p / "solver_history.csv").exists()),
+    spacing_series()
+    runs = sorted((p for p in RES.glob("f3_ternary_fs*_lam16_fem") if (p / "solver_history.csv").exists()),
                   key=lambda p: -float(re.search(r"_fs(-[0-9.]+)_", p.name).group(1)))
     rows = [analyse(r) for r in runs]
     keys = [k for k in rows[0] if not k.startswith("_")]

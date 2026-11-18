@@ -2102,6 +2102,263 @@ On the GPU of rocm-server (float64, shared with other runs) a 64 x 64 x 64 run t
 sub-steps of the four-component orientation field. Routes: FE only; the unit-norm
 constraint and the non-differentiable energy have no network form in PINNACLE.
 
+## 10. The regular-solution eutectic model: lamellar growth of Ag-Cu
+
+### 10.1 Purpose
+
+A eutectic liquid freezes into two solid phases at once. In Ag-Cu these are an Ag-rich and
+a Cu-rich solid solution that grow side by side as lamellae and exchange atoms through the
+liquid ahead of the front. (lewis 2004 eutectic) give a phase-field model for this with
+regular-solution thermodynamics and add an orientation field for eutectic grains;
+(ratkai 2017 nanoscale) use the same thermodynamics for lamellar growth on the nanometer
+scale. The case shows the user how the lamellar spacing and the undercooling set the front
+speed and the pattern, and at what spacing a lamella splits. It tests a fourth-order
+composition equation (the chemical potential as an auxiliary variable), a
+composition-dependent double well, and an orientational energy that depends on the
+composition.
+
+### 10.2 Governing equations
+
+Fields: $\phi$ (1 liquid, 0 solid) and $c$, the mole fraction of Cu. Energies are in units
+of $RT/v$, lengths in nm, times in $\xi^2/D_L$ = 7.143e-10 s ($\xi$ = 1 nm):
+
+$$ F = \int \Big\{ \frac{\kappa_\phi}{2}|\nabla\phi|^2 + \frac{\kappa_c}{2}|\nabla c|^2 + w(c)\,g(\phi)
+      + [1 - p(\phi)]\,f_S(c) + p(\phi)\,f_L(c) \Big\}\,dV, $$
+
+$$ f_L = \omega_L\,c(1-c) + c\ln c + (1-c)\ln(1-c), \qquad
+   f_S = (1-c) f_A + c f_B + \omega_S\,c(1-c) + c\ln c + (1-c)\ln(1-c), $$
+
+$$ \dot\phi = -m_\phi\big\{ w(c)\,g'(\phi) + p'(\phi)\,[f_L - f_S] - \kappa_\phi\nabla^2\phi \big\}, \qquad
+   \dot c = \nabla\!\cdot\!\big\{ D(\phi)\,c(1-c)\,\nabla\mu \big\}, $$
+
+$$ \mu = (w_B - w_A)\,g(\phi) + [1 - p(\phi)]\,f_S'(c) + p(\phi)\,f_L'(c) - \kappa_c\nabla^2 c, \qquad
+   D(\phi) = r + (1 - r)\,p(\phi), $$
+
+with $w(c) = (1-c)\,w_A + c\,w_B$, $f_A = L_A v (T - T_A)/(T_A R T)$ and the same for B, and
+$\omega = \Omega v/(RT)$ with $\Omega_L v = 16{,}000 - 4T$ and $\Omega_S v = 26{,}000 - 4T$
+J/mol (lewis 2004 eutectic). What the terms do:
+
+- $\omega_S > 2$: the solid has a miscibility gap. The two ends of the gap are the two
+  solid solutions.
+- $\omega_L < 2$: the liquid stays mixed.
+- $\kappa_c$: the energy of the boundary between the two solids. Without it the lamellae
+  could be arbitrarily thin.
+- $r = D_S/D_L$ = 0.01: the solid pattern, once formed, changes slowly.
+
+*Eutectic grain (case F2b).* An orientation field $\theta \in [0, 1)$ is added with the
+energy of (lewis 2004 eutectic),
+
+$$ f_{ori} = [1 - p(\phi)]\,S\,E(c, u), \qquad u = d\,|\nabla\theta|, $$
+
+$$ E = h(c)\,u + [1 - h(c)]\,\{A + B\,|\cos(2\pi m u)|\}, \qquad
+   h(c) = \tfrac{1}{2}\Big\{1 + \cos\Big[2\pi\,\frac{c - c_\alpha}{c_\beta - c_\alpha}\Big]\Big\}. $$
+
+Inside either solid ($h = 1$) the energy is that of a grain boundary, linear in the
+misorientation. Across a boundary between the two solids ($h \to 0$) it is lowest at a
+fixed misorientation, $u = 1/(4m)$: the two solids of one grain keep an orientation
+relation. $\dot\theta = \chi_l\,p(\phi)\,\nabla\!\cdot\!(\partial f_{ori}/\partial\nabla\theta)$.
+
+PINNACLE: `rs_phase_bulk`, `rs_chemical_potential`, `rs_solute_flux` with $\mu$ as an
+auxiliary variable; `eo_grain_flux`, `eo_phase_coupling`, `eo_potential_coupling` for the
+orientation (ADR 0042).
+
+### 10.3 Parameters
+
+The model with these data gives a eutectic at 1055.48 K and $c_E$ = 0.3454, with solids of
+$c_\alpha$ = 0.149 and $c_\beta$ = 0.851 (`scripts/cryst_eutectic_thermo.py`; the papers
+print 1055.5 K and 0.35).
+
+**Table 38.** Parameters of cases F2 and F2b.
+
+| quantity | value | provenance |
+|---|---|---|
+| $L_{Ag}$, $L_{Cu}$, $v$ | 1097, 1728 J/cm³, 8.7 cm³/mol | reported_text (lewis 2004 eutectic) |
+| $T_{Ag}$, $T_{Cu}$ | 1234, 1358 K | reported_text |
+| $\Omega_L v$, $\Omega_S v$ | 16,000 - 4 T, 26,000 - 4 T J/mol | reported_text |
+| interface energies | 172 (Ag), 227 (Cu) mJ/m² | reported_text (ratkai 2017 nanoscale) |
+| interface thickness (10 to 90 %) | 1 nm | reported_text |
+| $\epsilon_c^2 = \epsilon_\phi^2/4$; $D_L$; $M_\phi$; $D_S/D_L$ | 1.4e-9 m²/s; 0.25 m³/(J s); 0.01 | reported_text |
+| at 955.5 K: $f_A$, $f_B$, $\omega_S$, $\omega_L$ | -0.2711, -0.5609, 2.792, 1.533 | derived |
+| $\kappa_\phi$, $\kappa_c$, $w_A$, $w_B$, $m_\phi$ (955.5 K) | 0.1991, 0.0498, 7.691, 11.061, 0.1631 | derived |
+| liquid composition $c_0$ | 0.345 | reported_text (eutectic) |
+| mesh size, time step | 0.25 nm, 0.004 | assumed |
+| F2: box, steps | $\lambda$ x 60 nm, one lamella pair, periodic across; 300,000 steps (0.86 µs) | assumed |
+| F2: initial solid | slab of 10 nm, Cu-rich share by the lever rule (0.309 at 955.5 K) | assumed |
+| F2b: $A$, $B$, $m$, $d$ | 0.9, 0.1, 1/2, mesh size | reported_text (lewis 2004 eutectic) |
+| F2b: $S$, $\chi_l$ | 0.1 and 0.3; 3 and 0.3 | assumed (not printed) |
+| F2b: box, temperature, seed | 64 x 64 nm (256 x 256), 900 K, lamellar disc of radius 10 nm with 10 nm pairs, one orientation | assumed |
+
+### 10.4 Cases and results
+
+Decks: `decks/crystallization/eutectic/f2_lamellar_T<T>_c0.345_lam<lambda>_fem.i`,
+`f2_long100_T955.5_c0.345_lam16_fem.i` and `grain/f2b_grain_*.i`, from
+`scripts/cryst_eutectic_decks.py`. Measures and figures: `scripts/cryst_eutectic_figures.py`
+and `scripts/cryst_eutectic_grain_figures.py`.
+
+*Expected result.* (ratkai 2017 nanoscale) report steady lamellar growth with
+$\lambda^2 v$ = 0.41e-17 m³/s and cite 1.4e-17 m³/s from experiment. (lewis 2004 eutectic)
+show a eutectic grain that grows from a seed as a two-phase pattern with one orientation
+relation. Neither paper prints a speed for a single spacing and temperature that could be
+compared directly; the comparison is of $\lambda^2 v$ in order of magnitude and of the
+form (tier 3, qualitative).
+
+#### 10.4.1 Series in the lamellar spacing
+
+![Spacing series](../../figures/crystallization/f2_spacing_maps.png)
+
+**Figure 42.** Lamellar growth at 955.5 K (undercooling 100 K) for initial
+spacings of 8 to 48 nm after 300,000 steps. Color: Cu fraction in the solid; line: the
+front. The box holds one pair and is repeated sideways for display. Animation of the 16 nm
+case: `figures/crystallization/f2_lamellar_T955.5_lam16.gif`.
+
+![Spacing measures](../../figures/crystallization/f2_spacing_measures.png)
+
+**Figure 43.** Measures of the spacing series against the initial spacing. Left:
+front speed. Middle: $\lambda^2 v$ with the initial spacing; lines: simulation and
+experiment as given by (ratkai 2017 nanoscale). Right: Cu-rich share of the new solid.
+
+**Table 39.** Spacing series at 955.5 K. Final spacing: box width over the number
+of Cu-rich lamellae 3 nm behind the front. Unsteadiness: relative change of the speed
+between the last two fifths of the run.
+
+| initial $\lambda$ (nm) | front (nm) | speed (m/s) | unsteadiness | Cu-rich lamellae at the end | final spacing (nm) | $\lambda^2 v$ with the final spacing (1e-17 m³/s) | Cu-rich share |
+|---|---|---|---|---|---|---|---|
+| 8 | 38.3 | 0.0329 | 0.00002 | 1 | 8 | 0.21 | 0.273 |
+| 12 | 37.8 | 0.0324 | 0.0003 | 1 | 12 | 0.47 | 0.270 |
+| 16 | 36.8 | 0.0313 | 0.010 | 1 | 16 | 0.80 | 0.259 |
+| 24 | 37.2 | 0.0323 | 0.019 | 2 | 12 | 0.46 | 0.270 |
+| 32 | 36.4 | 0.0315 | 0.020 | 2 | 16 | 0.81 | 0.258 |
+| 48 | 36.4 | 0.0320 | 0.002 | 4 | 12 | 0.46 | 0.269 |
+
+- Spacings of 8, 12 and 16 nm grow as set. At 16 nm the Cu-rich lamella varies in width
+  along the growth direction.
+- At 24 and 32 nm the Cu-rich lamella splits in two within the first 2 nm of growth, and the
+  branches move apart until the spacing is halved. At 48 nm it splits and a new Cu-rich
+  lamella forms in the middle of the wide Ag-rich one, which then splits as well: four
+  lamellae, spacing 12 nm.
+- The pattern therefore selects a spacing between 8 and 16 nm at this undercooling,
+  whatever the start. With that spacing $\lambda^2 v$ is 0.2 to 0.8e-17 m³/s. The value
+  0.41e-17 of (ratkai 2017 nanoscale) lies inside the range; the experimental value they
+  cite is 1.8 to 7 times higher.
+- The front speed is the same within 5 % for all spacings (0.0313 to 0.0329 m/s). The
+  classical theory of lamellar growth gives a speed that depends on the spacing through
+  diffusion along the front and through the curvature of the lamella tips. Neither shows
+  here. At 100 K of undercooling and nanometer spacings the speed is consistent with
+  growth limited by attachment at the interface ($m_\phi$); that was not tested by a
+  series in $m_\phi$.
+- The Cu-rich share of the new solid is 0.26 to 0.27, below the lever rule (0.309). The
+  solids are less pure than at equilibrium (next section), which lowers the share needed.
+
+#### 10.4.2 Series in the undercooling
+
+![Undercooling series](../../figures/crystallization/f2_undercooling_maps.png)
+
+**Figure 44.** Lamellar growth with an initial spacing of 16 nm at undercoolings
+of 50, 75, 100 and 150 K (1005.5 to 905.5 K) after 300,000 steps.
+
+![Undercooling measures](../../figures/crystallization/f2_undercooling_measures.png)
+
+**Figure 45.** Left: front speed against undercooling. Right: fraction of the
+minority component in each new solid (symbols) and at equilibrium (dashed; the two
+equilibrium curves coincide in this model).
+
+**Table 40.** Undercooling series at an initial spacing of 16 nm.
+
+| $T$ (K) | undercooling (K) | front (nm) | speed (m/s) | speed per K (1e-4 m/s/K) | final spacing (nm) | minority fraction, Ag-rich / Cu-rich solid | equilibrium |
+|---|---|---|---|---|---|---|---|
+| 1005.5 | 50 | 22.7 | 0.0151 | 3.0 | 16 | 0.157 / 0.158 | 0.119 |
+| 980.5 | 75 | 29.9 | 0.0233 | 3.1 | 16 | 0.149 / 0.137 | 0.106 |
+| 955.5 | 100 | 36.8 | 0.0313 | 3.1 | 16 | 0.143 / 0.124 | 0.094 |
+| 905.5 | 150 | 53.0 | 0.0506 | 3.4 | 8 | 0.105 / 0.122 | 0.073 |
+
+- The speed rises linearly with the undercooling, 3.0 to 3.4e-4 m/s per K.
+- At 150 K the 16 nm lamella splits and the spacing halves to 8 nm. The selected spacing
+  falls as the speed rises, the direction of the rule $\lambda^2 v$ = constant.
+- Both solids hold 0.03 to 0.05 more of the minority component than at equilibrium at
+  every undercooling: the front traps solute. The solid diffusivity (1 % of the liquid's)
+  is too low to remove the excess during the run.
+
+#### 10.4.3 Long run: is the growth steady?
+
+![Long run](../../figures/crystallization/f2_long.png)
+
+**Figure 46.** Run of 600,000 steps (1.7 µs) at 955.5 K and 16 nm in a box 100 nm
+long. Left: Cu fraction at the end (three periods). Middle: front position against time.
+Right: Cu-rich share across the box against height.
+
+- The front moves from 10.1 to 63.8 nm at 0.0314 m/s in the second half and 0.0313 m/s in
+  the first: steady. This differs from the ternary front of section 11, which slows down;
+  here nothing is rejected into the liquid on average.
+- Cu-rich share 0.273 ± 0.033 over the grown length (lever rule 0.309). The width of the
+  lamella oscillates along the growth direction with a period of about 10 nm and an
+  amplitude that gets smaller.
+- $\lambda^2 v$ = 0.80e-17 m³/s.
+
+#### 10.4.4 Eutectic grain with an orientation field (case F2b)
+
+![Eutectic grain](../../figures/crystallization/f2b_grain.png)
+
+**Figure 47.** Growth of a eutectic grain at 900 K from a lamellar seed. Rows in
+pairs: composition (red Cu-rich, blue Ag-rich, light blue liquid) and orientation (color:
+$\theta$; gray: liquid). Top pair: $S$ = 0.1, $\chi_l$ = 0.3. Middle: $S$ = 0.1,
+$\chi_l$ = 3. Bottom: $S$ = 0.3, $\chi_l$ = 3. Columns: start, 50,000 and 100,000 steps.
+Animations: `figures/crystallization/f2b_<run>.gif`.
+
+**Table 41.** Eutectic grain after 100,000 steps (0.29 µs). Reoriented share: part of
+the solid more than 5 % of the period away from the seed orientation.
+
+| $S$ | $\chi_l$ | solid fraction | Cu-rich share | reoriented share | orientation |
+|---|---|---|---|---|---|
+| 0.1 | 3 | 0.359 | 0.262 | 0.19 | seed orientation, with sectors of other orientations that start at the tips of the Cu-rich lamellae |
+| 0.1 | 0.3 | 0.326 | 0.277 | 0.69 | seed kept; everything grown later is disordered at the scale of the cell |
+| 0.3 | 3 | 0.323 | 0.233 | 0.00 | one orientation throughout |
+
+- The grain grows as a two-phase pattern in all three runs. The central Cu-rich lamella
+  extends along its length; the side lamellae turn outward and follow the front. The
+  outline is elongated along the lamellae, where both solids are fed directly from the
+  liquid.
+- $\chi_l$ sets how well the new solid takes the orientation of the grain. At 3 most of it
+  does. At 0.3 the front outruns the ordering and the shell freezes with the random
+  orientation of the liquid, as in section 9 at low mobility. The two-phase pattern is
+  almost unchanged: at $S$ = 0.1 the orientational energy is too small to act on it.
+- At $S$ = 0.3 the solid has one orientation and the pattern differs: the side lamellae
+  stay straight and do not split. The orientational energy now enters the balance at the
+  boundaries between the two solids and feeds back on the morphology.
+- Not reproduced: the step of half a period in $\theta$ across the boundaries between the
+  two solids, which the energy favors. The seed here has one
+  orientation in both solids and the new solid keeps it at $S$ = 0.3. A seed with the
+  orientation step built in was not run.
+
+### 10.5 What to expect when the parameters change
+
+- *Lamellar spacing.* Below about 8 nm the boundary energy between the solids takes too
+  much of the driving force (not run below 8 nm). From 8 to 16 nm the lamellae grow as
+  set. Above about 20 nm they split until the spacing is back in that range.
+- *Undercooling.* The speed is proportional to it (3e-4 m/s per K here). The stable range
+  of spacings moves down: 16 nm is stable at 100 K and splits at 150 K.
+- *Liquid composition $c_0$.* Sets the share of the two solids by the lever rule. Far from
+  the eutectic composition one solid grows ahead of the other (not run).
+- *$D_S/D_L$.* Higher: the trapped excess of the minority component relaxes and the
+  lamellae coarsen behind the front.
+- *$\kappa_c$.* Higher: wider boundaries between the solids and a larger smallest spacing.
+- *$\chi_l$ and $S$ (grain).* Low $\chi_l$: a disordered shell. High $S$: one orientation
+  and straighter lamellae. Very high $S$ is expected to slow growth, as $h$ does in
+  sections 7 and 9.
+- *Crystallography.* In a micrograph the lamellae are the composition contrast; the
+  orientation field gives what an orientation map of the same area would show. One
+  eutectic grain is a region where each solid has a single orientation, even though the
+  two solids alternate many times across it. The sectors at $\chi_l$ = 3 are new grains
+  that start at the lamella tips, the counterpart of growth front nucleation in sections 7
+  and 9.
+
+### 10.6 Cost
+
+One lamella pair, 0.25 nm mesh, 60 nm long, 300,000 steps on the GPU of rocm-server
+(float64, shared with other runs): 689 s at 8 nm (32 x 240 cells), 928 to 1379 s at 16 nm,
+1745 to 1812 s at 12 to 32 nm, 2560 s at 48 nm (192 x 240 cells), that is 2.3 to 8.5 ms per
+step. The GPU was shared, so the times are not a scaling measurement. The long run took 4209 s. The
+grain (256 x 256, 100,000 steps, with orientation) took 3273 to 6200 s. Routes: FE only.
+
 ## 11. The ternary eutectic model: lamellar growth, solute rejection and trapping
 
 ### 11.1 Purpose
@@ -2156,7 +2413,7 @@ $\mu_1$, $\mu_2$, $\mu_3$ as auxiliary variables of `pf_fem_explicit` (ADR 0044)
 
 ### 11.3 Parameters
 
-**Table 38.** Parameters of case F3.
+**Table 42.** Parameters of case F3.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -2187,33 +2444,33 @@ partitionless growth (tier 3, qualitative).
 
 ![Ternary series](../../figures/crystallization/f3_maps.png)
 
-**Figure 42.** Series in $f_s$ at time 300 (120,000 steps). Top: $c_1 - c_2$ in
+**Figure 48.** Series in $f_s$ at time 300 (120,000 steps). Top: $c_1 - c_2$ in
 the solid (red and blue: the two solid solutions; white: homogeneous solid). Bottom:
 $c_3$. The slab below 40 cells is the initial solid. Animation:
 `figures/crystallization/f3_f3_ternary_fs-0.86_c30.09_lam16_fem.gif`.
 
 ![Ternary measures](../../figures/crystallization/f3_measures.png)
 
-**Figure 43.** Measures of the series. Left: front speed over the last 40 % of the
+**Figure 49.** Measures of the series. Left: front speed over the last 40 % of the
 run; dotted line: the speed above which the paper reports partitionless growth. Middle:
 $c_3$ of the new solid over that of the liquid, and the contrast between the two solids
 (1: the initial solids; 0: homogeneous). Right: largest $c_3$ ahead of the front.
 
-**Table 39.** Series in the driving force at time 300. Advance: front position
+**Table 43.** Series in the driving force at time 300. Advance: front position
 minus 40. Speed: mean over the last 40 % of the run. The middle columns are measured in the
 solid more than 15 cells from the seed, which three runs did not reach (--).
 
 | $f_s$ | advance (cells) | speed | new solid | $c_3$ solid / liquid | $c_3$ peak ahead |
 |---|---|---|---|---|---|
-| -0.82 | 17.5 | 0.053 | two-phase, 8 pairs | -- | 0.117 |
-| -0.84 | 22.8 | 0.067 | two-phase, 8 pairs | -- | 0.122 |
+| -0.82 | 17.5 | 0.053 | two-phase, 4 pairs | -- | 0.117 |
+| -0.84 | 22.8 | 0.067 | two-phase, 4 pairs | -- | 0.122 |
 | -0.86 | 23.1 | 0.053 | two-phase, contrast fading | -- | 0.115 |
 | -0.88 | 40.8 | 0.094 | homogeneous | 0.46 | 0.133 |
 | -0.90 | 60.1 | 0.138 | homogeneous | 0.55 | 0.150 |
 | -0.93 | 94.5 | 0.223 | homogeneous | 0.69 | 0.173 |
 | -0.964 | 138.4 | 0.323 | homogeneous | 0.84 | 0.228 |
 
-- At $f_s$ = -0.82 and -0.84 the front continues the eight lamella pairs of the seed. The
+- At $f_s$ = -0.82 and -0.84 the front continues the four lamella pairs of the seed. The
   new solid is almost free of component 3, which collects in a layer ahead of the front.
 - From $f_s$ = -0.88 the solid no longer separates: $c_1 = c_2$ behind the front
   (contrast below 0.001). The front is too fast for components 1 and 2 to exchange sideways
@@ -2234,22 +2491,22 @@ solid more than 15 cells from the seed, which three runs did not reach (--).
 
 ![Long ternary runs](../../figures/crystallization/f3_long.png)
 
-**Figure 44.** Long runs (time 1500, 600,000 steps) at $f_s$ = -0.82, -0.84 and
+**Figure 50.** Long runs (time 1500, 600,000 steps) at $f_s$ = -0.82, -0.84 and
 -0.86. Maps: $c_1 - c_2$ in the solid and $c_3$ at the end. Middle: front position against
 time; $n$ is the exponent of (position - 40) $\propto t^n$ over the last 80 % of the run.
 Right: $c_3$ averaged across the box, along the growth direction; dotted: the initial
 liquid value.
 
-**Table 40.** Long runs at time 1500. Deceleration: relative change of the speed
+**Table 44.** Long runs at time 1500. Deceleration: relative change of the speed
 between the fourth and the last fifth of the run.
 
 | $f_s$ | front (cells) | speed (last 40 %) | deceleration | exponent $n$ | pairs | contrast | $c_3$ solid / liquid | $c_3$ at the front | $c_3$ at the far end |
 |---|---|---|---|---|---|---|---|---|---|
-| -0.82 | 99.7 | 0.028 | 0.22 | 0.76 | 8 | 0.68 | 0.28 | 0.143 | 0.130 |
-| -0.84 | 115.5 | 0.033 | 0.27 | 0.74 | 8 | 0.64 | 0.32 | 0.162 | 0.147 |
-| -0.86 | 126.7 | 0.045 | 0.28 | 0.89 | 8 | 0.46 | 0.39 | 0.176 | 0.158 |
+| -0.82 | 99.7 | 0.028 | 0.22 | 0.76 | 4 | 0.68 | 0.28 | 0.143 | 0.130 |
+| -0.84 | 115.5 | 0.033 | 0.27 | 0.74 | 4 | 0.64 | 0.32 | 0.162 | 0.147 |
+| -0.86 | 126.7 | 0.045 | 0.28 | 0.89 | 4 | 0.46 | 0.39 | 0.176 | 0.158 |
 
-- The lamellae are stable. Eight pairs of spacing 8 cells grow over 60 to 87 cells with
+- The lamellae are stable. Four pairs of spacing 16 cells grow over 60 to 87 cells with
   straight boundaries; no pair is lost or added.
 - The front is not steady. It decelerates in all three runs, with an exponent between 1/2
   (growth limited by diffusion) and 1 (steady growth).
@@ -2272,6 +2529,40 @@ between the fourth and the last fifth of the run.
   the two solids (the thin vertical lines in the $c_3$ maps), where both major components
   are diluted.
 
+#### 11.4.3 Series in the initial spacing
+
+![Ternary spacing series](../../figures/crystallization/f3_spacing.png)
+
+**Figure 51.** Initial spacings $\lambda_0$ of 8, 16, 32 and 64 cells at
+$f_s$ = -0.84 (top) and -0.9 (bottom) at time 300; $c_1 - c_2$ in the solid. The view is
+cut 25 cells above the front.
+
+**Table 45.** Spacing series at time 300. Pairs at the front: counted 3 cells
+behind it.
+
+| $f_s$ | $\lambda_0$ (cells) | front (cells) | speed | pairs at the start | pairs at the front | spacing at the front (cells) |
+|---|---|---|---|---|---|---|
+| -0.84 | 8 | 59.4 | 0.059 | 8 | 8 | 8 |
+| -0.84 | 16 | 62.8 | 0.067 | 4 | 4 | 16 |
+| -0.84 | 32 | 60.6 | 0.065 | 2 | 6 | 10.7 |
+| -0.84 | 64 | 59.8 | 0.060 | 1 | 3 | 21.3 |
+| -0.9 | 8 | 99.6 | 0.1375 | 8 | homogeneous | -- |
+| -0.9 | 16 | 100.1 | 0.1375 | 4 | homogeneous | -- |
+| -0.9 | 32 | 100.5 | 0.1375 | 2 | homogeneous | -- |
+| -0.9 | 64 | 100.7 | 0.1374 | 1 | homogeneous | -- |
+
+- $f_s$ = -0.84: spacings of 8 and 16 cells grow as set. At 32 and 64 cells a lamella of
+  the other solid forms in the middle of every wide lamella, at the front, about 10 cells
+  after the start. Probable cause: the wide lamella collects the other major component
+  ahead of its center faster than sideways diffusion removes it. The spacing falls toward the range of
+  8 to 16 cells without any noise. At 64 cells the adjustment is not finished at the end
+  of the run.
+- The speed depends weakly on the spacing (0.059 to 0.067, highest at 16 cells). The runs
+  are transients (section 11.4.2), so no law $\lambda(v)$ is read from them.
+- $f_s$ = -0.9: the solid is homogeneous at every initial spacing and the speed is the same
+  to three digits. The transition to the homogeneous solid does not depend on the pattern
+  it starts from.
+
 ### 11.5 What to expect when the parameters change
 
 - *Driving force $f_s$.* Above about -0.85: two-phase lamellae that reject component 3,
@@ -2281,9 +2572,10 @@ between the fourth and the last fifth of the run.
 - *Share of the third component $c_3$.* More of it thickens the rejected layer and slows
   the lamellar front further. In three dimensions it is what breaks the flat front into
   colonies and dendrites (ratkai 2015 ternary). Not varied here.
-- *Lamellar spacing.* The front here keeps the spacing of the seed, because the frozen
-  solid cannot adjust and no noise is applied. The paper finds $\lambda \propto v^{-1/2}$
-  with noise. A series in the initial spacing is in section 11.4.3 when run.
+- *Lamellar spacing.* At a low driving force spacings of 8 to 16 cells are kept; wider
+  lamellae are subdivided at the front (section 11.4.3). The paper finds
+  $\lambda \propto v^{-1/2}$ for steady, pulled growth; the transient runs here do not
+  test that law.
 - *$\Omega_{12}$.* Below 2 the two solids are miscible and no lamellae form. Larger values
   give purer solids and a sharper boundary.
 - *$\kappa_c$.* Larger: wider boundaries between the solids and a larger smallest spacing.
@@ -2337,7 +2629,7 @@ The paper's three-dimensional box (96 x 96 x 612, 3.6e6 steps) has 460 times the
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 41.** Measured cost per time step.
+**Table 46.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -2350,8 +2642,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 42.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 41; `derived`, not measured beyond 1000 x 1000).
+**Table 47.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 46; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|

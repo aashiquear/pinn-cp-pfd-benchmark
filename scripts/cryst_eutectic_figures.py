@@ -106,6 +106,8 @@ def main() -> None:
                        levels=[0.5], colors="k", linewidths=0.6)
             ax.set_title(label(r), fontsize=8)
             ax.set_xlabel("nm")
+            if ax is not axes[0, 0]:
+                ax.set_yticklabels([])
         axes[0, 0].set_ylabel("growth direction (nm)")
         fig.colorbar(im, ax=axes[0, :], shrink=0.7, pad=0.02, label="Cu fraction $c$ (solid)")
         fig.savefig(FIG / f"{tag}.png", bbox_inches="tight")
