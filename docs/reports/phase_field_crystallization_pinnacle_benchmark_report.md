@@ -11,26 +11,37 @@ Reproduction: `docs/reproduce_crystallization.md`. Every deck named here is a co
 
 ## Abstract
 
-*Draft from the results available on 2026-11-17; to be revised when all cases are complete.*
+*Draft from the results available on 2026-11-18; to be revised when all cases are complete.*
 
 We benchmark the phase-field module of the PINNACLE framework against published results on
-crystal nucleation and polycrystalline growth. Five models are covered so far: a single-field
-model of a pure undercooled melt, the same model with a foreign wall, with thermal noise, a
-binary alloy model, and its extension by an orientation field. Each case is solved by finite
-elements and, where the problem is deterministic and stationary, also by a physics-informed
-network and by a network-started finite-element solve. Every result is compared with a
-reference written independently of the framework and with the published figure. Finite-element
-critical nuclei in nickel agree with a shooting solution to $2.2\times10^{-5}$ and with the
-published barrier to 1.1 %; interface energy and front velocity agree with closed forms to
-$1.4\times10^{-4}$. Nucleation barriers on a wall follow the published curves within 0.008 of
-the normalized barrier. Noise-induced crystallization gives an Avrami exponent of
-$3.14 \pm 0.29$ over five realizations, against the theoretical 3. The binary model reproduces
-the four single-crystal growth forms, and the orientation-field model the single-crystal
-dendrite, the polycrystalline dendrite and the spherulite, with crystal radii within 1.0 to
-10.1 % of the independent reference. A network trained on the stationary residual reaches the
-critical nucleus from initial guesses of 0.4 to 2.0 classical radii, where Newton's method
-converges only from 0.85 to 1.3. Noise-driven cases have no network route. Parameters that
-the sources do not state are marked as assumed.
+crystal nucleation and polycrystalline growth. Nine models are covered: a single-field model
+of a pure undercooled melt, the same model with a foreign wall and with thermal noise, a
+binary alloy model, its extension by an orientation field in two dimensions and by a
+quaternion field in three, a density-coupled model of the hard-sphere liquid, a
+regular-solution model of the Ag-Cu eutectic, and a ternary eutectic model. Each case is
+solved by finite elements and, where the problem is deterministic and stationary, also by a
+physics-informed network and by a network-started finite-element solve. Every result is
+compared with the published figure and, where one could be written, with a reference
+independent of the framework. Finite-element critical nuclei in nickel agree with a shooting
+solution to $2.2\times10^{-5}$ and with the published barrier to 1.1 %; interface energy and
+front velocity agree with closed forms to $1.4\times10^{-4}$. Nucleation barriers on a wall
+follow the published curves within 0.008 of the normalized barrier. Noise-induced
+crystallization gives an Avrami exponent of $3.14 \pm 0.29$ over five realizations, against
+the theoretical 3. The binary model reproduces the four single-crystal growth forms, and the
+orientation-field model the single-crystal dendrite, the polycrystalline dendrite and the
+spherulite, with crystal radii within 1.0 to 10.1 % of the independent reference; nine of the
+ten published spherulitic forms were obtained. On a rough wall the number of crystals per
+site follows the wedge angle. In three dimensions a single crystal turns into a
+polycrystalline spherulite when the orientational mobility is reduced by a factor of 5 to 7.
+The Ag-Cu eutectic grows steadily at 0.031 m/s at 100 K of undercooling and selects a
+lamellar spacing of 8 to 16 nm by splitting wider lamellae; the ternary eutectic front
+rejects the third component, decelerates at a uniform driving force, and grows without
+phase separation at high driving force. A network trained on the stationary residual
+reaches the critical nucleus from initial guesses of 0.4 to 2.0 classical radii, where
+Newton's method converges only from 0.85 to 1.3. Noise-driven cases have no network route.
+For every model the report states what changes when each parameter is varied, with
+intermediate values that the sources do not show. Parameters that the sources do not state
+are marked as assumed.
 
 ## 1. Introduction
 
@@ -2612,17 +2623,35 @@ The paper's three-dimensional box (96 x 96 x 612, 3.6e6 steps) has 460 times the
   cells.
 - C3: $h$ is assumed and not yet calibrated; one realization per case; 500 x 500 only for
   the Fig. 4 conditions and 1000 x 1000 for the Fig. 5 conditions; the parameter series of
-  section 7.5 are one realization per point, the fibrillar cases (C4) included; C5, C6,
-  E1 to E5 and the phase-field crystal (D) are not started.
+  section 7.5 are one realization per point, the fibrillar cases (C4) included.
+- C6: panel (e) of the gallery was not obtained (section 7.5.3); a regularized interface
+  anisotropy for $s_0 > 1/3$ is not in PINNACLE. E5: ten runs, 23 crystals; the counts per
+  site are small numbers.
+- Not started: the biomineral cases E2 and E3 (shell and coral forms of
+  (granasy 2021 biomineralization)), the phase-field crystal (D), and the network routes
+  for A2, A5 and B1.
 - F1 (hard spheres): FE route only; the Monte Carlo points are read by eye from a figure.
-  Of the four models added on 2026-11-17, the eutectic (binary and ternary) and the
-  three-dimensional quaternion model are not implemented yet.
+- F4 (quaternion field, section 9): 64 x 64 x 64 cells against 300 x 300 x 300 in the
+  paper; dendrite arms are not reached; one realization per mobility; the mobilities are
+  assumed, so only the ratio at the transition is compared.
+- F2 (eutectic, section 10): no number of the papers is matched directly; $\lambda^2 v$
+  agrees in order of magnitude. The independence of the speed from the spacing was not
+  traced to its cause by a series in $m_\phi$. F2b: the orientation step between the two
+  solids was not obtained; $S$ and $\chi_l$ are assumed.
+- F3 (ternary, section 11): two-dimensional, uniform driving force, no noise, closed box of
+  192 cells. The paper's regime sequence (colonies, two-phase dendrites) needs three
+  dimensions and a pulled gradient; PINNACLE has no moving frame or pulled field
+  $f_s(y - vt)$. The speed at which the solid becomes homogeneous (0.07 to 0.09) differs
+  from the paper's limit of partitionless growth (0.35), and the cause was not separated.
+- Sections 9 to 11 have no independent reference code; they are compared with the papers
+  only, and the kernels are covered by the unit tests of PINNACLE (ADR 0042 to 0044).
 - Neural results are over 5 seeds at $\Delta T/T_f = 0.20$ and one seed elsewhere. The cost
   of the development runs behind `pf_pinn_stationary` and `pf_fem_saddle` (about 40
   exploratory runs of 1 to 90 s) is not in the wall times of the tables.
 - Hardware of every number of sections 3 to 6: Intel Core i9-9980HK, 2 to 6 threads,
   float64, numpy backend for FE and torch 2.13.0 (CPU) for the network routes; no GPU on
-  that machine. Section 7 ran on the rocm-server GPU.
+  that machine. Sections 7 and 9 to 11 ran on the rocm-server GPU, shared between jobs, so
+  their wall times are upper bounds.
 
 ## 13. Computational cost at larger sizes
 
@@ -2664,7 +2693,26 @@ Table 46; `derived`, not measured beyond 1000 x 1000).
   TPU today.
 - The stationary cases (sections 3, 4 and 8) cost seconds to minutes on one core at any of
   the sizes used and need no accelerator.
-- Three-dimensional cases are not measured yet.
+
+The other explicit models, measured on the same integrated GPU (float64; the GPU was shared
+between jobs, so the times are upper bounds):
+
+**Table 48.** Measured cost of the eutectic, ternary and three-dimensional cases, and
+estimates for the published sizes (`derived` by scaling with cells and steps; not measured).
+
+| model (section) | grid | fields | time per step | per cell and step | published size | estimate for the published size | suggested hardware |
+|---|---|---|---|---|---|---|---|
+| Ag-Cu eutectic (10) | 64 x 240 | 3 | 3.1 to 4.6 ms | 2e-7 to 3e-7 s | similar boxes | as measured: 15 to 45 min per run | any GPU; CPU overnight |
+| eutectic grain with orientation (10) | 256 x 256 | 4 | 33 to 62 ms | 5e-7 to 9e-7 s | not printed | 1 to 2 h per run as measured | any GPU |
+| ternary eutectic (11) | 64 x 192 | 6 | 3.3 ms | 2.7e-7 s | 96 x 96 x 612, 3.6e6 steps | about 60 days at the two-dimensional rate per cell | several discrete GPUs or a cluster; not a desktop run |
+| quaternion field, three dimensions (9) | 64 x 64 x 64 | 6 (20 sub-steps) | 2.2 to 2.6 s | 8e-6 to 1e-5 s | 300 x 300 x 300 | 230 to 270 s per step; about 3000 steps to fill the box: 8 to 9 days | discrete GPU with 24 GB or more; memory not measured |
+
+- At the small two-dimensional grids of sections 10 and 11 the step time is dominated by
+  fixed overhead per step, so the cost per cell falls on larger grids; the estimates above
+  do not use that and are conservative.
+- The three-dimensional step is 8 to 9 times more expensive per cell than the two-dimensional
+  orientation model (Table 46) because of the four-component field and trilinear
+  elements with 8 nodes.
 
 ## 14. References
 
@@ -2696,3 +2744,7 @@ auer-2001-prediction; davidchack-2000-direct.
 
 Quaternion orientation field in three dimensions (section 9):
 pusztai-2005-threedimensions; granasy-2005-spherulites.
+
+Regular-solution eutectic model (section 10): lewis-2004-eutectic; ratkai-2017-nanoscale.
+
+Ternary eutectic model (section 11): ratkai-2015-ternary.
