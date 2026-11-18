@@ -1861,7 +1861,168 @@ two unknowns); the reference takes 40 s for all 28 states. Routes: FE only so fa
 tabulated free energies have no network form in PINNACLE (ADR 0041); a stationary PINN and
 the hybrid for this case need a differentiable equation-of-state closure and are not done.
 
-## 9. Limits
+## 9. The quaternion orientation field: polycrystalline growth in three dimensions
+
+### 9.1 Purpose
+
+In two dimensions one angle fixes the orientation of a crystal. In three dimensions three
+numbers are needed, and a field of Euler angles has singular points. (pusztai 2005
+threedimensions) describe the orientation by a unit quaternion and carry the model of
+section 7 to three dimensions. The case answers two questions for the user: does a crystal
+that grows into a liquid of random orientations order that liquid at its front, and at what
+orientational mobility does it stop doing so and become a polycrystal (growth front
+nucleation). It tests three capabilities the earlier sections do not: a four-component
+variable held on the unit sphere, an orientational energy that is invariant under rotation
+of the sample, and a kinetic anisotropy taken in the frame of the local crystal.
+
+### 9.2 Governing equations
+
+The phase field $\phi$ (1 liquid, 0 crystal) and the composition $c$ follow the binary model
+of section 6. The orientation is $q = (q_0, q_1, q_2, q_3)$ with $\sum_i q_i^2 = 1$,
+$q_0 = \cos(\delta/2)$ and $q_i = a_i \sin(\delta/2)$ for a rotation by $\delta$ about the
+axis $a$. The angle between two nearby orientations is twice their distance on the unit
+sphere, so the orientational energy linear in the misorientation is
+(pusztai 2005 threedimensions)
+
+$$ f_{ori} = 2 H T\,[1 - p(\phi)]\,\Big\{\sum_i (\nabla q_i)^2\Big\}^{1/2}. $$
+
+The equations of motion are
+
+$$ \dot\phi = M_\phi(n')\Big\{\nabla^2\phi - a_w(c)\,g'(\phi) - p'(\phi)\big[b(c) - h\,F(u)\big]\Big\} + \zeta_\phi, $$
+
+$$ \dot q_i = \chi_l\,p(\phi)\Big\{\nabla\!\cdot\!J_i - q_i \sum_k q_k \nabla\!\cdot\!J_k\Big\}, \qquad
+   J_i = [1 - p(\phi)]\,\frac{\pi}{2}\,\frac{\xi_0 \nabla q_i}{u}, $$
+
+with the normalized misorientation $u = \xi_0 |\nabla q|\,k/\pi$ and $F(u) = \pi u$. The
+second term of the $q$ equation is the Lagrange multiplier that keeps $|q| = 1$. The
+kinetic coefficient has cubic symmetry in the frame of the crystal,
+
+$$ M_\phi(n') = 1 - 3\gamma + 4\gamma\,(n_1'^4 + n_2'^4 + n_3'^4), \qquad n' = R(q)^T \frac{\nabla\phi}{|\nabla\phi|}, $$
+
+so every grain grows fastest along its own $\langle 100\rangle$ directions. For a rotation
+about one fixed axis the model reduces to the two-dimensional one with the same $h$ and
+$\chi_l$ (tested in PINNACLE, ADR 0043). Crystal symmetries are not applied to the
+orientational energy (triclinic), as in the paper's runs.
+
+*Energy shape.* The two-dimensional kernels of section 7 use a saturated energy,
+$F = |\sin \pi u|$ up to $u = 1/2$ and 1 beyond. In three dimensions without crystal
+symmetry this shape fails: two random orientations differ by 126° on average ($u = 1.4$ at
+$k = 4$), where the saturated energy exerts no torque. The first series of this case was
+run with it. The crystal kept the random orientation of the liquid cell by cell (mean
+neighbor misorientation 123°) and the result did not depend on $\chi_l$. The decks now set
+`energy_shape = linear`, the published energy above, added to PINNACLE for this case (ADR
+0043 addendum, revision `4bad49b`). The first series is discarded.
+
+### 9.3 Parameters
+
+**Table 35.** Parameters of case F4.
+
+| quantity | value | provenance |
+|---|---|---|
+| binary model (Cu-Ni at 1574 K), $\Delta x$ = 6.25e-3, $\Delta t$ = 4.75e-6 | as section 6 | reported_table / derived |
+| supersaturation $S$ | 1.0 (spherulite), 0.78 (dendrites) | reported_text |
+| orientational mobility $\chi_l$ | 360, 108, 72, 54, 36, 12 | assumed (the paper prints mobilities in other units; it reduces $M_q$ by 3 to 3.5 for the spherulite) |
+| $h$ | 1900 | assumed, as section 7 |
+| $k$, $\xi_0$ | 4, $\Delta x$ | assumed |
+| kinetic anisotropy $\gamma$ | 0.2 | assumed (not printed in the paper) |
+| noise on $\phi$ | standard deviation 0.0025 per step, liquid only | assumed |
+| seed | radius 8 cells, one random orientation per seed | assumed |
+| box | 64 x 64 x 64 cells, periodic | paper: 300 x 300 x 300 |
+
+### 9.4 Cases and results
+
+Decks: `decks/crystallization/quaternion/f4_spherulite_n64_s1_chi<chi>_g0.2_fem.i` and
+`f4_dendrites_n64_s0.78_chi360_g0.2_fem.i`, from `scripts/cryst_quaternion_decks.py`.
+Solver: `pf_fem_explicit` on trilinear elements, $q$ as a unit-norm variable with 20
+sub-steps per step. Measures and figures: `scripts/cryst_quaternion_figures.py`.
+
+*Expected result.* (pusztai 2005 threedimensions) show a single seed that grows into a
+compact polycrystalline spherulite when the orientational mobility is reduced by a factor
+of 3 to 3.5, and several seeds that grow into dendrites with arms along their own cubic
+axes at $S$ = 0.78. No number is printed for either; the comparison is of the form
+(tier 4).
+
+![Three-dimensional series](../../figures/crystallization/f4_spherulite_views.png)
+
+**Figure 39.** One seed at $S$ = 1 for $\chi_l$ = 360, 108, 72, 54, 36 and 12
+(left to right; steps 300, 300, 600, 600, 300, 300). Top: view along $z$, colored by the
+tilt of the crystal $z$ axis against the laboratory $z$ axis (0 to 90°). Middle:
+composition in the mid-plane. Bottom: tilt in the mid-plane. The disc of one color at the
+center is the seed. Animations: `figures/crystallization/f4_spherulite_<run>.gif`.
+
+**Table 36.** Measures of the series of Figure 39 at the stated step.
+Growth: increase of the equivalent radius per step. Misorientation: mean angle between
+neighboring crystal cells. Boundary share: neighbor pairs above 15°.
+
+| $\chi_l$ | step | solid fraction | radius (cells) | growth (cells per step) | sphericity | misorientation | boundary share |
+|---|---|---|---|---|---|---|---|
+| 360 | 300 | 0.177 | 22.3 | 0.048 | 0.975 | 0.03° | 0 |
+| 108 | 300 | 0.071 | 16.4 | 0.028 | 0.980 | 1.6° | 0.02 |
+| 72 | 600 | 0.142 | 20.7 | 0.021 | 0.979 | 5.5° | 0.09 |
+| 54 | 600 | 0.098 | 18.3 | 0.017 | 0.977 | 22.9° | 0.43 |
+| 36 | 300 | 0.028 | 12.0 | 0.013 | 0.985 | 61° | 0.71 |
+| 12 | 300 | 0.022 | 11.1 | 0.010 | 0.994 | 76° | 0.64 |
+
+- $\chi_l$ = 360: a single crystal. The front orders the liquid completely (0.03°). The
+  shape shows the cubic kinetic anisotropy: flat sides and corners along the crystal axes.
+- $\chi_l$ = 108 (reduced by 3.3): still one crystal, with the first small regions of
+  other orientation at the front (2 % of the neighbor pairs). This is the onset of growth
+  front nucleation, at the reduction the paper quotes for its spherulite.
+- $\chi_l$ = 72 and 54: a polycrystal. Sectors of different orientation start at the
+  surface of the seed and widen outward. At 54 nearly half of the neighbor pairs are grain
+  boundaries and the outline is round: a compact polycrystalline spherulite, as in the
+  paper's figure.
+- $\chi_l$ = 36 and 12: the shell that has grown is orientationally disordered at the scale
+  of the cell, and growth nearly stops (4 and 3 cells in 300 steps against 14 at 360). The
+  disordered solid pays the orientational energy $h F$ in every cell, which removes most of
+  the driving force.
+- The growth rate falls by a factor of 5 over the series at a fixed thermodynamic driving
+  force. In this model the rate of orientational ordering limits growth once $\chi_l$ is
+  low.
+
+![Four seeds](../../figures/crystallization/f4_dendrites_views.png)
+
+**Figure 40.** Four seeds of random orientation at $S$ = 0.78,
+$\chi_l$ = 360, step 280 (solid fraction 0.28); panels as in Figure 39.
+Animation: `figures/crystallization/f4_dendrites_<run>.gif`.
+
+- Each seed grows as one crystal with its own orientation (four tilt values; misorientation
+  inside the crystals 0.04°), and the crystals keep their orientations where they meet.
+- Dendrite arms do not form. The crystals meet at a radius of about 13 cells, before the
+  front has developed arms. The paper's box is 300 cells wide. This part of the case
+  is not reproduced at 64 cells; it shows multi-grain growth and impingement only.
+- Accuracy: tier 4 (form) for the spherulite, with the transition found at the mobility
+  reduction the paper quotes; the dendrite form is not reached.
+
+### 9.5 What to expect when the parameters change
+
+- *Orientational mobility $\chi_l$.* The control parameter of this section. High: a single
+  crystal. A reduction by about 3: first new grains. By 5 to 7: a polycrystal with grains
+  that widen outward. By 10 and more: a disordered, slowly growing solid. In a material
+  this is the ratio of rotational to translational diffusion, which falls steeply on
+  undercooling toward the glass transition (granasy 2005 spherulites).
+- *Supersaturation $S$.* A faster front leaves less time for ordering, so the transition
+  is expected at higher $\chi_l$ (granasy 2005 spherulites). Not varied here.
+- *Kinetic anisotropy $\gamma$.* Sets the faceting of the single crystal and the arm
+  directions of dendrites; with $\gamma = 0$ the single crystal is a sphere.
+- *Orientational energy $h$.* A larger $h$ raises the grain-boundary energy and the cost of
+  a disordered solid: growth at low $\chi_l$ stops earlier.
+- *Box size.* Dendrites, and spherulites with many grains across the radius, need boxes of
+  200 to 300 cells per edge (section 11).
+- *Crystallography.* The tilt maps are the three-dimensional counterpart of an orientation
+  map from electron backscatter diffraction; the misorientation and boundary share of Table
+  36 are the quantities such a map gives. With the triclinic energy every pair
+  of different orientations is a grain boundary; twin or symmetry-equivalent orientations
+  of a cubic crystal are not recognized.
+
+### 9.6 Cost
+
+On the GPU of rocm-server (float64, shared with other runs) a 64 x 64 x 64 run takes 2.2 to
+2.6 s per step: 670 s for 300 steps, 1560 s for 600. The cost is dominated by the 20
+sub-steps of the four-component orientation field. Routes: FE only; the unit-norm
+constraint and the non-differentiable energy have no network form in PINNACLE.
+
+## 10. Limits
 
 - Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
   need `pf_pinn`, which does not yet carry the spherical term (A5), and a per-step predictor
@@ -1889,12 +2050,12 @@ the hybrid for this case need a differentiable equation-of-state closure and are
   float64, numpy backend for FE and torch 2.13.0 (CPU) for the network routes; no GPU on
   that machine. Section 7 ran on the rocm-server GPU.
 
-## 10. Computational cost at larger sizes
+## 11. Computational cost at larger sizes
 
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 35.** Measured cost per time step.
+**Table 37.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -1907,8 +2068,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 36.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 35; `derived`, not measured beyond 1000 x 1000).
+**Table 38.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 37; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|
@@ -1931,7 +2092,7 @@ Table 35; `derived`, not measured beyond 1000 x 1000).
   the sizes used and need no accelerator.
 - Three-dimensional cases are not measured yet.
 
-## 11. References
+## 12. References
 
 Keys of `bib/references.bib`, by model.
 
