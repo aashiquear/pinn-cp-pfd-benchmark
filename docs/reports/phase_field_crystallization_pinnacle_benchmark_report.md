@@ -1286,7 +1286,125 @@ already a spherulite of elongated grains at 180.
   then smaller than the 20-cell threshold. Mean misorientation and boundary fraction are the
   measures to follow at the fine-grained end.
 
-#### 7.5.2 Summary for the user
+#### 7.5.2 Fibrillar growth with fixed-angle branching: from needles to category 2 spherulites
+
+Case C4, after Fig. 6 of (granasy 2005 spherulites). Polymers and many minerals grow as
+thin fibers that branch at fixed crystallographic angles. Two ingredients are added to the
+model of section 7.2. (1) A two-fold anisotropy of the phase-field mobility,
+$M_\phi = 1 + \delta_0\cos(2\vartheta - 2\pi\theta)$, with $\delta_0 = 0.995$ (`reported_text`:
+"99.5 %"): the crystal grows 400 times faster along its axis than across it, and the interface
+free energy is isotropic ($s_0 = 0$). (2) The branching part $F_0$ of the orientational
+energy with weight $x = 0.15$ and $m = 3$ (`reported_text`): a second, metastable minimum
+at a misorientation of $1/(2m) = 1/6$ of the period, 30 degrees for a two-fold crystal, so
+that a new grain at the growth front prefers that misfit. $\chi_l = 360$ is `assumed` (not
+stated for this figure); the seed is set at 30 degrees ($\theta = 1/6$). In PINNACLE the
+mobility is a rate factor of the phase-field row with the interface normal taken from a
+lumped nodal gradient (`ac_interface_anisotropic kinetic_anisotropy_strength`, ADR 0040
+addendum). Twelve decks, `decks/crystallization/orientation/fibril/c4_s<S>_x<x>_d<delta0>_fem.i`
+(500 x 500). The paper varies S; the series in $x$ and $\delta_0$ are added here.
+
+**Supersaturation** ($x = 0.15$, $\delta_0 = 0.995$; the paper's series).
+
+![Fibrillar growth, supersaturation series](../../figures/crystallization/c4_series_supersaturation_maps.png)
+
+**Figure 26.** Composition (top) and orientation (bottom, period 180 degrees) for S = 0.75,
+0.85, 0.9, 0.95, 1.0, 1.1 (PINNACLE). Reading: a needle along the seed direction with a few
+side fibers at fixed angles (0.75), a bundle of diverging fibers (0.85, 0.9: an axialite or
+sheaf), a nearly space-filling fan with two notches left on either side of the seed (0.95),
+and a round spherulite of radial sectors (1.0, 1.1). The same sequence as Fig. 6 of the
+paper. The fibers appear in a few discrete colors: the orientations allowed by the 30 degree
+misfit.
+
+![Fibrillar growth, reference](../../figures/crystallization/c4_fig6_reference_maps.png)
+
+**Figure 27.** The same six conditions in the independent reference
+(`decks/crystallization/reference/c4_fig6_s*.i`). Reading: the same sequence of forms; the
+reference realizations carry more branches (38 against 16 orientation domains at S = 0.9)
+and keep open "eyes" beside the seed up to S = 1.0.
+
+**Table 25.** Measures of the fibrillar supersaturation series (PINNACLE; symmetry index 2).
+
+| S | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
+|---|---|---|---|---|---|---|---|---|---|
+| 0.75 | 2600 | 63.3 | 0.12 | 0.47 | 12 | 0.0032 | 0.0140 | 0.71 | -0.115 |
+| 0.85 | 2000 | 86.9 | 0.16 | 0.46 | 9 | 0.0029 | 0.0109 | 0.83 | -0.153 |
+| 0.9 | 1700 | 120.8 | 0.26 | 0.51 | 16 | 0.0026 | 0.0128 | 0.85 | -0.062 |
+| 0.95 | 1500 | 203.2 | 0.69 | 0.87 | 26 | 0.0020 | 0.0088 | 0.90 | 0.033 |
+| 1.0 | 1300 | 216.5 | 0.83 | 0.93 | 25 | 0.0021 | 0.0117 | 0.93 | -0.004 |
+| 1.1 | 1100 | 223.9 | 0.91 | 0.92 | 39 | 0.0024 | 0.0141 | 0.94 | -0.103 |
+
+- The change from open fiber bundles to a space-filling spherulite lies between S = 0.9 and
+  0.95: compactness 0.26 to 0.69, growth exponent 0.51 to 0.87. Below, the fibers are
+  separated by solute-rich liquid and lengthen as $t^{1/2}$; above, the liquid between them
+  is trapped and the envelope advances at a constant rate.
+- Radial alignment is high throughout (0.71 to 0.94): every fiber grows along its own fast
+  axis, so the crystal axis points outward everywhere. This is the fiber texture seen in
+  spherulites under polarized light (the Maltese cross); the category 1 spherulite of Table 24
+  made of equiaxed grains has an alignment near zero.
+- The grains are sectors, not equiaxed: 12 to 39 domains of 1000 to 5900 cells each, with a
+  boundary fraction near 0.01, an order of magnitude below the category 1 spherulite at
+  $\chi_l = 180$ (0.059).
+- Against the reference: same forms, fewer branches in the PINNACLE realization and the
+  "eyes" close earlier. One realization each; the discretizations differ in how they
+  evaluate the interface normal of the kinetic anisotropy (nodal projection against central
+  differences).
+
+**Branching weight** (S = 0.9, $\delta_0 = 0.995$).
+
+![Branching weight series](../../figures/crystallization/c4_series_branching_maps.png)
+
+**Figure 28.** As Figure 26 for $x$ = 0, 0.05, 0.15, 0.3. Reading: without the branching
+minimum ($x = 0$) the fibers split by low-angle fanning and the orientation changes smoothly
+along the fan; with $x$ = 0.05 and 0.15 side fibers start at fixed angles and carry distinct
+orientations; at 0.3 the front nucleates grains everywhere and the form is a compact
+fine-grained spherulite with liquid inclusions.
+
+**Table 26.** Measures of the branching-weight series.
+
+| $x$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 1700 | 104.3 | 0.20 | 0.64 | 13 | 0.0017 | 0.0041 | 0.80 | -0.059 |
+| 0.05 | 1700 | 110.0 | 0.22 | 0.54 | 12 | 0.0018 | 0.0049 | 0.74 | -0.072 |
+| 0.15 | 1700 | 120.8 | 0.26 | 0.51 | 16 | 0.0026 | 0.0128 | 0.85 | -0.062 |
+| 0.3 | 1700 | 164.8 | 0.71 | 0.89 | 894 | 0.0555 | 0.3318 | 0.46 | 0.046 |
+
+- Up to $x = 0.15$ the weight changes how the fibers branch, not how many grains there are
+  (12 to 16 domains); between 0.15 and 0.3 the fixed-angle minimum becomes deep enough for
+  grains to form at the front without waiting for noise: 894 domains, boundary fraction
+  0.33, and the growth becomes linear in time (exponent 0.89).
+- The branching weight is therefore the parameter for the density of the internal structure
+  of a spherulite at a given supersaturation; the paper uses 0.1 to 0.275 in its gallery
+  (its Table II).
+
+**Kinetic anisotropy** (S = 0.9, $x = 0.15$).
+
+![Kinetic anisotropy series](../../figures/crystallization/c4_series_kinetic_maps.png)
+
+**Figure 29.** As Figure 26 for $\delta_0$ = 0, 0.5, 0.9, 0.995. Reading: with an isotropic
+mobility the crystal is a disc of a few sectors; at 0.5 the envelope becomes lobed, each
+lobe a sector growing along its fast axis; at 0.9 the sectors separate into broad blades;
+at 0.995 into thin fibers.
+
+**Table 27.** Measures of the kinetic-anisotropy series.
+
+| $\delta_0$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 1700 | 208.7 | 0.96 | 0.89 | 20 | 0.0017 | 0.0069 | 0.13 | 0.094 |
+| 0.5 | 1700 | 225.4 | 0.82 | 0.93 | 18 | 0.0017 | 0.0083 | 0.84 | 0.093 |
+| 0.9 | 1700 | 155.3 | 0.40 | 0.72 | 11 | 0.0017 | 0.0087 | 0.90 | 0.018 |
+| 0.995 | 1700 | 120.8 | 0.26 | 0.51 | 16 | 0.0026 | 0.0128 | 0.85 | -0.062 |
+
+- The anisotropy of the mobility sets the aspect ratio of the growth units: compactness
+  0.96, 0.82, 0.40, 0.26. Fibers need $\delta_0$ above about 0.9, that is a ratio of fast to
+  slow mobility above about 20.
+- Radial alignment jumps from 0.13 to 0.84 already at $\delta_0 = 0.5$: a moderate kinetic
+  anisotropy is enough to select grains whose fast axis points outward, long before the form
+  becomes fibrillar.
+- A strong anisotropy slows the overall transformation (equivalent radius 225 cells at 0.5,
+  121 at 0.995 after the same time): the slow faces hardly move and solute piles up between
+  the fibers.
+
+#### 7.5.3 Summary for the user
 
 | to obtain | change | measured effect |
 |---|---|---|
@@ -1296,8 +1414,12 @@ already a spherulite of elongated grains at 180.
 | spherulite | lower $\chi_l$ further, or raise S at fixed $\chi_l$ | round envelope, fine radial grains |
 | finer grains | lower $\chi_l$, raise S | domain area falls by a factor of 3 to 10 per halving of $\chi_l$ |
 
-Not varied yet: $h$, the noise amplitudes, the seed size, the symmetry index $k$. The series
-for fibrillar growth (kinetic anisotropy, branching weight and angle) are running.
+| needles, sheaves | two-fold kinetic anisotropy $\delta_0 > 0.9$, S below about 0.9 | compactness 0.12 to 0.26, fibers along the crystal axis |
+| category 2 spherulite (fibers that fan out) | the same with S of 0.95 or more | compactness 0.69 to 0.91, radial alignment above 0.9 |
+| denser internal structure | raise the branching weight $x$ | 16 domains at 0.15, 894 at 0.3 |
+
+Not varied yet: $h$, the noise amplitudes, the seed size, the branching angle ($m$) and
+four- or six-fold fibers.
 
 ### 7.6 Cost
 
@@ -1363,7 +1485,7 @@ Newton iteration with exact tangents (ADR 0041).
 
 ### 8.3 Parameters
 
-**Table 25.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
+**Table 28.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
 
 | quantity | value | provenance | source |
 |---|---|---|---|
@@ -1388,7 +1510,7 @@ Case F1. Decks `decks/crystallization/hard_sphere/f1_nucleus_<interface>_phi<val
 2400 elements). Reference: `scripts/cryst_hard_sphere_reference.py`, a shooting solution of
 the same equations, independent of PINNACLE.
 
-**Table 26.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
+**Table 29.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
 halfway between its center value and 1; $\Delta N$: excess number of particles of the
 nucleus.
 
@@ -1411,7 +1533,7 @@ nucleus.
 
 ![Hard-sphere nucleation barrier](../../figures/crystallization/f1_barrier.png)
 
-**Figure 26.** Left: nucleation barrier against the volume fraction of the liquid; lines:
+**Figure 30.** Left: nucleation barrier against the volume fraction of the liquid; lines:
 independent reference, circles: PINNACLE, for the average interface data and the three
 orientations; dashed: classical droplet model with the average interface free energy;
 squares: Monte Carlo (digitized); star: the value printed in the paper. Right: ratio of the
@@ -1422,7 +1544,7 @@ at small sizes ($m(0)$ rises from 0.11 to 0.48).
 
 ![Hard-sphere nucleus profiles](../../figures/crystallization/f1_profiles.png)
 
-**Figure 27.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
+**Figure 31.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
 the three Monte Carlo states (thin lines: PINNACLE; broad pale lines: reference). Reading:
 the interface is as wide as the nucleus; the density at the center (0.581 to 0.588) stays
 below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
@@ -1433,7 +1555,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   0.5500, the nucleus shrinks from $R_{1/2} = 3.9$ to 2.4 $\sigma$ and from 24 to 2 excess
   particles, and its center loses crystallinity ($m(0)$ from 0.11 to 0.48). Beyond about
   0.55 the "nucleus" is a weak ripple of structure rather than a crystallite.
-- Interface data (Table 27): the barrier scales roughly with $\gamma_\infty^3$, as in the
+- Interface data (Table 30): the barrier scales roughly with $\gamma_\infty^3$, as in the
   classical theory, but the interface thickness matters as well: the (110) data (largest
   $\gamma_\infty$, thinnest interface) give the highest barrier, the (111) data the lowest.
   A 10 % change of $\gamma_\infty$ changes the barrier by about 30 %.
@@ -1444,7 +1566,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   coexistence (section 8.3). Hall's two solid forms differ by 0.3 % in pressure near
   melting; only the polynomial form reproduces the solid densities printed in the paper.
 
-**Table 27.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
+**Table 30.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
 
 | $\phi_\infty$ | (111) | (100) | average | (110) |
 |---|---|---|---|---|
@@ -1476,7 +1598,7 @@ the hybrid for this case need a differentiable equation-of-state closure and are
   cells.
 - C3: $h$ is assumed and not yet calibrated; one realization per case; 500 x 500 only for
   the Fig. 4 conditions and 1000 x 1000 for the Fig. 5 conditions; the parameter series of
-  section 7.5 are one realization per point. The fibrillar cases (C4) are running; C5, C6,
+  section 7.5 are one realization per point, the fibrillar cases (C4) included; C5, C6,
   E1 to E5 and the phase-field crystal (D) are not started.
 - F1 (hard spheres): FE route only; the Monte Carlo points are read by eye from a figure.
   Of the four models added on 2026-11-17, the eutectic (binary and ternary) and the
@@ -1493,7 +1615,7 @@ the hybrid for this case need a differentiable equation-of-state closure and are
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 28.** Measured cost per time step.
+**Table 31.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -1506,8 +1628,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 29.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 28; `derived`, not measured beyond 1000 x 1000).
+**Table 32.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 31; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|
