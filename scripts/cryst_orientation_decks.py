@@ -129,7 +129,112 @@ def fibril_deck(s: float, x: float, delta0: float, member_of: list[str]) -> str:
     return text
 
 
+# Fig. 10 of the paper (its Table II): ten spherulitic morphologies. Columns: S, s0 (interface
+# free energy), delta0 (kinetic coefficient), x, preferred misorientation in degrees (None: x = 0),
+# m_phi (phase-field mobility), chi_l, grid of the paper. Both anisotropies are two-fold.
+GALLERY = {
+    "a": (1.0, 0.335, 0.75, 0.1, 30, 1.0, 144, 1000),
+    "b": (0.75, 0.5, 0.5, 0.0, None, 0.9, 108, 2000),
+    "c": (0.95, 0.0, 0.995, 0.275, 15, 1.0, 360, 1000),
+    "d": (0.9, 0.0, 0.995, 0.15, 90, 1.0, 360, 2000),
+    "e": (0.9, 0.75, 0.995, 0.15, 90, 1.0, 1440, 500),
+    "f": (1.1, 0.0, 0.995, 0.2, 30, 1.0, 360, 1000),
+    "g": (0.9, 0.5, 0.0, 0.0, None, 0.9, 360, 2000),
+    "h": (1.1, 0.5, 0.0, 0.2, 15, 1.0, 360, 500),
+    "i": (0.9, 0.5, 0.0, 0.0, None, 0.8, 180, 1000),
+    "j": (0.875, 0.0, 0.995, 0.2, 15, 1.0, 18, 3000),
+}
+GALLERY_STEPS = {0.75: 2600, 0.875: 1850, 0.9: 1700, 0.95: 1500, 1.0: 1300, 1.1: 1100}
+
+
+def gallery_deck(panel: str) -> str:
+    s, s0, delta0, x, angle, m_phi, chi, n_paper = GALLERY[panel]
+    FIBRIL_STEPS.setdefault(s, GALLERY_STEPS[s])
+    text = fibril_deck(s, x, delta0, ["gallery"])
+    m = 180.0 / (2.0 * angle) if angle else 3.0  # minimum of F0 at 1/(2m) of the 180 degree period
+    # with s0 >= 0.5 the gradient term is up to (1 + s0)^2 times stiffer: half the step
+    halve = s0 >= 0.5
+    steps = FIBRIL_STEPS[s] * (2 if halve else 1)
+    head = (
+        f"# Part IV, case C6 (FE route): spherulitic morphology of panel ({panel}) of Fig. 10 of\n"
+        "# (granasy 2005 spherulites), conditions of its Table II (reported_table):\n"
+        f"# S = {s:g}; two-fold anisotropy of the interface free energy s0 = {s0:g} and of the kinetic\n"
+        f"# coefficient delta0 = {delta0:g}; branching weight x = {x:g}"
+        + (f" with a preferred misorientation of {angle} degrees (m = {m:g})" if angle else " (no branching minimum)")
+        + f";\n# phase-field mobility m_phi = {m_phi:g}; orientational mobility chi_l = {chi:g}.\n"
+        f"# The paper's grid is {n_paper} x {n_paper}; here 500 x 500 (the step count is not printed).\n"
+        "# Seed crystal at 30 degrees (theta = 1/6): ASSUMED.\n"
+        + ("# ASSUMED for stability of the explicit step with this strong anisotropy: half the time step\n"
+           "# of the other cases (2.375e-6) and twice the steps.\n" if halve else "")
+    )
+    text = head + "\n".join(text.split("\n")[7:])
+    text = text.replace("#     s = 1 (isotropic); the phi equation is multiplied by M(vartheta, theta);",
+                        "#     s = 1 + s0 cos(2 vartheta - 2 pi theta); the phi equation is multiplied by\n"
+                        "#     m_phi M(vartheta, theta), M = 1 + delta0 cos(2 vartheta - 2 pi theta);")
+    text = sub(text, r"output_dir = .*", f"output_dir = results/crystallization/orientation/gallery/c6_fig10{panel}_fem")
+    text = sub(text, r"anisotropy_strength  = 0\.0", f"anisotropy_strength  = {s0:g}")
+    text = text.replace("    mobility             = 1.0\n    gradient_coefficient = 1.0",
+                        f"    mobility             = {m_phi:g}\n    gradient_coefficient = 1.0")
+    text, count = re.subn(r"(strength           = 1900\.0.*\n\s*)mobility           = 1\.0", rf"\g<1>mobility           = {m_phi:g}", text)
+    assert count == 1, "coupling mobility"
+    text, count = re.subn(r"(concentration = c\n\s*)mobility      = 1\.0", rf"\g<1>mobility      = {m_phi:g}", text)
+    assert count == 1, "bulk mobility"
+    text = text.replace("branch_m           = 3.0", f"branch_m           = {m:g}")
+    text = sub(text, r"mobility_liquid    = .*", f"mobility_liquid    = {chi:g}       # chi_l (Table II)")
+    text = sub(text, r"n_steps         = \d+", f"n_steps         = {steps}")
+    text = sub(text, r"snapshots_every = \d+", f"snapshots_every = {steps // 20}")
+    if halve:
+        text = sub(text, r"dt              = 4\.75e-6", "dt              = 2.375e-6")
+        text = sub(text, r"subcycles       = 'theta 20'", "subcycles       = 'theta 10'")
+        # the noise amplitudes are increments per step: keep the increment per unit time
+        text = sub(text, r"amplitude    = 1578\.7", "amplitude    = 2232.6")
+        text = sub(text, r"amplitude             = 23679\.0", "amplitude             = 33487.2")
+    return text
+
+
+# Case E4: static and dynamic heterogeneities. A needle crystal (two-fold kinetic anisotropy,
+# no branching minimum) against the same run with orientation pinning centres (foreign
+# particles of fixed random orientation; 6.25 % of the nodes, the density of the 2000 x 2000
+# run of Fig. 11 of the paper) and against a run with the orientational mobility reduced by 5.
+PINNING = {"needle": (360.0, 0.0), "particles": (360.0, 0.0625), "low_mobility": (72.0, 0.0)}
+
+
+def pinning_deck(kind: str, s: float = 0.85) -> str:
+    chi, fraction = PINNING[kind]
+    text = fibril_deck(s, 0.0, 0.995, ["pinning"])
+    head = (
+        "# Part IV, case E4 (FE route): duality of static and dynamic heterogeneities, after Fig. 11\n"
+        "# (right block) of (granasy 2005 spherulites) and Fig. 6 of (granasy 2006 review).\n"
+        f"# Variant '{kind}': supersaturation S = {s:g}; two-fold kinetic coefficient with\n"
+        f"# delta0 = 0.995; no branching minimum (x = 0); chi_l = {chi:g}"
+        + (f"; orientation pinning centres on {100 * fraction:g} % of the nodes\n"
+           "# (random nodes that keep their initial, random orientation: foreign particles)." if fraction
+           else ".")
+        + "\n# reported_text: kinetic anisotropy 99.5 %, k = 2, isotropic interface free energy, 250,000\n"
+        "# single-pixel pinning centres on 2000 x 2000 (6.25 %), mobility reduced by 5 in the third run.\n"
+        "# assumed: S (not printed), the grid (500 x 500), the seed at 30 degrees, the step count.\n"
+    )
+    text = head + "\n".join(text.split("\n")[7:])
+    text = sub(text, r"output_dir = .*", f"output_dir = results/crystallization/orientation/pinning/e4_{kind}_fem")
+    text = sub(text, r"mobility_liquid    = .*", f"mobility_liquid    = {chi:g}       # chi_l")
+    if fraction:
+        text = sub(text, r"(  subcycles       = 'theta 20'.*\n)",
+                   rf"\g<1>  pinned_fraction = 'theta {fraction:g}'   # orientation pinning centres\n  pinning_seed    = 7\n")
+    return text
+
+
 def main() -> None:
+    pin_out = ROOT / "decks/crystallization/orientation/pinning"
+    pin_out.mkdir(parents=True, exist_ok=True)
+    FIBRIL_STEPS.setdefault(0.85, 2000)
+    for kind in PINNING:
+        (pin_out / f"e4_{kind}_fem.i").write_text(pinning_deck(kind))
+    print(len(PINNING), "pinning decks")
+    gal_out = ROOT / "decks/crystallization/orientation/gallery"
+    gal_out.mkdir(parents=True, exist_ok=True)
+    for panel in GALLERY:
+        (gal_out / f"c6_fig10{panel}_fem.i").write_text(gallery_deck(panel))
+    print(len(GALLERY), "gallery decks")
     fib_out = ROOT / "decks/crystallization/orientation/fibril"
     fib_out.mkdir(parents=True, exist_ok=True)
     fib: dict[tuple[float, float, float], list[str]] = {}
