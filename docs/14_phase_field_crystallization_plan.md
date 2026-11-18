@@ -229,6 +229,23 @@ If the PINNACLE Torch residual is five times slower than the stencil (to be meas
 written), every entry is five times longer: the 4000^2 and 5000^2 cases are then 2 to 8 days,
 the 1000^2 versions one to three hours.
 
+Measured afterwards (2026-11-17, PINNACLE ef9a7cd, `pf_fem_explicit` on the GPU, float64, three
+fields, 20 theta sub-steps): 0.24 to 0.31 s per step at 500^2 (405 to 553 s per Fig. 4 case
+with output), against 0.04 to 0.05 s per step for the reference at the same size and 0.12 s
+at 1000^2. PINNACLE is about six times slower than the stencil. Scaled with the number of
+elements (not yet measured above 500^2; the memory of the element-wise arrays at 4000^2 is
+not measured either):
+
+| case | PINNACLE estimate | reference estimate |
+|---|---|---|
+| 1000^2, 3,200 steps (Fig. 5 conditions up to the box size) | about 1 h | 7 min (measured) |
+| Fig. 8 at 1000^2, 16,300 steps | about 5 h | 35 min |
+| Fig. 5 at 4000^2, 13,500 steps | about 2.5 to 3 days | 7 to 8 h |
+| Fig. 8 at 5000^2, 16,300 steps | about 5 days | 13 to 14 h |
+
+The large cases are within days on the reference and at the edge of it on PINNACLE; they are
+run only after the 1000^2 versions are reviewed.
+
 ### 8.3 Cases added from the two additional papers
 
 | id | case | source | model | needs |
@@ -251,3 +268,28 @@ barrier (2006 Fig. 2), 3-D cases with quaternion orientation (2006 Fig. 4, 8).
 2. Torch (GPU) residual path of `pf_fem_explicit`; measure it on rocm-server.
 3. Runs on rocm-server: 500^2 cases (Fig. 4 c/f, 6, 7), then Fig. 5 and Fig. 8 at 1000^2, the
    Fig. 10 gallery, E1-E4; 4000^2 / 5000^2 only if step 2 puts them within days.
+
+### 8.5 Conditions for Fig. 5 (2026-11-17)
+
+The paper gives the grid (4000^2), the snapshot steps (1000, 2500, 5000, 13,500) and the
+picture, but neither S nor chi_l. S = 1.0 is `derived`: a crystal that fills 4000 cells in
+13,500 steps grows 0.15 cells per step, the speed measured at S = 1.0 (0.14 to 0.16); at
+S = 0.8 it is 0.05. chi_l is `assumed` from reference runs (h = 1900, s0 = 0.1):
+
+| chi_l | grid, steps | result |
+|---|---|---|
+| 360 | 500^2, 1300 | square single crystal (10 orientation domains, all near the seed) |
+| 300 | 1000^2, 3200 | faceted crystal of about ten sectors that start at the seed |
+| 240 | 1000^2, 3200 | sectors from the seed plus wedge-shaped grains that start at the growth front; envelope rounding |
+| 180 | 500^2, 1300 | radially elongated grains, rounded envelope |
+| 108 | 500^2, 1300 | fine-grained spherulite |
+
+![chi_l = 360, 180, 108 at 500^2](../figures/crystallization/c3_probe_fig5_maps.png)
+
+![chi_l = 300, 240 at 1000^2](../figures/crystallization/c3_probe_fig5_n1000_maps.png)
+
+chi_l = 240 is taken for the Fig. 5 decks (`c3_fig5_s1.0_chi240_n1000`). Difference from the
+paper to keep in view: there the crystal is a single square until a critical size and the
+grains appear later; here sectors already start at the seed for chi_l <= 300, which depends
+on the seed (12 cells, random orientation around it) and on the assumed h and noise.
+

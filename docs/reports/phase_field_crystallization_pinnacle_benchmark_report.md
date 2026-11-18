@@ -639,6 +639,38 @@ $2\pi/4$; 0.25 is a random field.
   `c3_reference_fig4*.gif` (orientation over time).
 - One realization per case. Routes: FE only (noise driven, section 4.2).
 
+### 5.5 C3: from a faceted crystal to a spherulite (paper Fig. 5), at 1000 x 1000
+
+The paper's run is 4000 x 4000 with 13,500 steps; it states neither $S$ nor $\chi_l$.
+$S = 1.0$ is `derived` from the stated size and step count (0.15 cells per step);
+$\chi_l = 240$ is `assumed` from reference runs at 360, 300, 240, 180 and 108
+(`docs/14_phase_field_crystallization_plan.md`, section 8.5). Decks:
+`decks/crystallization/orientation/c3_fig5_s1.0_chi240_n1000_fem.i` and
+`decks/crystallization/reference/c3_fig5_s1.0_chi240_n1000.i` (3200 steps, until the crystal
+reaches the box).
+
+| Step | Radius, PINNACLE / reference (cells) | Orientation domains |
+|---|---|---|
+| 800 | 135.9 / 124.4 (+9.3 %) | 34 / 47 |
+| 1600 | 257.4 / 233.9 (+10.1 %) | 69 / 96 |
+| 2400 | 379.7 / 344.9 (+10.1 %) | 116 / 148 |
+| 3200 | 497.5 / 456.6 (+9.0 %) | 180 / 209 |
+
+![Fig. 5 conditions at 1000 x 1000: PINNACLE (left, step 2800) and reference (right, step 3200)](../../figures/crystallization/c3_fig5_maps.png)
+
+- Both codes give the same form: a faceted crystal divided into sectors of different
+  orientation, with wedge-shaped grains that start at the growth front and an envelope that
+  rounds with size. The number of orientation domains grows with the radius in both.
+- The radius differs by 9 to 10 % at all times: a difference of front speed, as at
+  $S = 1.0$ in sections 5.3 (FE +1.8 %, finite differences -5.5 % against the Richardson
+  value) and 5.4.
+- Difference from the paper: there the crystal is one square until a critical size; here
+  sectors start at the seed. It depends on the seed and on the assumed $h$ and noise.
+- Cost: PINNACLE 3500 s (1.09 s per step) on the rocm-server GPU; reference 0.12 s per step.
+  The paper's size (4000 x 4000, 13,500 steps) would take about 2.5 to 3 days on PINNACLE
+  and 7 to 8 hours on the reference; not run.
+- Animations: `figures/crystallization/c3_fig5_*.gif`. One realization.
+
 ## 6. Limits
 
 - Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
