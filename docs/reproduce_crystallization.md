@@ -154,3 +154,36 @@ python3 scripts/cryst_orientation_figures.py c3_reference $R/orientation_referen
 ```
 
 `use_gpu = false` in the deck runs the same case on the CPU. Expected numbers: report section 5.4.
+
+## 7. Later cases (report sections 6.5.1, 7.4.4, 7.5, 8 to 11)
+
+Every deck is complete: `pinnacle run <deck>` on the GPU host, or with `use_gpu = false`
+(and `backend = numpy`) on a CPU. A case is a set of decks, then one figure script. The
+PINNACLE revision, host and wall time of every set are in `docs/run_ledger.md` (rows
+`cryst-*`). The parameter series of sections 7.5.1, 7.5.2 and 7.5.4 are run the same way;
+their decks are in `decks/crystallization/orientation/{series,fibril,pinning}/` and the
+`cryst_orientation_series.py` call of each figure is in its ledger row.
+
+| case (report section) | decks under `decks/crystallization/` | deck generator | after the runs |
+|---|---|---|---|
+| E1 planar front (6.5.1) | `trapping/e1_planar_s*_fem.i` | `cryst_trapping_decks.py` | `cryst_trapping_figures.py` |
+| C5 kinetics (7.4.4) | `orientation/kinetics/c5_n500_*_fem.i`; reference `reference/c5_kinetics_*.i` | none (the decks are shipped) | `cryst_binary_collect.py orientation/kinetics/<run>` per run, then `cryst_kinetics_figures.py <tag> [t_start=0.01425] <run dirs>` |
+| C6 gallery (7.5.3) | `orientation/gallery/c6_fig10{a..j}_fem.i` | `cryst_orientation_decks.py` | `cryst_binary_collect.py orientation/gallery/<run>` per run, then `cryst_gallery_figures.py` |
+| heat treatments | `orientation/heat_treatment/c6_fig9{d_direct,e_mild,e_deep}_fem.i` | none (the two quench decks differ from the direct one in the two driving functions and the step count) | `cryst_binary_collect.py orientation/heat_treatment/<run>` per run, then `cryst_heat_treatment_figures.py` |
+| E5 rough wall (7.5.5) | `walls_rough/e5_rough_wall_std*_fem.i` | mesh: `cryst_rough_wall_mesh.py` | `cryst_rough_wall_figures.py` |
+| F1 hard spheres (8) | `hard_sphere/f1_nucleus_*_fem.i` | `cryst_hard_sphere_decks.py`; reference `cryst_hard_sphere_reference.py` | `cryst_hard_sphere_figures.py` |
+| F4 quaternion field (9) | `quaternion/f4_*_fem.i` | `cryst_quaternion_decks.py spherulite n=64 S=1 chi=<chi> gamma=0.2 steps=<n>` | `cryst_quaternion_figures.py f4_spherulite max_fraction=0.3 <run dirs>` |
+| F2 eutectic (10.4.1 to 10.4.3) | `eutectic/f2_lamellar_*_fem.i`, `f2_long100_*_fem.i` | `cryst_eutectic_decks.py <T> 0.345 <lambda ...> steps=300000 length=60` | `cryst_eutectic_figures.py` |
+| F2b eutectic grain (10.4.4) | `eutectic/grain/f2b_grain_*_fem.i` | `cryst_eutectic_decks.py grain ...` | `cryst_eutectic_grain_figures.py` |
+| F3 ternary (11) | `ternary/f3_ternary_*_fem.i`, `f3_long_*_fem.i` | `cryst_ternary_decks.py fs=<...> lam=<...> width=64 length=192 steps=<n>` | `cryst_ternary_figures.py`, `cryst_ternary_figures.py long` |
+
+Notes:
+
+- The quaternion decks need `energy_shape = linear` (PINNACLE `4bad49b` or later). With
+  the default saturated shape a crystal does not order a liquid of random orientations.
+- `cryst_binary_collect.py` takes one run directory per call, relative to
+  `results/crystallization/`. It needs no matplotlib and can run on the GPU host; only
+  `frames.npz` and the CSV files are then copied to the machine that makes the figures.
+- The VTK series of the eutectic, ternary and rough-wall cases are read directly by their
+  figure scripts (150 to 450 MB per run under `results/`).
+- Gallery panel (e) stops with a non-finite field (report section 7.5.3).
