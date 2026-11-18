@@ -165,7 +165,7 @@ Sections 3 to 6: Intel Core i9-9980HK, 2 to 6 threads, float64, NumPy backend fo
 Torch 2.13.0 (CPU) for the network routes. Sections 7 and 9 to 11: host rocm-server, Radeon 8060S GPU
 (Torch with ROCm), float64. PINNACLE revisions: `ddaeb91` for section 3 (cases A1, A2, A4,
 A5 and the three routes at one undercooling), `cd2d3d3` for the network family and guess scan
-of section 3 and for sections 4 and 5, `cd2288f` for section 6, `ef9a7cd` for sections 7.4.1 to 7.4.3, `24f86b3` for sections 7.5.1 and 7.5.2, `d35d88e` for section 8, `94f9215` for sections 7.4.4, 7.5.3 to 7.5.5, 10 and 11, `4bad49b` for section 9. The runs on rocm-server use a copy of the PINNACLE source at the stated revision.
+of section 3 and for sections 4 and 5, `cd2288f` for section 6, `ef9a7cd` for sections 7.4.1 to 7.4.3, `24f86b3` for sections 7.5.1 and 7.5.2, `d35d88e` for section 8, `94f9215` for sections 7.4.4 and 7.5.3 to 7.5.5, `4bad49b` for section 9, and `94f9215` or `4bad49b` for sections 7.5.6, 10 and 11 (per run in `docs/run_ledger.md`; the kernels of these sections are the same in both revisions). The runs on rocm-server use a copy of the PINNACLE source at the stated revision.
 
 ## 3. The single-field model: interface, front and critical nucleus
 
@@ -1774,7 +1774,59 @@ Figure 22, cut by the wall.
 Cost: 230 s per run alone on the GPU of rocm-server (3000 steps, 80,601 nodes), 355 s when
 the GPU is shared.
 
-#### 7.5.6 Summary for the user
+#### 7.5.6 Thermal history before growth: direct quench and nucleation pulse
+
+Fig. 9(d), (e) of (granasy 2005 spherulites) compare two thermal histories that end at the
+same temperature: a direct quench from above the liquidus, and a quench to a much lower
+temperature (1350 K in the paper) followed by a return to the growth temperature. The deep
+stage nucleates more crystals, so the final structure is finer. The case shows the user how
+a short excursion in temperature sets the number of crystals independently of the
+conditions of growth.
+
+Decks: `decks/crystallization/orientation/heat_treatment/c6_fig9{d_direct,e_short,e_mild,e_deep}_fem.i`
+(conditions of section 7.4.4 with pre-heat: $S$ = 1.0 at 1574 K, $s_0$ = 0.1, $\chi_l$ = 54,
+noise 0.0062, 500 x 500, no seed). The temperature enters through the two driving terms of
+the phase-field equation as functions of time (`derived`); the other coefficients stay at
+their 1574 K values (`assumed`). The paper prints no stage durations. At 1350 K the driving
+term is three times larger and the explicit step of these decks is not stable, so the
+quench stage is taken at 1550 or 1520 K (`assumed`). Figure script:
+`scripts/cryst_heat_treatment_figures.py`.
+
+![Heat treatments](../../figures/crystallization/c6_heat_treatment.png)
+
+**Figure 38.** Four thermal histories after 3000 steps at 1595 K. Rows: direct quench
+to 1574 K; 20 steps at 1550 K, then 1574 K; 100 steps at 1550 K; 100 steps at 1520 K.
+Columns: orientation maps (liquid black) before the first crystals, near $X$ = 0.3 and 0.7,
+and at the end; a panel is left empty where no frame was saved during the transformation.
+Right: crystalline fraction against time after the hold, and the number of separate
+crystals in the saved frames with $X$ < 0.6. Animations:
+`figures/crystallization/c6_heat_treatment_<run>.gif`.
+
+**Table 33.** Thermal histories. Times are counted from the end of the hold at 1595 K;
+one step is 4.75e-6. Crystals: largest number of separate crystalline regions in a saved
+frame (frames every 100 steps; every 50 for the 20-step pulse).
+
+| history | $t_{10}$ (1e-3) | $t_{50}$ (1e-3) | crystals | structure at the end |
+|---|---|---|---|---|
+| direct quench to 1574 K | 1.87 | 2.69 | 28 | impinged spherulites |
+| 20 steps at 1550 K, then 1574 K | 0.75 | 1.38 | 42 | impinged spherulites, smaller |
+| 100 steps at 1550 K, then 1574 K | 0.21 | 0.29 | not resolved | transformed during the stage, everywhere at once |
+| 100 steps at 1520 K, then 1574 K | 0.10 | 0.15 | not resolved | the same |
+
+- A pulse of 20 steps at 1550 K raises the number of crystals from 28 to 42 and halves the
+  transformation time. The crystals have the same form as after the direct quench, because
+  they grow at the same temperature. This is the effect of the paper's figure.
+- The nucleation rate is very steep in temperature. At 1550 K the fraction passes 0.1 after
+  44 steps and 0.5 after 61; at 1520 K after 22 and 31. A stage of 100 steps therefore
+  transforms the whole box during the quench, and separate spherulites never appear.
+- For the user: the number density is set by the product of the nucleation rate at the
+  pulse temperature and the pulse length, and the window between "no extra crystals" and
+  "everything at once" is narrow, here a few tens of steps at 24 K below the growth
+  temperature. A series in the pulse length (5 to 40 steps) would map it; it was not run.
+- Accuracy: tier 3, qualitative. One realization per history; the counts of the first two
+  rows come from different frame spacings.
+
+#### 7.5.7 Summary for the user
 
 | to obtain | change | measured effect |
 |---|---|---|
@@ -1855,7 +1907,7 @@ Newton iteration with exact tangents (ADR 0041).
 
 ### 8.3 Parameters
 
-**Table 33.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
+**Table 34.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
 
 | quantity | value | provenance | source |
 |---|---|---|---|
@@ -1880,7 +1932,7 @@ Case F1. Decks `decks/crystallization/hard_sphere/f1_nucleus_<interface>_phi<val
 2400 elements). Reference: `scripts/cryst_hard_sphere_reference.py`, a shooting solution of
 the same equations, independent of PINNACLE.
 
-**Table 34.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
+**Table 35.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
 halfway between its center value and 1; $\Delta N$: excess number of particles of the
 nucleus.
 
@@ -1903,7 +1955,7 @@ nucleus.
 
 ![Hard-sphere nucleation barrier](../../figures/crystallization/f1_barrier.png)
 
-**Figure 38.** Left: nucleation barrier against the volume fraction of the liquid; lines:
+**Figure 39.** Left: nucleation barrier against the volume fraction of the liquid; lines:
 independent reference, circles: PINNACLE, for the average interface data and the three
 orientations; dashed: classical droplet model with the average interface free energy;
 squares: Monte Carlo (digitized); star: the value printed in the paper. Right: ratio of the
@@ -1914,7 +1966,7 @@ at small sizes ($m(0)$ rises from 0.11 to 0.48).
 
 ![Hard-sphere nucleus profiles](../../figures/crystallization/f1_profiles.png)
 
-**Figure 39.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
+**Figure 40.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
 the three Monte Carlo states (thin lines: PINNACLE; broad pale lines: reference). Reading:
 the interface is as wide as the nucleus; the density at the center (0.581 to 0.588) stays
 below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
@@ -1925,7 +1977,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   0.5500, the nucleus shrinks from $R_{1/2} = 3.9$ to 2.4 $\sigma$ and from 24 to 2 excess
   particles, and its center loses crystallinity ($m(0)$ from 0.11 to 0.48). Beyond about
   0.55 the "nucleus" is a weak ripple of structure rather than a crystallite.
-- Interface data (Table 35): the barrier scales roughly with $\gamma_\infty^3$, as in the
+- Interface data (Table 36): the barrier scales roughly with $\gamma_\infty^3$, as in the
   classical theory, but the interface thickness matters as well: the (110) data (largest
   $\gamma_\infty$, thinnest interface) give the highest barrier, the (111) data the lowest.
   A 10 % change of $\gamma_\infty$ changes the barrier by about 30 %.
@@ -1936,7 +1988,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   coexistence (section 8.3). Hall's two solid forms differ by 0.3 % in pressure near
   melting; only the polynomial form reproduces the solid densities printed in the paper.
 
-**Table 35.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
+**Table 36.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
 
 | $\phi_\infty$ | (111) | (100) | average | (110) |
 |---|---|---|---|---|
@@ -2006,7 +2058,7 @@ neighbor misorientation 123°) and the result did not depend on $\chi_l$. The de
 
 ### 9.3 Parameters
 
-**Table 36.** Parameters of case F4.
+**Table 37.** Parameters of case F4.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -2035,13 +2087,13 @@ axes at $S$ = 0.78. No number is printed for either; the comparison is of the fo
 
 ![Three-dimensional series](../../figures/crystallization/f4_spherulite_views.png)
 
-**Figure 40.** One seed at $S$ = 1 for $\chi_l$ = 360, 108, 72, 54, 36 and 12
+**Figure 41.** One seed at $S$ = 1 for $\chi_l$ = 360, 108, 72, 54, 36 and 12
 (left to right; steps 300, 300, 600, 600, 300, 300). Top: view along $z$, colored by the
 tilt of the crystal $z$ axis against the laboratory $z$ axis (0 to 90°). Middle:
 composition in the mid-plane. Bottom: tilt in the mid-plane. The disc of one color at the
 center is the seed. Animations: `figures/crystallization/f4_spherulite_<run>.gif`.
 
-**Table 37.** Measures of the series of Figure 40 at the stated step.
+**Table 38.** Measures of the series of Figure 41 at the stated step.
 Growth: increase of the equivalent radius per step. Misorientation: mean angle between
 neighboring crystal cells. Boundary share: neighbor pairs above 15°.
 
@@ -2073,8 +2125,8 @@ neighboring crystal cells. Boundary share: neighbor pairs above 15°.
 
 ![Four seeds](../../figures/crystallization/f4_dendrites_views.png)
 
-**Figure 41.** Four seeds of random orientation at $S$ = 0.78,
-$\chi_l$ = 360, step 280 (solid fraction 0.28); panels as in Figure 40.
+**Figure 42.** Four seeds of random orientation at $S$ = 0.78,
+$\chi_l$ = 360, step 280 (solid fraction 0.28); panels as in Figure 41.
 Animation: `figures/crystallization/f4_dendrites_<run>.gif`.
 
 - Each seed grows as one crystal with its own orientation (four tilt values; misorientation
@@ -2179,7 +2231,7 @@ The model with these data gives a eutectic at 1055.48 K and $c_E$ = 0.3454, with
 $c_\alpha$ = 0.149 and $c_\beta$ = 0.851 (`scripts/cryst_eutectic_thermo.py`; the papers
 print 1055.5 K and 0.35).
 
-**Table 38.** Parameters of cases F2 and F2b.
+**Table 39.** Parameters of cases F2 and F2b.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -2217,18 +2269,18 @@ form (tier 3, qualitative).
 
 ![Spacing series](../../figures/crystallization/f2_spacing_maps.png)
 
-**Figure 42.** Lamellar growth at 955.5 K (undercooling 100 K) for initial
+**Figure 43.** Lamellar growth at 955.5 K (undercooling 100 K) for initial
 spacings of 8 to 48 nm after 300,000 steps. Color: Cu fraction in the solid; line: the
 front. The box holds one pair and is repeated sideways for display. Animation of the 16 nm
 case: `figures/crystallization/f2_lamellar_T955.5_lam16.gif`.
 
 ![Spacing measures](../../figures/crystallization/f2_spacing_measures.png)
 
-**Figure 43.** Measures of the spacing series against the initial spacing. Left:
+**Figure 44.** Measures of the spacing series against the initial spacing. Left:
 front speed. Middle: $\lambda^2 v$ with the initial spacing; lines: simulation and
 experiment as given by (ratkai 2017 nanoscale). Right: Cu-rich share of the new solid.
 
-**Table 39.** Spacing series at 955.5 K. Final spacing: box width over the number
+**Table 40.** Spacing series at 955.5 K. Final spacing: box width over the number
 of Cu-rich lamellae 3 nm behind the front. Unsteadiness: relative change of the speed
 between the last two fifths of the run.
 
@@ -2264,16 +2316,16 @@ between the last two fifths of the run.
 
 ![Undercooling series](../../figures/crystallization/f2_undercooling_maps.png)
 
-**Figure 44.** Lamellar growth with an initial spacing of 16 nm at undercoolings
+**Figure 45.** Lamellar growth with an initial spacing of 16 nm at undercoolings
 of 50, 75, 100 and 150 K (1005.5 to 905.5 K) after 300,000 steps.
 
 ![Undercooling measures](../../figures/crystallization/f2_undercooling_measures.png)
 
-**Figure 45.** Left: front speed against undercooling. Right: fraction of the
+**Figure 46.** Left: front speed against undercooling. Right: fraction of the
 minority component in each new solid (symbols) and at equilibrium (dashed; the two
 equilibrium curves coincide in this model).
 
-**Table 40.** Undercooling series at an initial spacing of 16 nm.
+**Table 41.** Undercooling series at an initial spacing of 16 nm.
 
 | $T$ (K) | undercooling (K) | front (nm) | speed (m/s) | speed per K (1e-4 m/s/K) | final spacing (nm) | minority fraction, Ag-rich / Cu-rich solid | equilibrium |
 |---|---|---|---|---|---|---|---|
@@ -2293,7 +2345,7 @@ equilibrium curves coincide in this model).
 
 ![Long run](../../figures/crystallization/f2_long.png)
 
-**Figure 46.** Run of 600,000 steps (1.7 µs) at 955.5 K and 16 nm in a box 100 nm
+**Figure 47.** Run of 600,000 steps (1.7 µs) at 955.5 K and 16 nm in a box 100 nm
 long. Left: Cu fraction at the end (three periods). Middle: front position against time.
 Right: Cu-rich share across the box against height.
 
@@ -2309,13 +2361,13 @@ Right: Cu-rich share across the box against height.
 
 ![Eutectic grain](../../figures/crystallization/f2b_grain.png)
 
-**Figure 47.** Growth of a eutectic grain at 900 K from a lamellar seed. Rows in
+**Figure 48.** Growth of a eutectic grain at 900 K from a lamellar seed. Rows in
 pairs: composition (red Cu-rich, blue Ag-rich, light blue liquid) and orientation (color:
 $\theta$; gray: liquid). Top pair: $S$ = 0.1, $\chi_l$ = 0.3. Middle: $S$ = 0.1,
 $\chi_l$ = 3. Bottom: $S$ = 0.3, $\chi_l$ = 3. Columns: start, 50,000 and 100,000 steps.
 Animations: `figures/crystallization/f2b_<run>.gif`.
 
-**Table 41.** Eutectic grain after 100,000 steps (0.29 µs). Reoriented share: part of
+**Table 42.** Eutectic grain after 100,000 steps (0.29 µs). Reoriented share: part of
 the solid more than 5 % of the period away from the seed orientation.
 
 | $S$ | $\chi_l$ | solid fraction | Cu-rich share | reoriented share | orientation |
@@ -2424,7 +2476,7 @@ $\mu_1$, $\mu_2$, $\mu_3$ as auxiliary variables of `pf_fem_explicit` (ADR 0044)
 
 ### 11.3 Parameters
 
-**Table 42.** Parameters of case F3.
+**Table 43.** Parameters of case F3.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -2455,19 +2507,19 @@ partitionless growth (tier 3, qualitative).
 
 ![Ternary series](../../figures/crystallization/f3_maps.png)
 
-**Figure 48.** Series in $f_s$ at time 300 (120,000 steps). Top: $c_1 - c_2$ in
+**Figure 49.** Series in $f_s$ at time 300 (120,000 steps). Top: $c_1 - c_2$ in
 the solid (red and blue: the two solid solutions; white: homogeneous solid). Bottom:
 $c_3$. The slab below 40 cells is the initial solid. Animation:
 `figures/crystallization/f3_f3_ternary_fs-0.86_c30.09_lam16_fem.gif`.
 
 ![Ternary measures](../../figures/crystallization/f3_measures.png)
 
-**Figure 49.** Measures of the series. Left: front speed over the last 40 % of the
+**Figure 50.** Measures of the series. Left: front speed over the last 40 % of the
 run; dotted line: the speed above which the paper reports partitionless growth. Middle:
 $c_3$ of the new solid over that of the liquid, and the contrast between the two solids
 (1: the initial solids; 0: homogeneous). Right: largest $c_3$ ahead of the front.
 
-**Table 43.** Series in the driving force at time 300. Advance: front position
+**Table 44.** Series in the driving force at time 300. Advance: front position
 minus 40. Speed: mean over the last 40 % of the run. The middle columns are measured in the
 solid more than 15 cells from the seed, which three runs did not reach (--).
 
@@ -2502,13 +2554,13 @@ solid more than 15 cells from the seed, which three runs did not reach (--).
 
 ![Long ternary runs](../../figures/crystallization/f3_long.png)
 
-**Figure 50.** Long runs (time 1500, 600,000 steps) at $f_s$ = -0.82, -0.84 and
+**Figure 51.** Long runs (time 1500, 600,000 steps) at $f_s$ = -0.82, -0.84 and
 -0.86. Maps: $c_1 - c_2$ in the solid and $c_3$ at the end. Middle: front position against
 time; $n$ is the exponent of (position - 40) $\propto t^n$ over the last 80 % of the run.
 Right: $c_3$ averaged across the box, along the growth direction; dotted: the initial
 liquid value.
 
-**Table 44.** Long runs at time 1500. Deceleration: relative change of the speed
+**Table 45.** Long runs at time 1500. Deceleration: relative change of the speed
 between the fourth and the last fifth of the run.
 
 | $f_s$ | front (cells) | speed (last 40 %) | deceleration | exponent $n$ | pairs | contrast | $c_3$ solid / liquid | $c_3$ at the front | $c_3$ at the far end |
@@ -2544,11 +2596,11 @@ between the fourth and the last fifth of the run.
 
 ![Ternary spacing series](../../figures/crystallization/f3_spacing.png)
 
-**Figure 51.** Initial spacings $\lambda_0$ of 8, 16, 32 and 64 cells at
+**Figure 52.** Initial spacings $\lambda_0$ of 8, 16, 32 and 64 cells at
 $f_s$ = -0.84 (top) and -0.9 (bottom) at time 300; $c_1 - c_2$ in the solid. The view is
 cut 25 cells above the front.
 
-**Table 45.** Spacing series at time 300. Pairs at the front: counted 3 cells
+**Table 46.** Spacing series at time 300. Pairs at the front: counted 3 cells
 behind it.
 
 | $f_s$ | $\lambda_0$ (cells) | front (cells) | speed | pairs at the start | pairs at the front | spacing at the front (cells) |
@@ -2658,7 +2710,7 @@ The paper's three-dimensional box (96 x 96 x 612, 3.6e6 steps) has 460 times the
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 46.** Measured cost per time step.
+**Table 47.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -2671,8 +2723,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 47.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 46; `derived`, not measured beyond 1000 x 1000).
+**Table 48.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 47; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|
@@ -2697,7 +2749,7 @@ Table 46; `derived`, not measured beyond 1000 x 1000).
 The other explicit models, measured on the same integrated GPU (float64; the GPU was shared
 between jobs, so the times are upper bounds):
 
-**Table 48.** Measured cost of the eutectic, ternary and three-dimensional cases, and
+**Table 49.** Measured cost of the eutectic, ternary and three-dimensional cases, and
 estimates for the published sizes (`derived` by scaling with cells and steps; not measured).
 
 | model (section) | grid | fields | time per step | per cell and step | published size | estimate for the published size | suggested hardware |
@@ -2711,7 +2763,7 @@ estimates for the published sizes (`derived` by scaling with cells and steps; no
   fixed overhead per step, so the cost per cell falls on larger grids; the estimates above
   do not use that and are conservative.
 - The three-dimensional step is 8 to 9 times more expensive per cell than the two-dimensional
-  orientation model (Table 46) because of the four-component field and trilinear
+  orientation model (Table 47) because of the four-component field and trilinear
   elements with 8 nodes.
 
 ## 14. References

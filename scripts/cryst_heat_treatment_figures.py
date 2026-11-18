@@ -2,7 +2,7 @@
 """Case C6, heat treatments (Fig. 9(d), (e) of granasy 2005 spherulites): figures and measures.
 
 Usage: python3 scripts/cryst_heat_treatment_figures.py
-Reads results/crystallization/orientation/heat_treatment/c6_fig9{d_direct,e_mild,e_deep}_fem/
+Reads results/crystallization/orientation/heat_treatment/c6_fig9{d_direct,e_short,e_mild,e_deep}_fem/
 (frames.npz from cryst_binary_collect.py, solver_history.csv); writes
 figures/crystallization/c6_heat_treatment.png, c6_heat_treatment_<run>.gif and
 results/crystallization/orientation/heat_treatment/summary.csv.
@@ -33,6 +33,7 @@ from cryst_orientation_figures import FIG, ROOT, grain_count, orientation_image 
 
 RES = ROOT / "results/crystallization/orientation/heat_treatment"
 RUNS = {"c6_fig9d_direct_fem": "direct quench: 1595 K, then 1574 K",
+        "c6_fig9e_short_fem": "20 steps at 1550 K: 1595 K, 1550 K, then 1574 K",
         "c6_fig9e_mild_fem": "100 steps at 1550 K: 1595 K, 1550 K, then 1574 K",
         "c6_fig9e_deep_fem": "100 steps at 1520 K: 1595 K, 1520 K, then 1574 K"}
 RUNS = {k: v for k, v in RUNS.items() if (RES / k / "frames.npz").exists()}
@@ -45,7 +46,7 @@ def main() -> None:
     gs = fig.add_gridspec(len(RUNS), 5, width_ratios=[1, 1, 1, 1, 1.25], wspace=0.08, hspace=0.18)
     ax_x = fig.add_subplot(gs[0, 4])
     ax_n = fig.add_subplot(gs[len(RUNS) - 1, 4])
-    colors = ["#1b3a5c", "#3aa39b", "#c8553d"]
+    colors = ["#1b3a5c", "#8a6fb0", "#3aa39b", "#c8553d"]
     rows = []
     for i, (name, label) in enumerate(RUNS.items()):
         run = RES / name
@@ -67,8 +68,11 @@ def main() -> None:
         picks = [max(first - 1, 0)] + [int(np.argmin(np.abs(frac - v))) for v in (0.3, 0.7)] + [len(steps) - 1]
         for j, k in enumerate(picks):
             ax = fig.add_subplot(gs[i, j])
-            ax.imshow(orientation_image(phi[k], theta[k]), origin="lower")
             ax.set_xticks([]); ax.set_yticks([])
+            if j in (1, 2) and not 0.05 < frac[k] < 0.95:  # no saved frame during the transformation
+                ax.set_frame_on(False)
+                continue
+            ax.imshow(orientation_image(phi[k], theta[k]), origin="lower")
             ax.set_title(f"step {int(steps[k])}, X = {frac[k]:.2f}", fontsize=8)
             if j == 0:
                 ax.set_ylabel(label.split(":")[0], fontsize=9)
