@@ -640,7 +640,8 @@ the cap is evaluated with $\gamma(T_m)$; the barrier of Model II falls to zero t
   $\Psi - \sin\Psi\cos\Psi$; in Model II the angle follows from the wall value through
   $\cos\Psi = -1 + 6\phi_0^2 - 4\phi_0^3$, and the critical undercooling from
   $\Delta f = -w\,g(\phi_0)/p(\phi_0)$.
-- Parameter series (contact angle, wall value $\phi_0$, rough and structured walls): pending.
+- A rough wall is treated with the orientation-field model in section 7.5.5. Parameter
+  series in the contact angle and the wall value $\phi_0$, and structured walls: pending.
 
 ### 4.6 Cost
 
@@ -1683,7 +1684,72 @@ diffusion) is enough to lose it.
 - Animations are not produced for this case; the frames are in the run directories.
 - Cost: 507, 557 and 590 s on the GPU of rocm-server.
 
-#### 7.5.5 Summary for the user
+#### 7.5.5 Nucleation on a rough wall (case E5)
+
+*Purpose.* Crystals in a real melt rarely form in the bulk; they form on container walls and
+foreign particles, and on a rough surface first in its scratches and corners. The case
+shows this selection of sites with the noise-driven model of section 7.4.4 and no seed, and
+gives the user the rule that predicts it.
+
+*Model.* The binary model with the orientation field at the conditions of the radial
+spherulite ($S$ = 1.0, $s_0$ = 0.1, $\chi_l$ = 54). The liquid layer lies on a sawtooth
+wall with grooves 30 cells deep and 80 cells apart; the layer is 400 cells wide and 185 to
+215 high. Every boundary is a no-flux boundary, which for the phase field is a wall with a
+contact angle of 90° (granasy 2007 heterogeneous). The grid is a mapped structured grid
+(`scripts/cryst_rough_wall_mesh.py`). The noise is set below the level that nucleates in
+the bulk within the run (0.0062 in section 7.4.4): standard deviation 0.0054, 0.0048 and
+0.0044 of the nodal increment per step (assumed).
+
+*Expected result.* With a contact angle of 90° a two-dimensional nucleus in a wedge of
+opening angle $\beta$ is the sector $\beta / 2\pi$ of the homogeneous nucleus, and its
+barrier is the same fraction of the homogeneous one:
+
+**Table 32.** Sites of the box, their barrier relative to homogeneous nucleation
+(derived from the wedge angle), and the crystals found there in ten runs (one at 0.0054,
+five at 0.0048, four at 0.0044; 23 crystals). The site of a crystal is the node of lowest
+$\phi$ in the first saved frame in which it exists.
+
+| site | opening angle | relative barrier | number of sites | crystals | crystals per site |
+|---|---|---|---|---|---|
+| bottom corners (flank of the sawtooth and side wall) | 53° | 0.15 | 2 | 8 | 4 |
+| top corners | 90° | 0.25 | 2 | 4 | 2 |
+| grooves of the sawtooth | 106° | 0.30 | 4 | 3 | 0.75 |
+| flat walls (top and sides) | 180° | 0.50 | about 770 nodes | 6 | 0.008 per node |
+| ridges of the sawtooth | 254° | 0.70 | 5 | 1 | 0.2 |
+| bulk liquid | 360° | 1 | about 80,000 nodes | 1 | 0.00001 per node |
+
+![Rough wall](../../figures/crystallization/e5_rough_wall.png)
+
+**Figure 37.** Phase field (black: crystal) at four early frames of the first run
+at each noise level (0.0044, 0.0048, 0.0054 from top to bottom); the wall is drawn in red.
+Animations: `figures/crystallization/e5_rough_wall_<run>.gif`.
+
+- 22 of the 23 crystals form on a wall; the wall nodes are 1.5 % of the box.
+- The number of crystals per site follows the wedge angle: 4 per 53° corner, 2 per 90°
+  corner, 0.75 per 106° groove. The sharper the wedge, the lower the barrier and the more
+  often it is the first site.
+- Lowering the noise sharpens the selection. At 0.0044 all five crystals start in a corner (four
+  in the 53° corners, one in a top corner); at 0.0054 crystals also appear on the flat
+  walls and one in the bulk.
+- The one crystal counted on a ridge starts 5 cells from the ridge line on its flank, a
+  flat-wall site in effect.
+- Limits of the evidence: 23 crystals; the first runs at 0.0048 and 0.0054 use the same
+  random numbers (scaled), so their crystal on the top wall at the same place is one event,
+  not two. The side walls make the two end grooves sharper than the inner ones; a box
+  periodic along the wall would give equal grooves. Accuracy: tier 4 (the paper shows the
+  preference for grooves in one image and prints no count).
+
+*What to expect.* Deeper or sharper grooves lower the barrier in proportion to the opening
+angle and act at lower noise (lower undercooling in a material). A contact angle above 90°
+(less wetting, section 4) raises all wall barriers and moves nucleation back into the bulk.
+At a noise level that nucleates in the bulk the wall no longer matters and the result is
+that of section 7.4.4. After nucleation the crystals grow as the spherulites of
+Figure 22, cut by the wall.
+
+Cost: 230 s per run alone on the GPU of rocm-server (3000 steps, 80,601 nodes), 355 s when
+the GPU is shared.
+
+#### 7.5.6 Summary for the user
 
 | to obtain | change | measured effect |
 |---|---|---|
@@ -1764,7 +1830,7 @@ Newton iteration with exact tangents (ADR 0041).
 
 ### 8.3 Parameters
 
-**Table 32.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
+**Table 33.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
 
 | quantity | value | provenance | source |
 |---|---|---|---|
@@ -1789,7 +1855,7 @@ Case F1. Decks `decks/crystallization/hard_sphere/f1_nucleus_<interface>_phi<val
 2400 elements). Reference: `scripts/cryst_hard_sphere_reference.py`, a shooting solution of
 the same equations, independent of PINNACLE.
 
-**Table 33.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
+**Table 34.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
 halfway between its center value and 1; $\Delta N$: excess number of particles of the
 nucleus.
 
@@ -1812,7 +1878,7 @@ nucleus.
 
 ![Hard-sphere nucleation barrier](../../figures/crystallization/f1_barrier.png)
 
-**Figure 37.** Left: nucleation barrier against the volume fraction of the liquid; lines:
+**Figure 38.** Left: nucleation barrier against the volume fraction of the liquid; lines:
 independent reference, circles: PINNACLE, for the average interface data and the three
 orientations; dashed: classical droplet model with the average interface free energy;
 squares: Monte Carlo (digitized); star: the value printed in the paper. Right: ratio of the
@@ -1823,7 +1889,7 @@ at small sizes ($m(0)$ rises from 0.11 to 0.48).
 
 ![Hard-sphere nucleus profiles](../../figures/crystallization/f1_profiles.png)
 
-**Figure 38.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
+**Figure 39.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
 the three Monte Carlo states (thin lines: PINNACLE; broad pale lines: reference). Reading:
 the interface is as wide as the nucleus; the density at the center (0.581 to 0.588) stays
 below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
@@ -1834,7 +1900,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   0.5500, the nucleus shrinks from $R_{1/2} = 3.9$ to 2.4 $\sigma$ and from 24 to 2 excess
   particles, and its center loses crystallinity ($m(0)$ from 0.11 to 0.48). Beyond about
   0.55 the "nucleus" is a weak ripple of structure rather than a crystallite.
-- Interface data (Table 34): the barrier scales roughly with $\gamma_\infty^3$, as in the
+- Interface data (Table 35): the barrier scales roughly with $\gamma_\infty^3$, as in the
   classical theory, but the interface thickness matters as well: the (110) data (largest
   $\gamma_\infty$, thinnest interface) give the highest barrier, the (111) data the lowest.
   A 10 % change of $\gamma_\infty$ changes the barrier by about 30 %.
@@ -1845,7 +1911,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   coexistence (section 8.3). Hall's two solid forms differ by 0.3 % in pressure near
   melting; only the polynomial form reproduces the solid densities printed in the paper.
 
-**Table 34.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
+**Table 35.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
 
 | $\phi_\infty$ | (111) | (100) | average | (110) |
 |---|---|---|---|---|
@@ -1915,7 +1981,7 @@ neighbor misorientation 123°) and the result did not depend on $\chi_l$. The de
 
 ### 9.3 Parameters
 
-**Table 35.** Parameters of case F4.
+**Table 36.** Parameters of case F4.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -1944,13 +2010,13 @@ axes at $S$ = 0.78. No number is printed for either; the comparison is of the fo
 
 ![Three-dimensional series](../../figures/crystallization/f4_spherulite_views.png)
 
-**Figure 39.** One seed at $S$ = 1 for $\chi_l$ = 360, 108, 72, 54, 36 and 12
+**Figure 40.** One seed at $S$ = 1 for $\chi_l$ = 360, 108, 72, 54, 36 and 12
 (left to right; steps 300, 300, 600, 600, 300, 300). Top: view along $z$, colored by the
 tilt of the crystal $z$ axis against the laboratory $z$ axis (0 to 90°). Middle:
 composition in the mid-plane. Bottom: tilt in the mid-plane. The disc of one color at the
 center is the seed. Animations: `figures/crystallization/f4_spherulite_<run>.gif`.
 
-**Table 36.** Measures of the series of Figure 39 at the stated step.
+**Table 37.** Measures of the series of Figure 40 at the stated step.
 Growth: increase of the equivalent radius per step. Misorientation: mean angle between
 neighboring crystal cells. Boundary share: neighbor pairs above 15°.
 
@@ -1982,8 +2048,8 @@ neighboring crystal cells. Boundary share: neighbor pairs above 15°.
 
 ![Four seeds](../../figures/crystallization/f4_dendrites_views.png)
 
-**Figure 40.** Four seeds of random orientation at $S$ = 0.78,
-$\chi_l$ = 360, step 280 (solid fraction 0.28); panels as in Figure 39.
+**Figure 41.** Four seeds of random orientation at $S$ = 0.78,
+$\chi_l$ = 360, step 280 (solid fraction 0.28); panels as in Figure 40.
 Animation: `figures/crystallization/f4_dendrites_<run>.gif`.
 
 - Each seed grows as one crystal with its own orientation (four tilt values; misorientation
@@ -2055,7 +2121,7 @@ constraint and the non-differentiable energy have no network form in PINNACLE.
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 37.** Measured cost per time step.
+**Table 38.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -2068,8 +2134,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 38.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 37; `derived`, not measured beyond 1000 x 1000).
+**Table 39.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 38; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|
