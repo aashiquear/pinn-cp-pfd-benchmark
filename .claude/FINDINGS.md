@@ -1080,5 +1080,22 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   rewrites markdown under docs/research; switching the shared `evaluate_point_state` to BLAS
   contractions changed round-off and broke a 1e-12 energy test, so the fast contraction lives
   in the explicit executioner only; VTK series files are numbered by frame, not by step.
-- Open in stage C: the orientation field (C3-C6). Network routes: none (noise driven).
+- C3 (orientation field, Fig. 4 b/c/f) done at 500 x 500 on the rocm-server GPU, PINNACLE
+  ef9a7cd against `scripts/cryst_orientation_reference.py`: radius +1.0 / -1.6 / +10.1 %.
+  h = 1900 is assumed (H is in none of the five papers) and not calibrated.
+- Trap, fixed (PINNACLE ef9a7cd): `pf_fem_explicit` multiplied the per-step loads by the
+  kernel's `explicit_rate_factor`; the theta noise was scaled by chi (up to 54) and the crystal
+  stayed disordered. Loads are now added unscaled. Found by switching the noise off on a
+  96 x 96 copy of the deck: order appeared at once.
+- Trap in the reference: |grad theta| from two-cell central differences does not see
+  grid-scale disorder (F too small, crystal 28 % larger at S = 0.8). Default is now the mean
+  square of the four one-cell differences (`orientation_gradient = compact`).
+- An element-mean theta gradient in PINNACLE (tried as `gradient_averaging = element`) slows
+  ordering (misorientation 0.127 against 0.041) and was removed.
+- PINNACLE GPU cost: 0.24-0.31 s per step at 500 x 500, three fields, 20 theta sub-steps.
+- PINNACLE tests that depend on the thread count (network training on a basin boundary):
+  `test_deflation_decides_a_far_start` (now pinned to one thread) and the pre-existing
+  `test_slab_causal_reaches_lower_residual_than_single_window` (passes with 1, fails with 6).
+- Mistake to avoid: `pytest ... | tail && git commit` commits on tail's status, not pytest's.
+- Open in stage C: h calibration, delta 20.8 / 41.5 nm, C4-C6, E1-E5. Network routes: none.
 

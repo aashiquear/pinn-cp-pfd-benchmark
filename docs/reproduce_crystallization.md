@@ -129,3 +129,28 @@ Each 500 x 500 run writes 21 field files of 251,001 nodes (about 500 MB under `r
 The four C2 decks differ from the check deck in mesh size, supersaturation, anisotropy, noise
 and step count only.
 
+## 6. Stage C, orientation field (C3)
+
+On the GPU host (Torch with ROCm; `TORCH_BLAS_PREFER_HIPBLASLT=0`):
+
+```bash
+for d in c3_fig4b_s0.8_chi360 c3_fig4c_s0.8_chi54 c3_fig4f_s1.0_chi54; do
+  python scripts/cryst_orientation_reference.py decks/crystallization/reference/$d.i   # reference
+  pinnacle run decks/crystallization/orientation/${d}_fem.i                              # PINNACLE
+done
+```
+
+Then, where matplotlib is installed:
+
+```bash
+R=results/crystallization
+for d in c3_fig4b_s0.8_chi360_fem c3_fig4c_s0.8_chi54_fem c3_fig4f_s1.0_chi54_fem; do
+  python3 scripts/cryst_binary_collect.py orientation/$d
+done
+python3 scripts/cryst_orientation_figures.py c3_pinnacle $R/orientation/c3_fig4b_s0.8_chi360_fem \
+  $R/orientation/c3_fig4c_s0.8_chi54_fem $R/orientation/c3_fig4f_s1.0_chi54_fem
+python3 scripts/cryst_orientation_figures.py c3_reference $R/orientation_reference/fig4b_s0.8_chi360 \
+  $R/orientation_reference/fig4c_s0.8_chi54 $R/orientation_reference/fig4f_s1.0_chi54
+```
+
+`use_gpu = false` in the deck runs the same case on the CPU. Expected numbers: report section 5.4.

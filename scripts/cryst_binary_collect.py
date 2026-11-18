@@ -2,6 +2,7 @@
 """Convert a PINNACLE binary-model run (stage C) to the frames.npz / history.csv layout.
 
 Usage: python3 scripts/cryst_binary_collect.py <run directory under results/crystallization/binary>
+       python3 scripts/cryst_binary_collect.py orientation/<run>      (also stores theta)
 Reads the fields_step*.vtk series (phi, c on a structured box mesh) and fields.pvd; writes
 frames.npz (phi, c, steps, dx, dt, c_inf, c_l, c_s) and history.csv with the same columns as
 scripts/cryst_binary_reference.py, so scripts/cryst_binary_figures.py serves both.
@@ -23,7 +24,8 @@ C_L, C_S = 0.466219, 0.399112
 
 
 def main() -> None:
-    run = ROOT / "results/crystallization/binary" / sys.argv[1]
+    arg = sys.argv[1]
+    run = ROOT / "results/crystallization" / (arg if "/" in arg else f"binary/{arg}")
     times = [float(t) for t in re.findall(r'timestep="([^"]+)"', (run / "fields.pvd").read_text())]
     files = series_files(run)
     first = read_vtk(files[0][1])
@@ -33,7 +35,7 @@ def main() -> None:
     dx = float(xs[1] - xs[0])
     with (run / "solver_history.csv").open() as fh:
         dt = float(next(csv.DictReader(fh))["dt"])
-    phis, cs, rows = [], [], []
+    phis, cs, thetas, rows = [], [], [], []
     solute0 = None
     for (step, path), t in zip(files, times):
         data = read_vtk(path)["point"]
@@ -43,6 +45,10 @@ def main() -> None:
         c[iy, ix] = data["c"]
         # drop the duplicated periodic row and column: cells = nodes - 1
         phi, c = phi[:-1, :-1], c[:-1, :-1]
+        if "theta" in data:
+            theta = np.zeros((len(ys), len(xs)))
+            theta[iy, ix] = data["theta"]
+            thetas.append(theta[:-1, :-1].astype(np.float32))
         phis.append(phi.astype(np.float32))
         cs.append(c.astype(np.float32))
         solute0 = c.sum() if solute0 is None else solute0
@@ -54,7 +60,8 @@ def main() -> None:
                      "phi_min": float(phi.min()), "phi_max": float(phi.max()),
                      "c_min": float(c.min()), "c_max": float(c.max())})
     c_inf = float(np.median(cs[0]))
-    np.savez_compressed(run / "frames.npz", phi=np.array(phis), c=np.array(cs),
+    extra = {"theta": np.array(thetas)} if thetas else {}
+    np.savez_compressed(run / "frames.npz", phi=np.array(phis), c=np.array(cs), **extra,
                         steps=np.array([r["step"] for r in rows]), dx=dx, dt=dt, c_inf=c_inf, c_l=C_L, c_s=C_S)
     with (run / "history.csv").open("w", newline="") as fh:
         wr = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))

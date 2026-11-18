@@ -17,6 +17,11 @@ h = xi^2 H / (2 xi0 eps^2) of the orientational energy in the phi equation; diff
 theta wrapped to [-1/2, 1/2]; the modulus regularized as sqrt(|grad theta|^2 + eps^2); the
 noise amplitudes as standard deviations of the per-step increment; the seed.
 
+|grad theta| in F(u): `orientation_gradient = compact` (default) takes the mean square of the
+four one-cell differences; `central` takes the two-cell central difference, which does not
+see grid-scale disorder (it gave a 28 % larger crystal at S = 0.8 and is kept as an option
+only to show that).
+
 Usage: python cryst_orientation_reference.py <deck.i>     (Torch; GPU if available)
 Writes <out_dir>/frames.npz (phi, c, theta at the saved steps) and history.csv.
 """
@@ -79,6 +84,7 @@ def main() -> None:
     chi_l = float(case.get("chi_liquid", 360.0))
     h_ori = float(case["h_orientation"])
     noise_phi, noise_theta = float(case.get("noise_phi", 0.0025)), float(case.get("noise_theta", 0.0375))
+    compact = str(case.get("orientation_gradient", "compact")) == "compact"
     seed_radius = float(case["seed_radius_dx"]) * dx
     seed_angle = float(case.get("seed_theta", 0.0))
     gen = torch.Generator(device=device).manual_seed(int(case.get("rng_seed", 0)))
@@ -120,9 +126,16 @@ def main() -> None:
                 fy = (s * s - 1.0) * py + s * ds * px
                 rhs = rhs + (roll(fx, -1, 1) - roll(fx, 1, 1) + roll(fy, -1, 0) - roll(fy, 1, 0)) / (2 * dx)
             # orientational energy at the node: u = xi0 |grad theta| from wrapped central differences
-            tx = wrap(roll(theta, -1, 1) - roll(theta, 1, 1)) / 2.0
-            ty = wrap(roll(theta, -1, 0) - roll(theta, 1, 0)) / 2.0
-            u = torch.sqrt(tx * tx + ty * ty)  # xi0 = dx
+            if compact:
+                # mean square of the four one-cell differences: sees grid-scale disorder,
+                # which the two-cell central difference does not (a checkerboard has none)
+                ex = wrap(roll(theta, -1, 1) - theta)
+                ey = wrap(roll(theta, -1, 0) - theta)
+                u = torch.sqrt(0.5 * (ex * ex + roll(ex, 1, 1) ** 2) + 0.5 * (ey * ey + roll(ey, 1, 0) ** 2))
+            else:
+                tx = wrap(roll(theta, -1, 1) - roll(theta, 1, 1)) / 2.0
+                ty = wrap(roll(theta, -1, 0) - roll(theta, 1, 0)) / 2.0
+                u = torch.sqrt(tx * tx + ty * ty)  # xi0 = dx
             f0 = torch.where(u < 0.75 / m_branch, torch.abs(torch.sin(two_pi * m_branch * u)), torch.ones_like(u))
             f1 = torch.where(u < 0.25 / n_branch, torch.abs(torch.sin(two_pi * n_branch * u)), torch.ones_like(u))
             f_ori = x_branch * f0 + (1.0 - x_branch) * f1

@@ -474,7 +474,7 @@ surrogate route of the earlier parts), or solve the deterministic pieces around 
 (granasy 2005 spherulites) are all noise driven (growth-front nucleation) and are therefore
 FE-only in stage C.
 
-## 5. Stage C, first part: the binary model and single-crystal growth forms
+## 5. Stage C: the binary model, single-crystal growth forms and the orientation field
 
 Stage C follows (granasy 2005 spherulites). This part covers the two-field (phase and
 composition) model with one crystal orientation, case C2 (the paper's Fig. 4 a, b, d, e), and
@@ -582,6 +582,63 @@ four-fold $s_0 = 0.1$, $S = 0.8$, (d) isotropic $S = 1.0$, (e) four-fold $S = 1.
 - Routes: FE only. These runs are driven by noise (section 4.2); the alloy kernels state
   that they have no PINN form.
 
+### 5.4 C3: polycrystalline growth with the orientation field (paper Fig. 4 b, c, f)
+
+Model: the binary model of section 5.1 plus the orientation field $\theta \in [0, 1)$
+(model C of (granasy 2004 modelling), appendix A.3, single-minimum energy $x = 0$):
+
+$$
+\dot\phi = \ldots - p'(\phi)\,[\,b(c) - h\,F(u)\,] + \zeta_\phi, \qquad
+\dot\theta = \chi_l\,p(\phi)\,\nabla\!\cdot\!\Big\{[1-p(\phi)]\,\frac{\pi}{2}\cos(\pi u)\,
+\frac{\nabla\theta}{|\nabla\theta|}\Big\} + \zeta_\theta ,
+$$
+
+with $F(u) = |\sin \pi u|$ for $u < 1/2$ and 1 beyond, $u = \xi_0 |\nabla\theta|$,
+$\xi_0 = \Delta x$, and the interface anisotropy taken in the frame of the local
+orientation, $s = 1 + s_0\cos(4\vartheta - 2\pi\theta)$. The orientation is random in the
+liquid, orders in the interface and is frozen in the crystal. Provenance: $\chi_l = 360$
+and the factor 0.15 (`reported_text`); the noise amplitudes 0.0025 and 0.0375
+(`reported_text`, taken as standard deviations of the nodal increment per step, `assumed`);
+$h = 1900$ (`assumed`: the scale $H$ is not printed in any of the five papers read).
+
+Decks: `decks/crystallization/orientation/c3_fig4{b_s0.8_chi360,c_s0.8_chi54,f_s1.0_chi54}_fem.i`
+(`pf_fem_explicit`, Torch, GPU, 500 x 500, $\theta$ in 20 sub-steps), reference decks
+`decks/crystallization/reference/c3_fig4*.i` for `scripts/cryst_orientation_reference.py`.
+
+| Case | Expected (paper) | Radius, PINNACLE / reference (cells) | Mean neighbor misorientation in the crystal | Orientation domains |
+|---|---|---|---|---|
+| Fig. 4(b): $S = 0.8$, $\chi_l = 360$ | single-crystal dendrite | 114.6 / 113.4 (+1.0 %) | 0.000 / 0.000 | 2 / 2 |
+| Fig. 4(c): $S = 0.8$, $\chi_l = 54$ | polycrystalline dendrite | 93.0 / 94.5 (-1.6 %) | 0.016 / 0.010 | 106 / 88 |
+| Fig. 4(f): $S = 1.0$, $\chi_l = 54$ | spherulite of fine grains | 202.0 / 183.4 (+10.1 %) | 0.151 / 0.099 | 190 / 733 |
+
+Radius: equivalent radius at step 2000 (1300 for Fig. 4(f)). Misorientation in units of
+$2\pi/4$; 0.25 is a random field.
+
+![Orientation-field runs, PINNACLE](../../figures/crystallization/c3_pinnacle_maps.png)
+
+![Orientation-field runs, independent reference](../../figures/crystallization/c3_reference_maps.png)
+
+- The three forms are reproduced by both codes: with the full orientational mobility the
+  seed's orientation is taken over and the dendrite is one crystal; with the mobility
+  reduced to 15 % new orientations are trapped at the front and the dendrite arms no longer
+  follow one lattice; at $S = 1$ the front outruns the ordering and the crystal is a
+  compact spherulite of grid-scale grains.
+- Fig. 4(f): the grain structure is at the scale of the grid in both codes, so radius and
+  domain count depend on the discretization (10 % in radius). The domain count is a
+  threshold measure (12 orientation bins, regions above 20 cells) and not a grain size.
+- Two errors were found on the way, both by comparing the codes term by term on a 96 x 96
+  case. (1) PINNACLE multiplied the noise load by the row's mobility $\chi(\phi)$, so the
+  orientational noise was up to 54 times too large and the crystal stayed disordered
+  (misorientation 0.18 against 0.034); fixed in PINNACLE ef9a7cd with a regression test.
+  (2) The reference took $|\nabla\theta|$ in $F$ from two-cell central differences, which
+  do not see grid-scale disorder; it gave a 28 % larger crystal at $S = 0.8$ (radius 119
+  against 93). With one-cell differences the two codes agree to 1.6 %.
+- Cost on rocm-server (Radeon 8060S, float64): 0.24 to 0.31 s per step for PINNACLE
+  (405 to 553 s per case), 0.04 to 0.05 s per step for the reference stencil.
+- Animations: `figures/crystallization/c3_pinnacle_c3_fig4*_fem.gif`,
+  `c3_reference_fig4*.gif` (orientation over time).
+- One realization per case. Routes: FE only (noise driven, section 4.2).
+
 ## 6. Limits
 
 - Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
@@ -595,7 +652,9 @@ four-fold $s_0 = 0.1$, $S = 0.8$, (d) isotropic $S = 1.0$, (e) four-fold $S = 1.
 - B2: five realizations on one mesh and one step; no mesh or step study.
 - C2: the seed, the run length and the meaning of the noise amplitude are assumptions; each
   case is one realization; panel (a) differs from the published one in the scale of the
-  cells. The orientation field (C3 to C6) and the phase-field crystal (D) are not started.
+  cells.
+- C3: $h$ is assumed and not yet calibrated; one realization per case; 500 x 500 only. The
+  cases C4 to C6, E1 to E5 and the phase-field crystal (D) are not started.
 - Neural results are over 5 seeds at $\Delta T/T_f = 0.20$ and one seed elsewhere. The cost
   of the development runs behind `pf_pinn_stationary` and `pf_fem_saddle` (about 40
   exploratory runs of 1 to 90 s) is not in the wall times of the tables.
