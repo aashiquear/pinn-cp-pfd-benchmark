@@ -1099,3 +1099,31 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - Mistake to avoid: `pytest ... | tail && git commit` commits on tail's status, not pytest's.
 - Open in stage C: h calibration, delta 20.8 / 41.5 nm, C4-C6, E1-E5. Network routes: none.
 
+### Part IV, 2026-11-17 (evening): scope extension, series, hard spheres
+
+- Author's decisions: chi_l = 240 for Fig. 5; no 4000^2 / 5000^2; desktop-size runs plus a cost
+  table; parameter series with intermediate values and crystallographic measures for every
+  model; journal-form report (abstract, blank introduction, numbered figures and tables,
+  original-paper citations); implement the eutectic (binary PF2, ternary 3-D PF3), hard-sphere
+  and 3-D quaternion models. Plan: docs/14 section 9.
+- Literature extraction for the four models: `results/crystallization/lit/additional_models_extraction.md`
+  (local). Not obtained: Lewis et al., JOM 56(4) 34 (2004) (constants a, b, m, c_alpha, c_beta,
+  eps_theta of the eutectic orientational term); Pusztai et al., MSEA 413-414, 412 (2005).
+  Ask the author for both.
+- F1 hard spheres, what reproduces the paper (W* = 40.63 kT at 0.5207): Hall's RATIONAL fluid
+  form with Hall's POLYNOMIAL fcc form (his Eq. 13), liquid coexistence 0.494, solid at equal
+  pressure (0.5466), equal mu there. The rational solid form gives the wrong solid densities;
+  fixing mu at the printed 0.546 gives W* = 22. Hall's paper is 1972 (the 2003 paper cites 1970).
+- PINNACLE d35d88e: `hs_phase_bulk`, `hs_density_equilibrium` (ADR 0041); 24f86b3: kinetic
+  anisotropy as a rate factor (`kinetic_anisotropy_strength`, nodal gradient by lumped
+  projection). Stationary hard-sphere decks need `newton_tol = 1e-6` (residual floor 3e-8).
+- Orientation series (500^2, GPU): transition dendrite -> faceted between S 0.8 and 0.9;
+  seaweed at s0 = 0; grain count rises steeply below chi_l about 100 at S 0.8 and below about
+  240 at S 1.0. The domain count saturates/drops at the fine-grained end (20-cell threshold):
+  use mean misorientation and boundary fraction there.
+- CPU cost of the three-field explicit path (i9-9980HK, 8 threads): numpy 12.3 s/step at 500^2,
+  torch CPU 4.9 s/step; GPU 0.25 s/step. No TPU path (explicit namespaces: numpy, torch).
+- Collecting a 21-frame 500^2 VTK series takes about 1 min per run (`cryst_binary_collect.py`).
+- Working pattern that failed twice: long pytest in a foreground call hits the 10 min limit;
+  write pytest output to a file, echo the exit code, and gate the commit on it.
+
