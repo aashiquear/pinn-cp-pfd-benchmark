@@ -2180,7 +2180,11 @@ granasy-2002-binary; granasy-2005-spherulites.
 Orientation-field model (section 7): kobayashi-1998-vector; kobayashi-2000-continuum;
 warren-2003-polycrystalline; granasy-2002-binary; granasy-2004-mechanism;
 granasy-2004-modelling; granasy-2005-spherulites; pusztai-2005-polycrystalline;
-granasy-2006-review; granasy-2021-biomineralization.
+granasy-2006-review; granasy-2021-biomineralization; granasy-2007-heterogeneous (rough
+wall, section 7.5.5).
 
 Density-coupled hard-sphere model (section 8): granasy-2003-hardsphere; hall-1972-another;
 auer-2001-prediction; davidchack-2000-direct.
+
+Quaternion orientation field in three dimensions (section 9):
+pusztai-2005-threedimensions; granasy-2005-spherulites.
