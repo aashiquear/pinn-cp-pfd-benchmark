@@ -1133,9 +1133,171 @@ at the growth front and an envelope that rounds with size.
   ordering, and the crystal is a compact spherulite.
 - Size: at $\chi_l = 240$ the number of orientation domains grows with the radius (34 at
   step 800 to 180 at step 3200, Table 20).
-- Parameter series (intermediate $\chi_l$ at $S = 0.8$, $s_0$, $h$, noise amplitudes,
-  branching weight $x$ and angle, kinetic anisotropy, symmetry $k$) and the crystallographic
-  measures that go with them (grain size, misorientation distribution, texture): pending.
+#### 7.5.1 Parameter series at the conditions of the single-crystal and polycrystalline forms
+
+Fifteen runs on 500 x 500, one parameter varied at a time around the conditions of
+(granasy 2005 spherulites): decks `decks/crystallization/orientation/series/c3_s<S>_a<s0>_chi<chi>_fem.i`
+(written by `scripts/cryst_orientation_decks.py`, each one complete), measures by
+`scripts/cryst_orientation_series.py`. The intermediate values (S = 0.7 and 0.9;
+$s_0$ = 0.025 and 0.05; $\chi_l$ = 18, 108, 180, 240) are not in the paper. One realization
+per case, the same noise seeds in all.
+
+Measures, at the last saved step before the crystal reaches the box edge:
+*equivalent radius* $\sqrt{A/\pi}$ of the crystal area $A$; *compactness* $A/(\pi R_{\max}^2)$
+with $R_{\max}$ the largest distance of a crystal cell from the seed (1 for a disc, small for
+needles and dendrites); *growth exponent* $n$ of $R \propto t^n$ over the second half of the
+run (1/2: diffusion controlled, 1: interface controlled); *orientation domains*: connected
+crystal regions of like orientation (12 bins, more than 20 cells); *mean misorientation*
+between neighboring crystal cells in units of $2\pi/k$ (0.25: random); *boundary fraction*:
+share of neighbor pairs with misorientation above 0.05 (18 degrees of the 90 degree period),
+a measure of grain-boundary length per area; *radial alignment*
+$\langle\cos k(\alpha-\beta)\rangle$ of the fast growth direction $\alpha = 2\pi\theta/k$ with
+the direction $\beta$ from the seed (1: fast directions point outward everywhere, the fiber
+texture of a spherulite; 0: no relation); *trapped solute* $(\bar c - c_S)/(c_L - c_S)$ of the
+crystal (0: solidus composition; $1 - S$: the liquid composition is frozen in).
+
+**Supersaturation** ($s_0 = 0.1$, $\chi_l = 360$).
+
+![Supersaturation series](../../figures/crystallization/c3_series_supersaturation_maps.png)
+
+**Figure 20.** Composition (top) and orientation (bottom, liquid black) for S = 0.7, 0.8,
+0.9, 1.0 at $s_0 = 0.1$ and $\chi_l = 360$ (PINNACLE, 500 x 500). Reading: at 0.7 and 0.8 a
+four-fold dendrite with solute piled up between the arms; at 0.9 and 1.0 the arms close into
+a faceted, nearly square crystal without a solute layer, and the orientation drifts across
+the crystal in a few low-angle sectors.
+
+**Table 21.** Measures of the supersaturation series.
+
+| S | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
+|---|---|---|---|---|---|---|---|---|---|
+| 0.7 | 2600 | 69.6 | 0.33 | 0.60 | 2 | 0.0008 | 0.0018 | 0.52 | 0.013 |
+| 0.8 | 2000 | 114.5 | 0.36 | 0.79 | 2 | 0.0005 | 0.0006 | 0.40 | 0.051 |
+| 0.9 | 1500 | 174.8 | 0.67 | 0.86 | 10 | 0.0008 | 0.0022 | 0.13 | 0.090 |
+| 1.0 | 1300 | 208.9 | 0.80 | 0.90 | 7 | 0.0008 | 0.0021 | 0.03 | -0.004 |
+
+- The form changes between S = 0.8 and 0.9: compactness 0.36 to 0.67, growth exponent 0.79
+  to 0.86 and on to 0.90. Below, growth is limited by the diffusion of rejected solute and
+  the tips escape along the fast directions; above, the solute is trapped (the composition
+  map is flat) and the whole perimeter advances at the kinetic rate.
+- The front speed rises about threefold from 0.8 to 1.0 (radius 114.5 cells in 2000 steps
+  against 208.9 in 1300).
+- Crystallography: the crystal stays one grain up to 0.8. At 0.9 and 1.0, with the same
+  orientational mobility, the fast front no longer fully orders the orientation: a few
+  low-angle sectors appear (10 and 7 domains, mean misorientation still below 0.001).
+
+**Anisotropy of the interface free energy** ($S = 0.8$, $\chi_l = 360$).
+
+![Anisotropy series](../../figures/crystallization/c3_series_anisotropy_maps.png)
+
+**Figure 21.** As Figure 20 for $s_0$ = 0, 0.025, 0.05, 0.1 at S = 0.8. Reading: without
+anisotropy the crystal is a seaweed of splitting tips; 2.5 % already selects four primary
+arms; the arms sharpen and the side branches order as $s_0$ grows.
+
+**Table 22.** Measures of the anisotropy series.
+
+| $s_0$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 2000 | 94.4 | 0.66 | 0.62 | 2 | 0.0006 | 0.0009 | 0.09 | 0.058 |
+| 0.025 | 2000 | 105.2 | 0.41 | 0.70 | 2 | 0.0005 | 0.0007 | 0.35 | 0.063 |
+| 0.05 | 2000 | 111.8 | 0.37 | 0.77 | 7 | 0.0005 | 0.0006 | 0.39 | 0.059 |
+| 0.1 | 2000 | 114.5 | 0.36 | 0.79 | 2 | 0.0005 | 0.0006 | 0.40 | 0.051 |
+
+- Anisotropy stabilizes the tip: compactness falls from 0.66 (seaweed) to 0.36 (dendrite),
+  the radius after 2000 steps grows from 94 to 115 cells and the growth exponent from 0.62
+  to 0.79: a stable tip grows steadily into fresh liquid, a splitting tip stays in its own
+  solute field.
+- Radial alignment rises from 0.09 to 0.40: with anisotropy the arms run along the fast
+  directions of the lattice, so a section through the crystal shows the lattice orientation
+  in its outline; a seaweed does not.
+
+**Orientational mobility at S = 0.8** ($s_0 = 0.1$).
+
+![Mobility series at S = 0.8](../../figures/crystallization/c3_series_mobility_s0.8_maps.png)
+
+**Figure 22.** As Figure 20 for $\chi_l$ = 18, 54, 108, 180, 360 at S = 0.8. Reading: from
+right to left the single-crystal dendrite breaks into a few arms of different orientation
+(180, 108), then into a polycrystalline dendrite (54) and a compact fine-grained particle
+(18).
+
+**Table 23.** Measures of the mobility series at S = 0.8.
+
+| $\chi_l$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
+|---|---|---|---|---|---|---|---|---|---|
+| 18 | 2000 | 63.4 | 0.60 | 0.51 | 110 | 0.0831 | 0.3680 | 0.11 | -0.031 |
+| 54 | 2000 | 92.8 | 0.48 | 0.75 | 106 | 0.0150 | 0.0581 | 0.08 | 0.006 |
+| 108 | 2000 | 106.3 | 0.42 | 0.75 | 34 | 0.0039 | 0.0153 | 0.62 | 0.028 |
+| 180 | 2000 | 109.2 | 0.39 | 0.75 | 15 | 0.0015 | 0.0052 | 0.51 | 0.040 |
+| 360 | 2000 | 114.5 | 0.36 | 0.79 | 2 | 0.0005 | 0.0006 | 0.40 | 0.051 |
+
+![Measures of the mobility series at S = 0.8](../../figures/crystallization/c3_series_mobility_s0.8_measures.png)
+
+**Figure 23.** The measures of Table 23 against $\chi_l$. Reading: the number of orientation
+domains and the misorientation rise steeply below $\chi_l$ of about 100, and the radius
+falls with them.
+
+![Misorientation distributions](../../figures/crystallization/c3_series_mobility_s0.8_misorientation.png)
+
+**Figure 24.** Probability density of the misorientation between neighboring crystal cells
+for the mobility series at S = 0.8 (logarithmic scale). Reading: at 360 and 180 nearly all
+pairs lie below 0.02 (inside grains); with falling mobility a flat tail up to 0.5 grows:
+high-angle boundaries of all misorientations, as expected for orientations frozen in from an
+unordered liquid without a preferred misfit angle.
+
+- Each halving of the mobility roughly multiplies the grain-boundary content by three to
+  four (boundary fraction 0.0006, 0.005, 0.015, 0.058, 0.37) and divides the mean domain area
+  (20,600, 2500, 1040, 255, 115 cells).
+- Growth slows as the mobility falls (radius 114.5 to 63.4 cells): a front whose orientation
+  is not ordered carries the orientational energy $hF$, which reduces the driving force.
+- The dendritic outline survives down to 108: every arm is a single crystal that started at
+  the seed with its own orientation and grows along its own fast direction (radial alignment
+  0.5 to 0.6, the highest of the series). At 54 new grains also form at the growth front and
+  the arms bend and split; at 18 the particle is a spherulite in the making.
+
+**Orientational mobility at S = 1.0** ($s_0 = 0.1$).
+
+![Mobility series at S = 1.0](../../figures/crystallization/c3_series_mobility_s1.0_maps.png)
+
+**Figure 25.** As Figure 20 for $\chi_l$ = 54, 108, 180, 240, 360 at S = 1.0. Reading: the
+same transition as at S = 0.8, shifted to higher mobility: the faceted crystal (360) is
+already a spherulite of elongated grains at 180.
+
+**Table 24.** Measures of the mobility series at S = 1.0.
+
+| $\chi_l$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
+|---|---|---|---|---|---|---|---|---|---|
+| 54 | 1300 | 202.2 | 0.98 | 0.90 | 190 | 0.1508 | 0.6451 | -0.00 | -0.004 |
+| 108 | 1300 | 205.1 | 0.94 | 0.90 | 1393 | 0.0698 | 0.3130 | 0.03 | -0.004 |
+| 180 | 1300 | 210.3 | 0.88 | 0.91 | 305 | 0.0146 | 0.0593 | 0.38 | -0.004 |
+| 240 | 1300 | 210.0 | 0.84 | 0.91 | 59 | 0.0039 | 0.0128 | 0.25 | -0.004 |
+| 360 | 1300 | 208.9 | 0.80 | 0.90 | 7 | 0.0008 | 0.0021 | 0.03 | -0.004 |
+
+- The transition from a single crystal to a polycrystal depends on the ratio of the
+  ordering rate to the front speed: at S = 1.0 the front is three times faster and the same
+  number of orientation domains is reached at about twice the mobility (15 domains at
+  $\chi_l = 180$ for S = 0.8; 59 at 240 and 305 at 180 for S = 1.0).
+- The radius is almost independent of the mobility at S = 1.0 (209 to 210 cells at 180 to
+  360): the driving force is large against the orientational energy. The envelope rounds
+  (compactness 0.80 at 360, 0.88 at 180) because grains of all orientations reach the front.
+- Solute: the trapped fraction is zero within 0.005 in all runs at S = 1.0 (the liquid has
+  the solidus composition); at S = 0.8 it rises from -0.03 to 0.05 with the mobility, that
+  is with the growth rate.
+- The domain count is a threshold measure: at $\chi_l = 54$ and S = 1.0 it drops to 190
+  although the misorientation is the highest of the series (0.15), because most grains are
+  then smaller than the 20-cell threshold. Mean misorientation and boundary fraction are the
+  measures to follow at the fine-grained end.
+
+#### 7.5.2 Summary for the user
+
+| to obtain | change | measured effect |
+|---|---|---|
+| compact, faceted crystal instead of a dendrite | raise S above about 0.85 | compactness 0.36 to 0.80, solute trapped |
+| seaweed instead of a dendrite | $s_0 \to 0$ | tip splitting, no lattice-aligned arms |
+| polycrystalline dendrite | lower $\chi_l$ to about 0.15 to 0.3 of the single-crystal value at S = 0.8 | 34 to 106 domains, dendritic outline kept |
+| spherulite | lower $\chi_l$ further, or raise S at fixed $\chi_l$ | round envelope, fine radial grains |
+| finer grains | lower $\chi_l$, raise S | domain area falls by a factor of 3 to 10 per halving of $\chi_l$ |
+
+Not varied yet: $h$, the noise amplitudes, the seed size, the symmetry index $k$. The series
+for fibrillar growth (kinetic anisotropy, branching weight and angle) are running.
 
 ### 7.6 Cost
 
@@ -1145,7 +1307,160 @@ PINNACLE 3500 s (1.09 s per step), reference 0.12 s per step. The paper's size f
 (4000 x 4000, 13,500 steps) would take about 2.5 to 3 days on PINNACLE and 7 to 8 hours on
 the reference; not run.
 
-## 8. Limits
+## 8. The density-coupled model: crystal nucleation in the hard-sphere liquid
+
+### 8.1 Purpose
+
+The single-field model of section 3 takes the driving force as a number and gives the
+crystal the density of the liquid. In the hard-sphere system, the reference system of
+nucleation theory (colloidal suspensions realize it), the crystal is about 10 % denser than
+the liquid, the thermodynamics is known from equations of state, and the nucleation barrier
+is known from Monte Carlo simulation (auer 2001 prediction). The model of
+(granasy 2003 hardsphere) couples a structural order parameter to the density and predicts
+the barrier without an adjustable parameter. It answers: how large is the barrier when the
+nucleus is so small that it has no bulk crystal at its center, and how far is the classical
+droplet model off. The case tests a capability the earlier sections do not: a free energy
+given by equations of state and a second field without a gradient term.
+
+### 8.2 Governing equations
+
+Fields: the structural order parameter $m$ (1 liquid, 0 crystal) and the volume fraction
+$\phi = \pi\sigma^3\rho/6$ ($\sigma$ the sphere diameter, $\rho$ the number density). The
+Helmholtz free energy is (granasy 2003 hardsphere, Eq. 1-2)
+
+$$
+F = \int \Big\{ \frac{bT}{2}|\nabla m|^2 + wT\,g(m) + [1-p(m)]\,f_S(\phi) + p(m)\,f_L(\phi) \Big\}\,d\mathbf r ,
+\qquad g = \tfrac14 m^2(1-m)^2,\quad p = m^3(10-15m+6m^2).
+$$
+
+The particle number is conserved, so the critical fluctuation in a liquid of volume fraction
+$\phi_\infty$ is an extremum of the grand potential $\Omega = F - \mu_\infty N$ (Eq. 4-6):
+
+$$
+bT\Big(m'' + \frac{2}{r}m'\Big) = wT\,g'(m) + p'(m)\,[f_L(\phi) - f_S(\phi)], \qquad
+[1-p(m)]\,\mu_S(\phi) + p(m)\,\mu_L(\phi) = \mu_\infty .
+$$
+
+The second equation has no gradient: the density follows the structure point by point. The
+work of formation is $W^* = \int 4\pi r^2\,\{ \tfrac{bT}{2}m'^2 + \Delta\omega \}\,dr$ with
+$\Delta\omega = f - \mu_\infty\rho + p_\infty$ (Eq. 8). The bulk free energies follow from
+the equations of state $Z(\phi) = p/(\rho kT)$ by $\partial a/\partial\phi = Z/\phi$ ($a$ per
+particle), $\mu = a + Z$, $f = \rho a$. The classical droplet model gives
+$W^*_{\rm CNT} = (16\pi/3)\,\gamma_\infty^3/\Delta\omega_{\max}^2$ with the largest gain
+$\Delta\omega_{\max}$ over the density of the crystal.
+
+The coefficients $b$ and $w$ are fixed at coexistence by the interface free energy and the
+10-90 % interface thickness (Eq. 10-11):
+
+$$
+\gamma_\infty = \sqrt{2bT}\int_0^1 \sqrt{\Delta\omega[\xi,\phi(\xi)]}\,d\xi, \qquad
+d_{10\text{-}90} = \sqrt{bT/2}\int_{0.1}^{0.9} \frac{d\xi}{\sqrt{\Delta\omega[\xi,\phi(\xi)]}} .
+$$
+
+In PINNACLE: kernels `hs_phase_bulk` ($m$ row), `hs_density_equilibrium` ($\phi$ row) and
+`ac_interface` (gradient term) on a radial line with the spherical volume element, solved by
+Newton iteration with exact tangents (ADR 0041).
+
+### 8.3 Parameters
+
+**Table 25.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
+
+| quantity | value | provenance | source |
+|---|---|---|---|
+| fluid equation of state | Hall, rational form | `derived` (cited, not printed, in the paper; coefficients verified in two open reproductions) | (hall 1972 another) |
+| fcc solid equation of state | Hall, polynomial fit in $\beta = 4(1-\phi/\phi_{cp})$ | `derived`: reproduces the paper's solid densities 0.5796, 0.5875, 0.5948 to four digits; Hall's rational solid form gives 0.5784, 0.5865, 0.5939 | (hall 1972 another) |
+| coexistence, liquid | 0.494 | `reported_text` | (granasy 2003 hardsphere) |
+| coexistence, solid | 0.5466, at equal pressure 11.81 (paper: 0.546, 11.81) | `derived` | this work |
+| interface free energy $\gamma_\infty$ | 0.58 (111), 0.62 (100), 0.64 (110), average 0.6133 | `reported_text` | (davidchack 2000 direct) through (granasy 2003 hardsphere) |
+| 10-90 % thickness | 5.94 (111), 5.54 (100), 4.75 (110), average 5.410 | `reported_text` | (granasy 2003 hardsphere) |
+| $b$, $w$ (average) | 4.38593, 3.44567 | `derived` from the two rows above | this work |
+| $b$, $w$ (111) / (100) / (110) | 4.52380, 2.63226 / 4.53801, 3.37041 / 4.04335, 4.55772 | `derived` | this work |
+
+The solid's additive constant is fixed by equal chemical potential at this coexistence.
+Fixing it at the printed 0.546 instead leaves a pressure mismatch of 0.05 and gives
+$W^* = 22$ instead of 40.6: the barrier is very sensitive to the consistency of the two
+free-energy branches.
+
+### 8.4 Cases and results
+
+Case F1. Decks `decks/crystallization/hard_sphere/f1_nucleus_<interface>_phi<value>_fem.i`
+(28 decks: four interface data sets, seven volume fractions; radial line of 60 $\sigma$,
+2400 elements). Reference: `scripts/cryst_hard_sphere_reference.py`, a shooting solution of
+the same equations, independent of PINNACLE.
+
+**Table 26.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
+halfway between its center value and 1; $\Delta N$: excess number of particles of the
+nucleus.
+
+| $\phi_\infty$ | $W^*/kT$ PINNACLE | reference | relative difference | classical | ratio | $m(0)$ | $\phi(0)$ | $R_{1/2}/\sigma$ | $\Delta N$ | Newton iterations |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0.5207 | 40.627 | 40.626 | +1.8e-05 | 29.21 | 1.39 | 0.115 | 0.5813 | 3.94 | 24.3 | 5 |
+| 0.5240 | 31.343 | 31.342 | +1.8e-05 | 22.08 | 1.42 | 0.145 | 0.5842 | 3.52 | 16.7 | 5 |
+| 0.5277 | 23.994 | 23.993 | +1.9e-05 | 16.61 | 1.44 | 0.182 | 0.5865 | 3.17 | 11.4 | 5 |
+| 0.5310 | 19.205 | 19.205 | +1.9e-05 | 13.16 | 1.46 | 0.218 | 0.5877 | 2.93 | 8.4 | 5 |
+| 0.5343 | 15.540 | 15.539 | +1.9e-05 | 10.60 | 1.47 | 0.258 | 0.5879 | 2.75 | 6.3 | 5 |
+| 0.5400 | 10.963 | 10.963 | +1.9e-05 | 7.53 | 1.46 | 0.336 | 0.5855 | 2.55 | 4.0 | 5 |
+| 0.5500 | 6.104 | 6.104 | +1.8e-05 | 4.46 | 1.37 | 0.485 | 0.5777 | 2.44 | 2.0 | 4 |
+
+- At $\phi_\infty = 0.5207$ PINNACLE gives $W^* = 40.627\,kT$; the paper prints 40.63
+  (accuracy tier 2: a number from the text). All 28 runs agree with the independent
+  reference to $3\times10^{-5}$, the discretization error of the 0.025 $\sigma$ mesh.
+- The Monte Carlo barriers at 0.5207, 0.5277 and 0.5343, read from Fig. 5 of the paper's
+  preprint (`digitized`, about $\pm 1$), are about 42, 26 and 19: the model gives 40.6, 24.0
+  and 15.5, the classical droplet model 29.2, 16.6 and 10.6.
+
+![Hard-sphere nucleation barrier](../../figures/crystallization/f1_barrier.png)
+
+**Figure 26.** Left: nucleation barrier against the volume fraction of the liquid; lines:
+independent reference, circles: PINNACLE, for the average interface data and the three
+orientations; dashed: classical droplet model with the average interface free energy;
+squares: Monte Carlo (digitized); star: the value printed in the paper. Right: ratio of the
+barrier to the classical one and the order parameter at the center of the nucleus. Reading:
+the phase-field barrier lies 37 to 47 % above the classical one over the whole range and
+close to the simulation points; the center of the nucleus is never bulk liquid-free crystal
+at small sizes ($m(0)$ rises from 0.11 to 0.48).
+
+![Hard-sphere nucleus profiles](../../figures/crystallization/f1_profiles.png)
+
+**Figure 27.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
+the three Monte Carlo states (thin lines: PINNACLE; broad pale lines: reference). Reading:
+the interface is as wide as the nucleus; the density at the center (0.581 to 0.588) stays
+below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
+
+### 8.5 What to expect when the parameters change
+
+- Volume fraction of the liquid: the barrier falls from 40.6 to 6.1 $kT$ between 0.5207 and
+  0.5500, the nucleus shrinks from $R_{1/2} = 3.9$ to 2.4 $\sigma$ and from 24 to 2 excess
+  particles, and its center loses crystallinity ($m(0)$ from 0.11 to 0.48). Beyond about
+  0.55 the "nucleus" is a weak ripple of structure rather than a crystallite.
+- Interface data (Table 27): the barrier scales roughly with $\gamma_\infty^3$, as in the
+  classical theory, but the interface thickness matters as well: the (110) data (largest
+  $\gamma_\infty$, thinnest interface) give the highest barrier, the (111) data the lowest.
+  A 10 % change of $\gamma_\infty$ changes the barrier by about 30 %.
+- The ratio to the classical barrier stays between 1.37 and 1.47 over the range: the
+  classical model underestimates the barrier, that is overestimates the nucleation rate by
+  $e^{11}$ at 0.5207.
+- Equations of state: the constant between the two branches must come from a consistent
+  coexistence (section 8.3). Hall's two solid forms differ by 0.3 % in pressure near
+  melting; only the polynomial form reproduces the solid densities printed in the paper.
+
+**Table 27.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
+
+| $\phi_\infty$ | (111) | (100) | average | (110) |
+|---|---|---|---|---|
+| 0.5207 | 34.81 | 42.03 | 40.63 | 45.14 |
+| 0.5277 | 20.28 | 24.80 | 23.99 | 26.85 |
+| 0.5343 | 12.84 | 16.04 | 15.54 | 17.64 |
+| 0.5500 | 4.60 | 6.26 | 6.10 | 7.40 |
+
+### 8.6 Cost
+
+Each deck runs in about 3 s on one laptop core (4 to 5 Newton iterations on 2401 nodes with
+two unknowns); the reference takes 40 s for all 28 states. Routes: FE only so far. The
+tabulated free energies have no network form in PINNACLE (ADR 0041); a stationary PINN and
+the hybrid for this case need a differentiable equation-of-state closure and are not done.
+
+## 9. Limits
 
 - Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
   need `pf_pinn`, which does not yet carry the spherical term (A5), and a per-step predictor
@@ -1160,8 +1475,12 @@ the reference; not run.
   case is one realization; panel (a) differs from the published one in the scale of the
   cells.
 - C3: $h$ is assumed and not yet calibrated; one realization per case; 500 x 500 only for
-  the Fig. 4 conditions and 1000 x 1000 for the Fig. 5 conditions. The cases C4 to C6, E1 to
-  E5 and the phase-field crystal (D) are not started.
+  the Fig. 4 conditions and 1000 x 1000 for the Fig. 5 conditions; the parameter series of
+  section 7.5 are one realization per point. The fibrillar cases (C4) are running; C5, C6,
+  E1 to E5 and the phase-field crystal (D) are not started.
+- F1 (hard spheres): FE route only; the Monte Carlo points are read by eye from a figure.
+  Of the four models added on 2026-11-17, the eutectic (binary and ternary) and the
+  three-dimensional quaternion model are not implemented yet.
 - Neural results are over 5 seeds at $\Delta T/T_f = 0.20$ and one seed elsewhere. The cost
   of the development runs behind `pf_pinn_stationary` and `pf_fem_saddle` (about 40
   exploratory runs of 1 to 90 s) is not in the wall times of the tables.
@@ -1169,11 +1488,49 @@ the reference; not run.
   float64, numpy backend for FE and torch 2.13.0 (CPU) for the network routes; no GPU on
   that machine. Section 7 ran on the rocm-server GPU.
 
-## 9. Computational cost at larger sizes
+## 10. Computational cost at larger sizes
 
-Pending.
+Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
+fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-## 10. References
+**Table 28.** Measured cost per time step.
+
+| hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
+|---|---|---|---|---|---|
+| laptop, Intel Core i9-9980HK, 8 threads | NumPy | 3.2 s | 12.3 s | -- | 4.9e-5 s |
+| the same | Torch, CPU | 1.3 s | 4.9 s | -- | 2.0e-5 s |
+| AMD Ryzen AI Max+ 395, integrated Radeon 8060S (ROCm) | Torch, GPU | -- | 0.24 to 0.31 s | 1.09 s | 1.1e-6 s |
+| the same GPU, independent finite-difference reference | Torch, GPU | -- | 0.04 to 0.05 s | 0.12 s | 1.2e-7 to 2e-7 s |
+
+A crystal that grows at constant speed needs a number of steps proportional to the box edge
+$N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
+$4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
+
+**Table 29.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 28; `derived`, not measured beyond 1000 x 1000).
+
+| grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
+|---|---|---|---|---|
+| 250 x 250 | 1000 | 22 min | (not measured; under 2 min by scaling) | any desktop |
+| 500 x 500 | 2000 | 2.7 h | 8 to 10 min (measured) | desktop CPU overnight, or any GPU |
+| 1000 x 1000 | 4000 | 22 h | 1.2 h (3200 steps measured: 58 min) | GPU with 8 GB or more |
+| 2000 x 2000 | 8000 | 7 days | 10 h | GPU with 16 GB or more |
+| 4000 x 4000 | 13,500 (paper, Fig. 5) | about 50 days | 2.5 to 3 days | GPU with 32 GB or more, or the stencil reference (7 to 8 h) |
+
+- Memory: the 1000 x 1000 run used 3.3 GB of host memory; the GPU memory was not recorded.
+  The element-wise arrays scale with the number of elements, so the 4000 x 4000 figure is an
+  extrapolation and was not tested.
+- A discrete GPU was not available; it is expected to be faster than the integrated one,
+  by a factor that was not measured.
+- TPU: the explicit path has array namespaces for NumPy and Torch only
+  (`backend/array_namespace.py`). PINNACLE has JAX and TensorFlow backends for the network
+  routes, but the explicit executioner does not use them, so these cases cannot run on a
+  TPU today.
+- The stationary cases (sections 3, 4 and 8) cost seconds to minutes on one core at any of
+  the sizes used and need no accelerator.
+- Three-dimensional cases are not measured yet.
+
+## 11. References
 
 Keys of `bib/references.bib`, by model.
 
@@ -1196,3 +1553,6 @@ Orientation-field model (section 7): kobayashi-1998-vector; kobayashi-2000-conti
 warren-2003-polycrystalline; granasy-2002-binary; granasy-2004-mechanism;
 granasy-2004-modelling; granasy-2005-spherulites; pusztai-2005-polycrystalline;
 granasy-2006-review; granasy-2021-biomineralization.
+
+Density-coupled hard-sphere model (section 8): granasy-2003-hardsphere; hall-1972-another;
+auer-2001-prediction; davidchack-2000-direct.

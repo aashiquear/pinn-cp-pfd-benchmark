@@ -293,3 +293,44 @@ paper to keep in view: there the crystal is a single square until a critical siz
 grains appear later; here sectors already start at the seed for chi_l <= 300, which depends
 on the seed (12 cells, random orientation around it) and on the assumed h and noise.
 
+## 9. Scope extension of 2026-11-17 (author's fifth message)
+
+Decisions: chi_l = 240 for the Fig. 5 conditions; no 4000^2 / 5000^2 runs for now; every case
+at a size a desktop finishes within hours, with a cost table for larger sizes; a parameter
+series with intermediate values for every model ("what to expect when the parameters
+change"); the report in journal form. The four models set aside in section 8.3 are to be
+implemented in PINNACLE and benchmarked.
+
+### 9.1 Sources read for the four models
+
+Full extraction (equations with numbers, printed parameters, what is not stated, candidate
+cases, contradictions between papers): `results/crystallization/lit/additional_models_extraction.md`
+(local, not shipped). PDFs under `data/literature/` (not shipped).
+
+| model | primary source read | not obtained |
+|---|---|---|
+| F1 hard-sphere nucleus with a density-coupled phase field | Granasy, Pusztai, Toth, Jurek, Conti, Kvamme, J. Chem. Phys. 119, 10376 (2003), arXiv cond-mat/0306527 | the Hall (1970) equations of state it uses are cited, not printed; b and w are not printed (they follow from gamma and the 10-90 % thickness) |
+| F2 binary eutectic, regular solution (Ag-Cu) | Ratkai, Toth, Kornyei, Pusztai, Granasy, J. Mater. Sci. 52, 5544 (2017): model without orientation field, all numbers printed | -- |
+| F2b the same with the orientation field (PF2 of the 2021 paper) | 2021 JACS Au Eq. 1-7, Tables 3-5; handbook chapter arXiv cond-mat/0703676, appendix A | Lewis, Pusztai, Granasy, Warren, Boettinger, JOM 56(4), 34 (2004): the constants a, b, m, c_alpha, c_beta, eps_theta of the orientational term are printed only there (paywalled) |
+| F3 ternary eutectic in 3-D (PF3) | Ratkai, Szallas, Pusztai, Mohri, Granasy, J. Chem. Phys. 142, 154501 (2015), arXiv 1503.08318; Pusztai et al., Phys. Rev. E 87, 032401 (2013) | flux-noise amplitude, lateral boundary conditions, the initial two-phase pattern |
+| F4 quaternion orientation field in 3-D | Pusztai, Bortel, Granasy, Europhys. Lett. 71, 131 (2005), arXiv cond-mat/0502594; MCWASP XI (2006); arXiv 0806.2234 | Mater. Sci. Eng. A 413-414, 412 (2005) (paywalled); H, the anisotropy magnitude and the noise amplitudes are not printed in the letter |
+
+Correction to section 8.3: Fig. 4 of the 2006 review (nucleation on stairs, cubes, a
+checkerboard in 3-D) was computed without an orientation field (Philos. Mag. 86, 3757,
+p. 3767); the quaternion results of that review are its Fig. 8. The phase-field curve of its
+Fig. 2 comes from a diploma thesis with density-dependent coefficients that are not printed;
+the benchmark target for F1 is the 2003 paper.
+
+### 9.2 Cases, targets and what PINNACLE needs
+
+| id | case | target (provenance) | size | new in PINNACLE |
+|---|---|---|---|---|
+| F1 | critical nucleus of the hard-sphere crystal, structural order parameter m and volume fraction slaved by equal chemical potential | W*/kT = 40.63 at volume fraction 0.5207 (`reported_text`); coexistence 0.494 / 0.546; crossing with the classical theory at 0.5781; profiles at 0.5207, 0.5277, 0.5343; Monte Carlo points of Auer and Frenkel (`digitized`) | 1-D spherical, seconds | a bulk kernel with a locally eliminated second field (or an algebraic row), equations of state as closures |
+| F2 | lamellar eutectic growth of Ag-Cu; lamellae, globules and bands with undercooling | lambda^2 v = 0.41e-17 m^3/s (`reported_text`); sequence of Fig. 4 of the 2017 paper (160 nm x 320 nm) | 2-D, 1e5 cells | regular-solution bulk and solute kernels; composition-gradient energy (fourth order): an auxiliary chemical-potential variable in `pf_fem_explicit` |
+| F2b | equiaxed eutectic grains with a locked orientation relation | qualitative (handbook Fig. 9); Avrami exponent about 3 | 2-D | orientational energy h(c) F1 + [1 - h(c)] F2; blocked on the JOM 2004 constants |
+| F3 | ternary eutectic: flat lamellar front, colonies, two-phase dendrite, partitionless growth with pulling velocity; spiraling dendrite | regime sequence of Fig. 5; lambda proportional to v^(-1/2) (Fig. 6); partitionless above v = 0.35 | paper: 96 x 96 x 612 and 3.6e6 steps (not desktop); here 2-D sections and a short 3-D box | ternary kernels, mobility matrix, moving frame (pulling), temperature gradient along z, 3-D kinetic anisotropy |
+| F4 | polycrystalline growth in 3-D with quaternions: several dendritic particles, a polycrystalline spherulite, nucleation and Avrami kinetics | qualitative (letter Fig. 2-4); p decreasing from about 4 (Fig. 3, `digitized`) | paper: 200^3 to 300^3; here 64^3 to 100^3 | four-component unit-norm variable, quaternion flux kernel and coupling, unit-norm projection in the executioner, 3-D kinetic anisotropy |
+
+Order: F1 (quantitative, cheap), then the auxiliary-variable capability with F2 and F3, then
+F4. F2b waits for the JOM 2004 paper.
+

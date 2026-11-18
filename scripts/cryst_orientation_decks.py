@@ -68,7 +68,79 @@ def deck(s: float, s0: float, chi: float, member_of: list[str]) -> str:
     return text
 
 
+# Fig. 6 of the paper: fibrillar growth with fixed-angle branching. Two-fold kinetic coefficient
+# with 99.5 % anisotropy, isotropic interface energy, branching energy with m = 3 (30 degrees for
+# a two-fold crystal) and weight x = 0.15; the paper varies S. Added here: x and delta0 at S = 0.9.
+FIBRIL_STEPS = {0.75: 2600, 0.85: 2000, 0.9: 1700, 0.95: 1500, 1.0: 1300, 1.1: 1100}
+FIBRIL = {
+    "supersaturation": [(s, 0.15, 0.995) for s in (0.75, 0.85, 0.9, 0.95, 1.0, 1.1)],
+    "branching_weight": [(0.9, x, 0.995) for x in (0.0, 0.05, 0.15, 0.3)],
+    "kinetic_anisotropy": [(0.9, 0.15, d) for d in (0.0, 0.5, 0.9, 0.995)],
+}
+
+
+def fibril_name(s: float, x: float, delta0: float) -> str:
+    return f"c4_s{s:g}_x{x:g}_d{delta0:g}_fem"
+
+
+def fibril_deck(s: float, x: float, delta0: float, member_of: list[str]) -> str:
+    text = BASE.read_text()
+    steps = FIBRIL_STEPS[s]
+    c_inf = C_L - s * (C_L - C_S)
+    head = (
+        "# Part IV, case C4 (FE route): fibrillar growth with fixed-angle branching, from needle\n"
+        "# crystals to category 2 spherulites, after Fig. 6 of (granasy 2005 spherulites).\n"
+        f"# Supersaturation S = {s:g}; two-fold kinetic coefficient M = 1 + delta0 cos(2 vartheta - 2 pi theta)\n"
+        f"# with delta0 = {delta0:g}; isotropic interface free energy; orientational energy\n"
+        f"# x F0 + (1 - x) F1 with x = {x:g}, m = 3 (preferred misorientation 30 degrees), n = 1/2.\n"
+        f"# Member of the series: {', '.join(member_of)}. Seed crystal at 30 degrees (theta = 1/6).\n"
+        "# ASSUMED beyond the header below: chi_l = 360 (not stated for this figure).\n"
+    )
+    text = head + "\n".join(text.split("\n")[3:])
+    text = text.replace("orientation in units of 2 pi / 4:", "orientation in units of 2 pi / 2 (two-fold crystal):")
+    text = text.replace(
+        "#     s = 1 + s0 cos(4 vartheta - 2 pi theta),  F(u) = |sin(pi u)| (u < 1/2),  u = xi0 |grad theta|",
+        "#     s = 1 (isotropic); the phi equation is multiplied by M(vartheta, theta);\n"
+        "#     F = x F0 + (1 - x) F1, F0 = |sin(2 pi m u)| (u < 3/(4m)), F1 = |sin(2 pi n u)| (u < 1/(4n)),\n"
+        "#     both 1 beyond; u = xi0 |grad theta|",
+    )
+    text = sub(text, r"c_inf = [0-9.]+;", f"c_inf = {c_inf:.6f};")
+    text = sub(text, r"^# EXPECTED RESULT\..*$",
+               "# EXPECTED RESULT. See the series table of the Part IV report (fibrillar growth, "
+               "\"What to expect when the parameters change\").")
+    text = sub(text, r"output_dir = .*", f"output_dir = results/crystallization/orientation/fibril/{fibril_name(s, x, delta0)}")
+    text = sub(text, r"expression = 0\.399112\+[0-9.]+\*", f"expression = {C_S:.6f}+{c_inf - C_S:.6f}*")
+    text = sub(text, r"inside   = 0\.0", "inside   = 0.1666667     # 30 degrees in units of pi")
+    text = sub(text, r"anisotropy_strength  = .*", "anisotropy_strength  = 0.0")
+    text = sub(text, r"anisotropy_mode      = 4",
+               "anisotropy_mode      = 2\n"
+               f"    kinetic_anisotropy_strength = {delta0:g}     # delta0 (paper: 0.995)\n"
+               "    kinetic_anisotropy_mode     = 2")
+    text = sub(text, r"orientation          = theta .*", "orientation          = theta      # each grain has its frame")
+    for _ in range(2):  # the coupling kernel and the flux kernel
+        text = sub(text, r"branch_fraction    = 0\.0.*\n(\s*)branch_n           = 0\.5",
+                   f"branch_fraction    = {x:g}        # x: weight of the branching energy F0\n"
+                   "\\1branch_m           = 3.0\n\\1branch_n           = 0.5")
+    text = sub(text, r"mobility_liquid    = .*", "mobility_liquid    = 360       # chi_l")
+    text = sub(text, r"n_steps         = \d+", f"n_steps         = {steps}")
+    text = sub(text, r"snapshots_every = \d+", f"snapshots_every = {steps // 20}")
+    text = text.replace("2000 steps, field series", f"{steps} steps, field series")
+    text = text.replace("every 100 steps.", f"every {steps // 20} steps.")
+    return text
+
+
 def main() -> None:
+    fib_out = ROOT / "decks/crystallization/orientation/fibril"
+    fib_out.mkdir(parents=True, exist_ok=True)
+    fib: dict[tuple[float, float, float], list[str]] = {}
+    for series, cases in FIBRIL.items():
+        for case in cases:
+            fib.setdefault(case, []).append(series)
+    for (s, x, d), member_of in sorted(fib.items()):
+        path = fib_out / f"{fibril_name(s, x, d)}.i"
+        path.write_text(fibril_deck(s, x, d, member_of))
+        print(path.relative_to(ROOT), member_of)
+    print(len(fib), "fibril decks")
     OUT.mkdir(parents=True, exist_ok=True)
     members: dict[tuple[float, float, float], list[str]] = {}
     for series, cases in SERIES.items():
