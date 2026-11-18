@@ -56,9 +56,9 @@ components marked with an ADR number were added to PINNACLE for this part (branc
 | Orientation field (7) | $\phi$, $c$, $\theta$ | the binary kernels, plus `orientation_grain_flux`, `orientation_phase_coupling`, `ac_interface_anisotropic orientation = theta`, initial condition `uniform_random` | `pf_fem_explicit` on the Torch (GPU) path, angular variable, sub-cycling | ADR 0040 (`8454620`, `ef9a7cd`) |
 | Fibrillar growth, gallery, pinning (7.5) | $\phi$, $c$, $\theta$ | the same, with `kinetic_anisotropy_strength`, `kinetic_anisotropy_mode` of `ac_interface_anisotropic`; `pinned_fraction` of the executioner (orientation pinning centers); `driving_a_function`, `driving_b_function`, `bounded_interpolation` of `wb_phase_bulk` (temperature programs) | `pf_fem_explicit` | `24f86b3`, `94f9215` |
 | Hard spheres (8) | $m$, $\phi$ (volume fraction) | `hs_phase_bulk`, `hs_density_equilibrium` (Hall equations of state), `ac_interface` | `pf_fem_transient` (one implicit step, Newton iteration) | ADR 0041 (`d35d88e`) |
-| Regular-solution eutectic | $\phi$, $c$, $\mu$ (auxiliary), $\theta$ | `rs_phase_bulk`, `rs_chemical_potential`, `rs_solute_flux`; `eo_grain_flux`, `eo_phase_coupling`, `eo_potential_coupling` | `pf_fem_explicit` with `auxiliary_variables` | ADR 0042 (`a2a7dad`) |
-| Ternary eutectic | $\phi$, $c_1$, $c_2$, $\mu_1$, $\mu_2$, $\mu_3$ (auxiliary) | `ts_phase_bulk`, `ts_chemical_potential`, `ts_solute_flux` | `pf_fem_explicit` with `auxiliary_variables` | ADR 0044 (`94f9215`) |
-| Quaternion orientation field, three dimensions | $\phi$, $c$, $q$ (4 components) | the binary kernels, plus `quaternion_grain_flux`, `quaternion_phase_coupling`, `cubic_kinetic_anisotropy`; initial condition `random_unit_quaternion` | `pf_fem_explicit` with `unit_norm_variables` | ADR 0043 (`94f9215`) |
+| Regular-solution eutectic (10) | $\phi$, $c$, $\mu$ (auxiliary), $\theta$ | `rs_phase_bulk`, `rs_chemical_potential`, `rs_solute_flux`; `eo_grain_flux`, `eo_phase_coupling`, `eo_potential_coupling` | `pf_fem_explicit` with `auxiliary_variables` | ADR 0042 (`a2a7dad`) |
+| Ternary eutectic (11) | $\phi$, $c_1$, $c_2$, $\mu_1$, $\mu_2$, $\mu_3$ (auxiliary) | `ts_phase_bulk`, `ts_chemical_potential`, `ts_solute_flux` | `pf_fem_explicit` with `auxiliary_variables` | ADR 0044 (`94f9215`) |
+| Quaternion orientation field, three dimensions (9) | $\phi$, $c$, $q$ (4 components) | the binary kernels, plus `quaternion_grain_flux`, `quaternion_phase_coupling`, `cubic_kinetic_anisotropy` (`energy_shape = linear`); initial condition `random_unit_quaternion` | `pf_fem_explicit` with `unit_norm_variables` | ADR 0043 (`94f9215`, addendum `4bad49b`) |
 
 Spherical symmetry is a property of the mesh: `[Mesh] coordinate_system = spherical` puts the
 volume element $4\pi r^2$ into every quadrature weight, so the weak form
@@ -151,10 +151,10 @@ this part. Every parameter carries a provenance tag: `reported_table`, `reported
 ### 2.5 Hardware and revisions
 
 Sections 3 to 6: Intel Core i9-9980HK, 2 to 6 threads, float64, NumPy backend for FE and
-Torch 2.13.0 (CPU) for the network routes. Section 7: host rocm-server, Radeon 8060S GPU
+Torch 2.13.0 (CPU) for the network routes. Sections 7 and 9 to 11: host rocm-server, Radeon 8060S GPU
 (Torch with ROCm), float64. PINNACLE revisions: `ddaeb91` for section 3 (cases A1, A2, A4,
 A5 and the three routes at one undercooling), `cd2d3d3` for the network family and guess scan
-of section 3 and for sections 4 and 5, `cd2288f` for section 6, `ef9a7cd` for sections 7.4.1 to 7.4.3, `24f86b3` for sections 7.5.1 and 7.5.2, `d35d88e` for section 8, `94f9215` for sections 7.4.4 and 7.5.3. The runs on rocm-server use a copy of the PINNACLE source at the stated revision.
+of section 3 and for sections 4 and 5, `cd2288f` for section 6, `ef9a7cd` for sections 7.4.1 to 7.4.3, `24f86b3` for sections 7.5.1 and 7.5.2, `d35d88e` for section 8, `94f9215` for sections 7.4.4, 7.5.3 to 7.5.5, 10 and 11, `4bad49b` for section 9. The runs on rocm-server use a copy of the PINNACLE source at the stated revision.
 
 ## 3. The single-field model: interface, front and critical nucleus
 
@@ -1568,7 +1568,7 @@ disc of 10 cells at 30 degrees) and the noise amplitudes (those of section 7.3).
 grids are 500 to 3000 cells wide; all panels are run here at 500 x 500, so that for the
 panels with larger grids only the first part of the growth is seen. With
 $s_0 \ge 0.5$ the explicit step is halved (assumed, for stability). The comparison is
-qualitative (tier 4).
+qualitative (tier 3).
 
 ![Gallery](../../figures/crystallization/c6_gallery.png)
 
@@ -1592,9 +1592,23 @@ composition below it. Panel (e) is missing: see the note under Table 30.
 | (i) | 0.9 | 0.5 | 0 | 0 | 0.8 | 180 | 1000 | 3400 | 0.23 | 0.73 | 30 | 0.005 | 0.77 |
 | (j) | 0.875 | 0 | 0.995 | 0.2 (15°) | 1 | 18 | 3000 | 1850 | 0.64 | 0.59 | 91 | 0.558 | 0.18 |
 
-Panel (e) ($\chi_l$ = 1440, four times the standard value) became non-finite after 560 steps
-with 10 orientation sub-steps per step. The orientation sub-step has to shrink in proportion
-to $\chi_l$; the deck now uses 40 sub-steps and the run is repeated.
+Panel (e) ($s_0$ = 0.75, $\chi_l$ = 1440) was not obtained. Three runs became non-finite
+early in the growth:
+
+| time step | orientation sub-steps | non-finite at time |
+|---|---|---|
+| 2.375e-6 | 10 | 0.00133 (560 steps) |
+| 2.375e-6 | 40 | 0.00143 |
+| 1.1875e-6 | 20 | 0.00189 |
+
+More orientation sub-steps and a smaller step delay the failure but do not remove it, so it
+is not the stability limit of the orientation equation. The probable cause is the interface
+anisotropy: for a two-fold anisotropy $1 + s_0\cos 2\vartheta$ the interface stiffness
+$1 - 3 s_0 \cos 2\vartheta$ is negative over a range of directions once $s_0 > 1/3$, and at
+$s_0 = 0.75$ it reaches -1.25, where the gradient term acts as backward diffusion. The
+panels with $s_0$ = 0.335 and 0.5 ran. The cause was not isolated further (no field was
+saved at the failure); a regularized anisotropy for missing orientations is not in PINNACLE
+(section 12).
 
 Reading, panel by panel, against Fig. 10 of the paper:
 
@@ -1668,7 +1682,7 @@ on 6.25 % of the nodes. Right: without centers, orientational mobility divided b
   grows by diffusion (exponent 0.42).
 - Both routes turn it into a branched polycrystal: 60 and 44 orientation domains, arms
   pointing in all directions, about twice the crystallized area and a growth exponent of 0.69
-  in both. This is the duality of the paper, reproduced in kind (tier 4).
+  in both. This is the duality of the paper, reproduced in kind (tier 3, qualitative).
 - The two forms are similar, not equal. With particles the grains are speckled (the centers
   stay inside the crystal as point defects: mean misorientation 0.032 against 0.005) and the
   arms are irregular; with low mobility the arms are clean single grains that fan out from
@@ -1736,7 +1750,7 @@ Animations: `figures/crystallization/e5_rough_wall_<run>.gif`.
 - Limits of the evidence: 23 crystals; the first runs at 0.0048 and 0.0054 use the same
   random numbers (scaled), so their crystal on the top wall at the same place is one event,
   not two. The side walls make the two end grooves sharper than the inner ones; a box
-  periodic along the wall would give equal grooves. Accuracy: tier 4 (the paper shows the
+  periodic along the wall would give equal grooves. Accuracy: tier 3, qualitative (the paper shows the
   preference for grooves in one image and prints no count).
 
 *What to expect.* Deeper or sharper grooves lower the barrier in proportion to the opening
@@ -2006,7 +2020,7 @@ sub-steps per step. Measures and figures: `scripts/cryst_quaternion_figures.py`.
 compact polycrystalline spherulite when the orientational mobility is reduced by a factor
 of 3 to 3.5, and several seeds that grow into dendrites with arms along their own cubic
 axes at $S$ = 0.78. No number is printed for either; the comparison is of the form
-(tier 4).
+(tier 3, qualitative).
 
 ![Three-dimensional series](../../figures/crystallization/f4_spherulite_views.png)
 
@@ -2057,7 +2071,7 @@ Animation: `figures/crystallization/f4_dendrites_<run>.gif`.
 - Dendrite arms do not form. The crystals meet at a radius of about 13 cells, before the
   front has developed arms. The paper's box is 300 cells wide. This part of the case
   is not reproduced at 64 cells; it shows multi-grain growth and impingement only.
-- Accuracy: tier 4 (form) for the spherulite, with the transition found at the mobility
+- Accuracy: tier 3, qualitative, for the spherulite, with the transition found at the mobility
   reduction the paper quotes; the dendrite form is not reached.
 
 ### 9.5 What to expect when the parameters change
@@ -2167,7 +2181,7 @@ front, eutectic colonies, two-phase dendrites, and partitionless growth above a 
 0.35; the lamellar spacing follows $\lambda \propto v^{-1/2}$. Their runs are
 three-dimensional and pulled through a gradient. A two-dimensional section at uniform
 driving force cannot form the dendrite. The comparison is of the sequence from lamellar to
-partitionless growth (tier 4).
+partitionless growth (tier 3, qualitative).
 
 #### 11.4.1 Series in the driving force
 
