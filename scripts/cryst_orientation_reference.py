@@ -75,6 +75,7 @@ def main() -> None:
     grid, case = deck["Grid"], deck["Case"]
     n, dx, dt = int(grid["n"]), float(grid["dx"]), float(grid["dt"])
     steps, save_every = int(grid["steps"]), int(grid["save_every"])
+    frame_every = int(grid.get("frame_every", save_every))  # fields; the history uses save_every
     sub = int(grid.get("theta_substeps", 20))
     dtype = torch.float64 if grid.get("precision", "float64") == "float64" else torch.float32
     device = "cuda" if torch.cuda.is_available() and grid.get("device", "auto") != "cpu" else "cpu"
@@ -92,7 +93,10 @@ def main() -> None:
 
     xs = (torch.arange(n, dtype=dtype) - n / 2 + 0.5) * dx
     rr = torch.sqrt(xs[None, :] ** 2 + xs[:, None] ** 2).to(device)
-    phi = 0.5 * (1.0 + torch.tanh((rr - seed_radius) / (2.0 * math.sqrt(2.0) * DELTA)))
+    if seed_radius > 0.0:
+        phi = 0.5 * (1.0 + torch.tanh((rr - seed_radius) / (2.0 * math.sqrt(2.0) * DELTA)))
+    else:  # no seed: homogeneous liquid, crystals form by noise-induced nucleation
+        phi = torch.ones_like(rr)
     c = C_S + (c_inf - C_S) * phi
     theta = torch.rand((n, n), generator=gen, dtype=dtype, device=device)
     theta = torch.where(rr < seed_radius, torch.full_like(theta, seed_angle), theta)
@@ -193,10 +197,11 @@ def main() -> None:
                              "equivalent_radius_dx": math.sqrt(solid * n * n / math.pi),
                              "solute_drift": float(c.sum()) / solute0 - 1.0,
                              "phi_min": float(phi.min()), "phi_max": float(phi.max())})
-                frames["phi"].append(phi.cpu().numpy().astype(np.float32))
-                frames["c"].append(c.cpu().numpy().astype(np.float32))
-                frames["theta"].append(theta.cpu().numpy().astype(np.float32))
-                frame_steps.append(step)
+                if step % frame_every == 0 or step == steps:
+                    frames["phi"].append(phi.cpu().numpy().astype(np.float32))
+                    frames["c"].append(c.cpu().numpy().astype(np.float32))
+                    frames["theta"].append(theta.cpu().numpy().astype(np.float32))
+                    frame_steps.append(step)
     np.savez_compressed(out_dir / "frames.npz", phi=np.array(frames["phi"]), c=np.array(frames["c"]),
                         theta=np.array(frames["theta"]), steps=np.array(frame_steps), dx=dx, dt=dt,
                         c_inf=c_inf, c_l=C_L, c_s=C_S)

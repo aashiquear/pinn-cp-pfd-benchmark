@@ -352,3 +352,24 @@ PINNACLE needs for F2: a row without time derivative in `pf_fem_explicit` (the c
 potential mu = d f/d c - eps_c^2 T lap c by lumped projection), kernels for the
 regular-solution bulk term of phi, for mu, and for the flux D(phi) c (1 - c) grad mu.
 
+### 9.4 Papers supplied by the author on 2026-11-18
+
+- Lewis, Pusztai, Granasy, Warren, Boettinger, JOM 56(4), 34 (2004) (read from the attached
+  PDF). For the Ag-Cu regular-solution model: L_A = 1097 J/cm^3, T_A = 1234 K, L_B = 1728 J/cm^3,
+  T_B = 1358 K, v = 8.7 cm^3/mol, Omega_L v = 16,000 - 4 T J/mol, Omega_S v = 26,000 - 4 T J/mol
+  (`reported_text`). The heats per mole, 9544 and 15,034 J/mol, are the values derived in
+  section 9.3 from the eutectic point; the 2017 paper's 11.30 and 13.05 kJ/mol are not what
+  the model uses. Runs: T = 900 K, c_alpha about 0.1, c_beta about 0.9, c_E = 0.35, D_S =
+  D_L/100, orientational mobility 1e5 times larger in the liquid, interface free energy
+  reduced by 6, dt~ = 2.5e-7, dx~ = 5e-3, xi = 6e-6 cm, 1000 x 1000 grid, 62,500 to 125,000
+  steps. Orientational term: F = h(c) F1 + [1 - h(c)] F2 + (1/2) eps_theta^2 T M^-1
+  |grad theta|^2, h(c) = (1/2){1 + cos[2 pi (c - c_alpha)/(c_beta - c_alpha)]}, F1 = |grad theta|,
+  F2 = a + b |cos(2 m pi d |grad theta| + psi)| with a = 0.9/d, b = 0.1/d, m = 1/2, psi = 0,
+  d = dx~, zeta_c = (eps_c/eps_phi)^2 = 1 (`reported_text`). m = 1/2 prefers a step of 0.5 in
+  theta across the alpha-beta boundary. Not printed: the value of zeta_theta, H (M in their
+  notation), the interface thickness and gamma of the pure components, the noise amplitudes.
+  F2b is no longer blocked; those four are `assumed`.
+- The quaternion letter (preprint, already read) and the 2006 review: nothing new. The longer
+  Mater. Sci. Eng. A paper was not obtained; F4 proceeds from the letter, with H, the
+  anisotropy magnitude and the noise amplitudes `assumed`.
+
