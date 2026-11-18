@@ -29,10 +29,10 @@ TEMPLATE = """# Part IV, case F4 (FE route): {title}
 # crystal, c = Cu fraction) in three dimensions; the orientation is a unit quaternion
 # q = (q0, q1, q2, q3), q0 = cos(delta/2), q_i = c_i sin(delta/2) (rotation by delta about c):
 #
-#     f_ori = [1 - p(phi)] h F(u),   u = xi0 |grad q| k / pi,   F = |sin(pi u)| (u < 1/2), 1 beyond
+#     f_ori = [1 - p(phi)] h F(u),   u = xi0 |grad q| k / pi,   F = pi u  (= 2 H T [1 - p] |grad q| of the paper)
 #     phi_t = M(n') {{ lap phi - a_w(c) g'(phi) - p'(phi) [ b(c) - h F(u) ] }} + zeta_phi
 #     c_t   = div{{ p(phi) [ grad c - c (1 - c) (q_f p' + q_w g') grad phi ] }}
-#     q_i,t = chi_l p(phi) {{ div J_i - q_i sum_k q_k div J_k }},  J_i = [1 - p] (pi/2) cos(pi u) xi0 grad q_i / u
+#     q_i,t = chi_l p(phi) {{ div J_i - q_i sum_k q_k div J_k }},  J_i = [1 - p] (pi/2) xi0 grad q_i / u
 #     M(n') = 1 - 3 gamma + 4 gamma (n'_1^4 + n'_2^4 + n'_3^4),  n' = R(q)^T grad phi / |grad phi|
 #
 # 2 xi0 |grad q| is the misorientation angle across one correlation length; for a rotation
@@ -155,6 +155,7 @@ TEMPLATE = """# Part IV, case F4 (FE route): {title}
     orientation        = q
     correlation_length = 6.25e-3
     period_index       = 4
+    energy_shape       = linear   # the published energy; the saturated shape cannot order random orientations
     strength           = 1900.0
     mobility           = 1.0
   []
@@ -201,6 +202,7 @@ TEMPLATE = """# Part IV, case F4 (FE route): {title}
     phase              = phi
     correlation_length = 6.25e-3
     period_index       = 4
+    energy_shape       = linear   # the published energy; the saturated shape cannot order random orientations
     mobility_liquid    = {chi:g}
     mobility_crystal   = 0.0
     regularization     = 1.0e-3

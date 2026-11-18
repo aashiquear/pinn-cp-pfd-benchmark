@@ -1127,3 +1127,16 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - Working pattern that failed twice: long pytest in a foreground call hits the 10 min limit;
   write pytest output to a file, echo the exit code, and gate the commit on it.
 
+
+## Quaternion orientation field: use `energy_shape = linear` with a random liquid (2026-11-18)
+
+- With the default saturated energy (`sine`) of `quaternion_grain_flux` /
+  `quaternion_phase_coupling` there is no torque beyond u = 1/2. Random triclinic orientations
+  differ by 126 degrees on average (u = 1.4 at k = 4), so the liquid never orders and the
+  crystal keeps the random orientation cell by cell. Signature: mean neighbor misorientation
+  of the solid near 123 degrees, identical results for different chi_l.
+- The first F4 series (64^3, chi 108/240/360 and the dendrites) had this defect and was
+  deleted. PINNACLE 4bad49b adds `energy_shape = linear` (the published energy); the F4
+  decks set it. Check of 32^3 at chi 360: ordered crystal, misorientation 0.1 degrees.
+- A hung `ssh host 'nohup job &'` is avoided with `< /dev/null` on the remote job and on ssh.
+- `cryst_binary_collect.py` takes one run directory per call.

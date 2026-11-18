@@ -5,10 +5,10 @@
 # crystal, c = Cu fraction) in three dimensions; the orientation is a unit quaternion
 # q = (q0, q1, q2, q3), q0 = cos(delta/2), q_i = c_i sin(delta/2) (rotation by delta about c):
 #
-#     f_ori = [1 - p(phi)] h F(u),   u = xi0 |grad q| k / pi,   F = |sin(pi u)| (u < 1/2), 1 beyond
+#     f_ori = [1 - p(phi)] h F(u),   u = xi0 |grad q| k / pi,   F = pi u  (= 2 H T [1 - p] |grad q| of the paper)
 #     phi_t = M(n') { lap phi - a_w(c) g'(phi) - p'(phi) [ b(c) - h F(u) ] } + zeta_phi
 #     c_t   = div{ p(phi) [ grad c - c (1 - c) (q_f p' + q_w g') grad phi ] }
-#     q_i,t = chi_l p(phi) { div J_i - q_i sum_k q_k div J_k },  J_i = [1 - p] (pi/2) cos(pi u) xi0 grad q_i / u
+#     q_i,t = chi_l p(phi) { div J_i - q_i sum_k q_k div J_k },  J_i = [1 - p] (pi/2) xi0 grad q_i / u
 #     M(n') = 1 - 3 gamma + 4 gamma (n'_1^4 + n'_2^4 + n'_3^4),  n' = R(q)^T grad phi / |grad phi|
 #
 # 2 xi0 |grad q| is the misorientation angle across one correlation length; for a rotation
@@ -30,7 +30,7 @@
 #
 # HOW IT IS SOLVED. `pf_fem_explicit` on trilinear elements, dx = 6.25e-3, dt = 4.75e-6,
 # periodic. q is a unit-norm variable (tangent projection of the rate, normalisation, q and
-# -q identified) advanced in 20 sub-steps per step. 1200 steps, field series every 120.
+# -q identified) advanced in 20 sub-steps per step. 400 steps, field series every 40.
 #
 # EXPECTED RESULT. Each seed grows into a dendrite with six primary arms along the <100> directions of its own lattice; the arms of different crystals point in unrelated directions (compare Fig. 2).
 
@@ -131,6 +131,7 @@
     orientation        = q
     correlation_length = 6.25e-3
     period_index       = 4
+    energy_shape       = linear   # the published energy; the saturated shape cannot order random orientations
     strength           = 1900.0
     mobility           = 1.0
   []
@@ -177,6 +178,7 @@
     phase              = phi
     correlation_length = 6.25e-3
     period_index       = 4
+    energy_shape       = linear   # the published energy; the saturated shape cannot order random orientations
     mobility_liquid    = 360
     mobility_crystal   = 0.0
     regularization     = 1.0e-3
@@ -185,12 +187,12 @@
 
 [Executioner]
   type                = pf_fem_explicit
-  n_steps             = 1200
+  n_steps             = 400
   dt                  = 4.75e-6
   periodic_axes       = 'x y z'
   unit_norm_variables = 'q'
   subcycles           = 'q 20'
-  snapshots_every     = 120
+  snapshots_every     = 40
   energy_every        = 0
 []
 

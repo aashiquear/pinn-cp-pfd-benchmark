@@ -1,5 +1,5 @@
 # Part IV, case F2b (FE route): growth of a eutectic grain of Ag-Cu at T = 900 K
-# (undercooling 155.5 K) from a seed of the Ag-rich solid, liquid composition c0 = 0.345,
+# (undercooling 155.5 K) from a two-phase (lamellar) seed, liquid composition c0 = 0.345,
 # with an orientation field: the two solid solutions keep a fixed orientation relation,
 # after (lewis 2004 eutectic).
 #
@@ -13,7 +13,7 @@
 # across a boundary between the two solids (h -> 0) it is lowest at u = 1/(4 m) = 1/2:
 # a step of half a period in theta. theta_t = chi(phi) div{dE-flux}, chi = chi_l p(phi).
 # reported_text (lewis 2004 eutectic): A = 0.9, B = 0.1, m = 1/2, psi = 0, d = dx.
-# assumed (not printed anywhere): S = 0.1, chi_l = 0.03, no noise, the seed.
+# assumed (not printed anywhere): S = 0.3, chi_l = 3, no noise, the seed.
 #
 #
 # PHYSICS. Binary phase-field model with regular-solution thermodynamics, (lewis 2004 eutectic)
@@ -49,8 +49,8 @@
 # auxiliary variable: the lumped projection of its kernel terms each step, so no fourth
 # derivative is formed. Periodic across the lamellae, no flux at the bottom and top.
 #
-# EXPECTED RESULT. The seed grows, rejects Cu, and the Cu-rich solid forms on it; the two
-# solids then grow side by side. Where they touch, theta differs by 0.5.
+# EXPECTED RESULT. The lamellae of the seed grow outward side by side; new Cu-rich solid
+# takes an orientation half a period from the Ag-rich solid next to it.
 # Report: Part IV, eutectic section.
 
 [Global]
@@ -58,7 +58,7 @@
   use_gpu    = true
   precision  = float64
   seed       = 0
-  output_dir = results/crystallization/eutectic/grain/f2b_grain_T900_c0.345_S0.1_chi0.03_fem
+  output_dir = results/crystallization/eutectic/grain/f2b_grain_T900_c0.345_S0.3_chi3_lam10_fem
 []
 
 [Problem]
@@ -70,8 +70,8 @@
 [Mesh]
   type      = box_mesh
   dim       = 2
-  domain    = '-24 -24 24 24'      # nm
-  divisions = '192 192'                   # 0.25 nm
+  domain    = '-32 -32 32 32'      # nm
+  divisions = '256 256'                   # 0.25 nm
 []
 
 [Variables]
@@ -98,14 +98,15 @@
 []
 
 [Functions]
-  # seed of the Ag-rich solid: radius 4 nm
+  # two-phase seed: a disc of radius 10 nm cut out of lamellae of spacing 10 nm along x
+  # (Cu-rich fraction 0.319, the lever rule)
   [./seed_phi]
     kind       = parsed
-    expression = 0.5*(1+tanh((sqrt(x**2+y**2)-4.0)/0.4551))
+    expression = 0.5*(1+tanh((sqrt(x**2+y**2)-10)/0.4551))
   []
   [./seed_c]
     kind       = parsed
-    expression = 0.071334+0.273666*0.5*(1+tanh((sqrt(x**2+y**2)-4.0)/0.4551))
+    expression = (0.071334+0.857332*0.5*(1+tanh((cos(2*pi*x/10)-0.537930)/0.3)))*(1-0.5*(1+tanh((sqrt(x**2+y**2)-10)/0.4551)))+0.345*0.5*(1+tanh((sqrt(x**2+y**2)-10)/0.4551))
   []
 []
 
@@ -133,7 +134,7 @@
     maximum  = 1.0
     seed     = 20261118
     center   = '0 0'
-    radius   = 4.0
+    radius   = 10
     inside   = 0.25
   []
 []
@@ -195,7 +196,7 @@
     orientation   = theta
     concentration = c
     mobility      = 0.153592
-    strength            = 0.1        # S (assumed)
+    strength            = 0.3        # S (assumed)
     boundary_thickness  = 0.25       # d = dx
     solid_composition_a = 0.071334
     solid_composition_b = 0.928666
@@ -210,7 +211,7 @@
     phase         = phi
     orientation   = theta
     concentration = c
-    strength            = 0.1        # S (assumed)
+    strength            = 0.3        # S (assumed)
     boundary_thickness  = 0.25       # d = dx
     solid_composition_a = 0.071334
     solid_composition_b = 0.928666
@@ -229,9 +230,9 @@
     variable         = theta
     phase            = phi
     concentration    = c
-    mobility_liquid  = 0.03       # chi_l (assumed)
+    mobility_liquid  = 3       # chi_l (assumed)
     mobility_crystal = 0.0
-    strength            = 0.1        # S (assumed)
+    strength            = 0.3        # S (assumed)
     boundary_thickness  = 0.25       # d = dx
     solid_composition_a = 0.071334
     solid_composition_b = 0.928666
@@ -244,12 +245,13 @@
 
 [Executioner]
   type                = pf_fem_explicit
-  n_steps             = 150000
+  n_steps             = 100000
   dt                  = 0.004
   periodic_axes       = 'x y'
   angular_variables   = 'theta'
+  subcycles           = 'theta 10'
   auxiliary_variables = 'mu'
-  snapshots_every     = 7500
+  snapshots_every     = 5000
   energy_every        = 0
 []
 
