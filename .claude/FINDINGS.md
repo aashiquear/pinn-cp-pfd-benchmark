@@ -1140,3 +1140,23 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   decks set it. Check of 32^3 at chi 360: ordered crystal, misorientation 0.1 degrees.
 - A hung `ssh host 'nohup job &'` is avoided with `< /dev/null` on the remote job and on ssh.
 - `cryst_binary_collect.py` takes one run directory per call.
+
+## Part IV, eutectic, ternary and thermal-history cases (2026-11-18)
+
+- Ag-Cu eutectic (F2), 100 K undercooling: front speed 0.031 to 0.033 m/s for every spacing
+  from 8 to 48 nm; lamellae wider than about 20 nm split within the first 2 nm of growth.
+  Do not expect a Jackson-Hunt maximum from these decks; the speed follows the undercooling
+  (3e-4 m/s per K). Runs shorter than 300,000 steps (first series, 60,000) grow only 5 nm
+  and show none of this.
+- Ternary eutectic (F3) at uniform driving force in a closed box: the lamellar front is not
+  steady (exponent 0.74 to 0.89); the far-end liquid enriches in c3 within 600,000 steps at
+  192 cells. A steady state needs a pulled gradient, which PINNACLE does not have.
+- `cryst_ternary_figures.py` counted nodes with c1 - c2 exactly 0 as two sign changes
+  (pairs doubled). Fixed; any sign-change count on a symmetric pattern needs a dead band.
+- Gallery panel (e) (s0 = 0.75, two-fold): non-finite at dt, dt/2-equivalent sub-steps and
+  dt/4. More orientation sub-steps do not help. Panels with s0 <= 0.5 run.
+- Nucleation pulse (section 7.5.6): at noise 0.0062 the window is narrow. 20 steps at
+  1550 K gives 42 crystals against 28; 100 steps at 1550 K or 1520 K transforms the whole
+  box during the stage. Save frames every 50 steps or finer for pulse runs.
+- Tier labels in the Part IV report: tier 3 is a published result (qualitative matches are
+  "tier 3, qualitative"); tier 4 is experiment only.
