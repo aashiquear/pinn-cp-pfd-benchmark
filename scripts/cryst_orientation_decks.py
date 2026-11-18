@@ -189,6 +189,10 @@ def gallery_deck(panel: str) -> str:
         # the noise amplitudes are increments per step: keep the increment per unit time
         text = sub(text, r"amplitude    = 1578\.7", "amplitude    = 2232.6")
         text = sub(text, r"amplitude             = 23679\.0", "amplitude             = 33487.2")
+    if chi > 360:  # the orientation sub-step is limited by chi_l: keep chi_l x sub-step at the standard value
+        n_sub = int(round((10 if halve else 20) * chi / 360.0))
+        text, count = re.subn(r"subcycles       = 'theta \d+'", f"subcycles       = 'theta {n_sub}'", text)
+        assert count == 1, "subcycles"
     return text
 
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Case F4 (quaternion orientation field in three dimensions): collection, measures, figures.
 
-Usage: python3 scripts/cryst_quaternion_figures.py <tag> <run dir> [<run dir> ...]
+Usage: python3 scripts/cryst_quaternion_figures.py <tag> [max_fraction=0.35] <run dir> [<run dir> ...]
+  (measures and views use the last saved frame whose solid fraction is below max_fraction)
   run dirs relative to the repo, each with the VTK series of a PINNACLE run (phi, c, q).
 
 Per run: frames.npz (phi, c, q at the saved steps, float32) and a row of
@@ -118,19 +119,23 @@ def surface_view(phi: np.ndarray, q: np.ndarray) -> np.ndarray:
 
 def main() -> None:
     tag = sys.argv[1]
-    runs = [ROOT / a for a in sys.argv[2:]]
+    limit = next((float(a.split("=")[1]) for a in sys.argv[2:] if a.startswith("max_fraction=")), 0.35)
+    runs = [ROOT / a for a in sys.argv[2:] if "=" not in a]
     plt.rcParams.update({"font.size": 9, "savefig.dpi": 200, "axes.linewidth": 0.8, "mathtext.fontset": "cm"})
     rows = []
     fig, axes = plt.subplots(3, len(runs), figsize=(3.3 * len(runs), 9.4), squeeze=False)
     for j, run in enumerate(runs):
         d = collect(run)
-        phi, c, q = d["phi"][-1].astype(float), d["c"][-1].astype(float), d["q"][-1].astype(float)
+        fractions = [float((f < 0.5).mean()) for f in d["phi"]]
+        usable = [i for i, f in enumerate(fractions) if f <= limit]
+        k = usable[-1] if usable else 0  # last frame before the crystal fills the periodic box
+        phi, c, q = d["phi"][k].astype(float), d["c"][k].astype(float), d["q"][k].astype(float)
         solid = phi < 0.5
         volume = float(solid.sum())
         faces = sum(float(np.sum(solid != np.roll(solid, 1, axis=a))) for a in range(3))
         radius = (3.0 * volume / (4.0 * np.pi)) ** (1.0 / 3.0)
         mis = misorientation(q, solid)
-        rows.append({"run": run.name, "step": int(d["steps"][-1]), "solid_fraction": volume / phi.size,
+        rows.append({"run": run.name, "step": int(d["steps"][k]), "solid_fraction": volume / phi.size,
                      "equivalent_radius": radius,
                      "sphericity": 4.0 * np.pi * radius**2 / (faces * 2.0 / 3.0) if faces else float("nan"),
                      "mean_misorientation_deg": float(mis.mean()) if mis.size else float("nan"),
@@ -139,7 +144,7 @@ def main() -> None:
         print(" ".join(f"{k}={v:.4g}" if isinstance(v, float) else f"{k}={v}" for k, v in rows[-1].items()))
         mid = phi.shape[2] // 2
         axes[0, j].imshow(surface_view(phi, q), origin="lower")
-        axes[0, j].set_title(f"{run.name}\nstep {int(d['steps'][-1])}", fontsize=7)
+        axes[0, j].set_title(f"{run.name}\nstep {int(d['steps'][k])}", fontsize=7)
         im1 = axes[1, j].imshow(c[:, :, mid].T, origin="lower", cmap="viridis", vmin=0.394, vmax=0.471)
         section = np.ma.masked_where(~solid[:, :, mid].T, tilt(q)[:, :, mid].T)
         axes[2, j].set_facecolor("k")

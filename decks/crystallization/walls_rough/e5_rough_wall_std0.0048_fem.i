@@ -1,10 +1,16 @@
-# Part IV, case C5 (FE route): nucleation and growth of polycrystalline spherulites and the
-# kinetics of the transformation, after Fig. 8 of (granasy 2005 spherulites). Conditions of
-# its Fig. 4(f): S = 1.0, s0 = 0.1, chi_l = 54. No seed: the crystals nucleate from the noise.
-# Paper: 5000 x 5000 after a pre-heat of 10,000 steps at 1595 K; here 500 x 500 from a
-# homogeneous liquid. The phase-field noise is `calibrated`: standard deviation 0.0062 of the
-# nodal increment per step, chosen so that the transformation takes the time of the paper
-# (time constant 0.0106). The paper prints 0.0025 without saying what it multiplies.
+# Part IV, case E5 (FE route): heterogeneous nucleation on a rough wall, after Fig. 3(a) of
+# (granasy 2006 review). A liquid layer of the binary Cu-Ni model with the orientation field
+# (conditions of Fig. 4(f) of (granasy 2005 spherulites): S = 1.0, s0 = 0.1, chi_l = 54) lies on a
+# sawtooth wall: grooves 30 cells deep, 80 cells apart. Every boundary is a no-flux boundary,
+# which for the phase field is a wall with a contact angle of 90 degrees (as in the paper).
+# No seed: crystals form from the noise. In a groove a nucleus touches two walls and needs a
+# fraction of the homogeneous nucleus, so with a noise level just below the one that nucleates in
+# the bulk the crystals appear in the grooves first.
+# MESH. Written by `python3 scripts/cryst_rough_wall_mesh.py` (not shipped: 5 MB); mapped grid
+# of 400 x 200 bilinear elements, 6.25e-3 wide.
+# assumed: the wall shape and size, the layer thickness, the noise: standard deviation 0.0048
+# of the nodal increment per step (0.77 of the level used for nucleation in the bulk, case C5).
+# correlated. The paper prints 0.0025 without saying what it multiplies; its time constant is 0.0106.
 #
 # PHYSICS. Model C of (granasy 2004 modelling), appendix A.3, with x = 0 (single-minimum
 # orientational energy); phi = 1 liquid, phi = 0 crystal, c = Cu fraction, theta in [0, 1) the
@@ -29,11 +35,11 @@
 #   and 0.0375 (theta) taken as standard deviations of the nodal increment per step.
 #
 # HOW IT IS SOLVED. `pf_fem_explicit` on the GPU: forward Euler with lumped mass on bilinear
-# elements, dx = 6.25e-3, dt = 4.75e-6, periodic; theta is an angular variable (differences to
-# the nearest equivalent value) advanced in 20 sub-steps per step. 5000 steps, field series
-# every 250 steps.
+# elements, dx = 6.25e-3, dt = 4.75e-6, no-flux boundaries; theta is an angular variable (differences to
+# the nearest equivalent value) advanced in 20 sub-steps per step. 3000 steps, field series
+# every 150 steps.
 #
-# EXPECTED RESULT. Spherulites nucleate at random places and times and grow until they impinge; the crystalline fraction follows X = 1 - exp{-[(t - t0)/tau]^p} with p near 3 (paper: 3.04 +/- 0.02).
+# EXPECTED RESULT. The first crystals sit in the grooves of the wall; they grow out as spherulites and cover the wall before any crystal forms in the bulk of the liquid.
 # One realization of a noise-driven process: grain shapes differ with the seeds, the form does not.
 
 [Global]
@@ -41,7 +47,7 @@
   use_gpu    = true        # explicit residual on the GPU (rocm-server); false runs on the CPU
   precision  = float64
   seed       = 0
-  output_dir = results/crystallization/orientation/kinetics/c5_cal_n500_std0.0062_fem
+  output_dir = results/crystallization/walls_rough/e5_rough_wall_std0.0048_fem
 []
 
 [Problem]
@@ -51,10 +57,9 @@
 []
 
 [Mesh]
-  type      = box_mesh
-  dim       = 2
-  domain    = '-1.5625 -1.5625 1.5625 1.5625'   # 500 dx
-  divisions = '500 500'
+  type   = file
+  path   = decks/crystallization/walls_rough/e5_rough_wall.msh
+  format = gmsh
 []
 
 [Variables]
@@ -137,14 +142,14 @@
   # Thermal noise of the phase field in the liquid (phi = 1) only. The paper gives the
   # amplitude 0.0025 without saying what it multiplies (`unavailable`); here it is the standard
   # deviation of the nodal increment per step (`assumed`, as in the reference run):
-  # A = 0.0062 / (dt x 0.3334), 0.3334 being the averaging factor of the lumped bilinear load.
+  # A = 0.0048 / (dt x 0.3334), 0.3334 being the averaging factor of the lumped bilinear load.
   [./phi_noise]
     type         = langevin_noise
     variable     = phi
-    amplitude    = 3915.0
+    amplitude    = 3031.0
     distribution = normal
     state_factor = phi**3*(10-15*phi+6*phi**2)
-    seed         = 20261117
+    seed         = 20261111
   []
   [./dc_dt]
     type        = time_derivative
@@ -192,12 +197,11 @@
 
 [Executioner]
   type            = pf_fem_explicit
-  n_steps         = 5000
+  n_steps         = 3000
   dt              = 4.75e-6
-  periodic_axes   = 'x y'
   angular_variables = 'theta'
   subcycles       = 'theta 20'    # the orientation equation needs about 1/20 of the step (2004 review)
-  snapshots_every = 250
+  snapshots_every = 150
   energy_every    = 0
 []
 

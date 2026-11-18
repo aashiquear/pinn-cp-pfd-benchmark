@@ -30,7 +30,7 @@
 #
 # HOW IT IS SOLVED. `pf_fem_explicit` on trilinear elements, dx = 6.25e-3, dt = 4.75e-6,
 # periodic. q is a unit-norm variable (tangent projection of the rate, normalisation, q and
-# -q identified) advanced in 20 sub-steps per step. 450 steps, field series every 45.
+# -q identified) advanced in 20 sub-steps per step. 200 steps, field series every 20.
 #
 # EXPECTED RESULT. With the orientational mobility reduced, the front cannot order the orientation: new grains form at the front and the crystal is a compact, nearly spherical polycrystal (compare Fig. 4).
 
@@ -185,12 +185,12 @@
 
 [Executioner]
   type                = pf_fem_explicit
-  n_steps             = 450
+  n_steps             = 200
   dt                  = 4.75e-6
   periodic_axes       = 'x y z'
   unit_norm_variables = 'q'
   subcycles           = 'q 20'
-  snapshots_every     = 45
+  snapshots_every     = 20
   energy_every        = 0
 []
 

@@ -2,9 +2,10 @@
 # kinetics of the transformation, after Fig. 8 of (granasy 2005 spherulites). Conditions of
 # its Fig. 4(f): S = 1.0, s0 = 0.1, chi_l = 54. No seed: the crystals nucleate from the noise.
 # Paper: 5000 x 5000 after a pre-heat of 10,000 steps at 1595 K; here 500 x 500 from a
-# homogeneous liquid. The phase-field noise is `calibrated`: standard deviation 0.009 of the
-# nodal increment per step, chosen so that the transformation takes the time of the paper
-# (time constant 0.0106). The paper prints 0.0025 without saying what it multiplies.
+# homogeneous liquid. The phase-field noise is `calibrated`: standard deviation 0.0062 of the
+# nodal increment per step, which gives some tens of crystals in this box. At the same nodal standard deviation the
+# reference stencil nucleates about five times later: the lumped finite-element load is spatially
+# correlated. The paper prints 0.0025 without saying what it multiplies; its time constant is 0.0106.
 #
 # PHYSICS. Model C of (granasy 2004 modelling), appendix A.3, with x = 0 (single-minimum
 # orientational energy); phi = 1 liquid, phi = 0 crystal, c = Cu fraction, theta in [0, 1) the
@@ -30,8 +31,8 @@
 #
 # HOW IT IS SOLVED. `pf_fem_explicit` on the GPU: forward Euler with lumped mass on bilinear
 # elements, dx = 6.25e-3, dt = 4.75e-6, periodic; theta is an angular variable (differences to
-# the nearest equivalent value) advanced in 20 sub-steps per step. 5000 steps, field series
-# every 250 steps.
+# the nearest equivalent value) advanced in 20 sub-steps per step. 1200 steps, field series
+# every 100 steps.
 #
 # EXPECTED RESULT. Spherulites nucleate at random places and times and grow until they impinge; the crystalline fraction follows X = 1 - exp{-[(t - t0)/tau]^p} with p near 3 (paper: 3.04 +/- 0.02).
 # One realization of a noise-driven process: grain shapes differ with the seeds, the form does not.
@@ -41,7 +42,7 @@
   use_gpu    = true        # explicit residual on the GPU (rocm-server); false runs on the CPU
   precision  = float64
   seed       = 0
-  output_dir = results/crystallization/orientation/kinetics/c5_cal_n500_std0.009_fem
+  output_dir = results/crystallization/orientation/kinetics/c5_n500_seed2_fem
 []
 
 [Problem]
@@ -137,14 +138,14 @@
   # Thermal noise of the phase field in the liquid (phi = 1) only. The paper gives the
   # amplitude 0.0025 without saying what it multiplies (`unavailable`); here it is the standard
   # deviation of the nodal increment per step (`assumed`, as in the reference run):
-  # A = 0.009 / (dt x 0.3334), 0.3334 being the averaging factor of the lumped bilinear load.
+  # A = 0.0062 / (dt x 0.3334), 0.3334 being the averaging factor of the lumped bilinear load.
   [./phi_noise]
     type         = langevin_noise
     variable     = phi
-    amplitude    = 5683.1
+    amplitude    = 3915.0
     distribution = normal
     state_factor = phi**3*(10-15*phi+6*phi**2)
-    seed         = 20261117
+    seed         = 20261112
   []
   [./dc_dt]
     type        = time_derivative
@@ -192,12 +193,12 @@
 
 [Executioner]
   type            = pf_fem_explicit
-  n_steps         = 5000
+  n_steps         = 1200
   dt              = 4.75e-6
   periodic_axes   = 'x y'
   angular_variables = 'theta'
   subcycles       = 'theta 20'    # the orientation equation needs about 1/20 of the step (2004 review)
-  snapshots_every = 250
+  snapshots_every = 100
   energy_every    = 0
 []
 

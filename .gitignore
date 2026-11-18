@@ -37,3 +37,4 @@ results/
 archive/results/
 data/literature/
 *.pdf
+decks/crystallization/walls_rough/*.msh

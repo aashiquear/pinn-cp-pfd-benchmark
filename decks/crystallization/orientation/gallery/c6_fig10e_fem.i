@@ -221,7 +221,7 @@
   dt              = 2.375e-6
   periodic_axes   = 'x y'
   angular_variables = 'theta'
-  subcycles       = 'theta 10'    # the orientation equation needs about 1/20 of the step (2004 review)
+  subcycles       = 'theta 40'    # the orientation equation needs about 1/20 of the step (2004 review)
   snapshots_every = 170
   energy_every    = 0
 []

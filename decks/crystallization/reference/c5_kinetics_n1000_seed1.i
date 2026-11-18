@@ -2,7 +2,7 @@
 # Fig. 8 of (granasy 2005 spherulites): conditions of its Fig. 4(f) (S = 1.0, s0 = 0.1,
 # chi_l = 54), no seed: crystals nucleate from the thermal noise. Paper: 5000 x 5000 after a
 # pre-heat of 10,000 steps at 1595 K; here 1000 x 1000 from a homogeneous liquid (no pre-heat).
-# Phase-field noise: standard deviation 0.007 per step (`calibrated`: a nucleation rate that gives about 100 crystals in this box;
+# Phase-field noise: standard deviation 0.007 per step (`calibrated`: a nucleation rate that gives about 50 crystals in this box;
 # at the transformation time of the paper, 0.0062, only six nucleate. The paper prints 0.0025 without saying what it multiplies: with 0.0025 as a
 # per-step standard deviation nothing nucleates in 7000 steps, with 0.007 the box is full by step 1100).
 # Consumed by scripts/cryst_orientation_reference.py.

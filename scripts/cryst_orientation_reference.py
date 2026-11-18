@@ -86,6 +86,10 @@ def main() -> None:
     h_ori = float(case["h_orientation"])
     noise_phi, noise_theta = float(case.get("noise_phi", 0.0025)), float(case.get("noise_theta", 0.0375))
     compact = str(case.get("orientation_gradient", "compact")) == "compact"
+    # optional heat treatment before the quench: `preheat_steps` steps with the driving forces
+    # `preheat_driving = <b_Ni> <b_Cu>` of a temperature above the liquidus
+    preheat_steps = int(case.get("preheat_steps", 0))
+    preheat_b = [float(v) for v in str(case.get("preheat_driving", f"{B_NI} {B_CU}")).split()]
     seed_radius = float(case["seed_radius_dx"]) * dx
     seed_angle = float(case.get("seed_theta", 0.0))
     gen = torch.Generator(device=device).manual_seed(int(case.get("rng_seed", 0)))
@@ -143,8 +147,16 @@ def main() -> None:
             f0 = torch.where(u < 0.75 / m_branch, torch.abs(torch.sin(two_pi * m_branch * u)), torch.ones_like(u))
             f1 = torch.where(u < 0.25 / n_branch, torch.abs(torch.sin(two_pi * n_branch * u)), torch.ones_like(u))
             f_ori = x_branch * f0 + (1.0 - x_branch) * f1
-            b = (1.0 - c) * B_NI + c * B_CU
-            rhs = rhs - A_W * g1(phi) - p1(phi) * (b - h_ori * f_ori)
+            if step <= preheat_steps:  # above the liquidus: fluctuations relax, nothing can grow
+                b = (1.0 - c) * preheat_b[0] + c * preheat_b[1]
+            else:
+                b = (1.0 - c) * B_NI + c * B_CU
+            if step <= preheat_steps:
+                # p'(phi) is taken as zero outside [0, 1]: above the liquidus b < 0 and the
+                # polynomial p' would push a fluctuation with phi > 1.03 away without bound
+                rhs = rhs - A_W * g1(phi) - p1(phi.clamp(0, 1)) * (b - h_ori * f_ori)
+            else:
+                rhs = rhs - A_W * g1(phi) - p1(phi) * (b - h_ori * f_ori)
             m_phi = 1.0 + delta0 * torch.cos(ang) if delta0 != 0.0 else 1.0
             new_phi = phi + dt * m_phi * rhs
             if noise_phi > 0.0:
@@ -194,7 +206,7 @@ def main() -> None:
                     raise SystemExit(f"non-finite field at step {step}")
                 solid = float((1.0 - phi).mean())
                 rows.append({"step": step, "t": step * dt, "solid_fraction": solid,
-                             "equivalent_radius_dx": math.sqrt(solid * n * n / math.pi),
+                             "equivalent_radius_dx": math.sqrt(max(solid, 0.0) * n * n / math.pi),
                              "solute_drift": float(c.sum()) / solute0 - 1.0,
                              "phi_min": float(phi.min()), "phi_max": float(phi.max())})
                 if step % frame_every == 0 or step == steps:
