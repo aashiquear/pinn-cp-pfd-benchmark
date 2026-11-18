@@ -173,6 +173,46 @@ def main() -> None:
         FuncAnimation(fig, draw, frames=len(frames)).save(FIG / "f2_lamellar_T955.5_lam16.gif",
                                                           writer=PillowWriter(fps=4), dpi=80)
         plt.close(fig)
+    # long run: is the lamellar growth steady?
+    long = RES / "f2_long100_T955.5_c0.345_lam16_fem"
+    if (long / "solver_history.csv").exists():
+        hist = list(csv.DictReader((long / "solver_history.csv").open()))
+        t = np.array([float(r["t"]) for r in hist])
+        xs, ys, phi, c = grid(long / "fields.vtk")
+        front = (1.0 - np.array([float(r["phi_mean"]) for r in hist])) * ys[-1]
+        solid_rows = (phi.mean(axis=1) < 0.05) & (ys > SEED_HEIGHT + 2.0)
+        beta_y = (c[:, :-1] > 0.5).mean(axis=1)
+        half = len(t) // 2
+        v = float(np.polyfit(t[half:], front[half:], 1)[0])
+        v_first = float(np.polyfit(t[len(t) // 10: half], front[len(t) // 10: half], 1)[0])
+        gr = groups(955.5)
+        lever = (0.345 - gr["c_alpha"]) / (gr["c_beta"] - gr["c_alpha"])
+        print(f"long run: front {front[0]:.1f} -> {front[-1]:.1f} nm, speed {v:.5f} nm per unit = "
+              f"{v * 1e-9 / TIME_UNIT:.4f} m/s (first half {v_first * 1e-9 / TIME_UNIT:.4f}), Cu-rich fraction "
+              f"{beta_y[solid_rows].mean():.3f} +/- {beta_y[solid_rows].std():.3f} (lever rule {lever:.3f}), "
+              f"lambda^2 v = {(16e-9) ** 2 * v * 1e-9 / TIME_UNIT:.3e} m^3/s")
+        with (RES / "long_summary.csv").open("w", newline="") as fh:
+            wr = csv.writer(fh)
+            wr.writerow(["front_start_nm", "front_end_nm", "speed_m_s", "speed_first_half_m_s", "beta_fraction",
+                         "beta_fraction_std", "lever_rule", "lambda2_v_m3_s"])
+            wr.writerow([front[0], front[-1], v * 1e-9 / TIME_UNIT, v_first * 1e-9 / TIME_UNIT,
+                         beta_y[solid_rows].mean(), beta_y[solid_rows].std(), lever,
+                         (16e-9) ** 2 * v * 1e-9 / TIME_UNIT])
+        fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.6), gridspec_kw={"width_ratios": [1.0, 1.2, 1.2]})
+        shown = np.where(phi > 0.5, np.nan, c)
+        im = axes[0].imshow(np.tile(shown[:, :-1], (1, 3)), origin="lower", extent=[0, 3 * xs[-1], 0, ys[-1]],
+                            cmap="viridis", vmin=0, vmax=1, aspect="equal")
+        axes[0].set_xlabel("nm"); axes[0].set_ylabel("growth direction (nm)")
+        fig.colorbar(im, ax=axes[0], shrink=0.8, label="Cu fraction $c$")
+        axes[1].plot(t * TIME_UNIT * 1e6, front, color="#1b3a5c", lw=1.3)
+        axes[1].set_xlabel(r"time ($\mu$s)"); axes[1].set_ylabel("front position (nm)")
+        axes[2].plot(ys[solid_rows], beta_y[solid_rows], color="#3aa39b", lw=1.2)
+        axes[2].axhline(lever, color="0.4", ls="--", lw=1.0, label="lever rule")
+        axes[2].set_ylim(0, 0.5); axes[2].set_xlabel("height in the grown solid (nm)")
+        axes[2].set_ylabel("Cu-rich fraction across the box"); axes[2].legend(frameon=False, fontsize=7)
+        fig.tight_layout()
+        fig.savefig(FIG / "f2_long.png", bbox_inches="tight")
+        plt.close(fig)
     print("wrote figures/crystallization/f2_*.png")
 
 

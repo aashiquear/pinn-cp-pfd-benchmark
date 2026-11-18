@@ -41,8 +41,8 @@
 # `phi_mean` of solver_history.csv. Report: Part IV, eutectic section.
 
 [Global]
-  backend    = numpy
-  use_gpu    = false
+  backend    = torch
+  use_gpu    = true
   precision  = float64
   seed       = 0
   output_dir = results/crystallization/eutectic/f2_lamellar_T955.5_c0.345_lam12_fem
@@ -57,8 +57,8 @@
 [Mesh]
   type      = box_mesh
   dim       = 2
-  domain    = '0 0 12 40'      # nm: one lamella pair across, growth along y
-  divisions = '48 160'                   # 0.25 nm
+  domain    = '0 0 12 60'      # nm: one lamella pair across, growth along y
+  divisions = '48 240'                   # 0.25 nm
 []
 
 [Variables]
@@ -164,11 +164,11 @@
 
 [Executioner]
   type                = pf_fem_explicit
-  n_steps             = 60000
+  n_steps             = 300000
   dt                  = 0.004
   periodic_axes       = 'x'
   auxiliary_variables = 'mu'
-  snapshots_every     = 3000
+  snapshots_every     = 15000
   energy_every        = 0
 []
 

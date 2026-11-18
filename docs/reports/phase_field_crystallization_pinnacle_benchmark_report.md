@@ -1620,7 +1620,59 @@ paper's in the assumed items listed above and in the 500 x 500 box.
 - Animations: `figures/crystallization/c6_gallery_<panel>.gif`.
 - Cost: 282 to 894 s per panel on the GPU of rocm-server (Table 30 runs, 4322 s in all).
 
-#### 7.5.4 Summary for the user
+#### 7.5.4 Foreign particles and low orientational mobility: two routes to the same form (case E4)
+
+*Purpose.* Section III.E of (granasy 2005 spherulites) and (granasy 2006 review) state a
+duality: a crystal becomes polycrystalline either because foreign particles force new
+orientations on the front (static heterogeneities) or because the orientation of the liquid
+relaxes too slowly to follow the front (dynamic heterogeneities), and the two routes give
+similar forms. The paper's Fig. 11 shows it for a needle crystal: 99.5 % two-fold kinetic
+anisotropy, isotropic interface energy, 250,000 single-pixel orientation pinning centers on
+2000 x 2000 (6.25 % of the pixels), or the orientational mobility reduced by a factor of 5
+(reported_text).
+
+*Set-up.* Three runs of 500 x 500 and 2000 steps at $S = 0.85$, $\delta_0 = 0.995$,
+no branching minimum ($x = 0$): the needle ($\chi_l$ = 360); the same with pinning centers on
+6.25 % of the nodes; the same without centers and $\chi_l$ = 72. A pinning center is a node
+whose orientation keeps its initial random value (`pinned_fraction = 'theta 0.0625'` of the
+executioner; ADR 0044, commit `94f9215`). Assumed: $S$ (not printed for this figure), the
+seed, the step count.
+
+![Pinning](../../figures/crystallization/e4_pinning_maps.png)
+
+**Figure 35.** Composition (top) and orientation (bottom, period 180 degrees) after
+2000 steps. Left: needle without heterogeneities. Middle: with orientation pinning centers
+on 6.25 % of the nodes. Right: without centers, orientational mobility divided by 5.
+
+**Table 31.** Measures of the three runs (definitions in section 7.5.1).
+
+| run | equivalent radius (cells) | maximum radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment |
+|---|---|---|---|---|---|---|---|---|
+| needle | 62.8 | 229 | 0.08 | 0.42 | 4 | 0.0005 | 0.0003 | 0.80 |
+| pinning centers, 6.25 % | 93.0 | 203 | 0.21 | 0.69 | 60 | 0.0322 | 0.114 | 0.56 |
+| $\chi_l / 5$ | 97.5 | 161 | 0.37 | 0.69 | 44 | 0.0054 | 0.023 | 0.86 |
+
+- Without heterogeneities the crystal is a single needle (4 domains, compactness 0.08) that
+  grows by diffusion (exponent 0.42).
+- Both routes turn it into a branched polycrystal: 60 and 44 orientation domains, arms
+  pointing in all directions, about twice the crystallized area and a growth exponent of 0.69
+  in both. This is the duality of the paper, reproduced in kind (tier 4).
+- The two forms are similar, not equal. With particles the grains are speckled (the centers
+  stay inside the crystal as point defects: mean misorientation 0.032 against 0.005) and the
+  arms are irregular; with low mobility the arms are clean single grains that fan out from
+  the seed (radial alignment 0.86 against 0.56).
+- The paper calls the dense late form "fungus"; it needs its 2000 x 2000 box. Here the
+  first branching generation is seen.
+
+*What to expect.* More pinning centers or a lower $\chi_l$ give more and thinner arms and,
+in the limit, a spherulite (section 7.5.1 for $\chi_l$). A needle needs both a clean liquid and
+a fast orientation field; either impurity particles or a viscous liquid (low rotational
+diffusion) is enough to lose it.
+
+- Animations are not produced for this case; the frames are in the run directories.
+- Cost: 507, 557 and 590 s on the GPU of rocm-server.
+
+#### 7.5.5 Summary for the user
 
 | to obtain | change | measured effect |
 |---|---|---|
@@ -1701,7 +1753,7 @@ Newton iteration with exact tangents (ADR 0041).
 
 ### 8.3 Parameters
 
-**Table 31.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
+**Table 32.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
 
 | quantity | value | provenance | source |
 |---|---|---|---|
@@ -1726,7 +1778,7 @@ Case F1. Decks `decks/crystallization/hard_sphere/f1_nucleus_<interface>_phi<val
 2400 elements). Reference: `scripts/cryst_hard_sphere_reference.py`, a shooting solution of
 the same equations, independent of PINNACLE.
 
-**Table 32.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
+**Table 33.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
 halfway between its center value and 1; $\Delta N$: excess number of particles of the
 nucleus.
 
@@ -1749,7 +1801,7 @@ nucleus.
 
 ![Hard-sphere nucleation barrier](../../figures/crystallization/f1_barrier.png)
 
-**Figure 35.** Left: nucleation barrier against the volume fraction of the liquid; lines:
+**Figure 36.** Left: nucleation barrier against the volume fraction of the liquid; lines:
 independent reference, circles: PINNACLE, for the average interface data and the three
 orientations; dashed: classical droplet model with the average interface free energy;
 squares: Monte Carlo (digitized); star: the value printed in the paper. Right: ratio of the
@@ -1760,7 +1812,7 @@ at small sizes ($m(0)$ rises from 0.11 to 0.48).
 
 ![Hard-sphere nucleus profiles](../../figures/crystallization/f1_profiles.png)
 
-**Figure 36.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
+**Figure 37.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
 the three Monte Carlo states (thin lines: PINNACLE; broad pale lines: reference). Reading:
 the interface is as wide as the nucleus; the density at the center (0.581 to 0.588) stays
 below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
@@ -1771,7 +1823,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   0.5500, the nucleus shrinks from $R_{1/2} = 3.9$ to 2.4 $\sigma$ and from 24 to 2 excess
   particles, and its center loses crystallinity ($m(0)$ from 0.11 to 0.48). Beyond about
   0.55 the "nucleus" is a weak ripple of structure rather than a crystallite.
-- Interface data (Table 33): the barrier scales roughly with $\gamma_\infty^3$, as in the
+- Interface data (Table 34): the barrier scales roughly with $\gamma_\infty^3$, as in the
   classical theory, but the interface thickness matters as well: the (110) data (largest
   $\gamma_\infty$, thinnest interface) give the highest barrier, the (111) data the lowest.
   A 10 % change of $\gamma_\infty$ changes the barrier by about 30 %.
@@ -1782,7 +1834,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   coexistence (section 8.3). Hall's two solid forms differ by 0.3 % in pressure near
   melting; only the polynomial form reproduces the solid densities printed in the paper.
 
-**Table 33.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
+**Table 34.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
 
 | $\phi_\infty$ | (111) | (100) | average | (110) |
 |---|---|---|---|---|
@@ -1831,7 +1883,7 @@ the hybrid for this case need a differentiable equation-of-state closure and are
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 34.** Measured cost per time step.
+**Table 35.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -1844,8 +1896,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 35.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 34; `derived`, not measured beyond 1000 x 1000).
+**Table 36.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 35; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|

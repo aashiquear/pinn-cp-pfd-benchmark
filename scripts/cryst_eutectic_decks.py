@@ -12,6 +12,7 @@ Usage: python3 scripts/cryst_eutectic_decks.py <T in K> <c0> <lambda in nm> [...
 """
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 
@@ -367,6 +368,33 @@ def grain_main(argv: list[str]) -> None:
         for chi in [float(v) for v in opts.get("chi", "0.03").split(",")]:
             text, name = grain_deck(t, c0, float(opts.get("size", 48.0)), int(opts.get("steps", 150000)),
                                     strength, chi, opts.get("backend", "torch"))
+            seed_lam, seed_r, sub = float(opts.get("seed_lam", 0.0)), float(opts.get("seed_r", 4.0)), int(opts.get("sub", 1))
+            if seed_lam > 0.0:  # two-phase seed: a disc cut out of a lamellar structure
+                gr = groups(t)
+                frac = (c0 - gr["c_alpha"]) / (gr["c_beta"] - gr["c_alpha"])
+                old_name, name = name, name.replace("_fem", f"_lam{seed_lam:g}_fem")
+                text = text.replace(old_name, name)
+                hull = f"0.5*(1+tanh((sqrt(x**2+y**2)-{seed_r:g})/0.4551))"
+                stripes = (f"({gr['c_alpha']:.6f}+{gr['c_beta'] - gr['c_alpha']:.6f}*0.5*(1+tanh((cos(2*pi*x/{seed_lam:g})"
+                           f"-{math.cos(math.pi * frac):.6f})/0.3)))")
+                lines = text.split("\n")
+                for i, line in enumerate(lines):
+                    if line.startswith("    expression = ") and "tanh((sqrt(x**2+y**2)" in line:
+                        lines[i] = (f"    expression = {hull}" if "seed_phi" in lines[i - 2] else
+                                    f"    expression = {stripes}*(1-{hull})+{c0:g}*{hull}")
+                text = "\n".join(lines)
+                text = text.replace("  # seed of the Ag-rich solid: radius 4 nm",
+                                    f"  # two-phase seed: a disc of radius {seed_r:g} nm cut out of lamellae of spacing "
+                                    f"{seed_lam:g} nm along x\n  # (Cu-rich fraction {frac:.3f}, the lever rule)")
+                text = text.replace("    radius   = 4.0\n", f"    radius   = {seed_r:g}\n")
+                text = text.replace("from a seed of the Ag-rich solid,", "from a two-phase (lamellar) seed,")
+                text = text.replace("# EXPECTED RESULT. The seed grows, rejects Cu, and the Cu-rich solid forms on it; the two\n"
+                                    "# solids then grow side by side. Where they touch, theta differs by 0.5.",
+                                    "# EXPECTED RESULT. The lamellae of the seed grow outward side by side; new Cu-rich solid\n"
+                                    "# takes an orientation half a period from the Ag-rich solid next to it.")
+            if sub > 1:
+                text = text.replace("  angular_variables   = 'theta'\n",
+                                    f"  angular_variables   = 'theta'\n  subcycles           = 'theta {sub}'\n")
             text = text.replace(f"results/crystallization/eutectic/{name}", f"results/crystallization/eutectic/grain/{name}")
             (out / f"{name}.i").write_text(text)
             print("grain/" + name)

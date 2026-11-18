@@ -139,7 +139,11 @@ def main() -> None:
     fig.savefig(FIG / f"{tag}_maps.png", bbox_inches="tight")
     plt.close(fig)
     # ---- measures against the parameter
-    x = np.array([float(v) for v in values])
+    try:
+        x = np.array([float(v) for v in values])
+        names = None
+    except ValueError:  # named cases instead of a numeric parameter
+        x, names = np.arange(len(values), dtype=float), values
     panels = [("equivalent_radius", "equivalent radius (cells)"), ("compactness", "compactness"),
               ("growth_exponent", "growth exponent"), ("orientation_domains", "orientation domains"),
               ("mean_misorientation", r"mean misorientation ($2\pi/k$)"), ("radial_alignment", "radial alignment"),
@@ -148,6 +152,8 @@ def main() -> None:
     for ax, (key, name) in zip(axes.ravel(), panels):
         ax.plot(x, [r[key] for r in rows], "o-", color=COLORS[1], lw=1.2, ms=4)
         ax.set_xlabel(label); ax.set_ylabel(name)
+        if names:
+            ax.set_xticks(x); ax.set_xticklabels(names, fontsize=7)
         if key == "orientation_domains":
             ax.set_yscale("log")
     fig.tight_layout()
