@@ -334,3 +334,21 @@ the benchmark target for F1 is the 2003 paper.
 Order: F1 (quantitative, cheap), then the auxiliary-variable capability with F2 and F3, then
 F4. F2b waits for the JOM 2004 paper.
 
+### 9.3 Check of the Ag-Cu regular-solution data (2026-11-17)
+
+Three-phase equilibrium computed from the regular-solution free energies with
+Omega_S = 26.0 - 0.004 T and Omega_L = 16.0 - 0.004 T kJ/mol, T_Ag = 1234 K, T_Cu = 1358 K:
+
+| heats of fusion | T_E | c_E (Cu) | solid compositions |
+|---|---|---|---|
+| 11.30, 13.05 kJ/mol (printed in the 2017 paper) | 1055.2 K | 0.395 | 0.149, 0.851 |
+| 9.543, 15.033 kJ/mol (implied by Delta g_A = -0.5802, Delta g_B = -1.0477 at T = 0.72 T_E in Table 4 of the 2021 paper) | 1055.5 K | 0.345 | 0.149, 0.851 |
+| stated in the 2017 paper | 1055.5 K | 0.35 | -- |
+
+The second row reproduces the stated eutectic point; the first does not reproduce c_E. Case F2
+uses 9.543 and 15.033 kJ/mol (`derived`), and reports the difference. Both rows give
+Omega_L/RT = 2.052 and Omega_S/RT = 3.635 at 0.72 T_E (2021 Table 4: 2.0510, 3.6335).
+PINNACLE needs for F2: a row without time derivative in `pf_fem_explicit` (the chemical
+potential mu = d f/d c - eps_c^2 T lap c by lumped projection), kernels for the
+regular-solution bulk term of phi, for mu, and for the flux D(phi) c (1 - c) grad mu.
+
