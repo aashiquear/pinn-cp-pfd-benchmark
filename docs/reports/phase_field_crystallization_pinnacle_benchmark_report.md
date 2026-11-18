@@ -2074,7 +2074,7 @@ Animation: `figures/crystallization/f4_dendrites_<run>.gif`.
 - *Orientational energy $h$.* A larger $h$ raises the grain-boundary energy and the cost of
   a disordered solid: growth at low $\chi_l$ stops earlier.
 - *Box size.* Dendrites, and spherulites with many grains across the radius, need boxes of
-  200 to 300 cells per edge (section 11).
+  200 to 300 cells per edge (section 13).
 - *Crystallography.* The tilt maps are the three-dimensional counterpart of an orientation
   map from electron backscatter diffraction; the misorientation and boundary share of Table
   36 are the quantities such a map gives. With the triclinic energy every pair
@@ -2088,7 +2088,209 @@ On the GPU of rocm-server (float64, shared with other runs) a 64 x 64 x 64 run t
 sub-steps of the four-component orientation field. Routes: FE only; the unit-norm
 constraint and the non-differentiable energy have no network form in PINNACLE.
 
-## 10. Limits
+## 11. The ternary eutectic model: lamellar growth, solute rejection and trapping
+
+### 11.1 Purpose
+
+Two solid phases that grow side by side from one liquid form a eutectic. A third component
+that neither solid dissolves is pushed ahead of the front. (ratkai 2015 ternary) show that
+this rejected component destabilizes the lamellar front into cells and, at higher speed,
+into two-phase dendrites, and that a fast front traps all components and grows without
+partitioning. The case gives the user the three numbers that control such a structure: how
+fast the front moves at a given driving force, how much of the third component the solid
+takes up, and whether the solid stays two-phase. It tests three capabilities of PINNACLE:
+three coupled conserved fields with a mobility matrix, chemical potentials carried as
+auxiliary variables (so that the fourth-order equations need second derivatives only), and
+a free energy with a logarithmic term.
+
+### 11.2 Governing equations
+
+Fields: $\phi$ (1 liquid, 0 solid; the paper uses the opposite labels) and the mole
+fractions $c_1$, $c_2$, with $c_3 = 1 - c_1 - c_2$. Free energy (ratkai 2015 ternary),
+dimensionless:
+
+$$ F = \int \Big\{ \frac{\kappa_\phi}{2}|\nabla\phi|^2 + w\,g(\phi) + p(\phi)\,f_l
+      + [1 - p(\phi)]\Big[f_s + \frac{\kappa_c}{2}\sum_i |\nabla c_i|^2\Big] \Big\}\,dV, $$
+
+$$ f_l = \sum_i c_i \ln c_i, \qquad
+   f_s = \sum_i c_i\,(f_{s,i} + \ln c_i) + \Omega_{12} c_1 c_2 + \Omega_{23} c_2 c_3 + \Omega_{31} c_3 c_1 . $$
+
+The liquid is an ideal solution and the solid a regular solution. $f_{s,i}$ is the free
+energy of pure solid $i$ relative to its liquid; the same value $f_s$ is used for the three
+components and is the driving force of the case. Equations of motion:
+
+$$ \dot\phi = -M_\phi \Big\{ w\,g'(\phi) + p'(\phi)\Big[f_l - f_s - \frac{\kappa_c}{2}\sum_i|\nabla c_i|^2\Big] - \kappa_\phi \nabla^2\phi \Big\}, $$
+
+$$ \dot c_i = \sum_j \nabla\!\cdot\!\big[\,p(\phi)\,M_{ij}\,\nabla\mu_j\,\big], \qquad
+   \mu_j = \ln c_j + [1 - p(\phi)]\Big(f_{s,j} + \sum_k \Omega_{jk} c_k\Big) - \kappa_c \nabla\!\cdot\!\big([1 - p(\phi)]\nabla c_j\big), $$
+
+with $M_{ii} = 1$ and $M_{ij} = -1/2$, which keeps $\sum_i c_i = 1$. The mobility vanishes
+in the solid ($p = 0$), so the composition pattern is frozen behind the front.
+
+What the terms do:
+
+- $\Omega_{12} = 3.05 > 2$: a solid of equal $c_1$ and $c_2$ is unstable and separates
+  into two solid solutions. This makes the lamellae.
+- $\Omega_{23} = \Omega_{31} = 3.0$: component 3 raises the energy of both solids. They
+  reject it.
+- $\kappa_c$ acts in the solid only. It sets the energy and width of the boundary between
+  the two solids, and with it the smallest lamellar spacing.
+- $f_s$: the more negative, the larger the driving force and the faster the front.
+
+In PINNACLE: kernels `ts_phase_bulk`, `ts_solute_flux` and `ts_chemical_potential`, with
+$\mu_1$, $\mu_2$, $\mu_3$ as auxiliary variables of `pf_fem_explicit` (ADR 0044).
+
+### 11.3 Parameters
+
+**Table 38.** Parameters of case F3.
+
+| quantity | value | provenance |
+|---|---|---|
+| $\kappa_\phi$, $\kappa_c$, $w$, $M_\phi$ | 0.75, 0.4, 0.0469, 1 | reported_text |
+| $\Omega_{12}$, $\Omega_{23} = \Omega_{31}$ | 3.05, 3.0 | reported_text |
+| $\Delta x$, $\Delta t$ | 1, 0.0025 | reported_text |
+| liquid composition $(c_1, c_2, c_3)$ | (0.455, 0.455, 0.09) | reported_text |
+| $f_s$ | -0.82 to -0.964, uniform | paper: a gradient, -0.964 at the cold end and -0.914 at the dendrite tip, pulled at a fixed speed; uniform here (assumed) |
+| initial solid | slab of 40 cells, lamella pairs of 16 cells, solids (0.8225, 0.0875, 0.09) and (0.0875, 0.8225, 0.09) | assumed |
+| noise | none | paper: flux noise, amplitude not printed (unavailable) |
+| box | 64 x 192 cells, two-dimensional, periodic across the lamellae, no flux at both ends | paper: 96 x 96 x 612 |
+| steps | 120,000 (series), 600,000 (long runs) | paper: up to 3.6e6 |
+
+### 11.4 Cases and results
+
+Decks: `decks/crystallization/ternary/f3_ternary_fs<f_s>_c30.09_lam16_fem.i` (series) and
+`f3_long_fs<f_s>_c30.09_lam16_fem.i` (long runs), from `scripts/cryst_ternary_decks.py`.
+Measures and figures: `scripts/cryst_ternary_figures.py`.
+
+*Expected result.* (ratkai 2015 ternary) report, with rising pulling speed: a flat lamellar
+front, eutectic colonies, two-phase dendrites, and partitionless growth above a speed of
+0.35; the lamellar spacing follows $\lambda \propto v^{-1/2}$. Their runs are
+three-dimensional and pulled through a gradient. A two-dimensional section at uniform
+driving force cannot form the dendrite. The comparison is of the sequence from lamellar to
+partitionless growth (tier 4).
+
+#### 11.4.1 Series in the driving force
+
+![Ternary series](../../figures/crystallization/f3_maps.png)
+
+**Figure 42.** Series in $f_s$ at time 300 (120,000 steps). Top: $c_1 - c_2$ in
+the solid (red and blue: the two solid solutions; white: homogeneous solid). Bottom:
+$c_3$. The slab below 40 cells is the initial solid. Animation:
+`figures/crystallization/f3_f3_ternary_fs-0.86_c30.09_lam16_fem.gif`.
+
+![Ternary measures](../../figures/crystallization/f3_measures.png)
+
+**Figure 43.** Measures of the series. Left: front speed over the last 40 % of the
+run; dotted line: the speed above which the paper reports partitionless growth. Middle:
+$c_3$ of the new solid over that of the liquid, and the contrast between the two solids
+(1: the initial solids; 0: homogeneous). Right: largest $c_3$ ahead of the front.
+
+**Table 39.** Series in the driving force at time 300. Advance: front position
+minus 40. Speed: mean over the last 40 % of the run. The middle columns are measured in the
+solid more than 15 cells from the seed, which three runs did not reach (--).
+
+| $f_s$ | advance (cells) | speed | new solid | $c_3$ solid / liquid | $c_3$ peak ahead |
+|---|---|---|---|---|---|
+| -0.82 | 17.5 | 0.053 | two-phase, 8 pairs | -- | 0.117 |
+| -0.84 | 22.8 | 0.067 | two-phase, 8 pairs | -- | 0.122 |
+| -0.86 | 23.1 | 0.053 | two-phase, contrast fading | -- | 0.115 |
+| -0.88 | 40.8 | 0.094 | homogeneous | 0.46 | 0.133 |
+| -0.90 | 60.1 | 0.138 | homogeneous | 0.55 | 0.150 |
+| -0.93 | 94.5 | 0.223 | homogeneous | 0.69 | 0.173 |
+| -0.964 | 138.4 | 0.323 | homogeneous | 0.84 | 0.228 |
+
+- At $f_s$ = -0.82 and -0.84 the front continues the eight lamella pairs of the seed. The
+  new solid is almost free of component 3, which collects in a layer ahead of the front.
+- From $f_s$ = -0.88 the solid no longer separates: $c_1 = c_2$ behind the front
+  (contrast below 0.001). The front is too fast for components 1 and 2 to exchange sideways
+  within the interface. Component 3 is still partly rejected.
+- Trapping of component 3 rises with the speed: 46 % of the liquid value at speed 0.094,
+  84 % at 0.323. At the paper's limit of 0.35 the trend gives nearly complete trapping,
+  which agrees with the paper's partitionless growth.
+- $f_s$ = -0.86 is at the transition. The contrast fades during the run and the speed is
+  not ordered with the neighbors (0.053 against 0.067 at -0.84): the run is a transient.
+- Difference from the paper: the solid becomes homogeneous in $c_1 - c_2$ at a speed
+  between 0.07 and 0.09 here. The paper still shows two-phase dendrites at higher speeds.
+  Three differences of the set-up bear on this and were not separated: no noise here (the
+  homogeneous solid is unstable but needs a perturbation to separate, and the mobility in
+  the solid is zero), a flat front in two dimensions (a dendrite tip rejects component 3
+  sideways and stays slower locally), and a uniform driving force.
+
+#### 11.4.2 Long runs: is the lamellar front steady?
+
+![Long ternary runs](../../figures/crystallization/f3_long.png)
+
+**Figure 44.** Long runs (time 1500, 600,000 steps) at $f_s$ = -0.82, -0.84 and
+-0.86. Maps: $c_1 - c_2$ in the solid and $c_3$ at the end. Middle: front position against
+time; $n$ is the exponent of (position - 40) $\propto t^n$ over the last 80 % of the run.
+Right: $c_3$ averaged across the box, along the growth direction; dotted: the initial
+liquid value.
+
+**Table 40.** Long runs at time 1500. Deceleration: relative change of the speed
+between the fourth and the last fifth of the run.
+
+| $f_s$ | front (cells) | speed (last 40 %) | deceleration | exponent $n$ | pairs | contrast | $c_3$ solid / liquid | $c_3$ at the front | $c_3$ at the far end |
+|---|---|---|---|---|---|---|---|---|---|
+| -0.82 | 99.7 | 0.028 | 0.22 | 0.76 | 8 | 0.68 | 0.28 | 0.143 | 0.130 |
+| -0.84 | 115.5 | 0.033 | 0.27 | 0.74 | 8 | 0.64 | 0.32 | 0.162 | 0.147 |
+| -0.86 | 126.7 | 0.045 | 0.28 | 0.89 | 8 | 0.46 | 0.39 | 0.176 | 0.158 |
+
+- The lamellae are stable. Eight pairs of spacing 8 cells grow over 60 to 87 cells with
+  straight boundaries; no pair is lost or added.
+- The front is not steady. It decelerates in all three runs, with an exponent between 1/2
+  (growth limited by diffusion) and 1 (steady growth).
+- The cause is the rejected component. The solid takes 28 to 39 % of the liquid's $c_3$;
+  the rest stays in the liquid. At a uniform driving force a planar front has no steady
+  state unless the solid takes up the full liquid value, so the layer ahead of the front
+  thickens and the front slows. In addition the box is closed and 192 cells long: by the
+  end the liquid at the far wall has risen from 0.09 to 0.13 to 0.16. Both effects reduce
+  the driving force with time. The runs do not separate them.
+- This is why the paper pulls the sample through a gradient. The front then moves to the
+  position where its speed equals the pulling speed, and a steady state exists at every
+  pulling speed. PINNACLE has a temperature programme in time (section 7.4.4) but no moving
+  frame; a pulled case would need a field $f_s(y - vt)$, which the kernels do not take
+  today (section 12).
+- $f_s$ = -0.86 shows the transition in one run. Over the first 20 cells the contrast
+  faded, and a band of about 12 cells grew nearly homogeneous (the white band in the map).
+  As the front slowed, the two-phase pattern came back with the spacing of the seed. The
+  contrast of the table (0.46) averages over both parts.
+- Component 3 inside the solid is not uniform: it is higher along the boundaries between
+  the two solids (the thin vertical lines in the $c_3$ maps), where both major components
+  are diluted.
+
+### 11.5 What to expect when the parameters change
+
+- *Driving force $f_s$.* Above about -0.85: two-phase lamellae that reject component 3,
+  slow and decelerating. Below about -0.88: a homogeneous solid, faster, with component 3
+  trapped in proportion to the speed. Near -0.964 the solid is close to the liquid
+  composition.
+- *Share of the third component $c_3$.* More of it thickens the rejected layer and slows
+  the lamellar front further. In three dimensions it is what breaks the flat front into
+  colonies and dendrites (ratkai 2015 ternary). Not varied here.
+- *Lamellar spacing.* The front here keeps the spacing of the seed, because the frozen
+  solid cannot adjust and no noise is applied. The paper finds $\lambda \propto v^{-1/2}$
+  with noise. A series in the initial spacing is in section 11.4.3 when run.
+- *$\Omega_{12}$.* Below 2 the two solids are miscible and no lamellae form. Larger values
+  give purer solids and a sharper boundary.
+- *$\kappa_c$.* Larger: wider boundaries between the solids and a larger smallest spacing.
+- *Box length.* A closed box enriches in the rejected component. For a steady measurement
+  the liquid ahead should be several diffusion lengths $D/v$ long; at speed 0.03 that is
+  several hundred cells.
+- *Crystallography.* The model has no orientation field: the two solids are phases, not
+  grains. A micrograph of such a solid would show the two-phase pattern (composition
+  contrast in back-scattered electrons) and the third component as a film at the phase
+  boundaries and in the last liquid to freeze. Orientation in a eutectic grain is treated
+  with the binary model in section 10.
+
+### 11.6 Cost
+
+64 x 192 cells with six fields on the GPU of rocm-server (float64): 393 s for 120,000 steps
+when the GPU ran seven such jobs in turn (3.3 ms per step); the long runs took 8867, 4573
+and 2781 s for 600,000 steps on a GPU shared with other jobs (4.6 to 14.8 ms per step).
+The paper's three-dimensional box (96 x 96 x 612, 3.6e6 steps) has 460 times the cells and
+6 to 30 times the steps; it was not attempted (section 13). Routes: FE only.
+
+## 12. Limits
 
 - Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
   need `pf_pinn`, which does not yet carry the spherical term (A5), and a per-step predictor
@@ -2116,12 +2318,12 @@ constraint and the non-differentiable energy have no network form in PINNACLE.
   float64, numpy backend for FE and torch 2.13.0 (CPU) for the network routes; no GPU on
   that machine. Section 7 ran on the rocm-server GPU.
 
-## 11. Computational cost at larger sizes
+## 13. Computational cost at larger sizes
 
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 38.** Measured cost per time step.
+**Table 41.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -2134,8 +2336,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 39.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 38; `derived`, not measured beyond 1000 x 1000).
+**Table 42.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 41; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|
@@ -2158,7 +2360,7 @@ Table 38; `derived`, not measured beyond 1000 x 1000).
   the sizes used and need no accelerator.
 - Three-dimensional cases are not measured yet.
 
-## 12. References
+## 14. References
 
 Keys of `bib/references.bib`, by model.
 

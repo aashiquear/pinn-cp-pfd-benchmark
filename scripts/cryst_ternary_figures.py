@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """Case F3 (ternary eutectic growth at a fixed driving force): measures and figures.
 
-Usage: python3 scripts/cryst_ternary_figures.py
+Usage: python3 scripts/cryst_ternary_figures.py [long]   (long: only the long runs)
 Reads results/crystallization/ternary/f3_ternary_fs*_fem/; writes summary.csv there and
-figures/crystallization/f3_maps.png, f3_measures.png, f3_<run>.gif.
+figures/crystallization/f3_maps.png, f3_measures.png, f3_<run>.gif. The long runs
+(f3_long_fs*_fem, 600,000 steps) give f3_long.png and long_summary.csv: maps at the end, the
+front position against time with the fitted growth exponent (front - seed ~ t^n over the last
+80 % of the run; n = 1 is steady growth, n = 1/2 is growth limited by diffusion), and the
+profile of c3 along the growth direction at the end.
 
 Measures per run (dx = 1, dt = 0.0025, as in the paper's dimensionless units):
   front speed          slope of the solid fraction over the last 40 % of the run times the box
@@ -85,7 +89,58 @@ def analyse(run: Path) -> dict:
             "_fields": (xs, ys, phi, c1, c2), "_run": run}
 
 
+def long_runs() -> None:
+    runs = sorted((p for p in RES.glob("f3_long_fs*_fem") if (p / "solver_history.csv").exists()),
+                  key=lambda p: -float(re.search(r"_fs(-[0-9.]+)_", p.name).group(1)))
+    if not runs:
+        return
+    rows = [analyse(r) for r in runs]
+    n = len(rows)
+    fig = plt.figure(figsize=(1.25 * 2 * n + 7.4, 5.0))
+    gs = fig.add_gridspec(1, 2 * n + 4, width_ratios=[1.0] * (2 * n) + [0.5, 2.6, 0.7, 2.6], wspace=0.1)
+    ax_t, ax_c = fig.add_subplot(gs[0, 2 * n + 1]), fig.add_subplot(gs[0, 2 * n + 3])
+    colors = ["#1b3a5c", "#c8553d", "#3aa39b", "#8a6fb0"]
+    for j, r in enumerate(rows):
+        xs, ys, phi, c1, c2 = r["_fields"]
+        hist = list(csv.DictReader((r["_run"] / "solver_history.csv").open()))
+        t = np.array([float(h["t"]) for h in hist])
+        front = (1.0 - np.array([float(h["phi_mean"]) for h in hist])) * float(ys[-1])
+        sel = (t > 0.2 * t[-1]) & (front - SEED > 1.0)
+        r["exponent"] = float(np.polyfit(np.log(t[sel]), np.log(front[sel] - SEED), 1)[0])
+        a1, a2 = fig.add_subplot(gs[0, 2 * j]), fig.add_subplot(gs[0, 2 * j + 1])
+        a1.imshow(np.where(phi < 0.5, c1 - c2, np.nan), origin="lower", cmap="RdBu_r", vmin=-0.8, vmax=0.8,
+                  extent=[0, xs[-1], 0, ys[-1]])
+        a2.imshow(1.0 - c1 - c2, origin="lower", cmap="magma", vmin=0.0, vmax=0.2, extent=[0, xs[-1], 0, ys[-1]])
+        a1.set_title(f"$f_s$ = {r['f_s']:g}\n$c_1 - c_2$", fontsize=8)
+        a2.set_title("$c_3$", fontsize=8)
+        for a in (a1, a2):
+            a.set_xticks([]); a.set_yticks([])
+        ax_t.plot(t[::200], front[::200], color=colors[j], lw=1.2,
+                  label=f"$f_s$ = {r['f_s']:g}, $n$ = {r['exponent']:.2f}")
+        ax_c.plot(ys, (1.0 - c1 - c2).mean(axis=1), color=colors[j], lw=1.2, label=f"$f_s$ = {r['f_s']:g}")
+    ax_t.set_xlabel("time"); ax_t.set_ylabel("front position (cells)")
+    ax_t.legend(frameon=False, fontsize=7)
+    ax_c.axhline(0.09, color="0.5", ls=":", lw=0.9)
+    ax_c.set_xlabel("position along the growth direction (cells)")
+    ax_c.set_ylabel("$c_3$, mean across the box")
+    ax_c.legend(frameon=False, fontsize=7)
+    fig.savefig(FIG / "f3_long.png", bbox_inches="tight")
+    plt.close(fig)
+    keys = [k for k in rows[0] if not k.startswith("_")]
+    with (RES / "long_summary.csv").open("w", newline="") as fh:
+        wr = csv.DictWriter(fh, fieldnames=keys, extrasaction="ignore")
+        wr.writeheader()
+        wr.writerows(rows)
+    for r in rows:
+        print("long", " ".join(f"{k}={r[k]:.4g}" if isinstance(r[k], float) else f"{k}={r[k]}" for k in keys))
+    print("wrote figures/crystallization/f3_long.png")
+
+
 def main() -> None:
+    if "long" in sys.argv[1:]:
+        plt.rcParams.update({"font.size": 9, "savefig.dpi": 200, "axes.linewidth": 0.8, "mathtext.fontset": "cm"})
+        long_runs()
+        return
     plt.rcParams.update({"font.size": 9, "savefig.dpi": 200, "axes.linewidth": 0.8, "mathtext.fontset": "cm"})
     runs = sorted((p for p in RES.glob("f3_ternary_fs*_fem") if (p / "solver_history.csv").exists()),
                   key=lambda p: -float(re.search(r"_fs(-[0-9.]+)_", p.name).group(1)))
