@@ -1,60 +1,147 @@
 # Phase-field crystallization with PINNACLE: nucleation, growth forms and polycrystalline solidification (Part IV)
 
-Status 2026-11-17. Complete: the single-field model (cases A1 to A5), a foreign wall (B1),
-thermal noise and transformation kinetics (B2), the binary alloy model (C1, C2) and the
-orientation-field model at the conditions of Fig. 4 and Fig. 5 of (granasy 2005 spherulites)
-(C3). Open: parameter series for every model, the remaining orientation-field cases (C4 to
-C6), the added cases E1 to E5, the eutectic, ternary, density-coupled and quaternion models,
-and the phase-field crystal (D). Plan: `docs/14_phase_field_crystallization_plan.md`.
-Reproduction: `docs/reproduce_crystallization.md`. Every deck named here is a complete input:
+Status 2026-11-18. All planned cases are run except the shell and coral forms (E2, E3), which
+were left out by the author's decision; what was not obtained is listed in section 13.
+Plan: `docs/14_phase_field_crystallization_plan.md`. Reproduction:
+`docs/reproduce_crystallization.md`. Every deck named here is a complete input:
 `pinnacle run <deck>`.
 
 ## Abstract
 
-*Draft from the results available on 2026-11-18; to be revised when all cases are complete.*
-
-We benchmark the phase-field module of the PINNACLE framework against published results on
-crystal nucleation and polycrystalline growth. Ten models are covered: a single-field model
-of a pure undercooled melt, the same model with a foreign wall and with thermal noise, a
-binary alloy model, its extension by an orientation field in two dimensions and by a
-quaternion field in three, a density-coupled model of the hard-sphere liquid, a
-regular-solution model of the Ag-Cu eutectic, a ternary eutectic model, and the
-phase-field crystal model. Each case is solved by finite elements; the deterministic
-single-field cases, stationary and time-dependent, also by a physics-informed network and
-by a network-started finite-element solve. Every result is
-compared with the published figure and, where one could be written, with a reference
-independent of the framework. Finite-element critical nuclei in nickel agree with a shooting
-solution to $2.2\times10^{-5}$ and with the published barrier to 1.1 %; interface energy and
-front velocity agree with closed forms to $1.4\times10^{-4}$. Nucleation barriers on a wall
-follow the published curves within 0.008 of the normalized barrier. Noise-induced
-crystallization gives an Avrami exponent of $3.14 \pm 0.29$ over five realizations, against
-the theoretical 3. The binary model reproduces the four single-crystal growth forms, and the
-orientation-field model the single-crystal dendrite, the polycrystalline dendrite and the
-spherulite, with crystal radii within 1.0 to 10.1 % of the independent reference; nine of the
-ten published spherulitic forms were obtained. On a rough wall the number of crystals per
-site follows the wedge angle. In three dimensions a single crystal turns into a
-polycrystalline spherulite when the orientational mobility is reduced by a factor of 5 to 7.
-The Ag-Cu eutectic grows steadily at 0.031 m/s at 100 K of undercooling and selects a
-lamellar spacing of 8 to 16 nm by splitting wider lamellae; the ternary eutectic front
-rejects the third component, decelerates at a uniform driving force, and grows without
-phase separation at high driving force. A network trained on the stationary residual
-reaches the critical nucleus from initial guesses of 0.4 to 2.0 classical radii, where
-Newton's method converges only from 0.85 to 1.3. Trained on the assembled finite-element
-residual, a network gives the barrier of a nucleus on a wall within $4\times10^{-4}$ of the
-finite-element saddle for both wall models and three seeds; as a start of Newton's method
-it reached the nucleus in 4 of 9 runs for the ordering wall. A time-dependent network
-gives the front velocity within 2 to 10 % and does not decide the fate of a seed 10 % above
-the critical size; the network-started march returns the finite-element result in every
-case without saving iterations. The phase-field crystal model gives the triangular,
-striped and liquid phases where the one-mode phase diagram places them, and crystal growth
-from a seed within 2 % of a spectral reference. Noise-driven cases have no network route.
-For every model the report states what changes when each parameter is varied, with
-intermediate values that the sources do not show. Parameters that the sources do not state
-are marked as assumed.
+Phase-field models of crystallization range from a single order parameter for a pure melt
+to coupled fields for composition, crystal orientation and particle density, and their
+published results are the natural test of a general-purpose solver. We benchmark the
+phase-field module of the open framework PINNACLE on ten such models: the single-field
+model of an undercooled melt, alone, with a foreign wall and with thermal noise; a binary
+alloy model and its extensions by an orientation field in two dimensions and by a
+quaternion field in three; a density-coupled model of the hard-sphere liquid; a
+regular-solution model of the Ag-Cu eutectic; a ternary eutectic model; and the
+phase-field crystal model. Each case is composed from registered kernels in an input deck,
+solved by finite elements, and compared with the published result and, where one could be
+written, with a reference independent of the framework. The deterministic single-field
+cases are also solved by a physics-informed network and by a network-started
+finite-element solve. Critical nuclei in nickel agree with a shooting solution to
+$2.2\times10^{-5}$ and with the published barrier to 1.1 %; interface energy and front
+velocity agree with closed forms to $1.4\times10^{-4}$; nucleation barriers on a wall follow
+the published curves within 0.008 of the normalized barrier; and noise-induced
+crystallization gives an Avrami exponent of $3.14 \pm 0.29$ against the theoretical 3. The
+alloy and orientation-field models reproduce the single-crystal growth forms, the
+polycrystalline dendrite and nine of ten published spherulitic forms, with crystal radii
+within 1.0 to 10.1 % of an independent finite-difference code. In three dimensions a single
+crystal becomes a polycrystalline spherulite when the orientational mobility is reduced by
+a factor of 5 to 7. The Ag-Cu eutectic grows at 0.031 m/s at 100 K of undercooling and
+selects a lamellar spacing of 8 to 16 nm, and phase-field crystal growth from a seed is
+within 2 % of a spectral reference. A network trained on the stationary residual reaches
+the critical nucleus from initial guesses of 0.4 to 2.0 classical radii, where Newton's
+method converges only from 0.85 to 1.3, and a network trained on the assembled
+finite-element residual gives the barrier of a nucleus on a wall within $4\times10^{-4}$.
+The network routes also have clear limits: as a start of Newton's method the network
+reached the wall nucleus in 4 of 9 runs for an ordering wall, a time-dependent network
+gives the front velocity only within 2 to 10 % and does not decide the fate of a seed 10 %
+above the critical size, and no network route was cheaper than the finite-element solve.
+For every model we state what changes when each parameter is varied, mark the parameters
+that the sources do not give, and report the cost on desktop hardware.
 
 ## 1. Introduction
 
-*To be written when all cases are complete.*
+Most technical and natural solids form by crystallization from a melt or a solution, and
+the microstructure that results (the number of grains, their shapes and orientations, the
+distribution of solute) is set during two stages that are difficult to observe: the
+nucleation of crystals a few nanometers across and their growth into forms that range from
+compact single crystals over dendrites to space-filling polycrystalline spherulites. The
+phase-field method describes both stages with one set of continuum equations. The
+crystal-liquid interface is a region of finite width in which a structural order parameter
+changes from its liquid to its crystal value, an idea that goes back to the
+diffuse-interface theory of (cahn 1958 interfacial) and its application to the critical
+nucleus in (cahn 1959 nucleation), and the dynamics follow from a free-energy functional by
+relaxation (allen 1979 antiphase) and conservation laws. Coupled to a composition field the
+method gives dendritic solidification of alloys (kobayashi 1993 dendritic;
+warren 1995 microsegregation; karma 1998 quantitative); coupled to an orientation field it
+gives grain boundaries and polycrystalline growth (kobayashi 1998 vector;
+warren 2003 polycrystalline).
+
+A line of work by Gránásy and coworkers extended this description to nucleation and to
+complex polycrystalline forms within one family of models. The binary model with thermal
+noise reproduces homogeneous nucleation and transformation kinetics (granasy 2002 binary);
+walls with prescribed wetting properties give heterogeneous nucleation
+(granasy 2007 heterogeneous); a free energy for the orientation in the liquid lets new
+grains form at the growth front, which explains polycrystalline dendrites and the
+categories of spherulites (granasy 2004 mechanism; granasy 2005 spherulites); a quaternion
+field carries the model to three dimensions (pusztai 2005 threedimensions); and
+regular-solution and ternary free energies give eutectic growth (lewis 2004 eutectic;
+ratkai 2015 ternary; ratkai 2017 nanoscale). On the scale of the particles, the phase-field
+crystal model replaces the order parameter by a periodic density and contains crystal
+structure, elasticity and defects without further input (elder 2002 elasticity;
+elder 2004 plastic). The review (granasy 2019 nucleation) collects these models and their
+results on nucleation. Together they form a body of published figures and numbers with
+stated equations and, for the most part, stated parameters, which makes them suitable as a
+benchmark.
+
+The models were solved by their authors with purpose-written codes, usually finite
+differences or spectral methods on uniform grids. A general-purpose framework has to
+obtain the same results from components that were not written for one model: kernels for
+each term of the equations, a small number of time integrators, and boundary terms, all
+composed in an input file. The cases stress such a framework in ways that standard
+verification problems do not. The critical nucleus is a saddle point of the free energy,
+unstable under the model's own dynamics, so neither a time march nor an unguided Newton
+iteration finds it reliably. Nucleation is driven by noise whose discrete variance diverges
+under refinement. The orientation field is an angle, or a unit quaternion, with a singular
+mobility in the liquid. The eutectic and phase-field crystal models are of fourth and sixth
+order in space. And the published growth forms need grids of $10^5$ to $10^7$ nodes over
+thousands of steps.
+
+A second question concerns physics-informed neural networks, which represent the solution
+by a network trained on the residual of the equations (raissi 2019 involving) or on an
+energy (samaniego 2020 concepts). For phase-field equations their training is known to be
+difficult: sharp moving interfaces call for adaptive sampling and sequential or causal
+training in time (wight 2021 adaptive; mattey 2022 sequential; wang 2024 causality). These
+studies address Allen-Cahn and Cahn-Hilliard benchmarks with smooth initial data. Whether a
+network can find the critical nucleus, hold it against the trivial liquid state, respect a
+wetting boundary condition, or decide whether a near-critical seed melts or grows has, to
+our knowledge, not been examined against reference solutions; neither has the combination
+in which a network supplies the starting point of a finite-element solve.
+
+This report is Part IV of a study that benchmarks the PINNACLE framework against published
+results; Parts I to III treated crystal plasticity and phase-field fracture. It makes four
+contributions.
+
+1. Ten phase-field crystallization models are set up from registered components of one
+   framework and compared with the published results and, where possible, with reference
+   solutions written independently of the framework (a shooting solution for the nucleus,
+   closed forms for interface and front, a finite-difference code for the alloy and
+   orientation-field models, a spectral code for the phase-field crystal). Each comparison
+   carries a tier that states what it rests on (section 2.4).
+2. The capabilities the cases required were added to the framework and are documented
+   there: a constrained saddle search, white-noise scaling, explicit GPU time stepping
+   with angular and unit-norm variables, auxiliary chemical potentials, the phase-field
+   crystal kernels, a stationary network with deflation of trivial states, training on the
+   assembled finite-element residual, and a per-step predictor for the implicit march
+   (section 2.1). The last three are independent of the phase-field model and can be used
+   by other assemblers.
+3. Three solution routes (finite elements, a physics-informed network, and a
+   network-started finite-element solve) are compared on the deterministic single-field
+   cases over several seeds, including the cases in which the network route fails.
+4. For every model the report states what a user should expect when each parameter is
+   changed, with series at intermediate values that the sources do not show, and gives the
+   measured cost on desktop hardware with estimates for the published sizes.
+
+Three limits of scope should be stated at the outset. Runs are of desktop size: the
+largest two-dimensional grid is 1000 x 1000 where the sources use up to 4000 x 4000, and
+the three-dimensional case uses $64^3$ cells against $300^3$. Parameters that the sources
+do not state (noise amplitudes, seeds, some mobilities) are assumed and marked, and
+comparisons that depend on them are qualitative. No case is compared with experiment
+directly; the experimental content enters through the published models.
+
+The report is organized by model. Section 2 describes the framework components, the
+solution routes, the independent references and the accuracy tiers. Sections 3 to 5 treat
+the single-field model: interface, front and critical nucleus (3), nucleation on a wall
+(4), and thermal noise with transformation kinetics (5). Sections 6 and 7 treat the binary
+alloy model and its orientation-field extension, with the spherulitic forms. Section 8
+covers the hard-sphere model, section 9 the quaternion field in three dimensions, sections
+10 and 11 the binary and ternary eutectic models, and section 12 the phase-field crystal.
+Each of these sections gives the purpose of the model, its equations and parameters, the
+cases with their results, the expected effect of parameter changes, and the cost. Section
+13 lists the limits, and section 14 the computational cost at larger sizes.
 
 ## 2. Methods
 
@@ -3438,6 +3525,10 @@ pusztai-2005-threedimensions; granasy-2005-spherulites.
 Regular-solution eutectic model (section 10): lewis-2004-eutectic; ratkai-2017-nanoscale.
 
 Ternary eutectic model (section 11): ratkai-2015-ternary.
+
+Network routes (sections 1 and 2.2): raissi-2019-involving; samaniego-2020-concepts;
+wight-2021-adaptive; mattey-2022-sequential; wang-2024-causality. Quantitative dendritic
+growth (section 1): karma-1998-quantitative.
 
 Phase-field crystal model (section 12): elder-2002-elasticity; elder-2004-plastic;
 toth-2010-polymorphism; granasy-2019-nucleation.
