@@ -187,3 +187,48 @@ Notes:
 - The VTK series of the eutectic, ternary and rough-wall cases are read directly by their
   figure scripts (150 to 450 MB per run under `results/`).
 - Gallery panel (e) stops with a non-finite field (report section 7.5.3).
+
+## 8. Stage D: phase-field crystal (report section 12)
+
+Needs PINNACLE with ADR 0046 (kernels `sh_potential`, `weak_laplacian`; `linear_solver = gmres_lu`).
+
+| step | command | output |
+|---|---|---|
+| decks | `python3 scripts/cryst_pfc_decks.py` | `decks/crystallization/pfc/*.i` (26 decks) |
+| reference: phase diagram | `python3 scripts/cryst_pfc_reference.py diagram` (about 10 min, one core) | `data/reference/cryst_pfc_phase_diagram.csv` |
+| reference: one state | `python3 scripts/cryst_pfc_reference.py cell 0.3 -0.25` | free-energy density, peak height and cell size of the three phases (printed) |
+| reference: growth | the command printed in the header of every `d2_growth_*.i` deck, e.g. `python3 scripts/cryst_pfc_reference.py grow 0.3 -0.34 26 15 12 1500 0.125 -0.505164` | `results/crystallization/pfc/reference_grow_*.npz` |
+| runs | `pinnacle run decks/crystallization/pfc/<deck>.i` for every deck (two threads each are enough: `OMP_NUM_THREADS=2`) | `results/crystallization/pfc/<deck>/` |
+| collect | `python3 scripts/cryst_pfc_collect.py` (NumPy only; can run on the compute host) | `<run>/frames.npz` |
+| figures | `python3 scripts/cryst_pfc_figures.py all` | `figures/crystallization/d1_phase_diagram.png`, `d2_growth.png`, `d2_density_series.png`, `d2_eps_series.png`, `d3_polycrystal.png`, the GIFs, `results/crystallization/pfc/*_summary.csv` |
+
+Notes.
+- The growth decks solve a quarter of the crystal (mirror sides); the reference solves the full periodic box, which is the same problem.
+- The seed amplitude is the one-mode amplitude at the solidus density of `data/reference/cryst_pfc_phase_diagram.csv`; the generator holds those densities as constants (`LIQUIDUS`, `SOLIDUS`), so regenerate the decks if the diagram is recomputed with other settings.
+- The reference time step matters: the first-order semi-implicit scheme at dt = 0.5 overestimates the transformed fraction by about 3 % at t = 1500; the commands in the decks use 0.125.
+
+## 9. Network routes of cases A2, A5 and B1 (report sections 3.4.2, 3.4.5 and 4.4)
+
+Needs PINNACLE with ADR 0045 (`pf_pinn_stationary residual_form = fem`, `deflation_function`,
+the per-step predictor of `pf_pinn_fem_hybrid`, `pf_pinn` on a spherical mesh) and Torch
+(CPU is enough). The FE decks of stages A and B must have been run first: the wall decks
+are derived from them and the figures compare with their results.
+
+| step | command | output |
+|---|---|---|
+| wall decks | `python3 scripts/cryst_wall_network_decks.py` | `decks/crystallization/walls/b1_wall_*_{pinn,hybrid,hybrid150}_seed*.i`, `*_newton.i` (21 decks) |
+| wall runs | `scripts/cryst_run_list.sh 2 results/crystallization/walls/runs_network.txt decks/crystallization/walls/b1_wall_*_newton.i decks/crystallization/walls/b1_wall_*_hybrid_seed*.i decks/crystallization/walls/b1_wall_*_pinn_seed*.i` and the same with `runs_network_20k.txt` for the `hybrid150` deck | one result directory per deck; 6.2 h of run time in total on 4 threads per run |
+| wall table and figures | `python3 scripts/cryst_wall_network_figures.py` | `results/crystallization/walls/network_table.csv`, `figures/crystallization/b1_wall_network.png`, `b1_wall_newton_control.png` |
+| Newton from saved fields | `python3 scripts/cryst_wall_network_newton_check.py` (about 2 min) | `results/crystallization/walls/newton_check.csv` |
+| transient decks | `python3 scripts/cryst_transient_network_decks.py` | `decks/crystallization/single_field/{a2_front_velocity_standard,a5_seed_subcritical,a5_seed_supercritical}_{window_fem,pinn_seed{0,1,2},hybrid_seed0}.i` (15 decks) |
+| transient runs | `scripts/cryst_run_list.sh 3 results/crystallization/single_field/runs_network_a2.txt decks/crystallization/single_field/a2_front_velocity_standard_{window_fem,hybrid_seed0,pinn_seed*}.i`; the same with `runs_network_a5.txt` and the `a5_seed_*` decks | 13 to 25 min per network run |
+| transient table and figures | `python3 scripts/cryst_transient_network_figures.py` | `results/crystallization/single_field/network_transient_table.csv`, `figures/crystallization/a2_network.png`, `a5_network.png` |
+
+Notes:
+
+- The wall time of a run comes from the run list's log, so it depends on what else the
+  machine does. Run at most 16 threads in total.
+- A network run is reproducible for its seed on the same Torch version and thread count;
+  the hybrid's corrected state does not depend on the seed when it reaches the nucleus.
+- Model II, hybrid: check the end state. A field that is uniform along the wall is the wall
+  layer, a thicker layer or the grown crystal, not the nucleus (report Table 17).

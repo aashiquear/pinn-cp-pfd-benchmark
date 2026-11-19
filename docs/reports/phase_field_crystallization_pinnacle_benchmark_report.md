@@ -14,13 +14,14 @@ Reproduction: `docs/reproduce_crystallization.md`. Every deck named here is a co
 *Draft from the results available on 2026-11-18; to be revised when all cases are complete.*
 
 We benchmark the phase-field module of the PINNACLE framework against published results on
-crystal nucleation and polycrystalline growth. Nine models are covered: a single-field model
+crystal nucleation and polycrystalline growth. Ten models are covered: a single-field model
 of a pure undercooled melt, the same model with a foreign wall and with thermal noise, a
 binary alloy model, its extension by an orientation field in two dimensions and by a
 quaternion field in three, a density-coupled model of the hard-sphere liquid, a
-regular-solution model of the Ag-Cu eutectic, and a ternary eutectic model. Each case is
-solved by finite elements and, where the problem is deterministic and stationary, also by a
-physics-informed network and by a network-started finite-element solve. Every result is
+regular-solution model of the Ag-Cu eutectic, a ternary eutectic model, and the
+phase-field crystal model. Each case is solved by finite elements; the deterministic
+single-field cases, stationary and time-dependent, also by a physics-informed network and
+by a network-started finite-element solve. Every result is
 compared with the published figure and, where one could be written, with a reference
 independent of the framework. Finite-element critical nuclei in nickel agree with a shooting
 solution to $2.2\times10^{-5}$ and with the published barrier to 1.1 %; interface energy and
@@ -38,7 +39,15 @@ lamellar spacing of 8 to 16 nm by splitting wider lamellae; the ternary eutectic
 rejects the third component, decelerates at a uniform driving force, and grows without
 phase separation at high driving force. A network trained on the stationary residual
 reaches the critical nucleus from initial guesses of 0.4 to 2.0 classical radii, where
-Newton's method converges only from 0.85 to 1.3. Noise-driven cases have no network route.
+Newton's method converges only from 0.85 to 1.3. Trained on the assembled finite-element
+residual, a network gives the barrier of a nucleus on a wall within $4\times10^{-4}$ of the
+finite-element saddle for both wall models and three seeds; as a start of Newton's method
+it reached the nucleus in 4 of 9 runs for the ordering wall. A time-dependent network
+gives the front velocity within 2 to 10 % and does not decide the fate of a seed 10 % above
+the critical size; the network-started march returns the finite-element result in every
+case without saving iterations. The phase-field crystal model gives the triangular,
+striped and liquid phases where the one-mode phase diagram places them, and crystal growth
+from a seed within 2 % of a spectral reference. Noise-driven cases have no network route.
 For every model the report states what changes when each parameter is varied, with
 intermediate values that the sources do not show. Parameters that the sources do not state
 are marked as assumed.
@@ -60,8 +69,8 @@ components marked with an ADR number were added to PINNACLE for this part (branc
 
 | Model (section) | Variables | Kernels and boundary terms | Executioner | Added in |
 |---|---|---|---|---|
-| Single-field (3) | $\phi$ | `time_derivative`, `ac_interface`, `ac_bulk` with a `parsed_free_energy` material | `pf_fem_transient`, `pf_pinn_stationary`, `pf_pinn_fem_hybrid` | ADR 0037 (`ddaeb91`) |
-| Wall (4) | $\phi$ | the same, plus the wetting boundary term (`flux_form = young`) or a Dirichlet value; postprocessor `wall_free_energy` | `pf_fem_saddle` | ADR 0038 (`cd2d3d3`) |
+| Single-field (3) | $\phi$ | `time_derivative`, `ac_interface`, `ac_bulk` with a `parsed_free_energy` material | `pf_fem_transient`, `pf_pinn_stationary`, `pf_pinn_fem_hybrid`; time-dependent network routes: `pf_pinn` (also on a spherical mesh), `pf_pinn_fem_hybrid` with a per-step predictor | ADR 0037 (`ddaeb91`); ADR 0045 (`c5170cc`) |
+| Wall (4) | $\phi$ | the same, plus the wetting boundary term (`flux_form = young`) or a Dirichlet value; postprocessor `wall_free_energy` | `pf_fem_saddle`; network routes: `pf_pinn_stationary residual_form = fem` with `deflation_function`, `pf_pinn_fem_hybrid` | ADR 0038 (`cd2d3d3`); ADR 0045 (`c5170cc`) |
 | Thermal noise (5) | $\phi$ | the same, plus `langevin_noise` (`scaling = white`, `state_factor`) | `pf_fem_transient` | ADR 0038 |
 | Binary alloy (6) | $\phi$, $c$ | `wb_phase_bulk`, `ac_interface_anisotropic`, `wb_solute_flux`, `langevin_noise` | `pf_fem_explicit` | ADR 0039 (`cd2288f`) |
 | Orientation field (7) | $\phi$, $c$, $\theta$ | the binary kernels, plus `orientation_grain_flux`, `orientation_phase_coupling`, `ac_interface_anisotropic orientation = theta`, initial condition `uniform_random` | `pf_fem_explicit` on the Torch (GPU) path, angular variable, sub-cycling | ADR 0040 (`8454620`, `ef9a7cd`) |
@@ -95,7 +104,8 @@ the two network executioners, and sparse storage of the linear operators. The ea
 
 Time-dependent cases use the FE route: `pf_fem_transient` (implicit) for the single-field
 model and `pf_fem_explicit` (forward Euler, lumped mass, bilinear elements, periodic node
-identification) for the alloy models.
+identification) for the alloy models. The deterministic single-field cases A2 and A5 were
+also run on the two network routes of Table 3.
 
 Why a separate stationary network. A saddle of the free energy $F$ is unstable under the
 gradient flow, so a time-dependent PINN cannot hold it. Every stationary state is a zero,
@@ -108,6 +118,37 @@ Constrained saddle search on the FE route (`pf_fem_saddle`, ADR 0038). At a fixe
 crystal $V = \int\omega\phi\,dV$ the nucleus is a minimum, which Newton finds; the multiplier
 $\lambda$ of that constraint is the force along the unstable direction, and the amount is
 moved until $\lambda = 0$; a plain Newton step then removes the constraint.
+
+Training on the assembled residual (`residual_form = fem`, ADR 0045). The strong form of
+the stationary equation has no place for a boundary term: a wall with a contact angle is a
+nonlinear flux condition and a symmetry plane a zero-flux condition, and both live in the
+boundary integral of the weak form. With `residual_form = fem` the network is evaluated at
+the mesh nodes and the loss is the discrete $L^2$ norm of the finite-element residual
+vector $R(\phi_\theta)$,
+
+$$ \mathcal L = \frac{\sum_i R_i^2/m_i}{\sum_i m_i}, $$
+
+with $m_i$ the lumped nodal measure. $R$ is the residual the Newton solve of the FE route
+uses, with every boundary term and the curvilinear measure; prescribed nodal values are
+overwritten, not penalized, and no kernel needs a strong form. The gradient with respect to
+the nodal values is $J^{T}(\partial\mathcal L/\partial R)$ with the consistent Jacobian $J$,
+passed to the network by automatic differentiation. The state to be deflated can be a
+function of position (`deflation_function`: the ordered wall layer of section 4). The
+training code sees an object with one method, `evaluate(u) -> (R, J)`, a mask of
+prescribed unknowns and nodal weights (`pinn/discrete_residual.py`); it holds nothing of
+the phase-field model, so an assembler of another model (the crystal-plasticity residual of
+the earlier parts) can be trained on by providing the same three items.
+
+**Table 3.** The three routes for a time-dependent case.
+
+| route | executioner | how the history is obtained |
+|---|---|---|
+| FE | `pf_fem_transient` | implicit steps, Newton's method per step, started from the previous state |
+| PINN | `pf_pinn` | a network $\phi_\theta(\mathbf x, t)$ trained on the strong residual over consecutive time slabs, the initial condition built in; in spherical symmetry the residual carries $(2/r)\,\partial_r\phi$ and the network reads $r^2$ (ADR 0045) |
+| PINN+FEM | `pf_pinn_fem_hybrid` with `[./pinn] type = pf_pinn` | the trained network is evaluated at the end time of every step and starts that step's Newton iteration (`set_step_predictor`); the FE corrector owns every state; the distance of each prediction from the converged state is recorded |
+
+The predictor is a callable `fn(time, state_n)`; a reduced model or an extrapolation can be
+attached in the same way.
 
 Why the noise-driven cases have no PINN route. A physics-informed network represents the
 solution as a deterministic function $\phi_\theta(\mathbf x, t)$ and is trained to make the
@@ -165,7 +206,7 @@ Sections 3 to 6: Intel Core i9-9980HK, 2 to 6 threads, float64, NumPy backend fo
 Torch 2.13.0 (CPU) for the network routes. Sections 7 and 9 to 11: host rocm-server, Radeon 8060S GPU
 (Torch with ROCm), float64. PINNACLE revisions: `ddaeb91` for section 3 (cases A1, A2, A4,
 A5 and the three routes at one undercooling), `cd2d3d3` for the network family and guess scan
-of section 3 and for sections 4 and 5, `cd2288f` for section 6, `ef9a7cd` for sections 7.4.1 to 7.4.3, `24f86b3` for sections 7.5.1 and 7.5.2, `d35d88e` for section 8, `94f9215` for sections 7.4.4 and 7.5.3 to 7.5.5, `4bad49b` for section 9, and `94f9215` or `4bad49b` for sections 7.5.6, 10 and 11 (per run in `docs/run_ledger.md`; the kernels of these sections are the same in both revisions). The runs on rocm-server use a copy of the PINNACLE source at the stated revision.
+of section 3 and for sections 4 and 5, `cd2288f` for section 6, `ef9a7cd` for sections 7.4.1 to 7.4.3, `24f86b3` for sections 7.5.1 and 7.5.2, `d35d88e` for section 8, `94f9215` for sections 7.4.4 and 7.5.3 to 7.5.5, `4bad49b` for section 9, and `94f9215` or `4bad49b` for sections 7.5.6, 10 and 11 (per run in `docs/run_ledger.md`; the kernels of these sections are the same in both revisions). The runs on rocm-server use a copy of the PINNACLE source at the stated revision. The network routes of sections 3.4.2, 3.4.5 and 4.4 (2026-11-18): the same Intel machine, 4 threads per run, Torch 2.12.1 (CPU), PINNACLE `c5170cc` (the working tree of that commit and of its merge `bc89347`; the code of these routes is the same in both). Section 12: `419577d`, merged as `bc89347`.
 
 ## 3. The single-field model: interface, front and critical nucleus
 
@@ -251,7 +292,7 @@ $W^*_{CNT} = \tfrac{16\pi}{3}\gamma^3/\Delta f^2$.
 
 ### 3.3 Parameters
 
-**Table 3.** Parameters of the single-field model for nickel. The reported values are those
+**Table 4.** Parameters of the single-field model for nickel. The reported values are those
 of Table 2 of (granasy 2019 nucleation), which takes them from experiment, thermodynamic
 data and simulation (among them (bokeloh 2011 barriers)).
 
@@ -298,9 +339,9 @@ $\delta^2/(M_\phi\epsilon^2) = 0.126$).
 **Figure 1.** Case A1, planar crystal-liquid interface of Ni at the melting point, FE route.
 Left: initial profile (twice too wide), relaxed profile and the closed-form logistic profile.
 Right: free energy per area over time against the target $\gamma_{SL} = 0.302$ J m$^{-2}$.
-Reading: the profile relaxes onto the closed form and the energy onto the target (Table 4).
+Reading: the profile relaxes onto the closed form and the energy onto the target (Table 5).
 
-**Table 4.** Case A1: interface free energy, profile and width on the three routes.
+**Table 5.** Case A1: interface free energy, profile and width on the three routes.
 
 | route | $\gamma_{SL}$ (J m$^{-2}$) | profile, max deviation from the logistic | 10-90 % width (nm) | note |
 |---|---|---|---|---|
@@ -328,9 +369,9 @@ $\int\phi\,dx$ for $t > 5$.
 interpolation functions. Left: solid length $\int\phi\,dx$ over time with the reference
 slope. Right: front velocity over time against the reference. Reading: after a short
 transient the front moves at constant velocity, within $1.4\times10^{-4}$ of the reference
-(Table 5).
+(Table 6).
 
-**Table 5.** Case A2: front velocity.
+**Table 6.** Case A2: front velocity.
 
 | $p$ | $v/M_\phi$ FE (nm GPa) | reference | relative error |
 |---|---|---|---|
@@ -340,23 +381,62 @@ transient the front moves at constant velocity, within $1.4\times10^{-4}$ of the
 The free energy falls at the rate $v\,\Delta f$ to ten digits in both runs, which is the
 energy balance of a steady front. Tier 2.
 
+Network routes (ADR 0045). Decks `a2_front_velocity_standard_{window_fem,pinn_seed{0,1,2},hybrid_seed0}.i`:
+a window of 10 nm with the front at 2.5 nm, $t = 0$ to 6, $h = 0.01$ nm. The network
+(4 layers of 48 units, six slabs of unit length, 1000 Adam epochs and 30 L-BFGS iterations
+per slab, strong form) is compared with the FE run of the same window.
+
+![A2 network](../../figures/crystallization/a2_network.png)
+
+**Figure 3.** Case A2 on the network routes. Left: solid length over time; FE, the
+network of seed 0 at every step, and the three seeds at the slab ends. Middle: Newton
+iterations per step of the FE run and of the network-started run (left axis), and the rms
+distance of each prediction from the converged state (grey, right axis). Right: profile at
+$t = 6$. Reading: the network front moves at the right speed within a few percent but lags
+by 0.15 to 0.35 nm at the end; started from it, the FE march returns the FE result with the
+same number of iterations.
+
+**Table 7.** Case A2, network routes (velocity from the slope of the solid length over
+$t = 1$ to 6; reference 0.644490).
+
+| route | seed | $v/M_\phi$ (nm GPa) | relative error | solid length at $t = 6$ (nm) | Newton iterations | wall time (s) |
+|---|---|---|---|---|---|---|
+| FE | | 0.64440 | $-1.4\times10^{-4}$ | 6.358 | 1200 | 9 |
+| PINN | 0 | 0.6576 | +2.0 % | 6.197 | | 1044 |
+| PINN | 1 | 0.5825 | $-9.6$ % | 6.022 | | 844 |
+| PINN | 2 | 0.5992 | $-7.0$ % | 6.008 | | 766 |
+| PINN+FEM | 0 | 0.64440 | $-1.4\times10^{-4}$ | 6.358 | 1199 | 1230 |
+
+- PINN: $-4.9 \pm 6.1$ % over three seeds (mean and standard deviation). The error sits at
+  the slab boundaries, where each new slab starts from the previous network's end state
+  (Figure 3, left, the kinks of the dashed line). Tier 2, against the same reference
+  as the FE route.
+- PINN+FEM: identical to FE to $10^{-10}$ in the solid length. The predictions are 0.033
+  (mean) and 0.065 (largest) rms from the converged states. The previous state is closer:
+  the front moves 0.013 nm per step, a tenth of the network's lag, so the prediction saves
+  one iteration in 1200. The hybrid is correct and brings no saving in this case.
+- Two settings found on the way (not in the table; ledger `cryst-A2-network`): causal
+  weighting ($\epsilon = 0.5$) with gradient-balanced loss weights gave a front 25 % too
+  slow with a loss of $10^{-8}$ from the first epoch, so the production decks use fixed
+  weights without causal weighting; a shorter window (8 nm, $t = 4$) gave 0.640 to 0.646.
+
 #### 3.4.3 A3: critical nucleus in undercooled Ni
 
 The case is Fig. 3 of (granasy 2019 nucleation): the nucleus of the standard single-field
-model with the Ni data of Table 3. Decks
+model with the Ni data of Table 4. Decks
 `decks/crystallization/single_field/a3_ni_nucleus_x<ΔT/T_f>_fem.i`, nine reduced
 undercoolings from 0.10 to 0.30; radial line of 12 to 23 nm (ten equimolar radii),
 $h = 0.005$ nm.
 
 ![A3](../../figures/crystallization/a3_ni_nucleus.png)
 
-**Figure 3.** Case A3, critical nucleus in Ni. Left: radial profiles (lines: reference;
+**Figure 4.** Case A3, critical nucleus in Ni. Left: radial profiles (lines: reference;
 circles: PINNACLE FE). Middle: barrier against undercooling, with the 'standard PF' line
 digitized from Fig. 3(c) of (granasy 2019 nucleation). Right: equimolar radius against the
 classical radius. Reading: FE, reference and published line coincide; the nucleus becomes
 smaller and more diffuse with undercooling.
 
-**Table 6.** Case A3: nucleation barrier, centre value and equimolar radius.
+**Table 8.** Case A3: nucleation barrier, centre value and equimolar radius.
 
 | $\Delta T/T_f$ | $W^*/kT$ FE | reference | published (digitized) | droplet model | $\phi(0)$ | $R_e$ (Å) |
 |---|---|---|---|---|---|---|
@@ -385,12 +465,12 @@ reference $W^* = 0.913705$ aJ $= 47.865\,kT$):
 
 ![A3 routes](../../figures/crystallization/a3_routes_x0.200.png)
 
-**Figure 4.** Case A3 at $\Delta T/T_f = 0.20$ on the three routes. Left: the nucleus profile
+**Figure 5.** Case A3 at $\Delta T/T_f = 0.20$ on the three routes. Left: the nucleus profile
 of FE, PINN and PINN+FEM against the shooting reference. Right: pointwise deviation from the
 reference. Reading: the three profiles coincide to about $10^{-4}$; the PINN+FEM deviation is
-that of the FE solve; the barriers are in Table 7.
+that of the FE solve; the barriers are in Table 9.
 
-**Table 7.** Case A3 at $\Delta T/T_f = 0.20$: the three routes.
+**Table 9.** Case A3 at $\Delta T/T_f = 0.20$: the three routes.
 
 | route | initial guess | $W^*$ (aJ), seed 0 | relative error over 5 seeds: mean ± std, worst | wall time |
 |---|---|---|---|---|
@@ -407,7 +487,7 @@ All nine undercoolings on the network routes (decks `a3_ni_nucleus_x<...>_{pinn,
 seed 0, every run started from the classical droplet $R = 2\gamma/|\Delta f|$ with full
 amplitude, which needs no reference solution):
 
-**Table 8.** Case A3: the network routes over the undercooling family.
+**Table 10.** Case A3: the network routes over the undercooling family.
 
 | $\Delta T/T_f$ | 0.100 | 0.125 | 0.150 | 0.175 | 0.200 | 0.225 | 0.250 | 0.275 | 0.300 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -415,12 +495,12 @@ amplitude, which needs no reference solution):
 | PINN+FEM, error of $W^*$ ($10^{-5}$) | 1.4 | 1.2 | 1.5 | 1.3 | 1.6 | 1.4 | 1.8 | 1.6 | 2.0 |
 | PINN+FEM, corrector iterations | 3 | 4 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
 
-All 18 runs reach the nucleus. The PINN+FEM errors are the FE mesh errors of Table 6.
+All 18 runs reach the nucleus. The PINN+FEM errors are the FE mesh errors of Table 8.
 
 Range of initial guesses (`scripts/cryst_guess_scan.py`): the three decks of the 0.20 case
 were started from full-amplitude droplets of 0.4 to 2.0 classical radii.
 
-**Table 9.** Case A3: outcome against the radius of the initial droplet.
+**Table 11.** Case A3: outcome against the radius of the initial droplet.
 
 | guess radius / classical radius | 0.40 | 0.55 | 0.70 | 0.85 | 1.00 | 1.15 | 1.30 | 1.60 | 2.00 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -446,12 +526,12 @@ and $w$ matched to the same $\gamma_{SL}$ and thickness.
 
 ![A4](../../figures/crystallization/a4_functions.png)
 
-**Figure 5.** Case A4, nucleation barrier in Ni against undercooling for four pairs of
+**Figure 6.** Case A4, nucleation barrier in Ni against undercooling for four pairs of
 double-well and interpolation functions. Lines: reference. Circles: PINNACLE FE. Reading:
 at equal interface energy and thickness the choice of functions changes the barrier by a
 factor of up to 3.2.
 
-**Table 10.** Case A4: $W^*/kT$ for four pairs of functions.
+**Table 12.** Case A4: $W^*/kT$ for four pairs of functions.
 
 | $\Delta T/T_f$ | standard | $g_{fcc}$ & $p_{PF}$ | GL $g_{bcc}$ & $p_{bcc}$ | GL $g_{fcc}$ & $p_{fcc}$ |
 |---|---|---|---|---|
@@ -474,7 +554,7 @@ element.
 
 ![A5](../../figures/crystallization/a5_seeds.png)
 
-**Figure 6.** Case A5, a seed 10 % smaller and a seed 10 % larger than the critical nucleus
+**Figure 7.** Case A5, a seed 10 % smaller and a seed 10 % larger than the critical nucleus
 of Ni at $\Delta T/T_f = 0.20$, marched in time. Left: solid volume (horizontal line: the
 nucleus). Middle: free energy (horizontal line: $W^*$). Right: centre value $\phi(r = 0)$.
 Reading: the smaller seed melts, the larger one grows; the free energy only decreases.
@@ -484,6 +564,47 @@ grows without bound; both start below the barrier ($F = 0.890$ and $0.887$ aJ ag
 $W^* = 0.9137$ aJ) and their free energy only decreases. This is the saddle-point character
 of the nucleus shown by the dynamics, and the reason a time march cannot produce case A3.
 Consistency check of A3 by an independent route in the same code (tier 1).
+
+Network routes (ADR 0045, `pf_pinn` on the spherical mesh). Decks
+`a5_seed_{sub,super}critical_{window_fem,pinn_seed{0,1,2},hybrid_seed0}.i`: $r \le 6$ nm,
+$t = 0$ to 3 (smaller seed) and 0 to 4 (larger seed), the settings of case A2.
+
+![A5 network](../../figures/crystallization/a5_network.png)
+
+**Figure 8.** Case A5 on the network routes; top: the seed of 0.9 critical radii,
+bottom: 1.1. Left: solid volume over time. Middle: Newton iterations per step and the rms
+distance of the predictions (grey). Right: profile at the end. Reading: the network melts
+the smaller seed too slowly and does not grow the larger one; the network-started FE march
+returns the FE result in both cases, at a cost of 46 to 55 % more Newton iterations.
+
+**Table 13.** Case A5, network routes: solid volume at the end (nm$^3$).
+
+| seed | route | network seed | volume at the end | FE | Newton iterations | wall time (s) |
+|---|---|---|---|---|---|---|
+| 0.9 | FE | | 0.0052 | | 496 | 6 |
+| 0.9 | PINN | 0, 1, 2 | 1.14, 1.18, 1.32 | 0.0052 | | 1222, 916, 832 |
+| 0.9 | PINN+FEM | 0 | 0.0052 | 0.0052 | 723 | 1271 |
+| 1.1 | FE | | 22.06 | | 639 | 7 |
+| 1.1 | PINN | 0, 1, 2 | 6.24, 6.21, 6.26 | 22.06 | | 1238, 850, 869 |
+| 1.1 | PINN+FEM | 0 | 22.06 | 22.06 | 988 | 1498 |
+
+- PINN, smaller seed: the direction is right (4.2 to 1.1-1.3 nm$^3$) but the seed has not
+  melted at $t = 3$, where the FE volume is 0.005.
+- PINN, larger seed: not obtained. All three seeds end at 6.2 nm$^3$ from 6.7, a slowly
+  shrinking droplet, where the FE seed grows to 22. Three further settings gave the same
+  fate (seed 0 each; ledger `cryst-A5-network-attempts`): eight slabs with 80 L-BFGS
+  iterations; eight slabs with the network re-initialized per slab (`continuity = reinit`,
+  3468 s); causal weighting with $\epsilon = 0.02$.
+- Why this case is hard for a residual-trained network: the seed starts 10 % from the saddle,
+  where the true rate of change is close to zero, so a slowly moving droplet on either side
+  of the saddle has a small residual, and the fate is decided by an unstable mode whose
+  growth rate the loss does not weight. The FE march resolves it because every step is an
+  exact solve.
+- PINN+FEM: identical to FE to $10^{-9}$ in the volume. The predictions are 0.10 to 0.15 rms
+  from the converged states (largest 0.21 and 0.29), worse than the previous state, and cost
+  723 against 496 and 988 against 639 Newton iterations. The corrector is not misled by a
+  prediction with the wrong fate.
+- Tier 1 for the hybrid (same code as the FE reference); the PINN route fails this case.
 
 Animations of cases A1, A2 and A5: `figures/crystallization/a1_planar_interface.gif`,
 `a2_front_velocity_standard.gif`, `a5_seed_subcritical.gif`, `a5_seed_supercritical.gif`: the
@@ -497,22 +618,26 @@ profile over time from the `fields_step*.vtk` series every run writes (`snapshot
   the interface and raises the energy.
 - Undercooling: the barrier falls from 255 $kT$ at $\Delta T/T_f = 0.10$ to 14.9 $kT$ at 0.30,
   the equimolar radius from 22.6 to 8.0 Å, and the centre of the nucleus from bulk crystal
-  ($\phi(0) = 0.999$) to 0.70 (Table 6). The droplet model overestimates the barrier by 1 %
+  ($\phi(0) = 0.999$) to 0.70 (Table 8). The droplet model overestimates the barrier by 1 %
   at 0.10 and 14 % at 0.30.
 - Temperature scaling of $\epsilon^2$ and $w$: constant values instead of proportional ones
   change the barrier by 62 to 176 % (section 3.3).
 - Double-well and interpolation functions: at equal $\gamma_{SL}$ and thickness the barrier
-  changes by a factor of 0.6 to 3.2 (Table 10).
+  changes by a factor of 0.6 to 3.2 (Table 12).
 - Front velocity: proportional to $M_\phi\,\Delta f\,\delta$; the standard $p$ gives a 4 %
-  slower front than $p = \phi^2(3-2\phi)$ at the same parameters (Table 5).
+  slower front than $p = \phi^2(3-2\phi)$ at the same parameters (Table 6).
 - Seed size: a seed 10 % below the critical radius melts, one 10 % above grows (section
   3.4.5).
+- Route: the network gives the front speed within 2 to 10 % depending on its seed and does
+  not decide the fate of a seed 10 % from the critical size; use the FE march for both, and
+  the network for the stationary nucleus (section 3.4.3).
 - Parameter series beyond these (interface thickness, mobility, dimension): pending.
 
 ### 3.6 Cost
 
 FE: 0.8 to 1.1 s per nucleus (3 to 5 Newton iterations). PINN: 8 to 16 s per nucleus;
-PINN+FEM: 9 to 16 s. The cost of the development runs behind `pf_pinn_stationary` and
+PINN+FEM: 9 to 16 s. Time-dependent cases A2 and A5: FE 6 to 9 s; PINN 13 to 21 min;
+PINN+FEM 21 to 25 min, of which the training is all but 10 s (Tables 7 and 13). The cost of the development runs behind `pf_pinn_stationary` and
 `pf_fem_saddle` (about 40 exploratory runs of 1 to 90 s) is not in the wall times of the
 tables.
 
@@ -562,7 +687,7 @@ $W_{cap} = (\gamma^2/|\Delta f|)\,(\Psi - \sin\Psi\cos\Psi)$.
 The data behind the published figure are in the original paper (arXiv cond-mat/0608375,
 footnote 16), not in (granasy 2019 nucleation), which reprints the figure.
 
-**Table 11.** Parameters of the wall cases.
+**Table 14.** Parameters of the wall cases.
 
 | Quantity | Value | Unit | Provenance | Source |
 |---|---|---|---|---|
@@ -598,20 +723,20 @@ around the nucleus removes both, and is the default.
 
 ![B1 nuclei](../../figures/crystallization/b1_wall_nuclei.png)
 
-**Figure 7.** Case B1, critical nuclei on the wall ($y = 0$), contour lines at
+**Figure 9.** Case B1, critical nuclei on the wall ($y = 0$), contour lines at
 $\phi = 1/6 \ldots 5/6$ as in the published figure. Reading: Model I is a cap meeting a bare
 wall; in Model II the nucleus merges into the ordered wall layer and flattens toward the
 critical undercooling.
 
 ![B1 barriers](../../figures/crystallization/b1_wall_barriers.png)
 
-**Figure 8.** Case B1, nucleation barrier normalized by the circular-cap value against
+**Figure 10.** Case B1, nucleation barrier normalized by the circular-cap value against
 undercooling for Models I and II: PINNACLE FE against the curves digitized from the reprint
 of the figure of (granasy 2007 heterogeneous). Crosses: the FE values normalized with
 $\gamma(T)$ instead of $\gamma(T_m)$. Reading: both models follow the published curves when
 the cap is evaluated with $\gamma(T_m)$; the barrier of Model II falls to zero toward 92 K.
 
-**Table 12.** Case B1: normalized barriers and the measured wall angle.
+**Table 15.** Case B1: normalized barriers and the measured wall angle.
 
 | $\Delta T$ (K) | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -627,7 +752,7 @@ the cap is evaluated with $\gamma(T_m)$; the barrier of Model II falls to zero t
   FE values are systematically 0.002 to 0.008 lower.
 - This agreement requires the cap to be evaluated with the melting-point interface energy.
   Neither paper states which $\gamma$ the normalization uses. With the model's own
-  $\gamma(T) = \gamma\,T/T_m$ the ratio is higher by $(T_m/T)^2$ (crosses in Figure 8:
+  $\gamma(T) = \gamma\,T/T_m$ the ratio is higher by $(T_m/T)^2$ (crosses in Figure 10:
   Model I 0.92 instead of 0.83 at 90 K) and does not match the published line. Recorded as
   `derived`.
 - Model I keeps the prescribed contact angle within 1.2 degrees; the angle of Model II is
@@ -635,29 +760,123 @@ the cap is evaluated with $\gamma(T_m)$; the barrier of Model II falls to zero t
 - Not obtained: Model I at 100 K (the constrained solve at the classical cap's amount does not
   converge) and Model II at 90 K, 2 K below the critical undercooling, where the nucleus and
   the bare layer nearly coincide and the search cannot separate the two zeros of $\lambda$.
-- Network routes: not run. `pf_pinn_stationary` imposes Dirichlet values only; the Model I
-  wall is a nonlinear flux condition, and for Model II the trivial state to be deflated is
-  the non-uniform wall layer. Both are extensions of the executioner, not done here.
+- Network routes (ADR 0045; decks `b1_wall_*_{pinn,hybrid,newton}*.i`, written by
+  `scripts/cryst_wall_network_decks.py`): see the next paragraphs.
+
+Network routes. The published mesh, 40 K for the comparison over seeds. The network
+(4 layers of 48 units) is fitted to the classical cap (3000 epochs), then trained on the
+assembled residual of the FE deck (`residual_form = fem`, section 2.2) with 150 L-BFGS
+iterations; for Model II the wall layer $\phi_{layer}(y)$ is the deflated state. The
+hybrid trains for 40 iterations and hands the nodal field to a plain Newton solve of the
+same deck. Control: the plain Newton solve from the cap, without the saddle search.
+
+![B1 network](../../figures/crystallization/b1_wall_network.png)
+
+**Figure 11.** Case B1 at 40 K, network trained on the assembled residual against the
+FE saddle; top: Model I, bottom: Model II. Left: contour lines $\phi = 1/6 \ldots 5/6$ of
+the starting cap (dotted), the FE saddle (black) and the network of seed 0 (dashed).
+Middle: difference of the two fields. Right: loss of the three seeds (regression to the
+cap, then L-BFGS; normalized by the cap's residual). Reading: the network moves from the
+cap to the saddle; the contour lines of Model I coincide with the FE ones, those of
+Model II are still 0.1 to 0.2 nm inside at 150 iterations.
+
+**Table 16.** Case B1 at 40 K: network routes against the FE saddle search (energy of
+the half nucleus in the deck's units; field differences are nodal).
+
+| model | route | seed | energy | relative difference | largest field difference | Newton iterations | wall time (s) | state reached |
+|---|---|---|---|---|---|---|---|---|
+| I | FE saddle search | | 0.336602 | | | 15 | under 10 | saddle |
+| I | starting cap | | | | 0.018 | | | |
+| I | FE, plain Newton from the cap | | 0.336602 | $-5\times10^{-14}$ | $1\times10^{-7}$ | 4 | 8 | saddle |
+| I | PINN | 0 | 0.336630 | $+8.1\times10^{-5}$ | 0.014 | | 2852 | saddle |
+| I | PINN | 1 | 0.336650 | $+1.4\times10^{-4}$ | 0.0086 | | 2091 | saddle |
+| I | PINN | 2 | 0.336612 | $+2.9\times10^{-5}$ | 0.0040 | | 723 | saddle |
+| I | PINN+FEM | 0, 1, 2 | 0.336602 | $-5\times10^{-14}$ | $1\times10^{-7}$ | 4, 5, 5 | 995, 998, 948 | saddle |
+| II | FE saddle search | | 2.458464 | | | 28 | under 10 | saddle |
+| II | starting cap | | | | 0.33 | | | |
+| II | FE, plain Newton from the cap | | $-1.6099$ | $-1.65$ | 1.00 | 36 | 27 | grown crystal |
+| II | PINN | 0 | 2.458237 | $-9.2\times10^{-5}$ | 0.084 | | 1523 | saddle |
+| II | PINN | 1 | 2.457480 | $-4.0\times10^{-4}$ | 0.153 | | 1570 | saddle |
+| II | PINN | 2 | 2.457445 | $-4.1\times10^{-4}$ | 0.124 | | 2286 | saddle |
+| II | PINN+FEM | 0 | 2.458464 | $-4\times10^{-16}$ | $2\times10^{-9}$ | 7 | 859 | saddle |
+| II | PINN+FEM | 1 | $-1.6099$ | $-1.65$ | 1.00 | 44 | 971 | grown crystal |
+| II | PINN+FEM | 2 | 2.2443 | $-0.087$ | 0.92 | 11 | 938 | wall layer |
+
+**Table 17.** Model II: which stationary state a plain Newton solve reaches,
+by its start (`scripts/cryst_wall_network_newton_check.py` for the rows started from a saved
+network field; the wall layer and the grown crystal are uniform along the wall).
+
+| $\Delta T$ (K) | start | iterations | state reached |
+|---|---|---|---|
+| 20 | cap | | none (no convergence) |
+| 20 | network, 40 iterations (seed 0) | | none (no convergence) |
+| 20 | network, 150 iterations (seed 0) | 19 | wall layer |
+| 40 | cap | 36 | grown crystal |
+| 40 | network, 40 iterations (seeds 0, 1, 2) | 7, 44, 11 | saddle, grown crystal, wall layer |
+| 40 | network, 150 iterations (seeds 0, 1, 2) | 5, 14, 7 | saddle, wall layer, saddle |
+| 60 | cap | | none (no convergence) |
+| 60 | network, 40 iterations (seed 0) | 6 | saddle (field within $10^{-14}$) |
+| 80 | cap | | none (no convergence) |
+| 80 | network, 40 iterations (seed 0) | 3 | a thicker uniform layer (energy +1.6 %) |
+
+![B1 Newton control](../../figures/crystallization/b1_wall_newton_control.png)
+
+**Figure 12.** Model II at 40 K, plain Newton solve; top: started from the cap,
+bottom: started from the network of seed 0. Phase field (dark: crystal) with the
+$\phi = 0.5$ line of the FE saddle. Reading: from the cap Newton's method runs to the
+crystallized box, from this network it lands on the nucleus.
+
+- PINN, both models: the barrier energy agrees with the FE saddle within
+  $1.4\times10^{-4}$ (Model I) and $4.1\times10^{-4}$ (Model II) for all three seeds;
+  $8\times10^{-5} \pm 6\times10^{-5}$ and $-3.0\times10^{-4} \pm 1.8\times10^{-4}$ (mean and
+  standard deviation). On the normalized barrier of Table 12 this is 0.0001 to 0.0003,
+  below the difference from the published curves. The field of Model II is not converged
+  to the same level (0.08 to 0.15 at the worst node): the energy is stationary at the
+  saddle, so it is second order in the field error. Tier 1 against the FE saddle; through
+  it tier 3 against the published curves. All six trainings held the nucleus; none fell to
+  the wall layer or the liquid.
+- Model I needs no network: plain Newton reaches the saddle from the cap, and from caps of
+  0.5 to 2.0 classical radii on a coarser mesh. The hybrid returns the same state for all
+  three seeds and saves nothing.
+- Model II, hybrid: not reliable. Newton's method on this problem has at least four
+  attractors (the nucleus, the wall layer, the grown crystal, and at 80 K a thicker layer
+  that is a stationary state of the box), and a start 0.1 to 0.25 from the nucleus at its
+  worst node can fall to any of them: 4 of the 9 network starts of Table 17 reach
+  the nucleus, against none of the 4 starts from the cap. At 80 K the network itself had
+  converged to the thicker layer (0.004 from the corrected field); the deflation function
+  removes the thin wall layer only.
+- A wrong end state is detected without the reference: it is uniform along the wall, and
+  its energy differs by 1.6 % or more. The constrained search of section 2.2 found the
+  nucleus in every case of Table 12 and remains the route for the barrier curves; the
+  network trained for 150 iterations is the second route that held the nucleus in every run
+  made, at 40 K only.
+- Cost: 12 to 48 min per network training on 4 threads (one assembly of 14 to 38 thousand
+  nodes per loss evaluation; several runs shared the machine, so the times are upper
+  bounds) against under 10 s for the saddle search (section 4.6).
 
 ### 4.5 What to expect when the parameters change
 
 - Undercooling: the normalized barrier of Model I falls slowly (0.991 at 10 K to 0.827 at
   90 K); that of Model II falls nearly linearly to zero at the critical undercooling of
   92.0 K (0.909 at 10 K, 0.112 at 80 K), where the ordered wall layer becomes unstable and
-  the wall crystallizes without a barrier (Table 12).
+  the wall crystallizes without a barrier (Table 15).
 - Wall model: a wall that orders the liquid (Model II) lowers the barrier far more than a
   wall with the same contact angle that does not (Model I).
 - Contact angle: in the sharp-interface limit the barrier scales as
   $\Psi - \sin\Psi\cos\Psi$; in Model II the angle follows from the wall value through
   $\cos\Psi = -1 + 6\phi_0^2 - 4\phi_0^3$, and the critical undercooling from
   $\Delta f = -w\,g(\phi_0)/p(\phi_0)$.
+- Solver start (Model II): a plain Newton solve reaches the nucleus, the wall layer, the
+  grown crystal or nothing, depending on the start; a result that is uniform along the wall
+  is not a nucleus (Table 17).
 - A rough wall is treated with the orientation-field model in section 7.5.5. Parameter
   series in the contact angle and the wall value $\phi_0$, and structured walls: pending.
 
 ### 4.6 Cost
 
 25 runs, 184 s in total on 2 threads; 3 to 8 volume iterations and 14 to 32 constrained
-Newton iterations per nucleus.
+Newton iterations per nucleus. Network routes: 21 runs, 6.2 h of run time in total
+(Table 16).
 
 ## 5. Thermal noise: nucleation and transformation kinetics
 
@@ -707,7 +926,7 @@ Two properties of the noise term had to be added to PINNACLE (ADR 0038):
 
 ### 5.3 Parameters
 
-**Table 13.** Parameters of the noise case B2 (a generic case in scaled units, no material).
+**Table 18.** Parameters of the noise case B2 (a generic case in scaled units, no material).
 
 | Quantity | Value | Provenance |
 |---|---|---|
@@ -725,18 +944,18 @@ realizations `b2_jmak_2d_seed{1..4}_fem.i`.
 
 ![B2 snapshots](../../figures/crystallization/b2_jmak_snapshots.png)
 
-**Figure 9.** Case B2, the phase field at successive times of the deck's realization.
+**Figure 13.** Case B2, the phase field at successive times of the deck's realization.
 Reading: crystals nucleate at random places and times, grow at a common front velocity and
 impinge.
 
 ![B2 kinetics](../../figures/crystallization/b2_jmak_kinetics.png)
 
-**Figure 10.** Case B2, transformation kinetics. Left: transformed fraction (area with
+**Figure 14.** Case B2, transformation kinetics. Left: transformed fraction (area with
 $\phi > 0.5$) and the fitted law. Middle: Avrami plot. Right: number of separate crystal
 regions; it rises with nucleation and falls with impingement. Reading: the fraction follows
 the Johnson-Mehl-Avrami-Kolmogorov law with an exponent near 3.
 
-**Table 14.** Case B2: fit of the transformation kinetics.
+**Table 19.** Case B2: fit of the transformation kinetics.
 
 | quantity | value |
 |---|---|
@@ -828,7 +1047,7 @@ directions; ADR 0039).
 
 Full derivation and provenance: `docs/14_phase_field_crystallization_plan.md`, section 7.2.
 
-**Table 15.** Parameters of the binary model (dimensionless form).
+**Table 20.** Parameters of the binary model (dimensionless form).
 
 | Quantity | Value | Provenance | Source |
 |---|---|---|---|
@@ -865,7 +1084,7 @@ discretization error of $-5.5$ % in the finite-difference code and $+1.8$ % in P
 
 ![C2 PINNACLE](../../figures/crystallization/c2_pinnacle_maps.png)
 
-**Figure 11.** Case C2 with PINNACLE. Top: composition; bottom: crystal. Columns: conditions
+**Figure 15.** Case C2 with PINNACLE. Top: composition; bottom: crystal. Columns: conditions
 of Fig. 4(a) of (granasy 2005 spherulites), isotropic $S = 0.8$; (b) four-fold $s_0 = 0.1$,
 $S = 0.8$; (d) isotropic $S = 1.0$; (e) four-fold $S = 1.0$. Reading: fingered and dendritic
 forms with solute-rich channels at $S = 0.8$, compact forms of nearly uniform composition at
@@ -873,17 +1092,17 @@ $S = 1.0$.
 
 ![C2 reference](../../figures/crystallization/c2_reference_maps.png)
 
-**Figure 12.** Case C2 with the independent finite-difference reference, same columns as
-Figure 11. Reading: the same four forms; the isotropic crystal carries a diamond-shaped grid
+**Figure 16.** Case C2 with the independent finite-difference reference, same columns as
+Figure 15. Reading: the same four forms; the isotropic crystal carries a diamond-shaped grid
 imprint that the finite-element result does not show.
 
 ![C2 growth](../../figures/crystallization/c2_pinnacle_growth.png)
 
-**Figure 13.** Case C2 with PINNACLE: equivalent radius (in cells) against dimensionless
+**Figure 17.** Case C2 with PINNACLE: equivalent radius (in cells) against dimensionless
 time for the four runs, logarithmic axes. Reading: the two $S = 1.0$ runs grow faster than
 the two $S = 0.8$ runs; the growth exponents are given in the text.
 
-**Table 16.** Case C2: growth forms.
+**Table 21.** Case C2: growth forms.
 
 | case | published form (Fig. 4 of (granasy 2005 spherulites)) | PINNACLE | steps, wall time | solute drift |
 |---|---|---|---|---|
@@ -902,7 +1121,7 @@ the two $S = 0.8$ runs; the growth exponents are given in the text.
 - The reference's isotropic crystal has a diamond-shaped outline, PINNACLE's is circular:
   the five-point stencil imprints the grid on an interface this thin, the bilinear elements
   do so less.
-- Growth law (Figure 13): the equivalent radius grows as $t^{0.71}$ to $t^{0.80}$ in the four
+- Growth law (Figure 17): the equivalent radius grows as $t^{0.71}$ to $t^{0.80}$ in the four
   runs, between the diffusion-controlled $t^{1/2}$ and the interface-controlled $t^{1}$ that
   (granasy 2005 spherulites) describes for small and large driving force.
 - Animations: `figures/crystallization/c2_pinnacle_c2_fig4*_fem.gif` (composition over time)
@@ -915,7 +1134,7 @@ the two $S = 0.8$ runs; the growth exponents are given in the text.
 - Supersaturation: at $S = 0.8$ the crystal rejects solute, the front is unstable and the
   form is fingered or dendritic with liquid channels at the liquidus composition; at
   $S = 1.0$ the solute is trapped, the crystal is compact and its composition is close to
-  that of the liquid (Table 16). The front is also faster at $S = 1.0$ (Figure 13).
+  that of the liquid (Table 21). The front is also faster at $S = 1.0$ (Figure 17).
 - Anisotropy of the interface energy: with $s_0 = 0$ the envelope is circular (seaweed at
   $S = 0.8$, disc at $S = 1.0$); with $s_0 = 0.1$ and four-fold symmetry it is a four-armed
   dendrite at $S = 0.8$ and a rounded square at $S = 1.0$.
@@ -934,7 +1153,7 @@ this model in Fig. 8(a) of (granasy 2021 biomineralization).
 
 ![Planar front: front advance, composition profiles, partitioning](../../figures/crystallization/e1_trapping.png)
 
-**Figure 14.** Planar front of the binary model. Left: advance of the front against the
+**Figure 18.** Planar front of the binary model. Left: advance of the front against the
 step number for S = 0.3 to 1.0 (logarithmic axes). Middle: composition at the end of the run
 against the distance from the front (dotted: solidus and liquidus). Right: partition
 coefficient (crystal composition over the peak composition in the liquid; dotted: the
@@ -943,7 +1162,7 @@ Reading: up to S = 0.78 the front slows down with time, the liquid at the front 
 liquidus and the crystal at the solidus; from S = 0.80 the front advances linearly in time,
 the peak collapses and the crystal takes the composition of the liquid.
 
-**Table 17.** Planar front against supersaturation. Growth exponent: slope of the front
+**Table 22.** Planar front against supersaturation. Growth exponent: slope of the front
 advance against time on logarithmic axes over the second half of the run. Solute peak:
 $(c_{peak} - c_\infty)/(c_L - c_\infty)$. Crystal composition: mean over the crystal formed
 in the second half (-- where it is thinner than 20 cells).
@@ -976,7 +1195,7 @@ in the second half (-- where it is thinner than 20 cells).
   enough that the solute cannot escape across the interface width.
 - Consequence for the forms: a dendrite needs a solute boundary layer (Mullins-Sekerka
   instability), so dendrites and seaweed appear below the transition (S = 0.7 and 0.8 in
-  Figure 25; at S = 0.8 the curved two-dimensional front still rejects solute) and
+  Figure 29; at S = 0.8 the curved two-dimensional front still rejects solute) and
   compact, faceted or spherulitic forms above it (S = 0.9 and more). The transition found
   between S = 0.8 and 0.9 in the two-dimensional series of section 7.5 is this one.
 - The growth exponents below the transition are a little under 1/2 (0.37 to 0.46): the runs
@@ -1046,7 +1265,7 @@ equation), `ac_interface_anisotropic orientation = theta`; $\theta$ is an angula
 
 ### 7.3 Parameters
 
-**Table 18.** Parameters of the orientation-field model, in addition to Table 15.
+**Table 23.** Parameters of the orientation-field model, in addition to Table 20.
 
 | Quantity | Value | Provenance | Source |
 |---|---|---|---|
@@ -1061,7 +1280,7 @@ equation), `ac_interface_anisotropic orientation = theta`; $\theta$ is an angula
 | regularization of $u$ | $10^{-3}$ | `assumed` | not given |
 | seed | disc of 12 cells, $\theta = 0$, random orientation around it | `assumed` | not given |
 | conditions of Fig. 5: $S$ | 1.0 | `derived` | from the stated size and step count (0.15 cells per step) |
-| conditions of Fig. 5: $\chi_l$ | 240 | `assumed` | from the reference runs of Table 20 |
+| conditions of Fig. 5: $\chi_l$ | 240 | `assumed` | from the reference runs of Table 25 |
 
 ### 7.4 Cases and results
 
@@ -1075,7 +1294,7 @@ only.
 
 ![C1](../../figures/crystallization/c1_orientation_energy.png)
 
-**Figure 15.** Case C1, orientational free energy against misorientation for $k = 2$,
+**Figure 19.** Case C1, orientational free energy against misorientation for $k = 2$,
 $m = 3$, $n = 1/2$, $x = 0.2$. Reading: besides the minimum at zero misorientation there is
 a metastable minimum at 30 degrees, which permits branching at that angle.
 
@@ -1086,7 +1305,7 @@ The case is Fig. 4 (b), (c), (f) of (granasy 2005 spherulites). Decks:
 (`pf_fem_explicit`, Torch, GPU, 500 x 500, $\theta$ in 20 sub-steps), reference decks
 `decks/crystallization/reference/c3_fig4*.i` for `scripts/cryst_orientation_reference.py`.
 
-**Table 19.** Case C3 at the conditions of Fig. 4 of (granasy 2005 spherulites): PINNACLE
+**Table 24.** Case C3 at the conditions of Fig. 4 of (granasy 2005 spherulites): PINNACLE
 against the independent reference.
 
 | Case | Expected (paper) | Radius, PINNACLE / reference (cells) | Mean neighbor misorientation in the crystal | Orientation domains |
@@ -1100,14 +1319,14 @@ $2\pi/4$; 0.25 is a random field.
 
 ![Orientation-field runs, PINNACLE](../../figures/crystallization/c3_pinnacle_maps.png)
 
-**Figure 16.** Case C3 with PINNACLE at the conditions of Fig. 4 (b), (c), (f) of
+**Figure 20.** Case C3 with PINNACLE at the conditions of Fig. 4 (b), (c), (f) of
 (granasy 2005 spherulites). Top: composition; bottom: orientation $\theta$ in the crystal
 (cyclic color map, liquid black). Reading: one orientation at $\chi_l = 360$, many grains
 along the arms at $\chi_l = 54$, a compact spherulite of fine grains at $S = 1.0$.
 
 ![Orientation-field runs, independent reference](../../figures/crystallization/c3_reference_maps.png)
 
-**Figure 17.** Case C3 with the independent reference, same panels as Figure 16. Reading:
+**Figure 21.** Case C3 with the independent reference, same panels as Figure 20. Reading:
 the same three forms; the grain patterns differ in detail because the two codes draw
 different noise.
 
@@ -1135,10 +1354,10 @@ different noise.
 The case is Fig. 5 of (granasy 2005 spherulites). The paper's run is 4000 x 4000 with 13,500
 steps; it states neither $S$ nor $\chi_l$. $S = 1.0$ is `derived` from the stated size and
 step count (0.15 cells per step, the speed measured at $S = 1.0$: 0.14 to 0.16; at $S = 0.8$
-it is 0.05). $\chi_l = 240$ is `assumed` from the reference runs of Table 20 ($h = 1900$,
+it is 0.05). $\chi_l = 240$ is `assumed` from the reference runs of Table 25 ($h = 1900$,
 $s_0 = 0.1$; `docs/14_phase_field_crystallization_plan.md`, section 8.5).
 
-**Table 20.** Reference runs at $S = 1.0$ for the choice of $\chi_l$.
+**Table 25.** Reference runs at $S = 1.0$ for the choice of $\chi_l$.
 
 | $\chi_l$ | grid, steps | result |
 |---|---|---|
@@ -1150,14 +1369,14 @@ $s_0 = 0.1$; `docs/14_phase_field_crystallization_plan.md`, section 8.5).
 
 ![chi_l = 360, 180, 108 at 500^2](../../figures/crystallization/c3_probe_fig5_maps.png)
 
-**Figure 18.** Independent reference at $S = 1.0$, $s_0 = 0.1$, 500 x 500, step 1300, for
+**Figure 22.** Independent reference at $S = 1.0$, $s_0 = 0.1$, 500 x 500, step 1300, for
 $\chi_l = 360$, 180 and 108. Top: composition; bottom: orientation. Reading: with falling
 orientational mobility the square single crystal gives way to radially elongated grains and
 then to a fine-grained spherulite with a circular envelope.
 
 ![chi_l = 300, 240 at 1000^2](../../figures/crystallization/c3_probe_fig5_n1000_maps.png)
 
-**Figure 19.** Independent reference at $S = 1.0$, $s_0 = 0.1$, 1000 x 1000, step 3200, for
+**Figure 23.** Independent reference at $S = 1.0$, $s_0 = 0.1$, 1000 x 1000, step 3200, for
 $\chi_l = 300$ and 240. Reading: at 300 the crystal is divided into about ten sectors that
 start at the seed; at 240 further wedge-shaped grains start at the growth front.
 
@@ -1165,7 +1384,7 @@ Decks: `decks/crystallization/orientation/c3_fig5_s1.0_chi240_n1000_fem.i` and
 `decks/crystallization/reference/c3_fig5_s1.0_chi240_n1000.i` (3200 steps, until the crystal
 reaches the box).
 
-**Table 21.** Case C3 at the conditions taken for Fig. 5, 1000 x 1000: PINNACLE against the
+**Table 26.** Case C3 at the conditions taken for Fig. 5, 1000 x 1000: PINNACLE against the
 reference over time.
 
 | Step | Radius, PINNACLE / reference (cells) | Orientation domains |
@@ -1177,7 +1396,7 @@ reference over time.
 
 ![Fig. 5 conditions at 1000 x 1000: PINNACLE (left, step 2800) and reference (right, step 3200)](../../figures/crystallization/c3_fig5_maps.png)
 
-**Figure 20.** Case C3 at $S = 1.0$, $\chi_l = 240$, 1000 x 1000: PINNACLE (left, step 2800)
+**Figure 24.** Case C3 at $S = 1.0$, $\chi_l = 240$, 1000 x 1000: PINNACLE (left, step 2800)
 and the independent reference (right, step 3200). Top: composition; bottom: orientation.
 Reading: both give a faceted crystal divided into sectors, with wedge-shaped grains starting
 at the growth front and an envelope that rounds with size.
@@ -1187,7 +1406,7 @@ at the growth front and an envelope that rounds with size.
   rounds with size. The number of orientation domains grows with the radius in both.
 - The radius differs by 9 to 10 % at all times: a difference of front speed, as at
   $S = 1.0$ in section 6.4.1 (FE +1.8 %, finite differences -5.5 % against the Richardson
-  value) and in Table 19.
+  value) and in Table 24.
 - Difference from the paper: there the crystal is one square until a critical size; here
   sectors start at the seed for $\chi_l \le 300$. It depends on the seed (12 cells, random
   orientation around it) and on the assumed $h$ and noise.
@@ -1223,13 +1442,13 @@ The time scale ($\tau$, $t_0$) therefore cannot be compared with the paper; the 
 
 ![Kinetics, reference with pre-heat](../../figures/crystallization/c5_reference_preheat_kinetics.png)
 
-**Figure 21.** Reference stencil, three runs of 1000 x 1000 with pre-heat. Left:
+**Figure 25.** Reference stencil, three runs of 1000 x 1000 with pre-heat. Left:
 crystalline fraction of the runs (gray), their mean and the fit. Middle: Avrami plot of the
 mean. Right: local exponent against the fraction.
 
 ![Maps, reference with pre-heat](../../figures/crystallization/c5_reference_preheat_maps.png)
 
-**Figure 22.** Orientation maps of one reference run with pre-heat at the three
+**Figure 26.** Orientation maps of one reference run with pre-heat at the three
 saved frames after the first crystals ($X$ = 0.47, 0.99, 1.00; frames are 650 steps apart).
 The crystals are round and nucleate at different times (different sizes at $X$ = 0.47); the
 grains inside them are a few cells wide, finer than in the seeded run of section 7.4.2,
@@ -1237,15 +1456,15 @@ because of the raised noise amplitude.
 
 ![Kinetics, PINNACLE](../../figures/crystallization/c5_pinnacle_kinetics.png)
 
-**Figure 23.** As Figure 21 for PINNACLE, three runs of 500 x 500 without
+**Figure 27.** As Figure 25 for PINNACLE, three runs of 500 x 500 without
 pre-heat.
 
 ![Kinetics, PINNACLE with pre-heat](../../figures/crystallization/c5_pinnacle_preheat_kinetics.png)
 
-**Figure 24.** As Figure 21 for PINNACLE, three runs of 500 x 500
+**Figure 28.** As Figure 25 for PINNACLE, three runs of 500 x 500
 with a pre-heat of 3000 steps at 1595 K; time counted from the quench.
 
-**Table 22.** Kinetic exponent of the ensemble mean (error of the fit) and of the single
+**Table 27.** Kinetic exponent of the ensemble mean (error of the fit) and of the single
 runs; number of crystals counted in the last frame with $X < 0.6$, summed over the runs.
 
 | code | grid | pre-heat | noise (std on $\phi$ per step) | $p$ (mean) | $p$ (single runs) | $t_0$ | $\tau$ | crystals |
@@ -1263,7 +1482,7 @@ runs; number of crystals counted in the last frame with $X < 0.6$, summed over t
 - With pre-heat the reference gives 2.88 ± 0.03, within 5 % of the paper's 3.04 and of the
   ideal value 3. The single runs scatter between 2.64 and 3.29: 40 to 50 crystals per run
   are too few for the second digit; the paper's box holds 25 times more.
-- PINNACLE with pre-heat (Figure 24) gives 3.37 ± 0.01 for the
+- PINNACLE with pre-heat (Figure 28) gives 3.37 ± 0.01 for the
   ensemble mean, 11 % above the paper, down from 3.72 without pre-heat. Two of the three
   runs give 3.02 and 2.82, the third 5.11. In that run the fit puts the incubation time
   near zero ($t_0$ = 0.0001 against 0.0009 and 0.0012): $t_0$ and $p$ trade against each
@@ -1284,19 +1503,19 @@ nucleation rate in two dimensions).
 
 ### 7.5 What to expect when the parameters change
 
-- Orientational mobility at $S = 1.0$ (Table 20, Figures 17 and 18): 360 gives a square
+- Orientational mobility at $S = 1.0$ (Table 25, Figures 17 and 18): 360 gives a square
   single crystal; 300 a faceted crystal of about ten sectors; 240 sectors plus grains that
   start at the growth front; 180 radially elongated grains with a rounded envelope; 108 and
   54 a fine-grained spherulite with a circular envelope. The lower the mobility, the finer
   the grains and the rounder the envelope.
-- Orientational mobility at $S = 0.8$ (Table 19): 360 gives a single-crystal dendrite, 54 a
+- Orientational mobility at $S = 0.8$ (Table 24): 360 gives a single-crystal dendrite, 54 a
   polycrystalline dendrite (106 orientation domains at step 2000) whose arms do not follow
   one lattice.
-- Supersaturation at $\chi_l = 54$ (Table 19): at 0.8 the form is still dendritic; at 1.0
+- Supersaturation at $\chi_l = 54$ (Table 24): at 0.8 the form is still dendritic; at 1.0
   the front is about three times faster (0.15 against 0.05 cells per step), outruns the
   ordering, and the crystal is a compact spherulite.
 - Size: at $\chi_l = 240$ the number of orientation domains grows with the radius (34 at
-  step 800 to 180 at step 3200, Table 21).
+  step 800 to 180 at step 3200, Table 26).
 #### 7.5.1 Parameter series at the conditions of the single-crystal and polycrystalline forms
 
 Fifteen runs on 500 x 500, one parameter varied at a time around the conditions of
@@ -1324,13 +1543,13 @@ crystal (0: solidus composition; $1 - S$: the liquid composition is frozen in).
 
 ![Supersaturation series](../../figures/crystallization/c3_series_supersaturation_maps.png)
 
-**Figure 25.** Composition (top) and orientation (bottom, liquid black) for S = 0.7, 0.8,
+**Figure 29.** Composition (top) and orientation (bottom, liquid black) for S = 0.7, 0.8,
 0.9, 1.0 at $s_0 = 0.1$ and $\chi_l = 360$ (PINNACLE, 500 x 500). Reading: at 0.7 and 0.8 a
 four-fold dendrite with solute piled up between the arms; at 0.9 and 1.0 the arms close into
 a faceted, nearly square crystal without a solute layer, and the orientation drifts across
 the crystal in a few low-angle sectors.
 
-**Table 23.** Measures of the supersaturation series.
+**Table 28.** Measures of the supersaturation series.
 
 | S | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1353,11 +1572,11 @@ the crystal in a few low-angle sectors.
 
 ![Anisotropy series](../../figures/crystallization/c3_series_anisotropy_maps.png)
 
-**Figure 26.** As Figure 25 for $s_0$ = 0, 0.025, 0.05, 0.1 at S = 0.8. Reading: without
+**Figure 30.** As Figure 29 for $s_0$ = 0, 0.025, 0.05, 0.1 at S = 0.8. Reading: without
 anisotropy the crystal is a seaweed of splitting tips; 2.5 % already selects four primary
 arms; the arms sharpen and the side branches order as $s_0$ grows.
 
-**Table 24.** Measures of the anisotropy series.
+**Table 29.** Measures of the anisotropy series.
 
 | $s_0$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1378,12 +1597,12 @@ arms; the arms sharpen and the side branches order as $s_0$ grows.
 
 ![Mobility series at S = 0.8](../../figures/crystallization/c3_series_mobility_s0.8_maps.png)
 
-**Figure 27.** As Figure 25 for $\chi_l$ = 18, 54, 108, 180, 360 at S = 0.8. Reading: from
+**Figure 31.** As Figure 29 for $\chi_l$ = 18, 54, 108, 180, 360 at S = 0.8. Reading: from
 right to left the single-crystal dendrite breaks into a few arms of different orientation
 (180, 108), then into a polycrystalline dendrite (54) and a compact fine-grained particle
 (18).
 
-**Table 25.** Measures of the mobility series at S = 0.8.
+**Table 30.** Measures of the mobility series at S = 0.8.
 
 | $\chi_l$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1395,13 +1614,13 @@ right to left the single-crystal dendrite breaks into a few arms of different or
 
 ![Measures of the mobility series at S = 0.8](../../figures/crystallization/c3_series_mobility_s0.8_measures.png)
 
-**Figure 28.** The measures of Table 25 against $\chi_l$. Reading: the number of orientation
+**Figure 32.** The measures of Table 30 against $\chi_l$. Reading: the number of orientation
 domains and the misorientation rise steeply below $\chi_l$ of about 100, and the radius
 falls with them.
 
 ![Misorientation distributions](../../figures/crystallization/c3_series_mobility_s0.8_misorientation.png)
 
-**Figure 29.** Probability density of the misorientation between neighboring crystal cells
+**Figure 33.** Probability density of the misorientation between neighboring crystal cells
 for the mobility series at S = 0.8 (logarithmic scale). Reading: at 360 and 180 nearly all
 pairs lie below 0.02 (inside grains); with falling mobility a flat tail up to 0.5 grows:
 high-angle boundaries of all misorientations, as expected for orientations frozen in from an
@@ -1421,11 +1640,11 @@ unordered liquid without a preferred misfit angle.
 
 ![Mobility series at S = 1.0](../../figures/crystallization/c3_series_mobility_s1.0_maps.png)
 
-**Figure 30.** As Figure 25 for $\chi_l$ = 54, 108, 180, 240, 360 at S = 1.0. Reading: the
+**Figure 34.** As Figure 29 for $\chi_l$ = 54, 108, 180, 240, 360 at S = 1.0. Reading: the
 same transition as at S = 0.8, shifted to higher mobility: the faceted crystal (360) is
 already a spherulite of elongated grains at 180.
 
-**Table 26.** Measures of the mobility series at S = 1.0.
+**Table 31.** Measures of the mobility series at S = 1.0.
 
 | $\chi_l$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1471,7 +1690,7 @@ addendum). Twelve decks, `decks/crystallization/orientation/fibril/c4_s<S>_x<x>_
 
 ![Fibrillar growth, supersaturation series](../../figures/crystallization/c4_series_supersaturation_maps.png)
 
-**Figure 31.** Composition (top) and orientation (bottom, period 180 degrees) for S = 0.75,
+**Figure 35.** Composition (top) and orientation (bottom, period 180 degrees) for S = 0.75,
 0.85, 0.9, 0.95, 1.0, 1.1 (PINNACLE). Reading: a needle along the seed direction with a few
 side fibers at fixed angles (0.75), a bundle of diverging fibers (0.85, 0.9: an axialite or
 sheaf), a nearly space-filling fan with two notches left on either side of the seed (0.95),
@@ -1481,12 +1700,12 @@ misfit.
 
 ![Fibrillar growth, reference](../../figures/crystallization/c4_fig6_reference_maps.png)
 
-**Figure 32.** The same six conditions in the independent reference
+**Figure 36.** The same six conditions in the independent reference
 (`decks/crystallization/reference/c4_fig6_s*.i`). Reading: the same sequence of forms; the
 reference realizations carry more branches (38 against 16 orientation domains at S = 0.9)
 and keep open "eyes" beside the seed up to S = 1.0.
 
-**Table 27.** Measures of the fibrillar supersaturation series (PINNACLE; symmetry index 2).
+**Table 32.** Measures of the fibrillar supersaturation series (PINNACLE; symmetry index 2).
 
 | S | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1503,7 +1722,7 @@ and keep open "eyes" beside the seed up to S = 1.0.
   is trapped and the envelope advances at a constant rate.
 - Radial alignment is high throughout (0.71 to 0.94): every fiber grows along its own fast
   axis, so the crystal axis points outward everywhere. This is the fiber texture seen in
-  spherulites under polarized light (the Maltese cross); the category 1 spherulite of Table 26
+  spherulites under polarized light (the Maltese cross); the category 1 spherulite of Table 31
   made of equiaxed grains has an alignment near zero.
 - The grains are sectors, not equiaxed: 12 to 39 domains of 1000 to 5900 cells each, with a
   boundary fraction near 0.01, an order of magnitude below the category 1 spherulite at
@@ -1517,13 +1736,13 @@ and keep open "eyes" beside the seed up to S = 1.0.
 
 ![Branching weight series](../../figures/crystallization/c4_series_branching_maps.png)
 
-**Figure 33.** As Figure 31 for $x$ = 0, 0.05, 0.15, 0.3. Reading: without the branching
+**Figure 37.** As Figure 35 for $x$ = 0, 0.05, 0.15, 0.3. Reading: without the branching
 minimum ($x = 0$) the fibers split by low-angle fanning and the orientation changes smoothly
 along the fan; with $x$ = 0.05 and 0.15 side fibers start at fixed angles and carry distinct
 orientations; at 0.3 the front nucleates grains everywhere and the form is a compact
 fine-grained spherulite with liquid inclusions.
 
-**Table 28.** Measures of the branching-weight series.
+**Table 33.** Measures of the branching-weight series.
 
 | $x$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1544,12 +1763,12 @@ fine-grained spherulite with liquid inclusions.
 
 ![Kinetic anisotropy series](../../figures/crystallization/c4_series_kinetic_maps.png)
 
-**Figure 34.** As Figure 31 for $\delta_0$ = 0, 0.5, 0.9, 0.995. Reading: with an isotropic
+**Figure 38.** As Figure 35 for $\delta_0$ = 0, 0.5, 0.9, 0.995. Reading: with an isotropic
 mobility the crystal is a disc of a few sectors; at 0.5 the envelope becomes lobed, each
 lobe a sector growing along its fast axis; at 0.9 the sectors separate into broad blades;
 at 0.995 into thin fibers.
 
-**Table 29.** Measures of the kinetic-anisotropy series.
+**Table 34.** Measures of the kinetic-anisotropy series.
 
 | $\delta_0$ | step | equivalent radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment | trapped solute |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1583,12 +1802,12 @@ qualitative (tier 3).
 
 ![Gallery](../../figures/crystallization/c6_gallery.png)
 
-**Figure 35.** PINNACLE at the parameter sets of Table II of
+**Figure 39.** PINNACLE at the parameter sets of Table II of
 (granasy 2005 spherulites), 500 x 500, at the last saved frame before the crystal reaches the
 box edge. For every panel: orientation (color, period 180 degrees; liquid black) and
-composition below it. Panel (e) is missing: see the note under Table 30.
+composition below it. Panel (e) is missing: see the note under Table 35.
 
-**Table 30.** Conditions (reported_table) and measures (definitions in section
+**Table 35.** Conditions (reported_table) and measures (definitions in section
 7.5.1; two-fold symmetry) of the gallery.
 
 | panel | S | $s_0$ | $\delta_0$ | $x$ (angle) | $m_\phi$ | $\chi_l$ | paper grid | step | compactness | growth exponent | orientation domains | boundary fraction | radial alignment |
@@ -1619,7 +1838,7 @@ $1 - 3 s_0 \cos 2\vartheta$ is negative over a range of directions once $s_0 > 1
 $s_0 = 0.75$ it reaches -1.25, where the gradient term acts as backward diffusion. The
 panels with $s_0$ = 0.335 and 0.5 ran. The cause was not isolated further (no field was
 saved at the failure); a regularized anisotropy for missing orientations is not in PINNACLE
-(section 12).
+(section 13).
 
 Reading, panel by panel, against Fig. 10 of the paper:
 
@@ -1635,7 +1854,7 @@ Reading, panel by panel, against Fig. 10 of the paper:
   the $x = 0.3$ run of section 7.5.2.
 - **(d): quadrite.** The paper shows a square pattern with a cross-hatched fine structure on
   2000 x 2000. Here the crystal is a star of straight blades of two orientations 90 degrees
-  apart (yellow and blue in Figure 35): the right-angle branching is present, the
+  apart (yellow and blue in Figure 39): the right-angle branching is present, the
   box is too small for the cross-hatched square to develop.
 - **(g), (i): sheaves.** The paper's panels contain several crystals (its box is 2 to 4 times
   wider and the crystals were nucleated by noise); a single seeded crystal here gives one
@@ -1655,7 +1874,7 @@ spherulites, spiky sheaves, right-angle branching, needles) but not every panel:
 paper's in the assumed items listed above and in the 500 x 500 box.
 
 - Animations: `figures/crystallization/c6_gallery_<panel>.gif`.
-- Cost: 282 to 894 s per panel on the GPU of rocm-server (Table 30 runs, 4322 s in all).
+- Cost: 282 to 894 s per panel on the GPU of rocm-server (Table 35 runs, 4322 s in all).
 
 #### 7.5.4 Foreign particles and low orientational mobility: two routes to the same form (case E4)
 
@@ -1677,11 +1896,11 @@ seed, the step count.
 
 ![Pinning](../../figures/crystallization/e4_pinning_maps.png)
 
-**Figure 36.** Composition (top) and orientation (bottom, period 180 degrees) after
+**Figure 40.** Composition (top) and orientation (bottom, period 180 degrees) after
 2000 steps. Left: needle without heterogeneities. Middle: with orientation pinning centers
 on 6.25 % of the nodes. Right: without centers, orientational mobility divided by 5.
 
-**Table 31.** Measures of the three runs (definitions in section 7.5.1).
+**Table 36.** Measures of the three runs (definitions in section 7.5.1).
 
 | run | equivalent radius (cells) | maximum radius (cells) | compactness | growth exponent | orientation domains | mean misorientation | boundary fraction | radial alignment |
 |---|---|---|---|---|---|---|---|---|
@@ -1729,7 +1948,7 @@ the bulk within the run (0.0062 in section 7.4.4): standard deviation 0.0054, 0.
 opening angle $\beta$ is the sector $\beta / 2\pi$ of the homogeneous nucleus, and its
 barrier is the same fraction of the homogeneous one:
 
-**Table 32.** Sites of the box, their barrier relative to homogeneous nucleation
+**Table 37.** Sites of the box, their barrier relative to homogeneous nucleation
 (derived from the wedge angle), and the crystals found there in ten runs (one at 0.0054,
 five at 0.0048, four at 0.0044; 23 crystals). The site of a crystal is the node of lowest
 $\phi$ in the first saved frame in which it exists.
@@ -1745,7 +1964,7 @@ $\phi$ in the first saved frame in which it exists.
 
 ![Rough wall](../../figures/crystallization/e5_rough_wall.png)
 
-**Figure 37.** Phase field (black: crystal) at four early frames of the first run
+**Figure 41.** Phase field (black: crystal) at four early frames of the first run
 at each noise level (0.0044, 0.0048, 0.0054 from top to bottom); the wall is drawn in red.
 Animations: `figures/crystallization/e5_rough_wall_<run>.gif`.
 
@@ -1769,7 +1988,7 @@ angle and act at lower noise (lower undercooling in a material). A contact angle
 (less wetting, section 4) raises all wall barriers and moves nucleation back into the bulk.
 At a noise level that nucleates in the bulk the wall no longer matters and the result is
 that of section 7.4.4. After nucleation the crystals grow as the spherulites of
-Figure 22, cut by the wall.
+Figure 26, cut by the wall.
 
 Cost: 230 s per run alone on the GPU of rocm-server (3000 steps, 80,601 nodes), 355 s when
 the GPU is shared.
@@ -1794,7 +2013,7 @@ quench stage is taken at 1550 or 1520 K (`assumed`). Figure script:
 
 ![Heat treatments](../../figures/crystallization/c6_heat_treatment.png)
 
-**Figure 38.** Four thermal histories after 3000 steps at 1595 K. Rows: direct quench
+**Figure 42.** Four thermal histories after 3000 steps at 1595 K. Rows: direct quench
 to 1574 K; 20 steps at 1550 K, then 1574 K; 100 steps at 1550 K; 100 steps at 1520 K.
 Columns: orientation maps (liquid black) before the first crystals, near $X$ = 0.3 and 0.7,
 and at the end; a panel is left empty where no frame was saved during the transformation.
@@ -1802,7 +2021,7 @@ Right: crystalline fraction against time after the hold, and the number of separ
 crystals in the saved frames with $X$ < 0.6. Animations:
 `figures/crystallization/c6_heat_treatment_<run>.gif`.
 
-**Table 33.** Thermal histories. Times are counted from the end of the hold at 1595 K;
+**Table 38.** Thermal histories. Times are counted from the end of the hold at 1595 K;
 one step is 4.75e-6. Crystals: largest number of separate crystalline regions in a saved
 frame (frames every 100 steps; every 50 for the 20-step pulse).
 
@@ -1907,7 +2126,7 @@ Newton iteration with exact tangents (ADR 0041).
 
 ### 8.3 Parameters
 
-**Table 34.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
+**Table 39.** Parameters of the hard-sphere case. Units $kT = 1$, $\sigma = 1$.
 
 | quantity | value | provenance | source |
 |---|---|---|---|
@@ -1932,7 +2151,7 @@ Case F1. Decks `decks/crystallization/hard_sphere/f1_nucleus_<interface>_phi<val
 2400 elements). Reference: `scripts/cryst_hard_sphere_reference.py`, a shooting solution of
 the same equations, independent of PINNACLE.
 
-**Table 35.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
+**Table 40.** Hard-sphere nucleus, average interface data. $R_{1/2}$: radius where $m$ is
 halfway between its center value and 1; $\Delta N$: excess number of particles of the
 nucleus.
 
@@ -1955,7 +2174,7 @@ nucleus.
 
 ![Hard-sphere nucleation barrier](../../figures/crystallization/f1_barrier.png)
 
-**Figure 39.** Left: nucleation barrier against the volume fraction of the liquid; lines:
+**Figure 43.** Left: nucleation barrier against the volume fraction of the liquid; lines:
 independent reference, circles: PINNACLE, for the average interface data and the three
 orientations; dashed: classical droplet model with the average interface free energy;
 squares: Monte Carlo (digitized); star: the value printed in the paper. Right: ratio of the
@@ -1966,7 +2185,7 @@ at small sizes ($m(0)$ rises from 0.11 to 0.48).
 
 ![Hard-sphere nucleus profiles](../../figures/crystallization/f1_profiles.png)
 
-**Figure 40.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
+**Figure 44.** Radial profiles of the crystallinity $1 - m$ and of the volume fraction at
 the three Monte Carlo states (thin lines: PINNACLE; broad pale lines: reference). Reading:
 the interface is as wide as the nucleus; the density at the center (0.581 to 0.588) stays
 below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
@@ -1977,7 +2196,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   0.5500, the nucleus shrinks from $R_{1/2} = 3.9$ to 2.4 $\sigma$ and from 24 to 2 excess
   particles, and its center loses crystallinity ($m(0)$ from 0.11 to 0.48). Beyond about
   0.55 the "nucleus" is a weak ripple of structure rather than a crystallite.
-- Interface data (Table 36): the barrier scales roughly with $\gamma_\infty^3$, as in the
+- Interface data (Table 41): the barrier scales roughly with $\gamma_\infty^3$, as in the
   classical theory, but the interface thickness matters as well: the (110) data (largest
   $\gamma_\infty$, thinnest interface) give the highest barrier, the (111) data the lowest.
   A 10 % change of $\gamma_\infty$ changes the barrier by about 30 %.
@@ -1988,7 +2207,7 @@ below that of the bulk crystal of equal chemical potential (0.583 to 0.599).
   coexistence (section 8.3). Hall's two solid forms differ by 0.3 % in pressure near
   melting; only the polynomial form reproduces the solid densities printed in the paper.
 
-**Table 36.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
+**Table 41.** Barrier $W^*/kT$ (PINNACLE) for the interface data of the three orientations.
 
 | $\phi_\infty$ | (111) | (100) | average | (110) |
 |---|---|---|---|---|
@@ -2058,7 +2277,7 @@ neighbor misorientation 123°) and the result did not depend on $\chi_l$. The de
 
 ### 9.3 Parameters
 
-**Table 37.** Parameters of case F4.
+**Table 42.** Parameters of case F4.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -2087,13 +2306,13 @@ axes at $S$ = 0.78. No number is printed for either; the comparison is of the fo
 
 ![Three-dimensional series](../../figures/crystallization/f4_spherulite_views.png)
 
-**Figure 41.** One seed at $S$ = 1 for $\chi_l$ = 360, 108, 72, 54, 36 and 12
+**Figure 45.** One seed at $S$ = 1 for $\chi_l$ = 360, 108, 72, 54, 36 and 12
 (left to right; steps 300, 300, 600, 600, 300, 300). Top: view along $z$, colored by the
 tilt of the crystal $z$ axis against the laboratory $z$ axis (0 to 90°). Middle:
 composition in the mid-plane. Bottom: tilt in the mid-plane. The disc of one color at the
 center is the seed. Animations: `figures/crystallization/f4_spherulite_<run>.gif`.
 
-**Table 38.** Measures of the series of Figure 41 at the stated step.
+**Table 43.** Measures of the series of Figure 45 at the stated step.
 Growth: increase of the equivalent radius per step. Misorientation: mean angle between
 neighboring crystal cells. Boundary share: neighbor pairs above 15°.
 
@@ -2125,8 +2344,8 @@ neighboring crystal cells. Boundary share: neighbor pairs above 15°.
 
 ![Four seeds](../../figures/crystallization/f4_dendrites_views.png)
 
-**Figure 42.** Four seeds of random orientation at $S$ = 0.78,
-$\chi_l$ = 360, step 280 (solid fraction 0.28); panels as in Figure 41.
+**Figure 46.** Four seeds of random orientation at $S$ = 0.78,
+$\chi_l$ = 360, step 280 (solid fraction 0.28); panels as in Figure 45.
 Animation: `figures/crystallization/f4_dendrites_<run>.gif`.
 
 - Each seed grows as one crystal with its own orientation (four tilt values; misorientation
@@ -2151,7 +2370,7 @@ Animation: `figures/crystallization/f4_dendrites_<run>.gif`.
 - *Orientational energy $h$.* A larger $h$ raises the grain-boundary energy and the cost of
   a disordered solid: growth at low $\chi_l$ stops earlier.
 - *Box size.* Dendrites, and spherulites with many grains across the radius, need boxes of
-  200 to 300 cells per edge (section 13).
+  200 to 300 cells per edge (section 14).
 - *Crystallography.* The tilt maps are the three-dimensional counterpart of an orientation
   map from electron backscatter diffraction; the misorientation and boundary share of Table
   36 are the quantities such a map gives. With the triclinic energy every pair
@@ -2231,7 +2450,7 @@ The model with these data gives a eutectic at 1055.48 K and $c_E$ = 0.3454, with
 $c_\alpha$ = 0.149 and $c_\beta$ = 0.851 (`scripts/cryst_eutectic_thermo.py`; the papers
 print 1055.5 K and 0.35).
 
-**Table 39.** Parameters of cases F2 and F2b.
+**Table 44.** Parameters of cases F2 and F2b.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -2269,18 +2488,18 @@ form (tier 3, qualitative).
 
 ![Spacing series](../../figures/crystallization/f2_spacing_maps.png)
 
-**Figure 43.** Lamellar growth at 955.5 K (undercooling 100 K) for initial
+**Figure 47.** Lamellar growth at 955.5 K (undercooling 100 K) for initial
 spacings of 8 to 48 nm after 300,000 steps. Color: Cu fraction in the solid; line: the
 front. The box holds one pair and is repeated sideways for display. Animation of the 16 nm
 case: `figures/crystallization/f2_lamellar_T955.5_lam16.gif`.
 
 ![Spacing measures](../../figures/crystallization/f2_spacing_measures.png)
 
-**Figure 44.** Measures of the spacing series against the initial spacing. Left:
+**Figure 48.** Measures of the spacing series against the initial spacing. Left:
 front speed. Middle: $\lambda^2 v$ with the initial spacing; lines: simulation and
 experiment as given by (ratkai 2017 nanoscale). Right: Cu-rich share of the new solid.
 
-**Table 40.** Spacing series at 955.5 K. Final spacing: box width over the number
+**Table 45.** Spacing series at 955.5 K. Final spacing: box width over the number
 of Cu-rich lamellae 3 nm behind the front. Unsteadiness: relative change of the speed
 between the last two fifths of the run.
 
@@ -2316,16 +2535,16 @@ between the last two fifths of the run.
 
 ![Undercooling series](../../figures/crystallization/f2_undercooling_maps.png)
 
-**Figure 45.** Lamellar growth with an initial spacing of 16 nm at undercoolings
+**Figure 49.** Lamellar growth with an initial spacing of 16 nm at undercoolings
 of 50, 75, 100 and 150 K (1005.5 to 905.5 K) after 300,000 steps.
 
 ![Undercooling measures](../../figures/crystallization/f2_undercooling_measures.png)
 
-**Figure 46.** Left: front speed against undercooling. Right: fraction of the
+**Figure 50.** Left: front speed against undercooling. Right: fraction of the
 minority component in each new solid (symbols) and at equilibrium (dashed; the two
 equilibrium curves coincide in this model).
 
-**Table 41.** Undercooling series at an initial spacing of 16 nm.
+**Table 46.** Undercooling series at an initial spacing of 16 nm.
 
 | $T$ (K) | undercooling (K) | front (nm) | speed (m/s) | speed per K (1e-4 m/s/K) | final spacing (nm) | minority fraction, Ag-rich / Cu-rich solid | equilibrium |
 |---|---|---|---|---|---|---|---|
@@ -2345,7 +2564,7 @@ equilibrium curves coincide in this model).
 
 ![Long run](../../figures/crystallization/f2_long.png)
 
-**Figure 47.** Run of 600,000 steps (1.7 µs) at 955.5 K and 16 nm in a box 100 nm
+**Figure 51.** Run of 600,000 steps (1.7 µs) at 955.5 K and 16 nm in a box 100 nm
 long. Left: Cu fraction at the end (three periods). Middle: front position against time.
 Right: Cu-rich share across the box against height.
 
@@ -2361,13 +2580,13 @@ Right: Cu-rich share across the box against height.
 
 ![Eutectic grain](../../figures/crystallization/f2b_grain.png)
 
-**Figure 48.** Growth of a eutectic grain at 900 K from a lamellar seed. Rows in
+**Figure 52.** Growth of a eutectic grain at 900 K from a lamellar seed. Rows in
 pairs: composition (red Cu-rich, blue Ag-rich, light blue liquid) and orientation (color:
 $\theta$; gray: liquid). Top pair: $S$ = 0.1, $\chi_l$ = 0.3. Middle: $S$ = 0.1,
 $\chi_l$ = 3. Bottom: $S$ = 0.3, $\chi_l$ = 3. Columns: start, 50,000 and 100,000 steps.
 Animations: `figures/crystallization/f2b_<run>.gif`.
 
-**Table 42.** Eutectic grain after 100,000 steps (0.29 µs). Reoriented share: part of
+**Table 47.** Eutectic grain after 100,000 steps (0.29 µs). Reoriented share: part of
 the solid more than 5 % of the period away from the seed orientation.
 
 | $S$ | $\chi_l$ | solid fraction | Cu-rich share | reoriented share | orientation |
@@ -2476,7 +2695,7 @@ $\mu_1$, $\mu_2$, $\mu_3$ as auxiliary variables of `pf_fem_explicit` (ADR 0044)
 
 ### 11.3 Parameters
 
-**Table 43.** Parameters of case F3.
+**Table 48.** Parameters of case F3.
 
 | quantity | value | provenance |
 |---|---|---|
@@ -2507,19 +2726,19 @@ partitionless growth (tier 3, qualitative).
 
 ![Ternary series](../../figures/crystallization/f3_maps.png)
 
-**Figure 49.** Series in $f_s$ at time 300 (120,000 steps). Top: $c_1 - c_2$ in
+**Figure 53.** Series in $f_s$ at time 300 (120,000 steps). Top: $c_1 - c_2$ in
 the solid (red and blue: the two solid solutions; white: homogeneous solid). Bottom:
 $c_3$. The slab below 40 cells is the initial solid. Animation:
 `figures/crystallization/f3_f3_ternary_fs-0.86_c30.09_lam16_fem.gif`.
 
 ![Ternary measures](../../figures/crystallization/f3_measures.png)
 
-**Figure 50.** Measures of the series. Left: front speed over the last 40 % of the
+**Figure 54.** Measures of the series. Left: front speed over the last 40 % of the
 run; dotted line: the speed above which the paper reports partitionless growth. Middle:
 $c_3$ of the new solid over that of the liquid, and the contrast between the two solids
 (1: the initial solids; 0: homogeneous). Right: largest $c_3$ ahead of the front.
 
-**Table 44.** Series in the driving force at time 300. Advance: front position
+**Table 49.** Series in the driving force at time 300. Advance: front position
 minus 40. Speed: mean over the last 40 % of the run. The middle columns are measured in the
 solid more than 15 cells from the seed, which three runs did not reach (--).
 
@@ -2554,13 +2773,13 @@ solid more than 15 cells from the seed, which three runs did not reach (--).
 
 ![Long ternary runs](../../figures/crystallization/f3_long.png)
 
-**Figure 51.** Long runs (time 1500, 600,000 steps) at $f_s$ = -0.82, -0.84 and
+**Figure 55.** Long runs (time 1500, 600,000 steps) at $f_s$ = -0.82, -0.84 and
 -0.86. Maps: $c_1 - c_2$ in the solid and $c_3$ at the end. Middle: front position against
 time; $n$ is the exponent of (position - 40) $\propto t^n$ over the last 80 % of the run.
 Right: $c_3$ averaged across the box, along the growth direction; dotted: the initial
 liquid value.
 
-**Table 45.** Long runs at time 1500. Deceleration: relative change of the speed
+**Table 50.** Long runs at time 1500. Deceleration: relative change of the speed
 between the fourth and the last fifth of the run.
 
 | $f_s$ | front (cells) | speed (last 40 %) | deceleration | exponent $n$ | pairs | contrast | $c_3$ solid / liquid | $c_3$ at the front | $c_3$ at the far end |
@@ -2583,7 +2802,7 @@ between the fourth and the last fifth of the run.
   position where its speed equals the pulling speed, and a steady state exists at every
   pulling speed. PINNACLE has a temperature programme in time (section 7.4.4) but no moving
   frame; a pulled case would need a field $f_s(y - vt)$, which the kernels do not take
-  today (section 12).
+  today (section 13).
 - $f_s$ = -0.86 shows the transition in one run. Over the first 20 cells the contrast
   faded, and a band of about 12 cells grew nearly homogeneous (the white band in the map).
   As the front slowed, the two-phase pattern came back with the spacing of the seed. The
@@ -2596,11 +2815,11 @@ between the fourth and the last fifth of the run.
 
 ![Ternary spacing series](../../figures/crystallization/f3_spacing.png)
 
-**Figure 52.** Initial spacings $\lambda_0$ of 8, 16, 32 and 64 cells at
+**Figure 56.** Initial spacings $\lambda_0$ of 8, 16, 32 and 64 cells at
 $f_s$ = -0.84 (top) and -0.9 (bottom) at time 300; $c_1 - c_2$ in the solid. The view is
 cut 25 cells above the front.
 
-**Table 46.** Spacing series at time 300. Pairs at the front: counted 3 cells
+**Table 51.** Spacing series at time 300. Pairs at the front: counted 3 cells
 behind it.
 
 | $f_s$ | $\lambda_0$ (cells) | front (cells) | speed | pairs at the start | pairs at the front | spacing at the front (cells) |
@@ -2657,14 +2876,409 @@ behind it.
 when the GPU ran seven such jobs in turn (3.3 ms per step); the long runs took 8867, 4573
 and 2781 s for 600,000 steps on a GPU shared with other jobs (4.6 to 14.8 ms per step).
 The paper's three-dimensional box (96 x 96 x 612, 3.6e6 steps) has 460 times the cells and
-6 to 30 times the steps; it was not attempted (section 13). Routes: FE only.
+6 to 30 times the steps; it was not attempted (section 14). Routes: FE only.
 
-## 12. Limits
+## 12. The phase-field crystal model: crystal structure, phase diagram and growth on the particle scale
 
-- Network routes cover the stationary cases A1 and A3. The time-dependent cases A2 and A5
-  need `pf_pinn`, which does not yet carry the spherical term (A5), and a per-step predictor
-  for the hybrid; not run. B1 needs a flux boundary condition and a non-uniform deflation
-  state in `pf_pinn_stationary`; not run. B2 has no PINN route (section 2.2).
+### 12.1 Purpose
+
+The models of sections 3 to 11 describe the crystal by a structural order parameter that is
+uniform inside a grain; the lattice, its orientation and its defects enter through added
+fields (the orientation field of sections 7 and 9) or not at all. The phase-field crystal
+(PFC) model (elder 2002 elasticity; elder 2004 plastic; section 4.1.1 of
+granasy 2019 nucleation) works one level below: its single field is the time-averaged
+particle density, which is uniform in the liquid and periodic in the crystal. Crystal
+structure, anisotropy of the interface, elasticity, grain boundaries and dislocations are
+then consequences of the free energy and need no further input. The price is the length
+scale: every lattice period has to be resolved, so a simulation covers tens of lattice
+constants, not micrometres.
+
+This section (stage D of the plan, case D1 and three added cases) covers what a user of the
+model needs first:
+
+1. the three phases of the two-dimensional model and where they are stable (case D1);
+2. the growth of a crystal from a seed in a metastable liquid, with the density conserved
+   (case D2);
+3. how the mean density and the reduced temperature change the outcome: whether a seed
+   grows or melts, how fast, and whether the crystal is round or faceted (series);
+4. a polycrystal with grain boundaries that form by themselves (case D3).
+
+The PFC nucleation results of (granasy 2019 nucleation) (its Fig. 37 to 55) are noise-driven
+or need a saddle search in a space with many local minima; they are not reproduced
+(section 12.4.5).
+
+### 12.2 Governing equations
+
+Free energy (granasy 2019 nucleation, Eq. 30), all quantities dimensionless:
+
+$$F[\psi] = \int \Bigl\{ \frac{\psi}{2}\bigl[-\epsilon + (1 + \nabla^2)^2\bigr]\psi + \frac{\psi^4}{4} \Bigr\}\, d\mathbf r .$$
+
+$\psi$ is the reduced particle density and $\epsilon > 0$ the reduced temperature (larger
+$\epsilon$ = further below the critical point at $\epsilon = 0$, $\psi_0 = 0$). The operator
+$(1 + \nabla^2)^2$ vanishes for a density wave of wavenumber 1 and is positive for any other:
+it is the energy cost of a wrong particle spacing, and the origin of elasticity in the model.
+
+Equation of motion (granasy 2019 nucleation, Eq. 36, here without the noise term):
+
+$$\frac{\partial\psi}{\partial t} = \nabla^2 \mu, \qquad
+  \mu = \frac{\delta F}{\delta\psi} = -\epsilon\,\psi + \psi^3 + (1 + \nabla^2)^2\psi .$$
+
+The density is conserved: the mean density $\psi_0$ of the box is a parameter of the run, and
+a crystal that is denser than the liquid can grow only as fast as diffusion supplies
+particles.
+
+Phases in two dimensions:
+
+- liquid: $\psi = \psi_0$, free-energy density $f_L = (1 - \epsilon)\psi_0^2/2 + \psi_0^4/4$. It is
+  linearly unstable for $|\psi_0| < \sqrt{\epsilon/3}$ (a small wave of wavenumber $k$ grows at
+  the rate $\sigma = -k^2[-\epsilon + 3\psi_0^2 + (1 - k^2)^2]$);
+- triangular crystal: a triangular lattice of density peaks (for $\psi_0 < 0$), lattice
+  constant $a \approx 4\pi/\sqrt3 = 7.255$;
+- stripes: a one-dimensional density wave of period $\approx 2\pi$. It has no counterpart in a
+  simple atomic system (granasy 2019 nucleation calls it unphysical on the atomic scale); it
+  is the lamellar phase of systems such as block copolymers.
+
+One-mode approximation (elder 2004 plastic; re-derived and checked numerically here,
+`derived`): the triangular crystal is written as
+$\psi = \psi_0 + A\,[\cos(\tfrac{\sqrt3}{2}x)\cos(\tfrac{y}{2}) - \tfrac12\cos y]$, which gives
+
+$$f_T = f_L + \tfrac{3}{16}(3\psi_0^2 - \epsilon)A^2 - \tfrac{3}{16}\psi_0 A^3 + \tfrac{45}{512}A^4,
+  \qquad A = \tfrac45\Bigl(\psi_0 - \tfrac13\sqrt{15\epsilon - 36\psi_0^2}\Bigr)\ (\psi_0 < 0),$$
+
+and for stripes $\psi = \psi_0 + A\cos x$:
+$f_S = f_L + \tfrac14(3\psi_0^2 - \epsilon)A^2 + \tfrac{3}{32}A^4$, $A^2 = \tfrac43(\epsilon - 3\psi_0^2)$.
+Two phases coexist at the densities joined by the common tangent of their $f(\psi_0)$ curves
+(equal $\mu = df/d\psi_0$ and equal $f - \mu\psi_0$).
+
+How it is solved in PINNACLE (ADR 0046). The equation is of sixth order in space. With
+bilinear elements it is solved in mixed form with two more nodal variables, the chemical
+potential $\mu$ and $\nu = \nabla^2\psi$, so that no variable is differentiated more than once:
+
+$$(\dot\psi, w) + (\nabla\mu, \nabla w) = 0, \qquad
+  (-\epsilon\psi + \psi^3 + \psi + 2\nu - \mu,\, w) - (\nabla\nu, \nabla w) = 0, \qquad
+  (\nu, w) + (\nabla\psi, \nabla w) = 0 .$$
+
+**Table 52.** Deck blocks of the phase-field crystal model.
+
+| row | kernel | on variable | role |
+|---|---|---|---|
+| conservation | `coupled_time_derivative` | `psi` | $(\dot\psi, w)$ |
+| conservation | `split_ch_wres` | `mu` | $(M\nabla\mu, \nabla w)$, $M = 1$ |
+| chemical potential | `sh_potential` (new) | `psi` | $\mu = f'(\psi) + \lambda(q_0^2 + \nabla^2)^2\psi$ with `epsilon`, `cubic`, `quartic`, `wavenumber` $q_0$, `stiffness` $\lambda$; or a `free_energy` material |
+| Laplacian | `weak_laplacian` (new) | `nu` | $\nu = \nabla^2\psi$ (`of = psi`) |
+
+- Executioner `pf_fem_transient`, backward Euler, Newton's method with the exact block
+  Jacobian. The step is not limited by the sixth-order operator (an explicit step would be
+  limited to about $h^6/64 \approx 2\times10^{-3}$ at ten elements per lattice constant; the
+  runs below use 1 to 4).
+- `linear_solver = gmres_lu` (new): GMRES on the current Jacobian, preconditioned by the LU
+  factors of an earlier one, which are replaced when GMRES needs more than 25 iterations.
+  The Newton update is the same to $10^{-10}$; the first growth run needs 256 factorizations
+  for its 750 steps (2,250 Newton iterations).
+- Boundaries. The natural conditions of the three rows are
+  $\mathbf n\cdot\nabla\psi = \mathbf n\cdot\nabla\nu = \mathbf n\cdot\nabla\mu = 0$: every box side is a
+  mirror line. A box whose sides are mirror lines of the lattice ($L_x$ a multiple of $a/2$,
+  $L_y$ a multiple of $2\pi$, for rows of particles along $x$) holds the crystal without
+  strain, and a seed in a corner is a quarter of a crystal. Periodic boundaries are not
+  needed and were not added to the implicit executioner.
+
+### 12.3 Parameters
+
+The model has two parameters, $\epsilon$ and the mean density $\psi_0$; the mobility is 1.
+Numerical settings are in Table 53. Coexistence densities are in
+Table 55; they are `derived` (this work), not taken from a paper.
+
+**Table 53.** Settings of the phase-field crystal cases.
+
+| case | $\epsilon$ | $\psi_0$ | box (lattice constants) | elements per $a$ | nodes | $\Delta t$, end time |
+|---|---|---|---|---|---|---|
+| D1 crystal in a commensurate box | 0.3 | $-0.25$ | $2 \times 1.73$ | 8, 12, 16 | 255 to 957 | 2, 120 |
+| D1 phase from a random state | 0.3 | 0 to $-0.4$ (seven values) | $8 \times 6.1$ | 12 | 7,178 | 2, 300 |
+| D2 growth from a seed | 0.3 | $-0.34$ | $13 \times 13$ (a quarter of $26 \times 26$) | 10 (check: 14) | 17,161 | 2 (check: 1), 1500 |
+| D2 series in $\psi_0$ | 0.3 | $-0.36$ to $-0.32$ | as D2 | 10 | 17,161 | 2, 1500 to 3000 |
+| D2 series in $\epsilon$ | 0.1 to 0.5 | at supersaturation 0.63 | as D2 | 10 | 17,161 | 2 to 4, 1500 to 8000 |
+| D3 polycrystal | 0.3 | $-0.32$ | $18 \times 18.2$ | 10 | 33,123 | 2, 2000 |
+
+- Seed: the one-mode pattern with the amplitude of the crystal at its coexistence density
+  ($A = -0.505$ at $\epsilon = 0.3$), under a tanh envelope of radius $R_0$ = 12 (1.65 $a$) and
+  width 3, added to the uniform liquid; the mean density is not changed by it. `assumed`.
+- Random start: independent uniform values in $\psi_0 \pm 0.05$ at the nodes.
+- Supersaturation: $S = (\psi_0 - \psi_L)/(\psi_S - \psi_L)$ with the liquidus and solidus
+  densities of Table 55; by the lever rule it is also the crystalline fraction
+  at equilibrium.
+
+### 12.4 Cases and results
+
+Decks `decks/crystallization/pfc/*.i` (26, written by `scripts/cryst_pfc_decks.py`);
+independent reference `scripts/cryst_pfc_reference.py`: a Fourier pseudo-spectral solver in a
+periodic box, semi-implicit in time (linear operator implicit, $\psi^3$ explicit), no
+PINNACLE code. Figures and measures: `scripts/cryst_pfc_figures.py`.
+
+#### 12.4.1 D1: the crystal on the finite-element mesh
+
+The one-mode pattern at $\epsilon = 0.3$, $\psi_0 = -0.25$ in a box of two lattice constants by
+two row periods, relaxed for 60 steps; the reference is the same state relaxed spectrally
+in a unit cell ($32 \times 56$ points).
+
+**Table 54.** Case D1: free-energy density and peak height of the triangular crystal against the mesh size ($\epsilon = 0.3$, $\psi_0 = -0.25$).
+
+| elements per lattice constant | $f$ | error | peak height $\psi_{max} - \psi_0$ | error |
+|---|---|---|---|---|
+| 8 | 0.016622 | $+1.5$ % | 0.970 | $+5.9$ % |
+| 12 | 0.016445 | $+0.39$ % | 0.941 | $+2.7$ % |
+| 16 | 0.016410 | $+0.17$ % | 0.930 | $+1.5$ % |
+| spectral reference | 0.016382 | | 0.9157 | |
+| one-mode approximation | 0.016523 | $+0.86$ % | 0.900 | $-1.7$ % |
+
+- The peak height converges with $h^2$, the energy faster. Tier 2.
+- Bilinear elements misrepresent a wave of 8 to 16 nodes per period; this dispersion error
+  is the price of the low-order element and sets the mesh: 10 elements per lattice constant
+  in the growth runs (a check with 14 follows).
+- The mean density is conserved to rounding ($10^{-13}$ relative) and the free energy never
+  increases in any run of this section.
+- The equilibrium lattice constant is slightly larger than $4\pi/\sqrt3$ and grows with
+  $\epsilon$ (reference, cell size at the minimum of $f$, at the solidus density):
+  $a/a_0 = 1.0005, 1.0017, 1.0034, 1.0052, 1.0070$ for $\epsilon = 0.1 \ldots 0.5$; the peak
+  height grows from 0.38 to 1.12. The decks fix the box at $a_0$, a strain below 0.7 %.
+
+#### 12.4.2 D1: phase diagram and the phase reached from a random state
+
+**Table 55.** Coexistence densities of the two-dimensional model: relaxed unit cells (spectral reference) and, in parentheses, the one-mode approximation. Provenance `derived`; file `data/reference/cryst_pfc_phase_diagram.csv`.
+
+| $\epsilon$ | liquid stability limit $-\sqrt{\epsilon/3}$ | liquidus $\psi_L$ | solidus $\psi_S$ | triangular, at the stripe coexistence | stripes, at the triangular coexistence |
+|---|---|---|---|---|---|
+| 0.05 | $-0.1291$ | $-0.1442$ ($-0.1440$) | $-0.1408$ ($-0.1406$) | $-0.0515$ ($-0.0515$) | $-0.0479$ ($-0.0479$) |
+| 0.1 | $-0.1826$ | $-0.2068$ ($-0.2061$) | $-0.1961$ ($-0.1955$) | $-0.0753$ ($-0.0753$) | $-0.0654$ ($-0.0653$) |
+| 0.2 | $-0.2582$ | $-0.3011$ ($-0.2991$) | $-0.2676$ ($-0.2656$) | $-0.1126$ ($-0.1128$) | $-0.0862$ ($-0.0858$) |
+| 0.3 | $-0.3162$ | $-0.3793$ ($-0.3759$) | $-0.3166$ ($-0.3119$) | $-0.1445$ ($-0.1451$) | $-0.0990$ ($-0.0978$) |
+| 0.4 | $-0.3651$ | $-0.4494$ ($-0.4448$) | $-0.3541$ ($-0.3460$) | $-0.1735$ ($-0.1746$) | $-0.1076$ ($-0.1055$) |
+| 0.5 | $-0.4082$ | $-0.5141$ ($-0.5084$) | $-0.3850$ ($-0.3729$) | $-0.2007$ ($-0.2023$) | $-0.1139$ ($-0.1106$) |
+
+- The one-mode approximation is within 0.001 of the relaxed densities at $\epsilon \le 0.1$ and
+  0.012 off at $\epsilon = 0.5$, where the density peaks are no longer sinusoidal.
+- Published value. The caption of Fig. 37 of (granasy 2019 nucleation), from
+  (toth 2010 polymorphism), gives the liquid densities of its nucleation study at
+  $\epsilon = 0.5$ as $0.5134 + 0.0134/2^n$ (the signs are lost in the text extraction; read as
+  $\psi_0 = -0.5134 + 0.0134/2^n$): the supersaturation vanishes at $-0.5134$, which is that
+  paper's liquidus. This work: $-0.5141$, a difference of 0.14 %. Tier 3 for the reference
+  (one number; the phase diagram of the review's Fig. 35 was not digitized, and
+  (toth 2010 polymorphism) was not read in full text).
+- The liquid and the triangular crystal coexist over a density gap that widens with
+  $\epsilon$ (0.003 at 0.05, 0.13 at 0.5). For $\epsilon \ge 0.4$ the liquid stability limit
+  lies inside the gap (at 0.3 it coincides with the solidus within 0.0004): a liquid of the
+  solidus density is then already unstable.
+
+![D1 phase diagram](../../figures/crystallization/d1_phase_diagram.png)
+
+**Figure 57.** Case D1. Left: phase diagram of the two-dimensional phase-field crystal model from the spectral reference (solid lines: coexistence densities of relaxed unit cells; dotted: one-mode approximation; dashed: linear stability limit of the liquid); symbols: the seven PINNACLE runs at $\epsilon = 0.3$ (square: stripes, diamond: mixed, triangle: triangular, circle: liquid). Right: density field of those runs at $t = 80$ (top) and $t = 300$ (bottom), started from a random state. Reading: the phase that forms follows the diagram; inside the liquid's stability range ($\psi_0 = -0.35$, $-0.4$) the random state decays to the uniform liquid although at $-0.35$ the equilibrium state is a liquid-crystal mixture.
+
+**Table 56.** Case D1: state reached from a random start at $\epsilon = 0.3$ (PINNACLE FE, $t = 300$) against the phase diagram.
+
+| $\psi_0$ | equilibrium state (Table 55) | state reached | $f$ FE | $f$ of the perfect phase (one-mode) |
+|---|---|---|---|---|
+| 0 | stripes | stripes with defects | $-0.0131$ | $-0.0150$ |
+| $-0.06$ | stripes | stripes with defects | $-0.0111$ | $-0.0127$ |
+| $-0.12$ | stripes + triangular | both, in domains | $-0.0049$ | $-0.0059$ / $-0.0058$ |
+| $-0.2$ | triangular | triangular, several grains | 0.0071 | 0.0055 |
+| $-0.3$ | triangular | triangular, several grains | 0.0311 | 0.0305 |
+| $-0.35$ | liquid + triangular | liquid (metastable) | 0.0465 | 0.0466 (liquid) |
+| $-0.4$ | liquid | liquid | 0.0623 | 0.0624 (liquid) |
+
+- The phase agrees with the diagram at all seven densities (tier 2 against the reference
+  diagram; the state is classified by the spread and the skewness of the density, which is
+  0 for stripes and about 0.8 to 0.9 for a lattice of peaks).
+- The free energy stays above that of the perfect phase by $10^{-3}$ to $2\times10^{-3}$:
+  the pattern forms everywhere at once with random orientation, and the defects and grain
+  boundaries between the domains anneal slowly.
+- The two liquid rows are $10^{-4}$ below the analytic liquid value because the mean of the
+  random start differs from the nominal $\psi_0$ by about $3\times10^{-4}$.
+- $\psi_0 = -0.35$ shows the role of nucleation: the liquid is metastable there, small
+  fluctuations decay, and without a seed or a noise term nothing happens. Case D2 supplies
+  the seed.
+
+#### 12.4.3 D2: growth of a crystal from a seed
+
+![D2 growth](../../figures/crystallization/d2_growth.png)
+
+**Figure 58.** Case D2, a crystal growing from a seed of radius 12 in the metastable liquid at $\epsilon = 0.3$, $\psi_0 = -0.34$ (supersaturation 0.63). Panels 1 to 4: density field (the computed quarter mirrored to the full crystal) with the crystalline fraction $X$. Panel 5: $X$ against time, PINNACLE FE and the spectral reference. Panel 6: free-energy density. Reading: the crystal grows at a nearly constant rate with a rounded hexagonal outline until its depletion zone reaches the box sides; FE and reference agree within 2 %.
+
+Animation: `figures/crystallization/d2_growth.gif`.
+
+**Table 57.** Case D2: crystalline fraction against the spectral reference, and the influence of the numerical settings.
+
+| | $X(600)$ | $X(1200)$ | $X(1500)$ |
+|---|---|---|---|
+| PINNACLE FE, 10 elements per $a$, $\Delta t = 2$ | 0.2027 | 0.4271 | 0.4980 |
+| PINNACLE FE, $\Delta t = 1$ | 0.2014 | 0.4256 | |
+| PINNACLE FE, 14 elements per $a$ | 0.2028 | 0.4281 | |
+| reference, 16 points per $a$, $\Delta t = 0.125$ | 0.2052 | 0.4352 | 0.5063 |
+| reference, $\Delta t = 0.25$ | 0.2100 | 0.4418 | 0.5111 |
+| reference, $\Delta t = 0.5$ | 0.2207 | 0.4558 | 0.5205 |
+
+- FE against the reference at its smallest step: $-1.2$ % at $t = 600$, $-1.9$ % at 1200,
+  $-1.6$ % at 1500. Tier 2.
+- Most of that difference is the reference's: its first-order semi-implicit scheme
+  overestimates the fraction, by 7.6 % at $\Delta t = 0.5$ and 2.3 % at 0.25 relative to 0.125
+  at $t = 600$, and the sequence is still falling. The FE result changes by 0.6 % when its
+  step is halved and by 0.2 % with the finer mesh. The first reference runs of this stage
+  used $\Delta t = 0.5$ and showed an apparent FE error of 8 %; all references were rerun.
+- The free-energy density agrees within $3\times10^{-5}$ (0.07 %) throughout.
+- Mechanism. The crystal has the solidus density ($-0.317$), the liquid supplies $-0.34$: the
+  growing crystal depletes the liquid next to it toward the liquidus ($-0.379$), and
+  particles have to diffuse in from further away. The final fraction is therefore below 1:
+  0.498 at $t = 1500$ and still rising slowly toward the lever-rule value 0.63.
+
+#### 12.4.4 D3: polycrystal
+
+![D3 polycrystal](../../figures/crystallization/d3_polycrystal.png)
+
+**Figure 59.** Case D3, five seeds with lattices rotated by 0, 12, 27, 18 and $-9$ degrees at $\epsilon = 0.3$, $\psi_0 = -0.32$; density field at four times. Red circles: particles with five neighbours, green squares: with seven (Delaunay triangulation of the density peaks, interior of the crystal only). Reading: the grains grow, meet and leave boundaries decorated by miscoordinated particles; the boundaries shorten as the small grains are consumed.
+
+Animation: `figures/crystallization/d3_polycrystal.gif`.
+
+- The crystalline fraction passes 0.9 at $t = 160$ and is 0.94 at $t = 320$ (supersaturation
+  0.95). Where two lattices
+  meet at an angle, the boundary is a row of lattice defects; nothing in the deck describes
+  a grain boundary.
+- Count of five-fold particles: 23 at $t = 320$, 31 at 680, 30 at 2000 (of 363 to 367
+  particles); seven-fold: 4 to 5. In a triangular lattice a dislocation is a five-seven
+  pair, so the two counts should be equal. They are not, because the seven-fold partner in
+  these boundaries is mostly a smeared, low density peak that the peak detection (30 % of
+  the peak height) misses or merges. The markers show where the boundaries are; they are
+  not a dislocation census. Qualitative only.
+- The box sides are mirror lines, so a grain that reaches a side meets its own mirror image
+  there, which is a symmetric tilt boundary unless the grain is aligned with the box.
+- No reference run: the case shows the capability. The orientation-field model of
+  section 7 needs an orientation mobility and a misorientation energy as inputs to produce
+  the same physics on a larger scale.
+
+#### 12.4.5 Not reproduced
+
+- Fig. 37 of (granasy 2019 nucleation) (cluster free energy against cluster size from
+  solutions of the Euler-Lagrange equation at $\epsilon = 0.5$): it needs relaxation at fixed
+  chemical potential, $\delta F/\delta\psi = \mu_0$, from many initial clusters, and
+  (toth 2010 polymorphism), which holds the procedure, was not read in full text. Only its
+  liquidus density is compared (section 12.4.2).
+- Noise-induced nucleation, amorphous precursors, heterogeneous nucleation on structured
+  substrates (Fig. 38 to 55 of the review): they need the conserved coloured noise of Eq. 36
+  and substrate potentials; neither is implemented.
+- The three-dimensional phase diagram (bcc, hcp, fcc, Fig. 35 b): no 3-D run was made; the
+  kernels are dimension independent, the linear solver is the limit (section 12.6).
+
+### 12.5 What to expect when the parameters change
+
+![D2 density series](../../figures/crystallization/d2_density_series.png)
+
+**Figure 60.** Growth from a seed at $\epsilon = 0.3$ for five mean densities (and two seed sizes at the two lowest). Top row: at a crystalline fraction of 0.25 (or the last frame when the seed melted); bottom row: last frame. Right: crystalline fraction against time, PINNACLE FE (solid) and spectral reference (dotted). Reading: more supersaturation, faster growth and a larger final fraction; at the lowest supersaturation the seed melts.
+
+![D2 eps series](../../figures/crystallization/d2_eps_series.png)
+
+**Figure 61.** Growth from a seed at five reduced temperatures and the same supersaturation 0.63 (seed radius 16; 32 in the second column). Rows and right panel as in Figure 60, time scaled by the end time of each run. Reading: the crystal is round with a wide interface at small $\epsilon$ and a faceted hexagon with a sharp interface at $\epsilon = 0.5$; at $\epsilon = 0.1$ the seed of radius 16 melts.
+
+Animations: `figures/crystallization/d2_growth_eps*_psi*.gif` (one per run).
+
+**Table 58.** Growth series (PINNACLE FE). $S$: supersaturation; $X_{end}$: crystalline fraction at the end of the run, reference value in the next column; $v$: growth rate of the equivalent radius between $X = 0.05$ and 0.25; outline: largest over smallest radius of the crystal outline at $X = 0.25$ (1 for a circle, 1.155 for a regular hexagon).
+
+| $\epsilon$ | $\psi_0$ | $S$ | seed radius | end time | $X_{end}$ FE | $X_{end}$ reference | $v$ | outline |
+|---|---|---|---|---|---|---|---|---|
+| 0.3 | $-0.36$ | 0.31 | 12 | 2000 | 0 (melts) | 0 (melts) | | |
+| 0.3 | $-0.36$ | 0.31 | 24 | 3000 | 0 (melts) | 0.139 (grows) | | |
+| 0.3 | $-0.35$ | 0.47 | 12 | 2000 | 0.262 | 0.279 | 0.021 | 1.04 |
+| 0.3 | $-0.35$ | 0.47 | 24 | 3000 | 0.369 | 0.388 | 0.021 | 1.05 |
+| 0.3 | $-0.34$ | 0.63 | 12 | 1500 | 0.498 | 0.506 | 0.056 | 1.05 |
+| 0.3 | $-0.33$ | 0.79 | 12 | 1500 | 0.776 | 0.915 | 0.174 | 1.06 |
+| 0.3 | $-0.32$ | 0.95 | 12 | 1500 | 0.948 | 1.00 | (too fast for the frames) | 1.05 |
+| 0.1 | $-0.2001$ | 0.63 | 16 | 6000 | 0 (melts) | 0 (melts) | | |
+| 0.1 | $-0.2001$ | 0.63 | 32 | 8000 | 0.589 | 0.880 | 0.011 | 1.03 |
+| 0.2 | $-0.2800$ | 0.63 | 16 | 3000 | 0.547 | 0.579 | 0.047 | 1.03 |
+| 0.3 | $-0.3400$ | 0.63 | 16 | 1500 | 0.507 | 0.515 | 0.056 | 1.04 |
+| 0.4 | $-0.3894$ | 0.63 | 16 | 1500 | 0.493 | 0.503 | 0.053 | 1.09 |
+| 0.5 | $-0.4328$ | 0.63 | 16 | 1500 | 0.427 | 0.435 | 0.044 | 1.12 |
+
+What the series show, and what a user can expect:
+
+- Mean density (supersaturation). The growth rate rises steeply: 0.021, 0.056, 0.174 for
+  $S$ = 0.47, 0.63, 0.79. The final fraction follows the lever rule where the run reaches
+  equilibrium (0.776 against 0.786 at $S = 0.79$; 0.948 against 0.945 at 0.95).
+- Critical seed size. A seed must exceed the critical nucleus to grow: at $S = 0.31$ the
+  seed of radius 12 melts in both codes; at $\epsilon = 0.1$ ($S = 0.63$) radius 16 melts and
+  32 grows. The interface width grows as $\epsilon$ falls (Figure 61), and with it
+  the critical size.
+- A case on which the two codes disagree: $\epsilon = 0.3$, $\psi_0 = -0.36$, seed radius 24.
+  The reference crystal grows slowly (fraction 0.14 at $t = 3000$), the FE seed melts. The
+  seed is close to critical there, so the outcome is decided by small differences; the FE
+  crystal has a free energy about 0.7 % above the converged one at ten elements per lattice
+  constant (interpolated in Table 54), which lowers the driving force. This was
+  not tested with a finer mesh. A user who needs the critical size itself should use 14 to
+  16 elements per lattice constant or the saddle search of section 3.
+- Reduced temperature. At equal supersaturation the crystal outline changes from round
+  (ratio 1.03 at $\epsilon = 0.1$ and 0.2) to a faceted hexagon (1.12 at 0.5; a regular hexagon
+  has 1.155), and the liquid-crystal interface from several lattice constants wide to
+  about one (read from Figure 61, not measured). At $\epsilon = 0.5$ the fraction rises in steps (Figure 61, right):
+  the facets advance one particle row at a time. This is the faceted morphology that
+  (granasy 2019 nucleation) reports for $\epsilon = 0.5$ (its Fig. 37; tier 3, qualitative).
+- After the crystal reaches the box sides the two codes can end in different states:
+  at $S = 0.79$ and at $\epsilon = 0.1$ the reference crystal joins its periodic images along
+  the sides and keeps liquid only in the corners (fraction 0.92 and 0.88, above the lever
+  rule: a metastable crystal of lower density), while the FE crystal keeps a liquid layer
+  along the sides (0.78 and 0.59; lever rule 0.79 and 0.63). The two problems are
+  mathematically the same; which state is reached is decided when the depletion zones meet.
+  The comparison is quantitative only before that ($X$ below about 0.5).
+- Which phase forms from a disordered start is in Table 56; stripes appear only
+  for $|\psi_0|$ below about 0.1 at $\epsilon = 0.3$ and are avoided by choosing the density
+  inside the triangular range.
+
+Relevance for crystallography. The model returns what the coarser models take as input:
+the lattice and its constant, the anisotropy of the interface (round against faceted, from
+one parameter), the density change on freezing, grain boundaries as defect rows. It is
+the tool for questions on the scale of the lattice (the structure of a nucleus, of a grain
+boundary, epitaxy on a substrate), and too expensive for the morphologies of sections 6
+to 11, which span $10^3$ to $10^5$ lattice constants.
+
+### 12.6 Cost
+
+**Table 59.** Wall time of the phase-field crystal runs (rocm-server, CPU, two threads per run; the growth and polycrystal runs were made eight at a time beside six reference runs, a single growth run alone took 287 s).
+
+| run | nodes (unknowns) | steps | Newton iterations per step | LU factorizations | wall time |
+|---|---|---|---|---|---|
+| D1 crystal, 8 to 16 elements per $a$ | 255 to 957 (765 to 2,871) | 60 | 1 to 4 | | 1 s |
+| D1 phase from a random state | 7,178 (21,534) | 150 | 3.4 | | 18 to 47 s |
+| D2 growth, $\epsilon = 0.3$, $\psi_0 = -0.34$ | 17,161 (51,483) | 750 | 3.0 | 256 | 287 s alone; 492 s in the batch |
+| D2 with $\Delta t = 1$ | 17,161 | 1500 | | | 817 s |
+| D2 with 14 elements per $a$ | 33,489 (100,467) | 750 | | | 1099 s |
+| D2 series (twelve runs) | 17,161 | 750 to 2000 | 1.8 to 3.8 | | 303 to 1383 s each |
+| D3 polycrystal | 33,123 (99,369) | 1000 | 3.1 | 235 | 1156 s |
+| reference growth run, $416^2$ points, $\Delta t = 0.125$ | | 12,000 to 64,000 | | | 6 to 30 min |
+
+- With one sparse LU per Newton iteration (SciPy default ordering; 21,534 unknowns,
+  measured on the loaded workstation) the linear solve took about 90 % of a step. With the
+  reused factorization the first growth run needs 256 factorizations and 6,900 GMRES
+  iterations for 2,250 Newton iterations.
+- Scaling. Unknowns are $3 \times$ nodes and the nodes are $100 \times$ (lattice constants)$^2$
+  at ten elements per lattice constant. The factorization grows faster than linearly
+  (about $N^{1.5}$ in two dimensions): $100 \times 100$ lattice constants ($10^6$ nodes) is
+  beyond SuperLU in memory, and three dimensions need an iterative or multigrid solver or
+  a Fourier method. Published PFC studies use spectral codes on GPUs for that reason; the
+  reference script of this section is such a code and is faster than the FE route on a
+  periodic box. The FE route is the one that takes non-periodic boundaries, walls and
+  coupling to the other kernels of the framework.
+
+## 13. Limits
+
+- Network routes. Stationary: A1, A3 and B1 (PINN; the hybrid is reliable for A3 and
+  Model I, not for Model II of B1, where 4 of 9 network starts reached the nucleus,
+  Table 17). Time-dependent: the network gives the front speed of A2 within 2 to
+  10 %, melts the smaller seed of A5 too slowly and does not grow the larger one in six
+  runs with four settings; the hybrid returns the FE result in every time-dependent case
+  and saves no Newton iterations (A2) or costs 46 to 55 % more (A5). Training on the
+  assembled residual costs one assembly per loss evaluation: 12 to 48 min per wall nucleus
+  against seconds for FE. B2 has no PINN route (section 2.2). All other models are FE only.
+- Network routes of B1 away from 40 K: one hybrid seed at 20, 60 and 80 K, no PINN run.
+  The loss squares the FE operator, so its conditioning worsens under mesh refinement: on
+  the radial nucleus of section 3 the barrier is within $1.3\times10^{-3}$ after 150
+  iterations with 200 elements, and L-BFGS stalls at +2.6 % with 400 (PINNACLE ADR 0045).
+  A second-order (Gauss-Newton) training on the assembled residual or a coarse-to-fine
+  schedule, which would remove the slow tail of Figure 11, was not implemented.
 - A4 was run on the FE route only.
 - B1: two end points not obtained (Model I at 100 K, Model II at 90 K). The agreement with
   the published curves rests on two inferences recorded as `derived`: the cap normalized with
@@ -2679,9 +3293,25 @@ The paper's three-dimensional box (96 x 96 x 612, 3.6e6 steps) has 460 times the
 - C6: panel (e) of the gallery was not obtained (section 7.5.3); a regularized interface
   anisotropy for $s_0 > 1/3$ is not in PINNACLE. E5: ten runs, 23 crystals; the counts per
   site are small numbers.
-- Not started: the biomineral cases E2 and E3 (shell and coral forms of
-  (granasy 2021 biomineralization)), the phase-field crystal (D), and the network routes
-  for A2, A5 and B1.
+- Not run, by the author's decision of 2026-11-18: the biomineral cases E2 and E3 (shell and
+  coral forms of (granasy 2021 biomineralization)). They are large runs of the
+  orientation-field model, whose capabilities sections 7 and 9 already show.
+- Phase-field crystal (section 12): two dimensions only (the direct factorization is the
+  limit; no bcc, fcc or hcp run); no conserved noise and no substrate potential, so the
+  homogeneous and heterogeneous nucleation results of (granasy 2019 nucleation) are not
+  reproduced and crystals start from seeds; FE route only (`sh_potential` and
+  `weak_laplacian` have no strong form; the assembled-residual training of section 2.2
+  would apply but was not run). With bilinear elements at ten elements per lattice constant
+  the free energy of the crystal is 0.7 % and its peak height 4 % above the converged
+  values, and one near-critical seed ($\epsilon = 0.3$, $\psi_0 = -0.36$, radius 24) melts in
+  FE and grows in the reference. The reference is first order in time and 1 to 2 % high at
+  its step, the size of the remaining difference. After a crystal reaches the box sides the
+  mirror box (FE) and the periodic box (reference) ended in different states in two runs;
+  comparisons are quantitative only before contact. The primary papers
+  (elder 2002 elasticity; elder 2004 plastic; toth 2010 polymorphism) were not read in full
+  text: the model is taken from the review, the one-mode formulas were re-derived, and one
+  published number is compared (the liquidus at $\epsilon = 0.5$). The dislocation count of
+  the polycrystal is incomplete (qualitative).
 - F1 (hard spheres): FE route only; the Monte Carlo points are read by eye from a figure.
 - F4 (quaternion field, section 9): 64 x 64 x 64 cells against 300 x 300 x 300 in the
   paper; dendrite arms are not reached; one realization per mobility; the mobilities are
@@ -2697,20 +3327,21 @@ The paper's three-dimensional box (96 x 96 x 612, 3.6e6 steps) has 460 times the
   from the paper's limit of partitionless growth (0.35), and the cause was not separated.
 - Sections 9 to 11 have no independent reference code; they are compared with the papers
   only, and the kernels are covered by the unit tests of PINNACLE (ADR 0042 to 0044).
-- Neural results are over 5 seeds at $\Delta T/T_f = 0.20$ and one seed elsewhere. The cost
+- Neural results are over 5 seeds at $\Delta T/T_f = 0.20$ (A3), 3 seeds for A2, A5 and B1
+  at 40 K, and one seed elsewhere. The cost
   of the development runs behind `pf_pinn_stationary` and `pf_fem_saddle` (about 40
   exploratory runs of 1 to 90 s) is not in the wall times of the tables.
 - Hardware of every number of sections 3 to 6: Intel Core i9-9980HK, 2 to 6 threads,
-  float64, numpy backend for FE and torch 2.13.0 (CPU) for the network routes; no GPU on
+  float64, numpy backend for FE and torch 2.13.0 (CPU) for the network routes (2.12.1 for the runs of 2026-11-18); no GPU on
   that machine. Sections 7 and 9 to 11 ran on the rocm-server GPU, shared between jobs, so
   their wall times are upper bounds.
 
-## 13. Computational cost at larger sizes
+## 14. Computational cost at larger sizes
 
 Measured step times of the orientation-field model in PINNACLE (`pf_fem_explicit`; three
 fields, 20 orientation sub-steps per step, bilinear elements, float64):
 
-**Table 47.** Measured cost per time step.
+**Table 60.** Measured cost per time step.
 
 | hardware | backend | 250 x 250 | 500 x 500 | 1000 x 1000 | per cell and step |
 |---|---|---|---|---|---|
@@ -2723,8 +3354,8 @@ A crystal that grows at constant speed needs a number of steps proportional to t
 $N$, so the cost of a run that fills the box grows as $N^3$ in two dimensions. With
 $4N$ steps (the Fig. 4 runs use 2000 steps at $N = 500$ for S = 0.8):
 
-**Table 48.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
-Table 47; `derived`, not measured beyond 1000 x 1000).
+**Table 61.** Estimated wall time of one run that fills an $N \times N$ box (scaled from
+Table 60; `derived`, not measured beyond 1000 x 1000).
 
 | grid | steps | laptop CPU, Torch | integrated GPU | suggested hardware |
 |---|---|---|---|---|
@@ -2744,12 +3375,19 @@ Table 47; `derived`, not measured beyond 1000 x 1000).
   routes, but the explicit executioner does not use them, so these cases cannot run on a
   TPU today.
 - The stationary cases (sections 3, 4 and 8) cost seconds to minutes on one core at any of
-  the sizes used and need no accelerator.
+  the sizes used and need no accelerator. Their network routes cost 10 s (radial nucleus)
+  to 12 to 48 min (wall nucleus on 14 to 38 thousand nodes, assembled residual, CPU); the
+  time-dependent networks 13 to 21 min for a one-dimensional case that FE solves in 6 to
+  9 s. None of the network routes is cheaper than FE for a single solve of these cases.
+- Phase-field crystal (section 12.6): 287 s for 750 implicit steps at 51,483 unknowns and
+  1156 s for 1000 steps at 99,369 on 2 CPU threads; about 7 to 8 h estimated for 50 x 50
+  lattice constants (`derived`); three dimensions and larger boxes need an iterative solver
+  or a spectral code.
 
 The other explicit models, measured on the same integrated GPU (float64; the GPU was shared
 between jobs, so the times are upper bounds):
 
-**Table 49.** Measured cost of the eutectic, ternary and three-dimensional cases, and
+**Table 62.** Measured cost of the eutectic, ternary and three-dimensional cases, and
 estimates for the published sizes (`derived` by scaling with cells and steps; not measured).
 
 | model (section) | grid | fields | time per step | per cell and step | published size | estimate for the published size | suggested hardware |
@@ -2763,10 +3401,10 @@ estimates for the published sizes (`derived` by scaling with cells and steps; no
   fixed overhead per step, so the cost per cell falls on larger grids; the estimates above
   do not use that and are conservative.
 - The three-dimensional step is 8 to 9 times more expensive per cell than the two-dimensional
-  orientation model (Table 47) because of the four-component field and trilinear
+  orientation model (Table 60) because of the four-component field and trilinear
   elements with 8 nodes.
 
-## 14. References
+## 15. References
 
 Keys of `bib/references.bib`, by model.
 
@@ -2800,3 +3438,6 @@ pusztai-2005-threedimensions; granasy-2005-spherulites.
 Regular-solution eutectic model (section 10): lewis-2004-eutectic; ratkai-2017-nanoscale.
 
 Ternary eutectic model (section 11): ratkai-2015-ternary.
+
+Phase-field crystal model (section 12): elder-2002-elasticity; elder-2004-plastic;
+toth-2010-polymorphism; granasy-2019-nucleation.

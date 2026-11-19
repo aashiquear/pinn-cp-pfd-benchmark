@@ -1160,3 +1160,31 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   box during the stage. Save frames every 50 steps or finer for pulse runs.
 - Tier labels in the Part IV report: tier 3 is a published result (qualitative matches are
   "tier 3, qualitative"); tier 4 is experiment only.
+
+## Part IV, network routes of A2, A5, B1 and the phase-field crystal (2026-11-18)
+
+- Author's decision: E2 and E3 (shell and coral forms) are skipped; large, and the
+  capabilities are already shown.
+- B1 Model II has several stationary states that Newton's method reaches: nucleus, thin wall
+  layer, grown crystal, and at 80 K a thicker uniform layer. A hybrid result must be checked
+  for uniformity along the wall; an exit code of 0 is not enough. 40 L-BFGS iterations on
+  the assembled residual are not a reliable Newton start (4 of 9); 150 iterations hold the
+  nucleus in the network but Newton from that field still fell to the wall layer once in 3.
+- Model I of B1 needs no network and no saddle search at 40 K: plain Newton converges from
+  the cap.
+- Training on the assembled residual costs one FE assembly per loss evaluation: 12 to 48 min
+  per wall nucleus on the published mesh (4 threads). Keep at most 3 such runs at once on
+  the 16-thread workstation.
+- `pf_pinn` settings for a moving front: fixed loss weights, no causal weighting. Causal
+  weights (eps 0.5) with gradient weighting gave a front 25 % slow at a loss of 1e-8.
+- A5 larger seed: the time-dependent network does not grow it (six runs, four settings).
+  Do not spend more runs on slab counts or causal weights; the residual does not weight the
+  unstable mode near the saddle.
+- The time-dependent hybrid saves no Newton iterations when the step is small compared with
+  the network error (the previous state is the better start).
+- Phase-field crystal: FE boxes are mirror boxes, the spectral reference is periodic;
+  compare before the crystal reaches the sides. Ten bilinear elements per lattice constant
+  leave 0.7 % in the free energy; near-critical seeds are sensitive to it.
+- `scripts/cryst_run_list.sh` logs exit code and wall time per deck; the network figure
+  scripts read these logs.
+

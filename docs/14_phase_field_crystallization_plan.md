@@ -373,3 +373,18 @@ regular-solution bulk term of phi, for mu, and for the flux D(phi) c (1 - c) gra
   Mater. Sci. Eng. A paper was not obtained; F4 proceeds from the letter, with H, the
   anisotropy magnitude and the noise amplitudes `assumed`.
 
+## 10. Status (2026-11-18, evening)
+
+- Network routes of A2, A5 and B1: run (report sections 3.4.2, 3.4.5, 4.4). PINNACLE
+  ADR 0045 (`c5170cc`): training on the assembled residual, non-uniform deflation state,
+  per-step predictor, `pf_pinn` on curvilinear meshes. Outcome: B1 PINN within 4e-4 of the
+  FE barrier; B1 Model II hybrid reaches the nucleus in 4 of 9 starts; A2 PINN within 2 to
+  10 %; A5 larger seed not obtained on the PINN route; the time-dependent hybrid returns the
+  FE result and saves no iterations.
+- Stage D (phase-field crystal): done on the FE route, two dimensions (report section 12).
+  PINNACLE ADR 0046 (`419577d`, merged as `bc89347`) closes G12.
+- E2 and E3 (shell and coral forms): not run, by the author's decision of 2026-11-18 (large
+  runs; the capabilities are shown by sections 7 and 9).
+- Open: the Introduction of the report (left blank until the author's review); the items of
+  report section 13.
+
