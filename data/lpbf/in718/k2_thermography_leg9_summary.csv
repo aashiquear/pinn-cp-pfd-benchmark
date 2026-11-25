@@ -1,0 +1,7 @@
+# AM Bench 2022 staring-camera thermography of leg L9 (lane 2023 thermographydata, NIST mds2-2715):
+# summary over 17 layers x 3 builds of the per-layer pixel percentiles that the author's toolkit
+# derived from the NIST maps (its materials/validation/in718_amb2022/layer_profiles.csv);
+# provenance: derived by that toolkit, not re-derived from the NIST files in this study.
+quantity,layers,median_of_layer_medians,min_layer_median,max_layer_median,median_p25,median_p75
+TAM_s,51,0.001276,0.0010406,0.001821,0.0008021,0.0015296
+SCR_K_s,51,189370,121160,386160,120740,511100

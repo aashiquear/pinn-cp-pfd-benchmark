@@ -1188,3 +1188,143 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - `scripts/cryst_run_list.sh` logs exit code and wall time per deck; the network figure
   scripts read these logs.
 
+
+## Part V (LPBF process modeling) started, 2026-11-25: plan only
+
+- Author's brief: LPBF process chain in PINNACLE (thermal with melt-pool flow, phase-field grain
+  structure, crystal plasticity), benchmarked end to end against a published chain; coarse-mesh
+  capability check on rocm-server first, then a standalone full-accuracy deck for other hardware.
+  Plan, module table with what PINNACLE has, stages A-G, decisions D1-D8:
+  `docs/15_lpbf_process_modeling_plan.md`. Nothing is implemented or run until the author has
+  reviewed it.
+- Framework branch for this part: `feat/multi-gpu-and-am-process` (author), NOT
+  `feat/pinn_benchmark`. On 2026-11-25 it equals `master` at `ddf1e9e`; rocm-server still has
+  `feat/pinn_benchmark` at `d41c76f`. Local first, both repositories.
+- Orientation rule (author): random orientations where a grain is created, inherited by epitaxy,
+  unchanged after solidification; published precedent is cited in the plan, section 1.
+- Proposed benchmark (awaiting the author), revised the same day at the author's pointer: the
+  NIST AM Bench alloy 718 chain, local in `/mnt/extended/projects/ambench-data` (79 GB; its
+  README lists every record): AMB2022-03 single tracks (melt pool), AMB2022-01 build column
+  (commanded scan path, thermography maps, 3-D EBSD of a 2.5 mm leg), AMB2025-02 tensile tests
+  of the same legs. Cases K1 to K4 in the plan, section 2.4. Checked in the NIST files on
+  2026-11-25: baseline track 285 W, 960 mm/s, 67 um spot, depth 139.7 / width 136.3 um (mean
+  of six sections); tensile answers E 123.6 GPa, yield 690.7, ultimate 951.6 MPa, strain at
+  ultimate 0.247 (eight specimens, 1e-3 /s). Everything else in the plan's section 2.1 is from
+  the toolkit's documents or an earlier analysis and must be read again before a deck.
+- Known limits of that benchmark: the baseline pool is keyhole-like (as deep as wide), so a
+  flat-surface model needs a calibrated volumetric source for depth; the median grain is
+  11.5 um, below a 5 um grid; the residual-strain record is part scale and is not a target of
+  a 0.65 mm column; the measured modulus (123.6 GPa) is far below the polycrystal value and is
+  not fitted; crystal-plasticity parameters of as-built alloy 718 are not in the data.
+- Secondary case, for the process stress only: the 316L single track of
+  (grilli 2022 elimination) at 8 um (7,000 elements, 9.5 h on 12 CPUs in MOOSE). Full texts of
+  (hu 2022 residual), (yang 2021 grain) and the supplement of (chen 2019 microscale) were NOT
+  obtained (publisher pages refuse automated retrieval); the author is fetching the PDFs.
+- The workstation's python3 has no openpyxl; `.xlsx` files of the NIST records were read with
+  a zipfile reader. The NIST 3-D EBSD files are 2 to 14 GB HDF5 (`.dream3d`).
+- PINNACLE survey at `ddf1e9e`, what matters first: the transport operators are dense n x n and
+  `fem_transient` is linear with a fixed step (no k(T), no radiation, no latent heat); no fluid
+  solver; phase-field kernels take no temperature field; crystal plasticity has no temperature
+  and no thermal eigenstrain; no interpolating field hand-off between solves; `num_gpus` is
+  validated and unused. The moving-source example decks are translated but never run by a test.
+  Next free ADR number: 0047.
+- The author's toolkit (JAX route) is a structured-grid finite-volume code, not JAX-FEM; its
+  MOOSE app has no flow solver. Its thermal, flow, grain and crystal-plasticity formulations
+  are the reference for scope; the code is rewritten as PINNACLE components, not ported.
+- 45 references added to `bib/references.bib` (37 papers checked against Crossref, 8 NIST data
+  records checked against DataCite, keys ending in `data`); the header counts of
+  both bib files were already stale (277 entries before this addition) and are left as they were.
+
+## Part V, 2026-11-25 (later): go-ahead, thermal stage committed in PINNACLE, first K1 number
+
+- Author's go-ahead and decisions D1-D9: `docs/16_lpbf_notebook.md` section 1 (NIST alloy 718
+  primary; 316L Grilli deck shipped with coarse and full run as its own section; conduction
+  chain first, flow reported separately; one standalone deck per case; multi-GPU for the whole
+  framework, CUDA and ROCm; commit each PINNACLE stage locally, no push until told).
+- Literature PDFs for the 316L case are in `docs/literature/` (Grilli 2022, Chen 2019 and its
+  supplement; `*.pdf` is git-ignored). Hu 2022 and Yang 2021 are not there.
+- PINNACLE 355b8d6 on `feat/multi-gpu-and-am-process` (local only): package
+  `pinnacle.components.additive` (ADR 0047): `phase_change_thermal`, `enthalpy_time_derivative`,
+  `phase_change_conduction`, `beam_heat_source`, `surface_heat_loss`, `scan_path`,
+  `process_state`; executioner `end_time`, service hook `on_run_end`, builder hook
+  `bind_components`. One commit covers plan stages A and B. Not done from those stages:
+  graded `box_mesh`, parity-harness cases, user-guide matrix row.
+- Deck syntax traps: `[ICs]` / `[BCs]` / `[Utilities]` entries use `kind =`, kernels and
+  materials `type =`; Dirichlet needs `node_set = xmin` etc.; `stress_strain.csv` of a 3-D
+  run is a SUBSAMPLE of the nodes (use the Runner API or the `process_state` record for
+  fields); `line_mesh divisions = 400` gives 401 nodes (the csv shows 200 rows).
+- Explicit stability: dt <= h^2 / (2 d a). I first blamed the code for a divergence that was
+  my step (1-D, h = 0.005: limit 1.25e-5).
+- Cost measured: numpy explicit path 0.29 s per step at 73,500 hexahedra (8 Gauss points);
+  Torch CPU 0.155 s per step at 64,000. Not yet measured on the rocm-server GPU.
+- K1 case 0 at 10 um, conduction only, eta 0.70, delta 52 um (uncalibrated): depth 120-125 um,
+  width 122-129 um against 139.7 / 136.3 measured. Peak temperature 5,666 K.
+- Alloy 718 thermal tables were extracted from the two primary papers (notebook section 2);
+  evaporation constants, emissivity, film coefficient and plate temperature are still
+  `assumed` (toolkit values).
+
+## Part V, 2026-11-25 (night): PINNACLE stages C and D committed; K1 at 10 um done
+
+- PINNACLE local commits on `feat/multi-gpu-and-am-process`: 355b8d6 (thermal, ADR 0047),
+  b7246f4 (grains: `thermal_grain_growth`, `undercooling_nucleation`, ADR 0048), b3ec350
+  (mechanics: `thermal_load`, `field_series`, callback hooks, `prepare_load_step`, ADR 0049).
+  Host side copy `~/projects/pinnacle_am` (rsync of the working tree); runs there use
+  `PINNACLE_SRC` / `PYTHONPATH=$HOME/projects/pinnacle_am/src`.
+- Cost: K1 at 10 um (73,500 hexahedra, 480 explicit steps) 23 s on the host GPU in float64,
+  141 s on the workstation CPU with numpy.
+- K1 pipeline: `scripts/lpbf_k1.py <study deck> targets|decks|run|collect|figure|fit`; study
+  decks `decks/lpbf/in718/k1/k1_study_h10_start.i` and `k1_study_h10.i`; generated case decks
+  under `cases/<tag>/`. The host has no matplotlib: `figure` runs locally after an rsync of
+  `results/lpbf` (exclude `*.npz` except what a figure needs).
+- K1 result (conduction only): fitted eta 0.7724, delta 45.01 um; depth rms 23.4 %, width rms
+  8.6 % over seven cases; the conduction model cannot follow depth against spot size
+  (keyhole cases 22-44 % shallow). Do not spend more fit iterations on it.
+- Grain model facts: the regrowth front speed is 2 sqrt(D L kappa); nuclei form only where
+  it is below the isotherm speed AND `mean_undercooling` exceeds `front_range`; a seed must
+  be about the boundary width or curvature dissolves it; a constant (non-Arrhenius) mobility
+  coarsens the cold plate (63 um in 2 ms at L kappa = 2e-6 m2/s).
+- `polycrystal_coloring` uses the fewest colors it needs (5 of 12 here), so many grains
+  share an order parameter; same-component grains merge on contact.
+- Mechanics checks: constrained cube -167.08 MPa (closed form -167.1); melting cycle ends at
+  +10.76 GPa tension (elastic by construction, tau_c0 = 500 MPa).
+- A parsed `Function.value(t, x)` takes ONE point; use `spatial_values(points, t)` for arrays.
+- Registered function factories need `factory.params = Class.params` or the documented-params
+  guard fails.
+
+## Part V, 2026-11-25 (03:20 host time): PINNACLE at 7a4345e; column and 316L runs in progress
+
+- PINNACLE local commits after b3ec350: 34924f6 (`far_field_heat_loss`, `process_state
+  layer_reset_temperature`), 10bf33f (`thermal_load expansion_slope`), 7a4345e (device pool,
+  ADR 0050: `[Global] devices` / `num_gpus`, `pf_fem_explicit` on several devices; tested with
+  repeated device slots, equal to single device on six decks; scaling NOT measured; mechanics,
+  implicit solve and network training are NOT on the pool).
+- Scripts: `scripts/lpbf_column.py <deck> run|grains|figure` (temperature + grains; saves
+  fields.npz, history.csv, wall.json in the deck's output_dir; `key=value` overrides);
+  `scripts/lpbf_mechanics.py <deck> run|summary`; `scripts/lpbf_orientations.py` (Voronoi
+  seeds with uniform random Bunge angles as a point file).
+- K2 deck `decks/lpbf/in718/k2/k2_column_h10.i`: 0.66 s per step on the host GPU (129,600
+  elements, 30 order parameters, float64). One-layer check launched 03:02
+  (`results/lpbf/in718/k2/check_1layer`, about 25 min); the four-layer run is NOT launched yet.
+- 316L case: `decks/lpbf/ss316l/track_thermal_h8.i` (done locally, 138 s; pool 112 um wide,
+  70 um deep; series of 178 frames at 45 us) and `track_mechanics_h8.i` (launched on the host
+  CPU 03:13, 178 steps at about 57 s each: about 3 h; log `results/lpbf/ss316l/mechanics_h8.log`).
+- TRAP: PINNACLE's `kalidindi` material has no `compute_stacked` (no batched field path) and
+  the backward-Euler update needs the dislocation-density state (`rho`). The 316L deck
+  therefore uses `dislocation_density_cp` with parameters derived from the paper's
+  resistance values (deck header); this is a substitute law, stated in the deck.
+- 316L thermal properties, beam radius, absorptivity and penetration are `assumed`
+  (not sourced); Grilli Table 2 values are `reported_table` (read from the published PDF).
+- Chen 2019 supplement, Table 1 (one of the samples): spot 207 um, 330 W, 150 mm/s, layer
+  50 um, hatch angle 45 degrees. Not used yet.
+- Not started: flow stage (E), network routes (F), K3 tensile case, standalone decks, the
+  report. The author asked for all of them.
+- 2026-11-25 03:30: TRAP caught by the figure, not by the numbers: the K2 one-layer check filled
+  the empty space above the build surface with grains (regrowth acted wherever T < liquidus).
+  Fixed in PINNACLE 0d7befe (`thermal_grain_growth process_state = state`); every layer-wise
+  deck must name the service. The void run's texture number (0.75 <100>) is an artifact.
+  Look at a section image of every grain result before quoting a statistic.
+- One-layer reruns with selection exponents 4, 1, 0 launched 03:31 on the host GPU
+  (`results/lpbf/in718/k2/layer1_sel*`), about 20 min each; then the four-layer run.
+- Standalone decks written (not run): `decks/lpbf/in718/k1/cases/h5/*.i` (7), 
+  `decks/lpbf/in718/k2/k2_column_full_h5.i` (2.97 M elements, about 80 GB, 162,000 steps) and
+  `k2_column_full_h2p5.i` (float32, 23.8 M elements), `decks/lpbf/ss316l/track_*_h4.i`.
