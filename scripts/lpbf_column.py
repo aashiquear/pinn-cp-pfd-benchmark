@@ -184,10 +184,16 @@ def cmd_grains(deck: Path, overrides: list[str]) -> None:
     limit = np.cos(np.deg2rad(15.0))
     comp_built = component[built]
     fractions = {name: float(np.mean((c >= limit)[comp_built])) for name, c in (("100", cos100), ("110", cos110), ("111", cos111))}
+    # a grain needs a few elements to be told from a fragment of a diffuse boundary
+    min_cells = 8
+    kept = [r for r in rows if r["volume_um3"] >= min_cells * (1e6 * h) ** 3 * (1 - 1e-9)]
+    fragments = len(rows) - len(kept)
+    rows = kept
     d = np.array([r["d_eq_um"] for r in rows])
     new = np.array([not r["touches_plate"] for r in rows])
     summary = {
-        "mesh_um": 1e6 * h, "grains_in_build": len(rows),
+        "mesh_um": 1e6 * h, "min_grain_cells": min_cells, "fragments_below_min": fragments,
+        "grains_in_build": len(rows),
         "grains_not_touching_plate": int(new.sum()),
         "d_eq_um_median": float(np.median(d)), "d_eq_um_mean": float(d.mean()),
         "height_um_median": float(np.median([r["height_um"] for r in rows])),
@@ -264,7 +270,9 @@ def cmd_figure(deck: Path, overrides: list[str]) -> None:
     ax[1].imshow(image[:, :, ix], origin="lower", extent=[um[1][0], um[1][-1], um[2][0], um[2][-1]], interpolation="nearest")
     ax[1].axhline(plate_top, color="k", lw=0.6, ls="--")
     ax[1].set_xlabel("y ($\\mu$m)"); ax[1].set_ylabel("z ($\\mu$m)"); ax[1].set_title("section x = %.0f $\\mu$m" % um[0][ix])
-    kz = int(np.argmin(np.abs(um[2] - (plate_top + 0.6 * (um[2][-1] - plate_top)))))
+    filled = np.nonzero((solid > 0.5).mean(axis=(1, 2)) > 0.2)[0]
+    top_built = um[2][filled[-1]] if filled.size else um[2][-1]
+    kz = int(np.argmin(np.abs(um[2] - (plate_top + 0.5 * max(top_built - plate_top, 0.0)))))
     ax[2].imshow(image[kz], origin="lower", extent=[um[0][0], um[0][-1], um[1][0], um[1][-1]], interpolation="nearest")
     ax[2].set_xlabel("x ($\\mu$m)"); ax[2].set_ylabel("y ($\\mu$m)"); ax[2].set_title("layer plane z = %.0f $\\mu$m" % um[2][kz])
     fig.suptitle("Grains colored by the crystal direction along the build direction (inverse pole figure colors)", fontsize=10)

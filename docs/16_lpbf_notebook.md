@@ -166,3 +166,73 @@ and of GPU + GPU + CPU reproduce the single-device field to 4e-15 (13.1 s single
 and 18.6 s pooled: the overhead of the transfers, no speed-up on one physical device).
 Scaling on several GPUs is not measured. The mechanics solve and network training are not
 on the pool.
+
+## 9. Case K2: one layer and four layers at 10 um (PINNACLE 996d9d3)
+
+Two further one-layer runs after the void check of section 6 are also void as grain
+results: the grains of the plate coarsened (a mobility sized for the solidification front
+moved the boundaries of the cold solid). `mobility_reference_temperature` with
+`activation_energy = 1.5e6 J/mol` makes the mobility fall below the liquidus; the decks
+give the mobility at the liquidus.
+
+Valid runs (`results/lpbf/in718/k2/layer1`, `column_h10`; one seed each):
+
+| quantity | one layer | four layers |
+|---|---|---|
+| wall time, steps | 1,226 s, 2,240 | 4,820.9 s, 9,040 (0.533 s per step) |
+| nucleation events | 621 | 3,704 |
+| grains of at least 8 elements (fragments below) | 42 (36) | 378 (340) |
+| grains not touching the plate | 14 | 258 |
+| equivalent diameter, median / mean (um) | 71.3 / 89.1 | 36.8 / 47.2 |
+| height, median (um); aspect, median | 85; 0.58 | 40; 0.76 |
+| consolidated fraction above the plate | 0.215 | 0.912 |
+| build direction within 15 degrees of <100>, <110>, <111> | 0.076, 0.304, 0.329 | 0.192, 0.157, 0.195 |
+| surface time above melting, p25 / p50 / p75 (ms) | p50 2.31 | 1.70 / 2.39 / 3.02 |
+| cooling rate at freezing, surface, p25 / p50 / p75 (K/s) | p50 7.6e4 | 5.3e4 / 6.3e4 / 8.0e4 |
+| gradient at freezing, all melted elements, p50 (K/m) | | 3.56e6 |
+
+Measured: median diameter 11.5 um; texture 0.10, 0.21, 0.10 (random 0.10, 0.20, 0.14);
+thermography of leg L9 (`data/lpbf/in718/k2_thermography_leg9_summary.csv`): time above
+melting 1.28 ms, solid cooling rate 1.9e5 K/s. The cooling rates are different quantities
+(NIST: solid, over a temperature window; here: at the moment of freezing).
+
+Reading of the figure `figures/lpbf/k2_grains_column_h10.png`: plate grains continue
+across the plate surface; the grains are blocky (a boundary is 4 elements wide); the
+corners of the block at the height of layer 2 are not consolidated. Size and texture are
+not results at this mesh.
+
+## 10. 316L case: the relaxation stage was missing in the first mechanics run
+
+First run (`results/lpbf/ss316l/mechanics_h8_walls_held`, 178 steps to 8.01 ms, 5,670 s,
+439 Newton iterations, no cutback): mean stress of the volume xx 1,797 MPa, yy 1,986 MPa,
+zz 0.8 MPa; von Mises mean 2,111, 95th percentile 3,152, maximum 3,686 MPa; equivalent
+plastic strain mean 0.016, maximum 0.053. The paper's Figure 15 shows slice means between
+-400 and +130 MPa and local values between about -900 and +1,500 MPa.
+
+Cause, found by reading the paper's section 4.1 again: its result is taken after a
+relaxation simulation in which the walls x = 200 um and y = 160 um are removed. The first
+run ended with all four walls fixed, so its mean stress is the reaction of the walls on a
+volume that was heated to at least 800 K everywhere and cooled. A second contribution is
+expected from the flow rule (reference rate 1e-7 /s, exponent 0.1: at a strain rate of
+1 /s the resolved stress is five times the slip resistance); it is not separated here.
+
+PINNACLE: `release_time` on a Dirichlet condition (applied by `cp_quasi_static`, refused
+elsewhere). Decks: walls xmax and ymax released at 8.01 ms, 22 further steps of 45 us at
+the final temperature (the paper does not print the length of its relaxation stage;
+assumed).
+
+**Two-stage run** (`results/lpbf/ss316l/mechanics_h8`, PINNACLE 4827247, 200 steps,
+2,957 s, 463 Newton iterations, no cutback). Step 178 (walls fixed) reproduces the first
+run: mean xx 1,796.8 MPa, yy 1,986.1 MPa. Step 179 (walls released): mean xx 7.4, yy 3.9,
+zz 0.6 MPa, three Newton iterations; steps 180 to 200: one iteration each, no change of
+stress or plastic strain (elastic unloading; the assumed length of the relaxation stage
+has no influence). After relaxation: von Mises mean 691, 95th percentile 1,177, maximum
+1,887 MPa; element sigma_xx from -1,290 to 2,392 MPa; equivalent plastic strain mean
+0.016, maximum 0.053.
+
+Layer means against the height (z in um: sigma_xx, sigma_yy in MPa): 3.9: -429, -472;
+11.6: -400, -461; 19.3: -332, -423; 27.0: -240, -361; 34.7: -132, -240; 42.4: -19, -22;
+50.1: 116, 327; 57.9: 182, 422; 65.6: 235, 417; 73.3: 248, 368; 81.0: 241, 284;
+88.7: 223, 188; 96.4: 228, 83; 104.1: 183, -53. Paper, Figure 15d, read by eye: about
+-420 / -400 at the bottom, sign change near 30 / 22 um, maxima about +130 / +95, zero at
+the top.

@@ -83,7 +83,6 @@ def cmd_stress(directory: str, record: str, out: str) -> None:
         (ax[0, 0], s_grid[:, :, ix], edges(y) + edges(z), "RdBu_r", -lim, lim, "$\\sigma_{xx}$ (MPa), section across the track", melt[:, :, ix], (y, z), ("y ($\\mu$m)", "z ($\\mu$m)")),
         (ax[0, 1], s_grid[kz], edges(x) + edges(y), "RdBu_r", -lim, lim, "$\\sigma_{xx}$ (MPa), top layer of elements", melt[kz], (x, y), ("x, scan direction ($\\mu$m)", "y ($\\mu$m)")),
         (ax[1, 0], v_grid[:, :, ix], edges(y) + edges(z), "viridis", 0.0, float(np.percentile(vm, 99)), "von Mises stress (MPa), section across the track", melt[:, :, ix], (y, z), ("y ($\\mu$m)", "z ($\\mu$m)")),
-        (ax[1, 1], v_grid[kz], edges(x) + edges(y), "viridis", 0.0, float(np.percentile(vm, 99)), "von Mises stress (MPa), top layer of elements", melt[kz], (x, y), ("x, scan direction ($\\mu$m)", "y ($\\mu$m)")),
     ]
     for a, field, extent, cmap, lo, hi, title, mask, (u, v), labels in panels:
         im = a.imshow(field, origin="lower", extent=extent, cmap=cmap, vmin=lo, vmax=hi)
@@ -92,16 +91,26 @@ def cmd_stress(directory: str, record: str, out: str) -> None:
         a.set_title(title, fontsize=9)
         a.set_xlabel(labels[0]); a.set_ylabel(labels[1])
         fig.colorbar(im, ax=a, shrink=0.85)
+    # mean stress of every element layer against the height (the paper's Figure 15d)
+    _, y_grid = grid(centroid, data["stress_element"][:, 1, 1] / 1e6)
+    ax[1, 1].plot(1e6 * z, s_grid.mean(axis=(1, 2)), label="$\\sigma_{xx}$")
+    ax[1, 1].plot(1e6 * z, y_grid.mean(axis=(1, 2)), label="$\\sigma_{yy}$")
+    ax[1, 1].axhline(0.0, color="0.6", linewidth=0.6)
+    ax[1, 1].set_xlabel("z ($\\mu$m)"); ax[1, 1].set_ylabel("mean stress of the element layer (MPa)")
+    ax[1, 1].legend(frameon=False, fontsize=8)
+    print("layer means z_um, sxx, syy:")
+    for zz, a_, b_ in zip(1e6 * z, s_grid.mean(axis=(1, 2)), y_grid.mean(axis=(1, 2))):
+        print(f"  {zz:6.1f} {a_:9.1f} {b_:9.1f}")
     rows = list(csv.DictReader((base / "history.csv").open()))
     t = np.array([float(r["time"]) for r in rows]) * 1e3
     for key, label in (("mean_stress_00", "$\\sigma_{xx}$"), ("mean_stress_11", "$\\sigma_{yy}$"), ("mean_stress_22", "$\\sigma_{zz}$")):
         ax[0, 2].plot(t, [float(r[key]) / 1e6 for r in rows], label=label)
     ax[0, 2].set_xlabel("time (ms)"); ax[0, 2].set_ylabel("mean stress of the volume (MPa)")
-    ax[0, 2].legend(frameon=False, fontsize=8); ax[0, 2].set_xscale("log")
+    ax[0, 2].legend(frameon=False, fontsize=8)
     ax[1, 2].plot(t, [float(r["heat_temperature_max"]) for r in rows], color="C3", label="maximum")
     ax[1, 2].plot(t, [float(r["heat_temperature_min"]) for r in rows], color="C0", label="minimum")
     ax[1, 2].set_xlabel("time (ms)"); ax[1, 2].set_ylabel("temperature of the quadrature points (K)")
-    ax[1, 2].set_xscale("log"); ax[1, 2].set_yscale("log"); ax[1, 2].legend(frameon=False, fontsize=8)
+    ax[1, 2].set_yscale("log"); ax[1, 2].legend(frameon=False, fontsize=8)
     fig.tight_layout()
     Path(out).parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out, dpi=180)

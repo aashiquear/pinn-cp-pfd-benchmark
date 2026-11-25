@@ -59,10 +59,15 @@ loop over several GPUs. They have not been run for this report.
 ```bash
 cd decks/lpbf/ss316l && pinnacle run track_thermal_h8.i && cd ../../..      # 138 s on a CPU
 python3 scripts/lpbf_orientations.py decks/lpbf/ss316l/grains_seed1.csv 200e-6 160e-6 108e-6 16e-6 1
-python3 scripts/lpbf_mechanics.py decks/lpbf/ss316l/track_mechanics_h8.i run   # about 3 h, 8 threads
+python3 scripts/lpbf_mechanics.py decks/lpbf/ss316l/track_mechanics_h8.i run   # scan, cooling, wall release, relaxation
 python3 scripts/lpbf_figures.py stress results/lpbf/ss316l/mechanics_h8 \
         results/lpbf/ss316l/thermal_h8/process_state.npz figures/lpbf/ss316l_stress_h8.png
 ```
+
+The mechanics deck has two stages in one run: 178 steps with the side walls fixed, then
+the walls x = 200 um and y = 160 um are released (`release_time` on the two boundary
+conditions) and 22 relaxation steps follow. `history.csv` holds the mean stress of every
+step; the stress field written is the one after the relaxation.
 
 The 4 um decks (`track_thermal_h4.i`, `track_mechanics_h4.i`) are the paper's fine mesh
 and have not been run for this report.

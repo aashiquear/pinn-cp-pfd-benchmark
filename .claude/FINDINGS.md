@@ -1328,3 +1328,26 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - Standalone decks written (not run): `decks/lpbf/in718/k1/cases/h5/*.i` (7), 
   `decks/lpbf/in718/k2/k2_column_full_h5.i` (2.97 M elements, about 80 GB, 162,000 steps) and
   `k2_column_full_h2p5.i` (float32, 23.8 M elements), `decks/lpbf/ss316l/track_*_h4.i`.
+
+## Part V, 2026-11-25 (morning): column and 316L results, report complete for the conduction chain
+
+- K2 four layers at 10 um (valid, `results/lpbf/in718/k2/column_h10`): 4,821 s; 378 grains,
+  median diameter 36.8 um (measured 11.5); texture and size are NOT results at this mesh
+  (boundary 40 um wide, one seed). Time above melting 2.39 ms against 1.28 ms measured.
+- TRAP (316L): the first mechanics run ended with all four side walls fixed and gave a mean
+  stress of about 2 GPa. That is the wall reaction, not a residual stress. The paper
+  (grilli 2022 elimination, section 4.1) removes the walls x = 200 um and y = 160 um in a
+  relaxation simulation before it reports stress. Read the boundary conditions of EVERY stage
+  of a published procedure before comparing magnitudes.
+- PINNACLE 4827247 (local): `release_time` on a Dirichlet condition, applied by
+  `cp_quasi_static` only, refused by `Problem.run` under any other executioner.
+- 316L two-stage result (`results/lpbf/ss316l/mechanics_h8`; the first run is kept in
+  `mechanics_h8_walls_held`): layer means -429 / -472 MPa at the bottom (paper about -400),
+  +248 / +422 MPa in the track (paper about +130 / +95); tier 3, substitute inputs. The
+  relaxation steps are elastic.
+- `pinnacle syntax md` must be run AFTER the last change of any `params()` doc and before
+  pytest: `test_docs_syntax_tree_is_up_to_date` fails otherwise.
+- Report `docs/reports/lpbf_process_pinnacle_benchmark_report.md` has no open placeholder.
+  Still owed (its section 9): melt-pool flow stage and its decks, network routes beyond the K1
+  surrogate, K3, K4, fine-mesh runs (K1 5 um, full columns, 316L 4 um), multi-device
+  execution outside `pf_fem_explicit`, GPU scaling, seeds, sensitivity of assumed inputs.

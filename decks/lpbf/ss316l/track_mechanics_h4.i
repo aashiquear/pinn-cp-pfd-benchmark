@@ -38,6 +38,13 @@
 #
 # LOADING: the temperature only (no displacement or traction is prescribed).
 #
+# TWO STAGES, as in the paper: (1) scan and cooling to 8.01 ms with the four side walls
+#   and the bottom fixed; (2) relaxation at the final temperature with the walls x = 200 um
+#   and y = 160 um removed (`release_time`), so that the stress which remains is carried
+#   by the volume and not by the walls. The paper does not print the length of its
+#   relaxation stage; 22 steps of 45 us (0.99 ms) are assumed here. history.csv holds
+#   the mean stress of every step, so the state before the release (step 178) is kept.
+#
 # UNITS: SI (m, Pa, s, K).
 
 [Global]
@@ -139,11 +146,12 @@
     values     = [0.0]
   []
   [./xmax]
-    variable   = u
-    kind       = dirichlet
-    node_set   = xmax
-    components = [0]
-    values     = [0.0]
+    variable     = u
+    kind         = dirichlet
+    node_set     = xmax
+    components   = [0]
+    values       = [0.0]
+    release_time = 8.01e-3          # relaxation stage: this wall is removed
   []
   [./ymin]
     variable   = u
@@ -153,11 +161,12 @@
     values     = [0.0]
   []
   [./ymax]
-    variable   = u
-    kind       = dirichlet
-    node_set   = ymax
-    components = [1]
-    values     = [0.0]
+    variable     = u
+    kind         = dirichlet
+    node_set     = ymax
+    components   = [1]
+    values       = [0.0]
+    release_time = 8.01e-3          # relaxation stage: this wall is removed
   []
   [./zmin]
     variable   = u
@@ -170,8 +179,8 @@
 
 [Executioner]
   type            = cp_quasi_static
-  n_steps         = 178              # one per stored temperature frame (45 us)
-  t_end           = 8.01e-3
+  n_steps         = 200              # 178 temperature frames (45 us each), then 22 relaxation steps
+  t_end           = 9.0e-3
   newton_tol      = 1.0e-7           # N; forces are of order 1e-2 N
   newton_rel_tol  = 1.0e-6
   max_iter        = 30

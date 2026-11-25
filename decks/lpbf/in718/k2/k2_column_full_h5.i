@@ -162,8 +162,9 @@
     material            = in718
     boundary_energy     = 0.9
     boundary_width      = 20.0e-6
-    mobility_prefactor  = 3.372e+04
-    activation_energy   = 1.6e5
+    mobility_prefactor  = 0.218      # L at the liquidus, m3/(J s)
+    activation_energy   = 1.5e6      # numerical: the front mobility is gone 100 K below the liquidus
+    mobility_reference_temperature = 1610.15
     melting_rate        = 7.83e+05
     solidification_rate = 4.00e+05
     front_range         = 2.0
