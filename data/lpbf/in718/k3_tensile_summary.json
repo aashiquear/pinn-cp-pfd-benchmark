@@ -1,0 +1,82 @@
+{
+ "specimens": {
+  "IN_718_MT1": {
+   "E_GPa": 129.1333,
+   "yield_0p2_MPa": 688.8475,
+   "ultimate_MPa": 960.9203,
+   "strain_at_ultimate": 0.2484,
+   "width_mm": 1.24,
+   "thickness_mm": 1.03
+  },
+  "IN_718_MT2": {
+   "E_GPa": 121.4831,
+   "yield_0p2_MPa": 687.5907,
+   "ultimate_MPa": 943.4893,
+   "strain_at_ultimate": 0.2331,
+   "width_mm": 1.25,
+   "thickness_mm": 1.04
+  },
+  "IN_718_MT3": {
+   "E_GPa": 128.8771,
+   "yield_0p2_MPa": 682.1602,
+   "ultimate_MPa": 946.3551,
+   "strain_at_ultimate": 0.2213,
+   "width_mm": 1.26,
+   "thickness_mm": 1.03
+  },
+  "IN_718_MT4": {
+   "E_GPa": 130.5002,
+   "yield_0p2_MPa": 682.5071,
+   "ultimate_MPa": 951.6065,
+   "strain_at_ultimate": 0.2534,
+   "width_mm": 1.25,
+   "thickness_mm": 1.03
+  },
+  "IN_718_MT5": {
+   "E_GPa": 133.8914,
+   "yield_0p2_MPa": 687.6611,
+   "ultimate_MPa": 941.1979,
+   "strain_at_ultimate": 0.2188,
+   "width_mm": 1.25,
+   "thickness_mm": 1.04
+  },
+  "IN_718_MT6": {
+   "E_GPa": 118.5989,
+   "yield_0p2_MPa": 691.4327,
+   "ultimate_MPa": 944.4375,
+   "strain_at_ultimate": 0.2612,
+   "width_mm": 1.25,
+   "thickness_mm": 1.04
+  },
+  "IN_718_MT7": {
+   "E_GPa": 132.0448,
+   "yield_0p2_MPa": 689.9133,
+   "ultimate_MPa": 965.4235,
+   "strain_at_ultimate": 0.2588,
+   "width_mm": 1.25,
+   "thickness_mm": 1.02
+  },
+  "IN_718_MT8": {
+   "E_GPa": 130.1107,
+   "yield_0p2_MPa": 688.3141,
+   "ultimate_MPa": 959.1299,
+   "strain_at_ultimate": 0.2752,
+   "width_mm": 1.26,
+   "thickness_mm": 1.02
+  }
+ },
+ "mean": {
+  "E_GPa": 128.0799,
+  "yield_0p2_MPa": 687.3033,
+  "ultimate_MPa": 951.57,
+  "strain_at_ultimate": 0.2463
+ },
+ "sd": {
+  "E_GPa": 5.273,
+  "yield_0p2_MPa": 3.3152,
+  "ultimate_MPa": 9.1608,
+  "strain_at_ultimate": 0.0201
+ },
+ "curve_strain_limit": 0.21922,
+ "gauge_mm": 3.0
+}

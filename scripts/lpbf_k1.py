@@ -26,6 +26,7 @@ from __future__ import annotations
 import csv
 import html
 import json
+import math
 import os
 import re
 import shutil
@@ -162,6 +163,16 @@ def cmd_decks(deck: Path, cfg: dict, overrides: dict | None = None, tag: str | N
     h = float(study["mesh_um"]) * 1e-6
     n = [int(round(d * 1e-6 / h)) for d in DOMAIN_UM]
     dt = 0.8 * h * h / (6.0 * DIFFUSIVITY * float(study.get("liquid_conductivity_factor", 1.0)))
+    # Flow (k1_flow_template.i): the upwind diffusion a_u U h / 2 of the speed bound U joins
+    # the diffusivity in the step of the heat equation; the flow takes sub-steps bound by
+    # the artificial sound speed, c dt_flow <= 0.6 h / sqrt(3).
+    upwind = float(study.get("flow_upwind", 1.0))
+    speed_bound = float(study.get("flow_speed_bound", 0.0))
+    sound = float(study.get("sound_speed", 0.0))
+    substeps = 1
+    if sound > 0.0:
+        dt = 0.8 * h * h / (6.0 * (DIFFUSIVITY + 0.5 * upwind * speed_bound * h))
+        substeps = max(1, math.ceil(dt * sound * math.sqrt(3.0) / (0.6 * h)))
     factor = float(study.get("liquid_conductivity_factor", 1.0))
     k_liquid = " ".join(f"{t:.2f} {k * factor:.3f}" for t, k in K_LIQUID)
     for case in case_table(deck, cfg):
@@ -181,6 +192,14 @@ def cmd_decks(deck: Path, cfg: dict, overrides: dict | None = None, tag: str | N
             "DT": f"{dt:.4e}",
             "END_TIME": f"{float(study['end_time']):.4e}",
             "K_LIQUID": k_liquid,
+            "MESH": f"{h:.3e}",
+            "UPWIND": f"{upwind:g}",
+            "SOUND_SPEED": f"{sound:g}",
+            "P_DIFF": f"{0.05 * sound * h:.4e}",
+            "FLOW_SUBSTEPS": substeps,
+            "DGAMMA_DT": f"{float(study.get('surface_tension_gradient', 0.0)):.4e}",
+            "RECOIL": f"{float(study.get('recoil_coefficient', 0.0)):g}",
+            "SNAPSHOTS": max(1, int(round(float(study.get("frame_interval", 3.0e-5)) / dt))),
         }
         text = template
         for key, value in fields.items():
@@ -207,10 +226,14 @@ def run_case(case_deck: Path, out_dir: Path) -> float:
     env.setdefault("OMP_NUM_THREADS", "8")
     tic = time.time()
     with (out_dir / "run.log").open("w") as log:
-        rc = subprocess.call([python_bin(), "-W", "ignore", "-m", "pinnacle", "run", case_deck.name],
+        # scripts/lpbf_run.py: the deck through PINNACLE's Runner, with fields.npz (final
+        # fields and the field series of `snapshots_every`), history.csv and wall.json
+        rc = subprocess.call([python_bin(), "-W", "ignore", str(REPO / "scripts" / "lpbf_run.py"),
+                              str(case_deck)],
                              cwd=case_deck.parent, env=env, stdout=log, stderr=subprocess.STDOUT)
     wall = time.time() - tic
-    (out_dir / "wall.json").write_text(json.dumps({"exit": rc, "wall_s": round(wall, 1)}))
+    if rc:
+        (out_dir / "wall.json").write_text(json.dumps({"exit": rc, "wall_s": round(wall, 1)}))
     if rc:
         raise SystemExit(f"{case_deck.name}: exit {rc}, see {out_dir / 'run.log'}")
     return wall

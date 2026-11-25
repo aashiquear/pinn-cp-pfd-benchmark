@@ -23,6 +23,11 @@
 #   parameters derived to give the paper's initial resistance (213 MPa), saturation
 #   resistance (302 MPa) and initial hardening rate (h0 (1 - 213/302)^2.5 = 181 MPa):
 #   tau_c = tau_c0 + alpha0 mu b sqrt(sum q rho), d rho = (k1 sqrt(rho) - k2 rho) |d gamma| / b.
+#   Derivation: both laws harden system a by (rate) x sum_b q_ab |d gamma_b|; the rate of
+#   this law at rho0 is alpha0 mu k1 / (2 sqrt(S)), S = 1 + 11 q_lat, which gives
+#   k1 = 0.0652; the saturation density (k1 / k2)^2 gives k2 = 2 y_c. (A first version
+#   of this deck had k1 = 4.0e-3, y_c = 5.2e-10: the same saturation, but a hardening
+#   rate lower by the factor S = 16.4; its results are superseded.)
 #   The flow rule (power law, gamma_dot0, m) is the paper's.
 #
 # NOT FROM THE PAPER: the temperature field (conduction substitute); the grains (844
@@ -79,8 +84,8 @@
     alpha0                = 0.3           # assumed
     burgers               = 2.54e-10
     rho0                  = 1.0e10        # 1/m2, chosen
-    k1                    = 4.0e-3        # derived: initial hardening rate of the paper's law (181 MPa)
-    annihilation_diameter = 5.2e-10       # derived: saturation resistance 302 MPa
+    k1                    = 6.5155e-02    # derived: initial hardening rate of the paper's law (181 MPa)
+    annihilation_diameter = 8.2581e-09    # derived: saturation resistance 302 MPa
     [./crystal]
       structure    = fcc
       euler_angles = '0 0 0'       # replaced per point by [OrientationField]

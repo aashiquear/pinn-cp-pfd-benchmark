@@ -1,44 +1,55 @@
 # Laser powder bed fusion process modeling with PINNACLE: heat transfer, grain structure and process stress, benchmarked on NIST AM Bench alloy 718 and on a published 316L case (Part V)
 
-Status 2026-11-25. This report covers the conduction-driven process chain at the coarse
-resolution a single workstation GPU can run (the capability check), and ships the decks of
-the full-resolution cases. What is not done is listed in section 9: melt-pool flow, the
-network routes other than the single-track surrogate, the tensile case and the fine-mesh
-runs. Plan:
+Status 2026-11-25. This report covers the process chain at the coarse resolution a single
+workstation GPU can run (the capability check): heat transfer, melt-pool flow under a flat
+surface (reported separately from the conduction results), grain structure, tensile
+response with a calibrated crystal-plasticity set, and process stress. The decks of the
+full-resolution cases are shipped and not run (decision of the author: they are run on a
+multi-GPU node after this part is complete). What is not done is listed in section 9.
+Plan:
 `docs/15_lpbf_process_modeling_plan.md`; notebook with provenance tables:
 `docs/16_lpbf_notebook.md`; reproduction: `docs/reproduce_lpbf.md`; every run:
 `docs/run_ledger.md`. PINNACLE revision: branch `feat/multi-gpu-and-am-process`, commits
-355b8d6 to 4827247 (local).
+355b8d6 to 1ef059d (local).
 
 ## Abstract
 
-Laser powder bed fusion sets the grain structure and the residual stress of a part
-through a chain of heat transfer, solidification and thermally driven plasticity. This
-report adds that chain to the PINNACLE framework as registered components that are
-composed in input decks, and checks it at the resolution of one workstation GPU against
-the NIST AM Bench 2022 measurements on alloy 718 and against a published crystal-plasticity
-simulation of a 316L track. The model is an enthalpy heat equation with latent heat, a
-moving volumetric beam and surface losses; a multi-order-parameter grain model with
-melting, epitaxial regrowth and nucleation, advanced together with the temperature; and
-finite-strain crystal plasticity loaded by the stored temperature history. Melt-pool flow
-is not included. The components reproduce closed-form solutions (Stefan front within
-0.9 %, a constrained heated crystal within 0.02 %). For seven bare-plate tracks, with the
-two heat-source parameters fitted on two of them, the melt-pool width is within 8 % for
-six tracks and the depth is 15 to 44 % too small for the four deepest (keyhole) tracks;
-a conduction model does not carry the measured dependence of depth on spot size. A
-parametric network surrogate trained on 30 finite-element tracks reproduces the
-finite-element depth and width of the seven cases within 1 % and inherits its error
-against the measurements. A four-layer build column of 129,600 elements runs in 80 min;
-at its 10 um mesh the median grain diameter (37 um) is three times the measured one
-(11.5 um) and the time above melting is 1.9 times the measured one, so grain size and
-texture are not results of the coarse check. For the 316L track, after the relaxation
-stage of the published procedure, the stress pattern and the compression below the track
-($-430$ to $-470$ MPa against about $-400$) agree with the published simulation, and the
-tension in the track is 2 to 4 times higher under substitute thermal and grain inputs. The
-explicit executioner can split its element loop over several GPUs (NVIDIA CUDA and AMD
-ROCm); the result is identical to one device, and no speed-up could be measured on the
-one-GPU host. Decks of the full-resolution cases (up to 23.8 million elements) are shipped
-and have not been run.
+Laser powder bed fusion sets the grain structure, the strength and the residual stress of
+a part through a chain of heat transfer, melt-pool flow, solidification and thermally
+driven plasticity. This report adds that chain to the PINNACLE framework as registered
+components that are composed in input decks, and checks it at the resolution of one
+workstation GPU against the NIST AM Bench measurements on alloy 718 and against a
+published crystal-plasticity simulation of a 316L track. The model is an enthalpy heat
+equation with latent heat, a moving volumetric beam and surface losses; a weakly
+compressible flow of the liquid under a flat surface with thermocapillary shear, recoil
+pressure, buoyancy and mushy-zone drag; a multi-order-parameter grain model with melting,
+epitaxial regrowth and nucleation, advanced together with the temperature; and
+finite-strain crystal plasticity, loaded by the stored temperature history or by a tensile
+test. The components reproduce reference solutions (Stefan front within 0.9 %, a
+constrained heated crystal within 0.02 %, natural convection within 0.4 %, a lid-driven
+cavity within 3.5 %). For seven bare-plate tracks, with two heat-source parameters fitted
+on two of them, conduction alone gives the melt-pool width within 8 % for six tracks and
+a depth 15 to 44 % too small for the four deepest (keyhole) tracks; adding the flow
+changes the errors over the seven tracks from 23.4 to 21.0 % rms in depth and from 8.6 to
+6.3 % rms in width, and a flat surface does not carry the measured dependence of depth
+on spot size. A parametric network surrogate trained on 30 finite-element tracks
+reproduces the finite-element depth and width within 1 % and inherits its error against
+the measurements. Three crystal-plasticity parameters, started from a published-data fit
+of the author's toolkit and calibrated by Gauss-Newton on a 216-grain polycrystal,
+reproduce the measured tensile curve within 2.7 MPa rms; three grain realizations give a
+yield stress of 695 $\pm$ 4 MPa against 691 $\pm$ 3 MPa measured. A four-layer build
+column of 129,600 elements runs in 80 min; at its 10 um mesh the median grain diameter
+(37 um) is three times the measured one and its grains are selected toward
+$\langle100\rangle$, so that a cube cut from it is 15 % too soft at yield: grain size,
+texture and the property predicted from them are not results of the coarse check. For
+the 316L track, after the relaxation stage of the published procedure, the stress pattern
+agrees with the published simulation, the compression below the track is 10 to 30 %
+larger and the tension in the track 2 to 5 times larger under substitute thermal and grain
+inputs. The explicit field solves and the training of every network can be split over
+several GPUs (NVIDIA CUDA and AMD ROCm) with results identical to one device; no speed-up
+could be measured on the one-GPU host, and the mechanics and implicit solves are not yet
+on several devices. Decks of the full-resolution cases (up to 23.8 million elements) are
+shipped and have not been run.
 
 ## 1. Introduction
 
@@ -89,7 +100,8 @@ the open NIST measurements when it is run at the resolution of one workstation G
 what must a user run on larger hardware to reach the measured grain scale. Section 2
 gives the governing equations, section 3 the data, section 4 the method and section 5 the
 workflow. Section 6 reports the verification against exact solutions and the results on
-alloy 718, section 7 the 316L case of (grilli 2022 elimination), section 8 the cost and
+alloy 718 (conduction, the network surrogate, the build column, the tracks with melt-pool
+flow, the tensile case with its calibration), section 7 the 316L case of (grilli 2022 elimination), section 8 the cost and
 the multi-device path, and section 9 the limits and the work that remains.
 
 ## 2. Physics
@@ -219,6 +231,42 @@ $\mathbf F^a$ stays, and the point solidifies free of stress in the shape it has
 the material-point form of the element elimination and reactivation of
 (grilli 2022 elimination); no element leaves the mesh.
 
+### 2.4 Flow of the liquid
+
+The liquid of the pool is driven by the gradient of the surface tension along the free
+surface (thermocapillary or Marangoni shear), by the vapor recoil and by buoyancy, and it
+carries heat. The surface is kept flat (decision D2). The flow is modeled as weakly
+compressible with a constant density $\rho$ (artificial compressibility,
+chorin 1967 compressibility):
+
+$$\frac{\partial\mathbf u}{\partial t} + (\mathbf u\cdot\nabla)\mathbf u
+= -\frac{1}{\rho}\nabla p + \nabla\cdot(\nu_e\nabla\mathbf u)
+- \beta\,(T - T_l)\,\mathbf g - D(f_l)\,\mathbf u + \mathbf s, \tag{13}$$
+
+$$\frac{\partial p}{\partial t} + \rho c^2\,\nabla\cdot\mathbf u
+= \nabla\cdot(\kappa_p\nabla p), \tag{14}$$
+
+with the Boussinesq buoyancy (expansion coefficient $\beta$, gravity $\mathbf g$), the
+drag of the mushy zone (voller 1987 mushy)
+
+$$D(f_l) = A\,\frac{(1 - f_l)^2}{f_l^3 + \epsilon}, \tag{15}$$
+
+which brings the solid to rest, the artificial sound speed $c$ and a pressure diffusivity
+$\kappa_p$. For $c$ large against the flow speed the divergence of the velocity is small
+and a steady flow is the incompressible one. The surface forces act in a band of
+thickness $b$ (one element) below the surface,
+
+$$\mathbf s_\parallel = \frac{f_l}{\rho\,b}\,\frac{d\gamma}{dT}\,\nabla_\parallel T, \qquad
+s_n = -\frac{f_l\,c_r\,p_s(T)}{\rho\,b}, \tag{16}$$
+
+the thermocapillary shear and the recoil pressure ($c_r = 0.54$ of the saturation
+pressure $p_s$ of equation 5), directed into the body. Advection is stabilized by an
+upwind viscosity, $\nu_e = \mu/\rho + \tfrac12 a_u |\mathbf u| h$. The heat equation 1
+receives the advected enthalpy in conservative form,
+
+$$\frac{\partial H}{\partial t} + \nabla\cdot\bigl[\mathbf u\,(H - H(T_l))\bigr]
+= \nabla\cdot\bigl[(k + \tfrac12 a_u |\mathbf u| h\,C)\nabla T\bigr] + Q_b - Q_l. \tag{17}$$
+
 ## 3. Data
 
 ### 3.1 NIST AM Bench alloy 718 (primary benchmark)
@@ -315,6 +363,9 @@ to 0050); a process deck names them like any other physics.
 | `undercooling_nucleation` | utility (service) | nucleation sites and seeds |
 | `thermal_load` with `stress_divergence_cp thermal_load` | utility, kernel option | equations 8 and 11, stiffness factor, molten points |
 | `release_time` on a `dirichlet` condition | boundary-condition option | a fixed wall removed at a given time of a `cp_quasi_static` run (relaxation stage) |
+| `flow_momentum`, `flow_continuity` | kernels | equations 13 to 15 (weakly compressible flow, drag taken implicitly at the nodes) |
+| `thermocapillary_shear` | kernel | equation 16 |
+| `flow_heat_advection` | kernel | the advection term of equation 17 |
 | `field_series` | function | a stored field in time, interpolated in space and time (the hand-off of the temperature to the mechanics deck) |
 
 ### 4.2 Discretization and solution
@@ -334,6 +385,16 @@ here. Its stability limit on a mesh of size $h$ is $\Delta t \le h^2/(6a)$ with 
 diffusivity $a = k/C$; the decks use 0.8 of the limit of the liquid. The latent heat
 enters equation 12 through $C(T^n)$, which is accurate while the temperature changes by
 much less than the melting range per step.
+
+With flow, velocity and pressure are two more variables of the same deck. They exchange
+a wave of speed $c$; advanced together from the old state the pair is unstable for every
+step, so the executioner advances the temperature first, then the velocity, then the
+pressure from the new velocity (`staged_variables`), several times per thermal step
+(`staged_substeps`), with $c\,\Delta t_{flow} \le 0.6\,h/\sqrt3$. The drag of equation
+15 is a backward-Euler step at the nodes. The advected enthalpy of equation 17 is tested
+with the gradient of the shape functions, the adjoint of the divergence of equation 14:
+the enthalpy of the body is then conserved whatever the divergence of the discrete
+velocity is.
 
 The temperature and the order parameters are two variables of one deck and are advanced
 together; no file is exchanged between the thermal and the grain stage. The numerical
@@ -574,6 +635,235 @@ the second, the plate grains coarsened during the run because a mobility sized f
 solidification front also moved the boundaries of the cold solid; the mobility now falls
 with temperature below the liquidus. Table 9 is from the runs after both corrections.
 
+### 6.5 Case K1 with melt-pool flow (reported separately from the conduction results)
+
+The seven tracks of section 6.2 with the flow of section 2.4 added to the same decks
+(`k1_flow_template.i`, `k1_flow_study_h10.i`): the same 10 um mesh, the same heat source
+($\eta = 0.7724$, $\delta = 45.01$ um, the values fitted WITHOUT flow and not refitted),
+so that the difference to Table 7 is the effect of the flow alone. 2,270 thermal steps of
+0.53 us with four flow sub-steps each; 510 s per track on the GPU host (23 s without
+flow).
+
+**Flow inputs** (notebook, section 12): liquid density 7,578 kg/m$^3$ and viscosity
+5.3 mPa s (table of (amin 2024 heatsource), a thermal-fluid study of the same NIST tracks,
+read through a literature tool and not from the PDF); $d\gamma/dT = -1.1\times10^{-4}$
+N/(m K), $\beta = 5\times10^{-5}$ /K, $A = 10^8$ /s, $c_r = 0.54$: assumed. Numerical:
+$c = 25$ m/s, first-order upwind.
+
+**Verification of the flow components** (PINNACLE examples; tier 2 against a closed form,
+tier 3 against published numerical references whose values are quoted from memory and
+were not checked against the papers):
+
+| case | quantity | computed | reference |
+|---|---|---|---|
+| lid-driven cavity, Re = 100, 40 x 40 | extremes of the velocity on the center lines | $-0.2148$, $+0.1802$, $-0.2540$ | $-0.2109$, $+0.1753$, $-0.2453$ (ghia 1982 cavity): within 3.5 % |
+| side-heated cavity, Ra = $10^4$, 40 x 40 (buoyancy and equation 17) | Nusselt number; largest velocities | 2.2433; 16.21, 19.68 | 2.243; 16.178, 19.617 (devahldavis 1983 natural): within 0.4 % |
+| liquid layer under a surface shear, 16 elements over the depth | velocity profile; surface speed | interior within 0.007 (peak 0.083); $-0.212$ | $u = \tau(3z^2 - 2Hz)/(4\mu H)$; $-0.25$ |
+| energy of a track with the surface losses off | stored over supplied energy at 151 us | 1.009 with flow, 1.008 without | 1 |
+
+The band of equation 16 lowers the speed of the surface itself by about $\tau b/(2\mu)$
+(third row); the flow below the band is not affected.
+
+![Figure 4](../../figures/lpbf/animations/k1_flow_h10_case0_frames/frame_014.png)
+
+**Figure 4.** Case 0 with flow at 422 us: temperature and velocity in the section along
+the track axis and on the surface (white: liquidus, cyan: solidus; color range capped at
+3,200 K). Frame 14 of the animation `figures/lpbf/animations/k1_flow_h10_case0.gif`; the
+animations of the seven tracks are in the same folder.
+
+![Figure 5](../../figures/lpbf/k1_cross_sections_flow_h10.png)
+
+**Figure 5.** Computed against measured melt-pool depth and width of the seven cases with
+flow (source parameters of the conduction fit; "fitted" marks the two cases that fit
+used). The bar spans the solidus and liquidus isotherms; dashed lines: $\pm$10 %.
+
+**Table 11.** Depth and width (um) with flow against the conduction model of Table 7 (the
+same source) and the measurement; largest speed and peak temperature of the run.
+
+| case | depth measured | conduction | flow | error flow | width measured | conduction | flow | error flow | peak T (K), conduction / flow |
+|---|---|---|---|---|---|---|---|---|---|
+| 0 | 139.7 | 118.2 | 124.4 | $-11.0$ % | 136.3 | 133.7 | 134.3 | $-1.4$ % | about 6,500 / 4,696 |
+| 1.1 | 227.2 | 126.6 | 131.1 | $-42.3$ % | 106.2 | 125.9 | 116.0 | $+9.2$ % | / 5,293 |
+| 1.2 | 102.4 | 111.8 | 119.2 | $+16.3$ % | 141.7 | 140.0 | 147.1 | $+3.8$ % | / 4,312 |
+| 2.1 | 109.7 | 109.9 | 111.5 | $+1.6$ % | 112.9 | 121.5 | 122.7 | $+8.7$ % | / 4,451 |
+| 2.2 | 176.5 | 124.3 | 135.9 | $-23.0$ % | 156.1 | 143.7 | 142.9 | $-8.5$ % | / 4,843 |
+| 3.1 | 166.1 | 123.7 | 134.0 | $-19.3$ % | 134.3 | 141.4 | 140.6 | $+4.7$ % | / 4,963 |
+| 3.2 | 116.9 | 111.2 | 114.2 | $-2.3$ % | 129.4 | 124.7 | 126.4 | $-2.3$ % | / 4,378 |
+| rms over 7 | | 23.4 % | 21.0 % | | | 8.6 % | 6.3 % | | |
+
+- **Effect of the flow.** The pool becomes 2 to 12 um deeper and the width changes by
+  $-10$ to $+7$ um. The largest liquid speed is about 3.1 m/s (case 0), a jet from the
+  hot spot under the beam backward and downward along the pool (Figure 4); the peak
+  temperature falls from about 6,500 K to 4,300 to 5,300 K. The depth error over the
+  seven cases falls from 23.4 to 21.0 % rms and the width error from 8.6 to 6.3 % rms;
+  the small-spot case 1.1 improves most in width ($+18.6$ to $+9.2$ %).
+- **What the flow does not repair.** The three keyhole tracks (1.1, 2.2, 3.1) stay 19 to
+  42 % too shallow, and case 1.2 becomes too deep by 16 %: a flat surface cannot open a
+  keyhole, as decision D2 anticipated. The measured depth changes by 125 um between the
+  two spot sizes, the computed one by 12 um.
+- **Recoil and shear separately (case 0, one run each).** Without the recoil pressure the
+  thermocapillary shear alone spreads the liquid outward: width 162.7 um ($+19$ %),
+  depth 116.1 um, largest speed 1.35 m/s, peak temperature unchanged (about 6,100 to
+  6,500 K). The recoil pressure turns the flow downward under the beam and brings the
+  width back to 134.3 um. The balance of the two depends on $d\gamma/dT$ and $c_r$, which
+  are assumed here and were not varied.
+- **Peak temperatures** remain above the boiling point (3,186 K); the remarks of section
+  6.2 on temperatures inside the pool hold.
+- **No refit of the source with flow.** The two fitted cases move in opposite directions
+  (case 0 stays 11 % too shallow, case 1.2 becomes 16 % too deep), so a refit of
+  $\eta$ and $\delta$ cannot improve both; it was not done.
+
+Two defects of the first flow runs were found from the results and corrected before the
+runs of Table 11; both are recorded in the notebook (section 12). The drag as an explicit
+point term gave non-finite fields after seven steps. The advection term in the form
+$C\,\mathbf u\cdot\nabla T$ created energy: the stored energy reached 1.68 times the
+supplied energy and the pool never froze. No number of those runs is used.
+
+### 6.6 Case K3: tensile test and calibration of the crystal-plasticity parameters
+
+**Target.** The mean engineering stress-strain curve of the eight miniature specimens of
+(benzing 2025 tensiledata), cut along the build direction and pulled at $10^{-3}$ /s,
+derived here from the raw records (`scripts/lpbf_k3_targets.py`: extensometer displacement
+over the 3 mm gauge, force over the cross-section in the file header, mean on a common
+strain grid up to the smallest uniform elongation, 21.9 %). The properties recomputed
+from the records agree with the answers NIST published: ultimate stress 951.6 MPa (NIST
+951.6), 0.2 % yield stress 687.3 MPa (690.7), strain at the ultimate stress 0.246 (0.247).
+The modulus from a fit between 100 and 400 MPa is 128.1 GPa (NIST 123.6), far below the
+polycrystal modulus of the alloy; it is a specimen compliance and is not a target.
+
+**Forward model.** A cube of 120 um with 216 Voronoi grains of 20 um and uniform random
+orientations, 6 x 6 x 6 elements, pulled along $z$ to 20 % in 100 load steps; faces
+$x = 0$ and $y = 0$ are symmetry planes, the opposite faces are free. Finite-strain
+crystal plasticity with the dislocation-density law of equations 9 and 10
+(`cp_quasi_static`, backward-Euler slip update, as in Parts I to III). The engineering
+stress is the mean Cauchy stress along the load divided by $1 + \varepsilon$ (the
+cross-section shrinks at constant volume; the elastic volume change, about 0.2 %, is
+neglected). About 5 min per curve on four CPU threads.
+
+**Starting set.** The author's toolkit holds a crystal-plasticity set calibrated on the
+same NIST curve with a Taylor model of 400 grains and a Voce-type law (initial resistance
+227.2 MPa, saturation 666.3 MPa, $h_0 = 1{,}407$ MPa, exponent 3.10, latent ratio 1.4,
+$\dot\gamma_0 = 10^{-3}$ /s, $m = 0.05$, $C_{11}, C_{12}, C_{44} = 250, 160, 120$ GPa).
+The law here is a different one, so the starting values are derived to give the same
+initial resistance, the same saturation resistance and the same initial hardening rate
+$h_0(1 - g_0/g_s)^a = 386$ MPa:
+
+$$\tau_{c0} = g_0 - \alpha_0\mu b\sqrt{S\rho_0}, \qquad
+k_1 = \frac{2\sqrt S\,(386\ \text{MPa})}{\alpha_0\,\mu}, \qquad
+y_c = \frac{k_1}{2\sqrt{\rho_{sat}}}, \qquad S = 1 + 11\,q, \tag{18}$$
+
+with $k_2 = 2y_c$ in equation 10. Elastic constants, rate constants and $q$ are the
+toolkit's and are held; $\alpha_0 = 0.3$, $\mu = 81$ GPa, $b = 0.254$ nm and
+$\rho_0 = 10^{10}$ /m$^2$ are assumed.
+
+**Calibration.** Gauss-Newton in the logarithm of $\tau_{c0}$, $k_1$ and $y_c$ on the
+88 points of the target between 1 % strain and the end of the run; the Jacobian by
+finite differences (each parameter raised by 5 %, four finite-element runs per
+iteration), a Levenberg-Marquardt damping of $10^{-3}$ and a step limit of a factor 2
+(`scripts/lpbf_k3.py calibrate`; one deck per run, `decks/lpbf/in718/k3/cal_<i>_*.i`).
+PINNACLE's built-in inverse mode (`[Calibration] mode = inverse` on the 0-D
+`cp_constitutive` route) was tried first and gave stresses of 1.8 GPa at 0.1 % strain for
+this setup; it was not used, and the cause was not investigated.
+
+**Table 12.** Iterations of the calibration (grain seed 1).
+
+| iteration | $\tau_{c0}$ (MPa) | $k_1$ | $y_c$ (nm) | rms error (MPa) | largest error (MPa) |
+|---|---|---|---|---|---|
+| 0 (start) | 224.72 | 0.12866 | 3.641 | 66.58 | 84.8 |
+| 1 | 262.02 | 0.07459 | 2.677 | 31.26 | 39.5 |
+| 2 | 262.34 | 0.05676 | 1.859 | 3.59 | 16.0 |
+| 3 | 263.07 | 0.05334 | 1.554 | 2.75 | 17.2 |
+| 4 | 263.31 | 0.05279 | 1.497 | 2.662 | 17.7 |
+| 5 (calibrated) | 263.37 | 0.05269 | 1.489 | 2.661 | 17.8 |
+
+The condition number of the Jacobian is 39 at the start and 95 at the end: the three
+parameters are identifiable from one tensile curve, $k_1$ and $y_c$ less sharply than
+$\tau_{c0}$. The largest remaining error is at the first target point (1 % strain),
+where the measured curve is still bending over and the model has already yielded.
+
+**Table 13.** Calibrated set of alloy 718 (as built, build direction, room temperature,
+$10^{-3}$ /s) for the law of equations 9 and 10.
+
+| parameter | value | status |
+|---|---|---|
+| $\tau_{c0}$ | 263.37 MPa | fitted |
+| $k_1$ | 0.052690 | fitted |
+| $y_c$ ($k_2 = 2y_c$) | 1.4891 nm | fitted |
+| $\rho_0$ | $10^{10}$ /m$^2$ | assumed |
+| $\alpha_0$, $\mu$, $b$ | 0.3, 81 GPa, 0.254 nm | assumed |
+| $q$ (latent ratio) | 1.4 | held (toolkit) |
+| $\dot\gamma_0$, $n = 1/m$ | $10^{-3}$ /s, 20 | held (toolkit) |
+| $C_{11}$, $C_{12}$, $C_{44}$ | 250, 160, 120 GPa | held (toolkit) |
+
+![Figure 6](../../figures/lpbf/k3_tensile_calibration.png)
+
+**Figure 6.** Engineering stress-strain curve of the polycrystal cube with the starting
+set and with the calibrated set on three grain realizations, against the mean of the
+eight NIST specimens (band: standard deviation between the specimens).
+
+**Table 14.** Calibrated set on three grain realizations (216 grains each; seed 1 is the
+one the calibration used) against the measurement.
+
+| quantity | seed 1 | seed 2 | seed 3 | mean $\pm$ sd | measured |
+|---|---|---|---|---|---|
+| rms error of the curve, 1 to 20 % (MPa) | 2.66 | 7.16 | 8.46 | 6.1 $\pm$ 3.0 | |
+| 0.2 % yield stress (MPa) | 696.5 | 690.3 | 698.5 | 695.1 $\pm$ 4.3 | 690.7 $\pm$ 3.1 (NIST), 687.3 (here) |
+| stress at 5 % (MPa) | 832.4 | 824.9 | 837.4 | 831.6 $\pm$ 6.3 | 833.8 |
+| stress at 10 % (MPa) | 891.1 | 883.9 | 898.4 | 891.2 $\pm$ 7.3 | 890.3 |
+| stress at 20 % (MPa) | 941.4 | 936.4 | 953.3 | 943.7 $\pm$ 8.7 | 941.6 |
+| initial slope (GPa) | 219.6 | 217.9 | 219.7 | 219.1 $\pm$ 1.0 | 123.6 (NIST), not a target |
+
+- The calibration reduces the error of the curve from 66.6 to 2.7 MPa rms (0.3 % of the
+  flow stress) in five steps. For seed 1 this is a calibration (tier 4 agreement by
+  construction); seeds 2 and 3 show what the grain realization alone changes: 5 to
+  6 MPa, less than the scatter between the measured specimens (9 MPa at the ultimate
+  stress).
+- The starting set, which reproduces the toolkit's Voce parameters in three numbers,
+  yields 12 % too early and hardens too much (605 MPa yield, 1,025 MPa at 20 %). The
+  toolkit fitted a Taylor model, here a finite-element polycrystal carries the same law
+  constants: parameters of crystal plasticity do not transfer between homogenization
+  schemes, which is why the set is calibrated again.
+- **Limits.** One mesh (one element per grain on average), 216 grains, one strain rate,
+  one temperature, one loading direction; random texture (the measured texture is close
+  to random, section 3.1). The curve ends at 20 % strain, before the ultimate stress
+  (24.6 %); necking and failure are outside this model. The initial slope of the model is
+  the polycrystal modulus of the held elastic constants (219 GPa) and is not compared.
+  Parameters that were assumed ($\rho_0$, $\alpha_0$, $\mu$) trade off with the fitted
+  ones: the set is one consistent set, not a measurement of each parameter.
+
+**From the simulated structure to the tensile curve (the chain, one run).** A cube of
+120 um was cut out of the built material of the four-layer column of section 6.4 (above
+the plate, in the middle of the block) and pulled with the calibrated set; grains and
+orientations are those of the process simulation, the mesh is the column's (12 x 12 x 12
+elements). Nothing is fitted in this run.
+
+![Figure 7](../../figures/lpbf/k3_tensile_k2_structure.png)
+
+**Figure 7.** Engineering stress-strain curve of the cube cut from the simulated column
+against the random-texture polycrystal of Figure 6 and the measurement.
+
+**Table 15.** Tensile response of the cube cut from the simulated column (calibrated
+set, nothing fitted) against the random-texture polycrystal and the measurement.
+
+| quantity | cube of the simulated column | random texture, 216 grains (seed 1) | measured |
+|---|---|---|---|
+| 0.2 % yield stress (MPa) | 589.9 | 696.5 | 690.7 |
+| stress at 5 %, 10 %, 20 % (MPa) | 658.4, 694.8, 721.9 | 832.4, 891.1, 941.4 | 833.8, 890.3, 941.6 |
+| rms difference to the measured curve (MPa) | 193.8 | 2.7 | |
+| initial slope (GPa) | 152.7 | 219.6 | |
+
+- The cube of the simulated structure is 15 % too soft at yield and 23 % at 20 % strain.
+  The cause is its grain structure, not the plasticity set: the cube holds 20
+  orientations, three of which fill 73 % of it, and the build direction of the five
+  largest lies 4, 21, 21, 16 and 4 degrees from a cube axis $\langle100\rangle$ (largest
+  Schmid factors 0.43 to 0.49; the low initial slope shows the same, the modulus along
+  $\langle100\rangle$ being 125 GPa for these constants).
+- This is the coarse column again (section 6.4): at 10 um the model grows few, large
+  grains selected along $\langle100\rangle$, where the measured structure has a median
+  grain of 11.5 um and a texture close to random. The chain from process to property
+  runs end to end; its property prediction is only as good as the grain structure, and
+  that needs the fine column. One cube of one column realization.
+
 ## 7. 316L single track: process stress with crystal plasticity
 
 The case of (grilli 2022 elimination) with the substitute inputs of section 3.2, on the
@@ -588,38 +878,38 @@ is back at 300 to 304 K. 178 temperature frames at 45 us are handed to the mecha
 
 **Mechanics deck**, two stages as in the paper: (1) scan and cooling to 8.01 ms with no
 normal displacement on the four sides and the bottom; (2) relaxation with the walls
-$x = 200$ um and $y = 160$ um removed. 200 load steps of 45 us, 463 Newton iterations, no
-cutback, no unconverged step, 2,957 s.
+$x = 200$ um and $y = 160$ um removed. 200 load steps of 45 us, 460 Newton iterations, no
+cutback, no unconverged step, 5,540 s (the host was shared).
 
-![Figure 4](../../figures/lpbf/ss316l_stress_h8.png)
+![Figure 8](../../figures/lpbf/ss316l_stress_h8.png)
 
-**Figure 4.** 316L track, 8 um mesh, after the relaxation stage. Left: $\sigma_{xx}$ and
+**Figure 8.** 316L track, 8 um mesh, after the relaxation stage. Left: $\sigma_{xx}$ and
 von Mises stress in the section across the track at mid-length (line: boundary of the
 melted zone). Top middle: $\sigma_{xx}$ in the top layer of elements. Bottom middle: mean
 of $\sigma_{xx}$ and $\sigma_{yy}$ over every layer of elements against the height (the
 quantity of the paper's Figure 15d). Right: mean stress of the volume and temperature
 range in time; the walls are removed at 8.01 ms.
 
-**Table 11.** Residual stress after relaxation against the published simulation. The
+**Table 16.** Residual stress after relaxation against the published simulation. The
 paper's values are read from its Figure 15 (color scales and curve) by eye.
 
 | quantity | this work | (grilli 2022 elimination) |
 |---|---|---|
-| layer mean at the bottom, $\sigma_{xx}$ / $\sigma_{yy}$ (MPa) | $-429$ / $-472$ | about $-420$ / $-400$ |
-| height where the layer mean changes sign (um) | 43 / 43 | about 30 / 22 |
-| largest tensile layer mean (MPa), at height (um) | $+248$ at 73 / $+422$ at 58 | about $+130$ at 65 / $+95$ at 40 to 60 |
-| layer mean at the top surface (MPa) | $+183$ / $-53$ | about 0 / 0 |
-| mean over the top 50 um (MPa) | $+220$ / $+244$ | not printed (compared with experiments in its Figure 17) |
-| range of the local $\sigma_{xx}$ (MPa) | $-1{,}290$ to $+2{,}392$ (element means) | about $-900$ to $+1{,}300$ (color scale) |
-| $\sigma_{zz}$ at the top surface | mean of the volume 0.6 MPa | close to zero |
-| equivalent plastic strain | mean 0.016, maximum 0.053 | components of $\mathbf F_p - \mathbf I$ up to about 0.02 to 0.03 (its Figures 12, 13) |
+| layer mean at the bottom, $\sigma_{xx}$ / $\sigma_{yy}$ (MPa) | $-461$ / $-516$ | about $-420$ / $-400$ |
+| height where the layer mean changes sign (um) | 45 / 44 | about 30 / 22 |
+| largest tensile layer mean (MPa), at height (um) | $+296$ at 73 / $+479$ at 66 | about $+130$ at 65 / $+95$ at 40 to 60 |
+| layer mean at the top surface (MPa) | $+221$ / $-23$ | about 0 / 0 |
+| mean over the top 50 um (MPa) | $+263$ / $+296$ | not printed (compared with experiments in its Figure 17) |
+| range of the local $\sigma_{xx}$ (MPa) | $-1{,}338$ to $+2{,}570$ (element means) | about $-900$ to $+1{,}300$ (color scale) |
+| $\sigma_{zz}$ at the top surface | mean of the volume 0.7 MPa | close to zero |
+| equivalent plastic strain | mean 0.016, maximum 0.050 | components of $\mathbf F_p - \mathbf I$ up to about 0.02 to 0.03 (its Figures 12, 13) |
 
 - **Pattern.** Tension in and around the melted zone, compression in the substrate
   below it, a stress-free top surface in $z$, grain-to-grain variation of several hundred
-  MPa: the same pattern as the published result, and the compression at the bottom agrees
-  within about 15 %.
-- **Magnitude.** The tensile layer means are 2 to 4 times the published ones, the change
-  of sign lies 13 to 21 um higher, and the top layers stay in tension along the scan
+  MPa: the same pattern as the published result; the compression at the bottom is 10 to
+  30 % larger.
+- **Magnitude.** The tensile layer means are 2 to 5 times the published ones, the change
+  of sign lies 15 to 22 um higher, and the top layers stay in tension along the scan
   direction where the paper returns to zero. The melted zone here (70 um deep, the whole
   length, from an assumed beam on a conduction model) is not the paper's pool, the whole
   volume was heated to 800 K or more, and the grains and orientations are substitutes;
@@ -627,12 +917,12 @@ paper's values are read from its Figure 15 (color scales and curve) by eye.
   qualitative comparison, as planned.
 - **The relaxation stage is elastic here.** The 22 steps after the release converge in one
   iteration each and change neither the stress nor the plastic strain; its assumed length
-  (0.99 ms) therefore has no influence. The top layer of Figure 4 is more tensile towards
+  (0.99 ms) therefore has no influence. The top layer of Figure 8 is more tensile towards
   $x = 0$, the wall that stays fixed: only one wall of each pair is removed, as in the
   paper.
 - **A first run of this case is superseded.** It ended at 8.01 ms with all walls fixed
-  and gave a mean stress of 1,797 MPa ($xx$) and 1,986 MPa ($yy$) with a von Mises mean of
-  2,111 MPa (Figure 4, top right, before the release). Those numbers are the reaction of
+  and gave a mean stress of about 1.8 GPa ($xx$) and 2.0 GPa ($yy$) (Figure 8, top right,
+  before the release: 1,845 and 2,052 MPa in the run reported here). Those numbers are the reaction of
   the walls on a volume that was heated and cooled as a whole, not a residual stress. The
   relaxation stage of the paper had been left out of the deck; it needed a boundary
   condition that can be released during a run, which was added to PINNACLE
@@ -641,21 +931,34 @@ paper's values are read from its Figure 15 (color scales and curve) by eye.
   flow rule (reference rate $10^{-7}$ /s, exponent 0.1) at the strain rates of the
   process; this contribution was not quantified separately.
 
+- **A second run is superseded as well: the hardening parameters.** The dislocation-density
+  parameters of the deck are derived from the paper's law (section 3.2). The first
+  derivation matched the saturation resistance but gave a hardening rate lower by the
+  factor $S = 1 + 11q = 16.4$ ($k_1 = 4.0\times10^{-3}$ in place of 0.0652); the error
+  was found when the same derivation was written out for alloy 718 (equation 18). The
+  numbers of Table 16 are from the corrected deck. With the slower hardening the layer
+  means were $-429$ / $-472$ MPa at the bottom and $+248$ / $+422$ MPa at most: the
+  correction raises the stresses by 7 to 20 % and does not change the reading.
+
 ## 8. Cost, devices and the standalone decks
 
 ### 8.1 Cost of the runs of this report
 
-**Table 12.** Wall times. GPU host: one AMD Radeon 8060S (ROCm 7.2), 16 cores, float64.
+**Table 17.** Wall times. GPU host: one AMD Radeon 8060S (ROCm 7.2), 16 cores, float64.
 Every number is one run.
 
 | run | size | steps | wall time |
 |---|---|---|---|
 | K1 single track, 10 um | 73,500 elements | 480 | 23 s on the GPU; 141 s on the workstation CPU |
 | K1 surrogate: 30 training tracks; training | 3,427 parameters, ensemble of five | 3,000 + 50 epochs | about 12 min; 47 s (CPU) |
+| K1 single track with flow, 10 um | 73,500 elements, 5 fields | 2,270 with 4 flow sub-steps | 510 s on the GPU |
+| K1 single track, 5 um (case 0 only) | 588,000 elements | 1,920 | 706 s on the GPU: depth and width within 0.5 % of the 10 um run |
+| K3 tensile cube, 6 x 6 x 6 | 216 elements, 1,728 quadrature points | 100 load steps | about 310 s on 4 CPU threads; the calibration (6 iterations of 4 runs) about 50 min |
+| K3 cube of the simulated column, 12 x 12 x 12 | 1,728 elements | 100 load steps | 2,737 s on 6 CPU threads |
 | K2 column, one layer, 10 um | 129,600 elements, 31 fields | 2,240 | 1,226 s on the GPU |
 | K2 column, four layers, 10 um | the same | 9,040 | 4,821 s on the GPU (0.53 s per step) |
 | 316L thermal, 8 um | 7,000 elements | 5,334 | 138 s on the workstation CPU |
-| 316L mechanics, 8 um, two stages | 7,000 elements, 56,000 quadrature points | 200 load steps | 2,957 s on the CPU of the host (14.8 s per step); an earlier 178-step run that shared the host took 5,670 s |
+| 316L mechanics, 8 um, two stages | 7,000 elements, 56,000 quadrature points | 200 load steps | 5,540 s on the CPU of the host while it was shared with other runs (27.7 s per step); 2,957 s (14.8 s per step) when alone |
 
 For the 316L mechanics the paper reports 9.5 h on 12 CPUs at the same mesh with steps of
 1 us (8,010 steps); the run here takes 45 us steps with an implicit slip update, so the
@@ -677,12 +980,29 @@ the CPU, reproduce the single-device field to $4\times10^{-15}$ (13.1 s single; 
 and 18.6 s pooled, the cost of the transfers). **No speed-up has been measured**: that
 needs a node with several GPUs.
 
+**Network training on the pool.** The forward pass of a network splits its batch of
+points over the same pool (PINNACLE ADR 0051): every device receives a block of rows and a
+copy of the parameters, and the outputs are joined on the first device. The copies and
+the moves are part of the differentiation graph, so the derivatives a physics residual
+needs and the gradients of the optimizer are those of the single-device pass, and no
+executioner had to change. Checked: outputs, first and second input derivatives, parameter
+gradients and ten optimizer steps equal to the single-device pass for the three network
+classes; on the host GPU a network of four layers of 128 neurons with 200,000 points and
+second derivatives gives the same loss to 16 digits with the GPU named twice and with
+GPU + GPU + CPU (23.8 s, 24.1 s and 34.8 s for 20 steps: no speed-up on one physical
+device). On six example decks trained with and without a two-slot pool, three agree to
+$10^{-11}$ or better; the other three differ by as much as the same decks differ between
+one and eight threads on one device (round-off amplified by the optimizer).
+
 **What the pool covers and what it does not.** It covers every deck that runs on
-`pf_fem_explicit`: the thermal and grain stages of this report and the explicit
-phase-field decks of the framework. It does not cover the implicit executioners (sparse
-Newton solves on the CPU), the crystal-plasticity solve, or network training. The
-framework-wide multi-device execution that was asked for is therefore done for one
-executioner only; the others are open work.
+`pf_fem_explicit` (the thermal, flow and grain stages of this report and the explicit
+phase-field decks of the framework) and the networks of every network executioner. It
+does not cover the crystal-plasticity solve (its implicit slip update is evaluated in
+NumPy on the host), the implicit block executioner (NumPy assembly, sparse solve on the
+host) or any linear solve. The framework-wide multi-device execution that was asked for
+is therefore done for the explicit field solves and for network training; the mechanics
+and implicit solves are open work, and moving their point evaluation onto device tensors
+comes before a pool can serve them.
 
 ### 8.3 Standalone decks
 
@@ -692,7 +1012,7 @@ revision of the ledger and, for the 316L mechanics, the shipped orientation file
 headers state size, memory and step count. **None of them has been run for this report**;
 each has a checked coarse configuration of the same blocks.
 
-**Table 13.** Standalone decks.
+**Table 18.** Standalone decks.
 
 | deck | mesh | elements | steps | memory (estimate) | checked configuration |
 |---|---|---|---|---|---|
@@ -717,12 +1037,12 @@ each has a checked coarse configuration of the same blocks.
 
 **Limits of the model.**
 
-- *No melt-pool flow, flat surface.* The pool is a conduction pool. Widths are within about
-  10 %; the depth of the deeper (keyhole) tracks is 15 to 44 % too small, and it does not
-  follow the spot size. Temperatures inside the pool are far above boiling and are not
-  results. The flow stage of the plan (flat surface with Marangoni shear, recoil, buoyancy
-  and a mushy-zone drag (voller 1987 mushy)) is not implemented; by decision D2 it would
-  correct the width, not dig a keyhole.
+- *Flat surface.* Without flow the pool is a conduction pool; with the flow of section 2.4
+  the surface is still flat. Widths are within about 10 %; the depth of the keyhole
+  tracks is 19 to 44 % too small with or without flow, and it does not follow the spot
+  size. Temperatures inside the pool are above boiling and are not results. The flow is
+  first-order accurate in the advection (upwind), its surface forces are spread over one
+  element, and it is weakly compressible (Mach number 0.13 at the largest speed).
 - *Explicit latent heat through the apparent capacity* (equation 12); the implicit path
   conserves the enthalpy exactly and is the reference for small cases.
 - *Grain model without solute and without tip kinetics.* The front follows the isotherm
@@ -741,31 +1061,36 @@ each has a checked coarse configuration of the same blocks.
 - *Orientations* never change after solidification (plan, section 1); measured grains
   carry orientation gradients (polonsky 2020 gradients).
 
-**Assumed inputs** (Table 3 and notebook, section 7): evaporation constants, emissivity,
-film coefficients, plate temperatures, powder conductivity; for 316L the beam and every
-thermal property. None of them has been varied; the sensitivity analysis the project
-guidelines ask for is owed for each.
+**Assumed inputs** (Table 3 and notebook, sections 7 and 12): evaporation constants,
+emissivity, film coefficients, plate temperatures, powder conductivity; the temperature
+coefficient of the surface tension, the expansion coefficient of the liquid, the drag
+constant and the recoil coefficient; for 316L the beam and every thermal property. None
+of them has been varied: by decision of the author the study of the process inputs is a
+separate, later study.
 
 **Not done in this part.**
 
 | item | state |
 |---|---|
-| melt-pool flow (plan stage E) and its separate report section (decision D3) | not implemented |
+| deforming free surface (keyhole), powder particles | not planned in this part (decision D2) |
+| build column with flow | not run: about 9 h for four layers at 10 um on the host; the single tracks carry the flow result |
+| refit of the heat source with flow | not done (section 6.5: the two fit cases move in opposite directions) |
 | network routes (plan stage F) beyond the single-track surrogate of section 6.3: a network for the thermal field itself (PINN, PINN with FE correction), network routes on the grain and mechanics stages | not implemented |
-| case K3, tensile test of a cube of the predicted and of the measured grain structure against (benzing 2025 tensiledata) | not run; crystal-plasticity parameters of as-built alloy 718 were not sourced (decision D7) |
+| case K3 on a cube of the measured 3-D EBSD structure | not run (the calibration uses a random texture; the simulated structure is run once) |
 | case K4, process stress of the alloy 718 column | not run; the 316L case shows the capability |
 | thermography comparison (time above melting, cooling rate) | compared with a summary reduced by the author's toolkit (Table 10); the NIST maps were not re-reduced, and the solid cooling rate is not evaluated with NIST's definition |
-| fine-mesh runs (K1 at 5 um, the full column, 316L at 4 um) | decks shipped, not run (section 8.3) |
-| full 316L run at the paper's resolution (decision D8) | deck shipped, not run |
-| multi-device execution for mechanics, the implicit solve and network training | not implemented (section 8.2) |
+| fine-mesh runs (K1 at 5 um beyond one case, the full column, 316L at 4 um) | decks shipped, not run (section 8.3; decision of the author) |
+| multi-device execution for mechanics and the implicit solve | not implemented (section 8.2) |
 | scaling on several GPUs | not measured (one GPU on the host) |
-| seeds | every stochastic result here is one realization |
-| in PINNACLE: graded `box_mesh`, parity-harness cases for the new decks, batched path of the `kalidindi` material | open |
+| process-parameter study, sensitivity of the assumed inputs | later study (decision of the author) |
+| end-to-end example decks of the chain shipped with PINNACLE | planned once the capabilities are complete |
+| in PINNACLE: graded `box_mesh`, parity-harness cases for the new decks, batched path of the `kalidindi` material, the 0-D inverse calibration route on a polycrystal | open |
 
 ## References
 
 Process physics and reviews: khairallah-2016-meltflow; rosenthal-1946-moving;
-voller-1987-mushy. Process chains with phase field: yang-2021-grain; chadwick-2021-grain;
+voller-1987-mushy. Flow: chorin-1967-compressibility; ghia-1982-cavity;
+devahldavis-1983-natural; amin-2024-heatsource; nishi-2024-density. Process chains with phase field: yang-2021-grain; chadwick-2021-grain;
 liu-2018-sitespecific; liu-2020-integration; grilli-2022-elimination; hu-2022-residual;
 hu-2025-process; sun-2026-coupled; chen-2019-microscale. Chains with cellular automata and
 Monte Carlo: gandin-1994-cellular; rolchigo-2022-exaca; rolchigo-2022-uncertainty;

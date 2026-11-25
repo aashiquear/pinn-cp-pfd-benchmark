@@ -236,3 +236,93 @@ Layer means against the height (z in um: sigma_xx, sigma_yy in MPa): 3.9: -429, 
 88.7: 223, 188; 96.4: 228, 83; 104.1: 183, -53. Paper, Figure 15d, read by eye: about
 -420 / -400 at the bottom, sign change near 30 / 22 um, maxima about +130 / +95, zero at
 the top.
+
+## 11. Case K1 at 5 um, case 0 (cost and mesh check, PINNACLE 4827247)
+
+706 s on the host GPU for 588,000 elements and 1,920 steps (23 s at 10 um: the cost is
+linear in elements times steps, 6.3e-7 s per element step). Depth 117.6 um and width
+133.3 um (mean of the two isotherms) against 118.2 and 133.7 um at 10 um: the 10 um
+result is converged in the mesh within 0.5 %. The depth error against the measurement
+(-15 %) is therefore not a mesh error.
+
+## 12. Flow stage: inputs, verification, first track (PINNACLE ADR 0052)
+
+**Decisions of the author, 2026-11-25:** multi-GPU and flow next; coarse meshes only
+(fine decks are shipped, the author runs them on 8 x H200 after the push); an animation
+stack is kept for every run; three seeds for stochastic cases; the process-parameter
+study is later; K3 starts from the toolkit's calibrated tensile CP set and gets its own
+calibration study with PINNACLE.
+
+**Flow inputs of alloy 718** (deck `k1_flow_template.i`, study `k1_flow_study_h10.i`):
+
+| quantity | value | provenance |
+|---|---|---|
+| liquid density | 7,578 kg/m3 | `reported_table` of (amin 2024 heatsource), read through a literature extraction tool, not from the PDF; (nishi 2024 density) measured 7,430 |
+| viscosity | 5.3 mPa s | the same table of (amin 2024 heatsource) |
+| d gamma / dT | -1.1e-4 N/(m K) | `assumed` (value in common use; not sourced) |
+| volumetric expansion of the liquid | 5e-5 /K | `assumed` (value of the author's toolkit) |
+| drag constant A | 1e8 /s, eps 1e-3 | `assumed` (toolkit) |
+| recoil coefficient | 0.54 with the evaporation constants of the heat loss | `assumed` |
+| artificial sound speed | 25 m/s | numerical |
+| upwind factor | 1 (first order) | numerical |
+
+**Verification** (PINNACLE examples, tier 2 / 3): lid-driven cavity Re 100, 40 x 40:
+-0.2148 / +0.1802 / -0.2540 against -0.2109 / +0.1753 / -0.2453 (ghia 1982 cavity);
+side-heated cavity Ra 1e4: Nu 2.2433, u 16.21, v 19.68 against 2.243, 16.178, 19.617
+(devahldavis 1983 natural); thermocapillary layer: interior within 0.007 of the closed
+form, surface speed -0.212 against -0.25 (band).
+
+**Two defects found on the first track and corrected** (kept as a record):
+
+1. Drag as an explicit point term: non-finite fields after 7 steps (a liquid node next to
+   solid quadrature points sees `dt D = 1e4`). Now a nodal backward-Euler step.
+2. Heat advection as `C u . grad T`: the stored energy grew to 1.68 times the supplied
+   energy by 1.2 ms and went on growing after the beam had left; the pool was 220 um wide
+   and never froze. The discrete velocity is divergence free only weakly. Now the
+   conservative form: stored / supplied = 0.917 from 450 us to the end (the rest is the
+   surface loss). The run with the first form is void.
+
+**Case 0 with flow, no recoil, conduction-calibrated source (one run, 507 s):** depth
+116.1 um, width 162.7 um (conduction 118.2 / 133.7; measured 139.7 / 136.3); largest
+speed 1.35 m/s; peak temperature 6,100 to 6,500 K. With recoil (trial of 150 us): largest
+speed 3.3 m/s, peak temperature 4,870 K.
+
+**Seven tracks with flow and recoil** (`results/lpbf/in718/k1/flow_h10`, 505 to 512 s
+each): depth / width in um and error against the measurement: case 0 124.4 (-11.0 %) /
+134.3 (-1.4 %); 1.1 131.1 (-42.3) / 116.0 (+9.2); 1.2 119.2 (+16.3) / 147.1 (+3.8);
+2.1 111.5 (+1.6) / 122.7 (+8.7); 2.2 135.9 (-23.0) / 142.9 (-8.5); 3.1 134.0 (-19.3) /
+140.6 (+4.7); 3.2 114.2 (-2.3) / 126.4 (-2.3); rms 21.0 % / 6.3 %. Peak temperatures
+4,312 to 5,293 K. Case 0: stored / supplied energy 1.004 with the losses on; with the
+losses off 1.009 with flow and 1.008 without (300 us runs): the flow adds 0.1 %.
+
+## 13. Case K3: targets, starting set, calibration (2026-11-25)
+
+Targets from the raw NIST records (`scripts/lpbf_k3_targets.py`,
+`data/lpbf/in718/k3_tensile_mean_curve.csv`, `k3_tensile_summary.json`): 8 specimens,
+gauge 3 mm; E 128.1 +/- 5.3 GPa (100 to 400 MPa fit; NIST 123.6), yield 687.3 +/- 3.3 MPa
+(NIST 690.7), ultimate 951.6 +/- 9.2 MPa, strain at ultimate 0.246 +/- 0.020; mean curve
+to 21.9 %.
+
+Starting set from the toolkit's `calibrations/in718/tensile_cp.json` (Voce: g0 227.217,
+gs 666.333, h0 1407.207 MPa, a 3.1017, q 1.4, gdot0 1e-3, m 0.05, C 250/160/120 GPa;
+Taylor, 400 grains, rms 18.5 MPa there): tau_c0 224.72 MPa, k1 0.12866, y_c 3.6411 nm
+(rho0 1e10, alpha0 0.3, mu 81 GPa, b 0.254 nm assumed). Only this tensile set of the
+toolkit is used.
+
+PINNACLE's 0-D inverse route (`cp_constitutive`, `[Calibration] mode = inverse`) was
+tried with a Taylor polycrystal and a strain table: 1.8 GPa at 0.1 % strain, negative
+stresses; not used, not investigated.
+
+Gauss-Newton (log parameters, 5 % finite differences, damping 1e-3, 88 points from 1 %):
+rms 66.58, 31.26, 3.59, 2.75, 2.662, 2.661 MPa. Calibrated: tau_c0 263.365 MPa,
+k1 0.0526896, y_c 1.48908 nm. Jacobian condition 39 to 95.
+
+Three seeds with the calibrated set: rms 2.66 / 7.16 / 8.46 MPa; yield 696.5 / 690.3 /
+698.5; 5 %: 832.4 / 824.9 / 837.4; 10 %: 891.1 / 883.9 / 898.4; 20 %: 941.4 / 936.4 /
+953.3 MPa; initial slope 219.6 / 217.9 / 219.7 GPa.
+
+**316L hardening correction.** While deriving equation 18 the same derivation of the
+316L deck was found wrong: its k1 = 4.0e-3 (y_c 0.52 nm) gives the saturation of the
+paper's law but a hardening rate lower by S = 1 + 11 q = 16.4. Corrected to k1 = 0.065155,
+y_c = 8.2581 nm; the earlier result is kept in `results/lpbf/ss316l/mechanics_h8_k1_low`
+and the case is rerun.
