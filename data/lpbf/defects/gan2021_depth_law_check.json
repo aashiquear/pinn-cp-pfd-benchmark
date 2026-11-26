@@ -1,0 +1,24 @@
+{
+ "rows": 87,
+ "sets": {
+  "Al6061, spot size 88 um": 9,
+  "SS316, spot size 110 um": 7,
+  "Ti6, spot size 140 um": 23,
+  "Ti64, spot size 95 um": 48
+ },
+ "keyhole_number_range": [
+  1.5458918331484346,
+  31.38972358061504
+ ],
+ "absorptivity_range": [
+  0.12344629712840621,
+  0.6657817611936991
+ ],
+ "law": "e / r0 = 0.4 (Ke - 1.4)",
+ "r2_of_the_law": 0.9766841445354134,
+ "rms_of_the_law_in_e_over_r0": 0.39312388861998254,
+ "least_squares_line": {
+  "slope": 0.3969127525807824,
+  "onset": 1.0151125676033685
+ }
+}

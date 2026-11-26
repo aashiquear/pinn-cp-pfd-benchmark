@@ -890,6 +890,162 @@ set, nothing fitted) against the random-texture polycrystal and the measurement.
   runs end to end; its property prediction is only as good as the grain structure, and
   that needs the fine column. One cube of one column realization.
 
+### 6.7 Heat-source depth from the keyhole number (reported beside the fitted depth)
+
+The conduction model of section 6.2 has one fitted penetration depth (45 um) for all
+tracks, and its computed depth changes by 15 um over tracks whose measured depth changes
+by 125 um. The keyhole number (gan 2021 keyhole)
+
+$$Ke = \frac{\eta P}{(T_l - T_0)\,\pi\,\rho c_p\,\sqrt{\alpha V r_0^3}}$$
+
+compares the absorbed power with what conduction carries away from the spot, and the
+depth of the vapor depression follows $e/r_0 = 0.4\,(Ke - 1.4)$ in that paper. PINNACLE
+takes the decay length of the source from it, $\delta = e/2$ per track, never below one
+element (`beam_heat_source penetration_model = keyhole_number`, PINNACLE ADR 0055). No
+depth is fitted. Material values are those of the decks at the liquidus
+($\rho c_p = 6.35$ MJ/(m$^3$ K), $k = 26.8$ W/(m K)), $T_0 = 296.65$ K.
+
+**Check of the criterion.** Recomputed with PINNACLE's function on the 87 measurements
+of that paper (Ti-6Al-4V at two spot sizes, Al6061, 316L; its Supplementary Data 1), the
+law reproduces the measured keyhole depths with $R^2 = 0.977$ (rms 0.39 in $e/r_0$; a
+free line through the same data gives a slope of 0.397 and an onset of 1.02). The
+absorptivity in those rows is the measured one, between 0.12 and 0.67.
+
+![Figure 9](../../figures/lpbf/defects_keyhole_number.png)
+
+**Figure 9.** Depth over beam radius against the keyhole number. Gray: keyhole depths
+of (gan 2021 keyhole) with their measured absorptivity; line: the depth law; stars: the
+measured MELT depths of the seven NIST tracks, placed at the keyhole number three
+assumed absorptivities give.
+
+**Table 19.** Keyhole number of the seven NIST tracks for three absorptivities (0.7724:
+the value of the conduction fit of section 6.2; 0.50 and 0.35: assumed, the range
+measured on 316L in that paper is 0.36 to 0.66). Regimes of the paper: conduction below
+1.4, keyhole above 6.
+
+| line | spot radius (um) | measured depth, width (um) | width / depth | Ke at 0.35 | Ke at 0.50 | Ke at 0.7724 | depth law at 0.50 (um) |
+|---|---|---|---|---|---|---|---|
+| 0 | 33.5 | 139.7, 136.3 | 0.98 | 9.8 | 13.9 | 21.5 | 168 |
+| 1.1 | 24.5 | 227.2, 106.2 | 0.47 | 15.6 | 22.3 | 34.4 | 205 |
+| 1.2 | 41.0 | 102.4, 141.7 | 1.38 | 7.2 | 10.3 | 15.9 | 146 |
+| 2.1 | 33.5 | 109.7, 112.9 | 1.03 | 8.7 | 12.5 | 19.3 | 148 |
+| 2.2 | 33.5 | 176.5, 156.1 | 0.88 | 10.7 | 15.3 | 23.6 | 186 |
+| 3.1 | 33.5 | 166.1, 134.3 | 0.81 | 11.1 | 15.9 | 24.6 | 194 |
+| 3.2 | 33.5 | 116.9, 129.4 | 1.11 | 8.4 | 12.0 | 18.5 | 142 |
+
+![Figure 10](../../figures/lpbf/k1_keyhole_source.png)
+
+**Figure 10.** Depth and width of the seven tracks, computed against measured, for the
+fitted depth of section 6.2 and for the keyhole-number depth with two absorptivities in
+$Ke$. Dashed: 10 %.
+
+**Table 20.** Conduction model with three source depths, 10 um mesh (error in %; the
+source absorptivity is 0.7724 in all three).
+
+| line | fitted depth 45 um: depth, width | keyhole law, 0.7724 in $Ke$: depth, width | keyhole law, 0.50 in $Ke$: depth, width |
+|---|---|---|---|
+| 0 | $-15.4$, $-1.9$ | $+39.2$, $-26.3$ | $+16.1$, $-11.7$ |
+| 1.1 | $-44.3$, $+18.6$ | $+4.5$, $-18.5$ | $-12.8$, $+0.6$ |
+| 1.2 | $+9.2$, $-1.2$ | $+65.8$, $-24.1$ | $+37.7$, $-9.6$ |
+| 2.1 | $+0.2$, $+7.6$ | $+52.3$, $-19.3$ | $+27.7$, $-2.8$ |
+| 2.2 | $-29.6$, $-7.9$ | $+24.6$, $-32.3$ | $+3.0$, $-18.5$ |
+| 3.1 | $-25.5$, $+5.3$ | $+34.0$, $-24.2$ | $+11.8$, $-8.4$ |
+| 3.2 | $-4.9$, $-3.7$ | $+43.3$, $-23.9$ | $+18.5$, $-10.0$ |
+| rms | 23.4, 8.6 | 41.8, 24.5 | 21.1, 10.4 |
+| range of the computed depth (um) | 110 to 127 | 167 to 238 | 139 to 198 |
+
+- **All seven tracks are in keyhole mode**, for any absorptivity from 0.35 up (Table
+  19). This is the reason a conduction pool with one source depth cannot follow them.
+- **The measured melt depths follow the published law** when the absorptivity in $Ke$
+  is between 0.35 and 0.50 (Figure 9): the alloy 718 tracks then lie in the band of the
+  keyhole depths of the other alloys. With the absorptivity of the conduction fit
+  (0.7724) they lie far below the law: that value is a fitted parameter of a flat-surface
+  source and not the absorptivity of the keyhole number.
+- **As a source depth, the law carries the dependence on the spot size and on the
+  energy input that the fitted constant misses.** With 0.50 in $Ke$ the computed depth
+  spans 139 to 198 um (measured 102 to 227; fitted constant: 110 to 127), the deepest
+  track is 13 % too shallow (fitted constant: 44 %), and the rms error of the depth is
+  21.1 % without a fitted depth against 23.4 % with one. The shallow tracks are now
+  too deep (up to 38 %) and the widths are 10 % too small.
+- **It is not a parameter-free prediction.** The result depends on the absorptivity
+  put into $Ke$ (41.8 % against 21.1 % rms for 0.7724 and 0.50) and on the share of
+  the keyhole depth taken as the decay length (0.5, not varied). The paper measures the
+  absorptivity; for alloy 718 at these conditions no measurement is used here. The
+  fitted-depth result of section 6.2 stays the reference of this report.
+
+### 6.8 Defect indicators
+
+The models resolve no pore: the surface of the pool is flat, powder particles are not
+modeled and the element (10 um) is larger than most pores. What the runs hold are the
+quantities the published criteria are written in. The service `defect_indicators`
+(PINNACLE ADR 0055) reports them at the end of a run. Every entry is an indicator with a
+literature threshold, not a porosity prediction.
+
+**Table 21.** Indicators, their inputs and what was found.
+
+| defect | indicator (threshold) | input | finding in this report |
+|---|---|---|---|
+| lack of fusion | deposited material that never melted, as connected voids | process state of the run | none at the build condition; grows with the hatch (Table 22) |
+| lack of fusion | overlap index $(H/W)^2+(L/D)^2$ (above 1) (tang 2017 lackoffusion) | pool width $W$, depth $D$ of the run; hatch $H$, layer $L$ | 0.3 to 0.6 at the build hatch; crosses 1 where unmelted material appears |
+| keyhole mode | keyhole number (above 6) (gan 2021 keyhole) | beam, material at the liquidus, absorptivity | all seven tracks and the build condition (Table 19) |
+| keyhole mode | normalized enthalpy $\eta P/(\pi\rho c_pT_m\sqrt{\alpha Vr_0^3})$ (above $\pi T_b/T_m = 6.2$) (king 2014 keyhole) | the same | 5.9 to 12.7 at an absorptivity of 0.35: above the threshold for six of seven tracks |
+| keyhole mode | pool width over depth (at or below 1.5) | pool of the run | measured: 0.47 to 1.38, all below 1.5 |
+| balling | pool length over width (at or above 2.3) (yadroitsev 2010 singletrack) | pool of the run | 2.1 to 5.4 in every run: not informative here (below) |
+
+**Lack of fusion against the hatch spacing.** Two powder layers of 40 um on the plate,
+three tracks per layer at the build parameters, the same track positions in both layers
+(no rotation, the unfavorable case), conduction model at 10 um. The hatch is the only
+change (decks `decks/lpbf/in718/defects/lof_hatch*_h10.i`; about 9 min each on the GPU
+host). The build used 110 um.
+
+**Table 22.** Unmelted material between the outer track axes and the overlap index of
+the same run (pool width and depth of each track as the run gives them).
+
+| hatch (um) | unmelted share of the deposited material | voids (largest equivalent diameter) | pool width, depth (um) | overlap index, range over the six tracks |
+|---|---|---|---|---|
+| 110 | 0 | 0 | 160 to 250, 110 to 130 | 0.29 to 0.60 |
+| 150 | 0.0001 | 1 (12 um, one element) | 160 to 210, 110 to 120 | 0.62 to 1.01 |
+| 190 | 0.106 | 2 (101 um) | 160, 110 to 120 | 1.52 to 1.54 |
+| 230 | 0.294 | 2 (147 um) | 150 to 160, 110 | 2.20 to 2.48 |
+
+- **The two lack-of-fusion indicators agree.** Unmelted material appears between a
+  hatch of 150 and 190 um, where the overlap index of the same runs crosses 1 (1.01 at
+  150 um with one unmelted element, 1.5 at 190 um with 10.6 %). They are not
+  independent in their inputs (both come from the same temperature field), but they are
+  different statements: one counts elements, the other is a geometric rule on two pool
+  dimensions.
+- **At the build condition nothing stays unmelted**: none of the 30,976 deposited
+  elements of the scanned patch in the three column runs of section 6.4, and none in
+  the hatch series at 110 um. This is the expected result for a dense build; it is not
+  a test of the indicator, which the hatch series is.
+- **The voids are unmelted powder, resolved to the element.** A void of 100 um here
+  is a strip of powder between two tracks over both layers. The model has no powder
+  packing and no flow into the gap, so the numbers are an upper bound of what a real
+  pool would leave, and nothing below 10 um exists.
+- **Keyhole mode is indicated for every track** by the keyhole number and by the
+  measured aspect ratio; the conduction pool of section 6.2 has a width over depth of
+  1.0 to 1.25 and the same flag. Whether a keyhole leaves pores is a question of its
+  stability (the cited paper reports almost no porosity below $Ke$ of about 16 and a
+  chaotic keyhole above 30); with an absorptivity of 0.35 to 0.50 the tracks lie at 7
+  to 22. No pore count exists for these tracks to compare with.
+- **The balling ratio is not informative with this model.** The computed pool is 430 to
+  510 um long on a 500 um track (it does not reach a steady length) and three widths
+  long in the hatch series, so the rule flags every run, the build condition included. A length from a conduction pool that holds
+  its heat too long (section 6.4) cannot carry this criterion.
+- **Not covered:** gas pores, the pinch-off of pores at a keyhole tip, humping, spatter
+  and cracking. Cracking indices need a solid-fraction curve of the alloy and are the
+  next stage; pore transport and a deforming surface are open.
+
+**Data for a later benchmark of the indicators** (downloaded, not yet used; sources
+and licences in `data/lpbf/defects/raw/*/SOURCE.md`): the keyhole depths of
+(gan 2021 keyhole) used above; a compilation of melt-pool modes with 169 rows for alloy
+718 and 305 for 316L (labels by the compilers, not measured porosity); a literature
+compilation of relative density against process parameters (233 rows for alloy 718,
+312 for 316L, mixed density methods); per-pore lists from X-ray CT of three build
+conditions of alloy 718 (NIST mds2-3083, columns undocumented). No open table of
+cracking against process parameters was found, and the AM Bench 2022 CT record holds
+gray values only, no pore table.
+
 ## 7. 316L single track: process stress with crystal plasticity
 
 The case of (grilli 2022 elimination) with the substitute inputs of section 3.2, on the
@@ -966,6 +1122,26 @@ paper's values are read from its Figure 15 (color scales and curve) by eye.
   means were $-429$ / $-472$ MPa at the bottom and $+248$ / $+422$ MPa at most: the
   correction raises the stresses by 7 to 20 % and does not change the reading.
 
+**Table 16a.** The same run on three grain realizations (844 Voronoi grains of 16 um,
+uniform random orientations; seed 1 is Table 16). Standard deviation of three values.
+
+| quantity (MPa) | seed 1 | seed 2 | seed 3 | mean $\pm$ sd |
+|---|---|---|---|---|
+| layer mean at the bottom, $\sigma_{xx}$ | $-461$ | $-481$ | $-468$ | $-470 \pm 10$ |
+| layer mean at the bottom, $\sigma_{yy}$ | $-516$ | $-498$ | $-549$ | $-521 \pm 26$ |
+| largest tensile layer mean, $\sigma_{xx}$ | $+296$ | $+321$ | $+318$ | $+311 \pm 14$ |
+| largest tensile layer mean, $\sigma_{yy}$ | $+479$ | $+488$ | $+481$ | $+483 \pm 5$ |
+| layer mean at the top surface, $\sigma_{xx}$ | $+221$ | $+193$ | $+197$ | $+203 \pm 15$ |
+| layer mean at the top surface, $\sigma_{yy}$ | $-23$ | $-37$ | $-26$ | $-29 \pm 7$ |
+| von Mises stress, mean of the volume | 756 | 764 | 763 | $761 \pm 4$ |
+| largest element mean of $\sigma_{xx}$ | 2,570 | 2,450 | 2,628 | |
+| wall time on 8 CPU threads (s) | 5,540 (16 threads, shared) | 6,869 | 6,891 | |
+
+- **The layer means do not depend on the grain realization** beyond 5 % (26 MPa at
+  most); the differences from the published values in Table 16 are 100 to 400 MPa. The
+  grain realization is therefore not what separates this result from the paper's. The
+  local extremes move by 100 to 200 MPa with the seed.
+
 ## 8. Cost, devices and the standalone decks
 
 ### 8.1 Cost of the runs of this report
@@ -1003,8 +1179,8 @@ name table.
 
 Checked on the one GPU of the host: pools that name the GPU twice, and the GPU twice with
 the CPU, reproduce the single-device field to $4\times10^{-15}$ (13.1 s single; 14.7 s
-and 18.6 s pooled, the cost of the transfers). **No speed-up has been measured**: that
-needs a node with several GPUs.
+and 18.6 s pooled, the cost of the transfers). A speed-up needs a node with several GPUs
+(measured below).
 
 **Network training on the pool.** The forward pass of a network splits its batch of
 points over the same pool (PINNACLE ADR 0051): every device receives a block of rows and a
@@ -1038,8 +1214,66 @@ point evaluation of every crystal-plasticity solve with the batched law. It does
 cover the linear solves (sparse factorization on the host, the larger part of a mechanics
 step on a fine mesh), the host-side part of the implicit slip update, the implicit block
 executioner `pf_fem_transient`, and the J2 and `kalidindi` materials. **No speed-up has
-been measured for any of the three paths**: the host has one GPU, where a pool costs 5 to
-60 % more than the single device. The scaling is to be measured on the multi-GPU node.
+been measured on the host**, which has one GPU, where a pool costs 5 to 60 % more than the
+single device. The measurement on four separate GPUs follows; the network path was not
+measured there.
+
+**Measurement on four GPUs (cloud node, 2026-11-26).** One container with four NVIDIA
+A10G cards (24 GB each) and 8 CPU cores, PyTorch 2.15 with CUDA, float64; script
+`scripts/modal_multigpu.py`. The case is the single track with melt-pool flow of
+section 6.5 on finer meshes, run for a fixed number of steps with `devices` naming the
+first one, two or four cards.
+
+**Table 17a.** Explicit executioner on one, two and four GPUs.
+
+| case | 1 GPU | 2 GPUs | 4 GPUs |
+|---|---|---|---|
+| 5 um, 588,000 elements: wall time of 200 steps (s) | 306 | 358 | 279 |
+| the same, 100 steps (s), two series | 169, 169 | 192, 191 | 149, 146 |
+| per step, from the difference of 200 and 100 steps (s) | 1.37 | 1.66 | 1.30 |
+| largest difference of the final temperature to one GPU (K) | | 0.0 | 0.0 |
+| 3.5 um, 1,720,000 elements: per step in the solver, split part (s) | 2.1 | | 1.7 |
+
+**Table 17b.** Where a run of 30 steps at 5 um spends its time (profile of the main
+thread).
+
+| part | 1 GPU | 4 GPUs |
+|---|---|---|
+| set-up on the host, once (element geometry, lumped operators) | 35 s | 35 s |
+| element loop on the devices, per step | 0.71 s | 0.49 s |
+| services and bookkeeping on the host, per step (the remainder of 1.37 s and 1.30 s) | about 0.7 s | about 0.8 s |
+
+- **The pool is correct on separate cards.** The tensors of every slot are on its card,
+  and one, two and four cards give the same field.
+- **It is not useful for this solver at these sizes.** Four cards change the wall time
+  by $-9$ to $-14$ %, two cards by $+13$ to $+17$ %. The part of a step that is split
+  gains a factor 1.4 on four cards at 588,000 elements and 1.2 at 1.7 million: the gain
+  does not grow with the size of the mesh.
+- **Two causes were ruled out and one remains open.** A larger share of CPU for the
+  container (8 cores in place of the default share) changed nothing. Assembling the
+  nodal residual on each card and sending only nodal arrays, in place of element arrays
+  assembled on the first card, changed nothing (PINNACLE working tree; kept, since it
+  moves eight times less data). What limits the split part is not identified: the
+  kernels are sequences of several hundred tensor operations issued from Python by one
+  thread per card, and a plain loop of large operations on four cards from four threads
+  reached a factor 2.6 over the same work done one card after another in the same
+  container. A design with one process per card, or kernels compiled into fewer
+  operations, is the candidate; neither is built.
+- **About half of a step is serial work on the host** (copies of the fields for the
+  services, a nodal volume recomputed in every step, the lumped update), which no
+  number of cards shortens. The profile attributes 0.35 s per step of it to named
+  functions; the rest was not resolved. At 100 steps the one-time set-up on the host (35 s) is also a fifth of the
+  run; in a production run of several thousand steps it is negligible.
+- **Mechanics.** The tensile cube of case K3 at 4,096 elements (32,768 points, three
+  load steps) took 141, 143 and 142 s on one, two and four cards: no change. The
+  sparse solve and the host-side part of the slip update are not on the pool.
+- **Cost.** 4.66 US dollars metered for all runs of this measurement (seven runs,
+  four cards at 1.10 dollars per card and hour plus CPU and memory), covered by
+  account credits; nothing was billed.
+- **What this means for a node with eight GPUs.** As built, the device pool will not
+  shorten the fine runs. The use of several cards that works today is one case per
+  card (seeds, tracks, parameter sets side by side): the fine column decks fit on one
+  card of 141 GB.
 
 ### 8.3 Standalone decks
 

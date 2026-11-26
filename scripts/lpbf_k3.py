@@ -268,6 +268,50 @@ def cmd_cube(run_dir: Path, out: Path, corner: list[float], edge: float) -> None
           f"solid fraction of the cube {keep.sum() / max(inside.sum(), 1):.3f}")
 
 
+def cmd_ebsd(volume: Path, out: Path, corner_um: list[float], edge_um: float, stride: int) -> None:
+    """Cut a cube out of the NIST 3-D EBSD volume (build coordinates) as an orientation point file.
+
+    `corner_um`: lower corner in the build frame, x and y measured from the corner of the
+    volume, z from the plate top (z = 0 of the record). Every `stride`-th voxel is kept.
+    """
+    import h5py
+
+    with h5py.File(volume, "r") as h:
+        container = h["DataContainers/EBSDDataContainer"]
+        geometry = container["_SIMPL_GEOMETRY"]
+        origin = np.asarray(geometry["ORIGIN"][()], dtype=float)
+        spacing = np.asarray(geometry["SPACING"][()], dtype=float)
+        low = np.array([corner_um[0], corner_um[1], corner_um[2] - origin[2]])
+        first = np.ceil(low / spacing - 0.5).astype(int)
+        count = np.floor(edge_um / spacing).astype(int)
+        sl = tuple(slice(int(first[d]), int(first[d] + count[d]), stride) for d in (2, 1, 0))
+        euler = np.asarray(container["CellData/EulerAngles"][sl], dtype=float)
+        sample = np.asarray(container["CellData/SampleVoxels"][sl])[..., 0] > 0
+    if not sample.all():
+        raise SystemExit(f"the cube is not inside the sample: {sample.mean():.3f} of its voxels are")
+    index = [np.arange(first[d], first[d] + count[d], stride) for d in (0, 1, 2)]
+    centers = [((index[d] + 0.5) * spacing[d] - low[d]) * 1e-6 for d in (0, 1, 2)]
+    zz, yy, xx = np.meshgrid(centers[2], centers[1], centers[0], indexing="ij")
+    angles = np.degrees(euler.reshape(-1, 3)) % 360.0
+    phi2, big = euler[..., 2].ravel(), euler[..., 1].ravel()
+    # crystal direction along the build direction (Bunge, sample -> crystal: third column)
+    direction = np.abs(np.stack([np.sin(phi2) * np.sin(big), np.cos(phi2) * np.sin(big), np.cos(big)], axis=1))
+    direction.sort(axis=1)
+    poles = {"100": np.array([0, 0, 1.0]), "110": np.array([0, 1, 1.0]) / np.sqrt(2), "111": np.ones(3) / np.sqrt(3)}
+    texture = {k: float((direction @ v >= np.cos(np.radians(15.0))).mean()) for k, v in poles.items()}
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("w") as fh:
+        fh.write(f"# 3-D EBSD of NIST mds2-2767 ({volume.name}), build frame; cube corner x, y = "
+                 f"{corner_um[0]}, {corner_um[1]} um from the corner of the volume, z = {corner_um[2]} um above "
+                 f"the plate top; edge {edge_um} um; every {stride}. voxel ({spacing[0] * stride:g} x "
+                 f"{spacing[1] * stride:g} x {spacing[2] * stride:g} um); Bunge angles in degrees\n")
+        fh.write("x,y,z,phi1,Phi,phi2,grain_id\n")
+        for i, (x, y, z, a) in enumerate(zip(xx.ravel(), yy.ravel(), zz.ravel(), angles)):
+            fh.write("%.6e,%.6e,%.6e,%.4f,%.4f,%.4f,%d\n" % (x, y, z, *a, i))
+    print(f"wrote {out}: {angles.shape[0]} voxels; build direction within 15 deg of "
+          f"<100>, <110>, <111>: {texture['100']:.3f}, {texture['110']:.3f}, {texture['111']:.3f}")
+
+
 def main() -> None:
     args = sys.argv[1:]
     if len(args) >= 2 and args[0] == "run":
@@ -277,6 +321,9 @@ def main() -> None:
                       int(args[3]) if len(args) > 3 else 6, args[4] if len(args) > 4 else "")
     elif len(args) == 7 and args[0] == "cube":
         cmd_cube(Path(args[1]), Path(args[2]), [float(v) for v in args[3:6]], float(args[6]))
+    elif len(args) in (7, 8) and args[0] == "ebsd":
+        cmd_ebsd(Path(args[1]), Path(args[2]), [float(v) for v in args[3:6]], float(args[6]),
+                 int(args[7]) if len(args) == 8 else 1)
     elif len(args) >= 3 and args[0] == "figure":
         cmd_figure(Path(args[1]), Path(args[2]), args[3:])
     else:

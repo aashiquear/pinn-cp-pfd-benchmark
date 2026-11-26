@@ -72,6 +72,9 @@ def cmd_run(deck: Path, overrides: list[str]) -> None:
     for name, util in cfg.get("utilities", {}).items():
         if "record_file" in util and not applied.get(f"utilities.{name}.record_file"):
             util["record_file"] = str(target / "process_state.npz")
+        for key, name_ in (("series_file", "temperature_series.npz"), ("state_series_file", "consolidated_series.npz")):
+            if key in util and not applied.get(f"utilities.{name}.{key}"):
+                util[key] = str(target / name_)
     os.chdir(deck.parent)
     runner = Runner(cfg)
     runner.build()
@@ -97,6 +100,16 @@ def cmd_run(deck: Path, overrides: list[str]) -> None:
         if frames else np.zeros((0, 0), dtype=np.float16),
         snapshot_temperature=np.stack([np.asarray(f["temperature"], dtype=np.float32).ravel() for f in frames])
         if frames else np.zeros((0, 0), dtype=np.float32),
+            **(
+            {
+                "velocity": np.asarray(result["velocity"], dtype=np.float32),
+                "snapshot_velocity": np.stack(
+                    [np.asarray(f["velocity"], dtype=np.float16) for f in frames]
+                ),
+            }
+            if frames and "velocity" in frames[0]
+            else {}
+        ),
     )
     with (target / "history.csv").open("w", newline="") as fh:
         keys = ["step", "t", "dt", "temperature_max", "eta_max"]

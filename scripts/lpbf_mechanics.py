@@ -2,6 +2,7 @@
 """Part V: run a process-stress deck (crystal plasticity under a temperature history).
 
 usage: scripts/lpbf_mechanics.py <deck.i> run [key=value ...] | summary
+       scripts/lpbf_mechanics.py cooldown <series.npz> <out.npz> <temperature K> <time s>
 
   run      run the PINNACLE deck in this process and write, into its output_dir:
            fields.npz (nodes, connectivity, displacement, the Cauchy stress and the
@@ -10,6 +11,9 @@ usage: scripts/lpbf_mechanics.py <deck.i> run [key=value ...] | summary
            step: time, Newton iterations, cutbacks, mean stress, temperature range, molten
            points), wall.json. `key=value` overrides a deck key (recorded in wall.json).
   summary  print the final mean and extreme stresses from fields.npz
+  cooldown copy a temperature series and append one frame of uniform temperature at the
+           given time: the cool-down of the block to the plate temperature, which the
+           thermal run does not step through
 
 PINNACLE must be importable (PYTHONPATH).
 """
@@ -129,7 +133,27 @@ def cmd_summary(deck: Path, overrides: list[str]) -> None:
     (out_dir(cfg, deck) / "stress_summary.json").write_text(json.dumps(report, indent=1))
 
 
+def cmd_cooldown(series: Path, out: Path, temperature: float, time: float) -> None:
+    """Append one frame of uniform temperature to a stored series (the cool-down to the plate)."""
+    data = np.load(series)
+    times, values = data["times"], data["values"]
+    if time <= times[-1]:
+        raise SystemExit(f"the cool-down time {time} is not after the last frame {times[-1]}")
+    extra = {k: data[k] for k in data.files if k not in ("times", "values")}
+    np.savez_compressed(
+        out,
+        times=np.append(times, time),
+        values=np.concatenate([values, np.full((1, values.shape[1]), temperature, dtype=values.dtype)]),
+        **extra,
+    )
+    print(f"wrote {out}: {times.size + 1} frames, last frame {temperature} K at {time} s "
+          f"(last computed frame: {times[-1]:.6g} s, {values[-1].min():.1f} to {values[-1].max():.1f} K)")
+
+
 def main() -> None:
+    if len(sys.argv) == 6 and sys.argv[1] == "cooldown":
+        cmd_cooldown(Path(sys.argv[2]), Path(sys.argv[3]), float(sys.argv[4]), float(sys.argv[5]))
+        return
     if len(sys.argv) < 3 or sys.argv[2] not in ("run", "summary"):
         raise SystemExit(__doc__)
     deck = Path(sys.argv[1]).resolve()

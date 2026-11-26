@@ -199,6 +199,8 @@ def cmd_decks(deck: Path, cfg: dict, overrides: dict | None = None, tag: str | N
             "FLOW_SUBSTEPS": substeps,
             "DGAMMA_DT": f"{float(study.get('surface_tension_gradient', 0.0)):.4e}",
             "RECOIL": f"{float(study.get('recoil_coefficient', 0.0)):g}",
+            "KEYHOLE_ETA": f"{float(study.get('keyhole_absorptivity', study['absorptivity'])):.5f}",
+            "KEYHOLE_SHARE": f"{float(study.get('keyhole_depth_share', 0.5)):g}",
             "SNAPSHOTS": max(1, int(round(float(study.get("frame_interval", 3.0e-5)) / dt))),
         }
         text = template

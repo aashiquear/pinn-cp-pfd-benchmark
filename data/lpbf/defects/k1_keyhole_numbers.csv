@@ -1,0 +1,8 @@
+line,power_W,speed_mm_s,radius_um,depth_meas_um,width_meas_um,width_over_depth_meas,depth_over_radius_meas,Ke_0.7724,regime_0.7724,keyhole_depth_um_0.7724,normalized_enthalpy_0.7724,Ke_0.5,regime_0.5,keyhole_depth_um_0.5,normalized_enthalpy_0.5,Ke_0.35,regime_0.35,keyhole_depth_um_0.35,normalized_enthalpy_0.35
+0,285,960,33.5,139.7,136.3,0.9755,4.17,21.53,keyhole,269.7,17.56,13.94,keyhole,168,11.37,9.756,keyhole,112,7.959
+1.1,285,960,24.5,227.2,106.2,0.4674,9.274,34.42,keyhole,323.6,28.08,22.28,keyhole,204.7,18.18,15.6,keyhole,139.1,12.72
+1.2,285,960,41,102.4,141.7,1.383,2.498,15.9,keyhole,237.8,12.97,10.29,keyhole,145.9,8.397,7.205,keyhole,95.21,5.878
+2.1,285,1200,33.5,109.7,112.9,1.029,3.276,19.26,keyhole,239.3,15.71,12.47,keyhole,148.3,10.17,8.726,keyhole,98.17,7.118
+2.2,285,800,33.5,176.5,156.1,0.8848,5.267,23.58,keyhole,297.3,19.24,15.27,keyhole,185.8,12.45,10.69,keyhole,124.4,8.718
+3.1,325,960,33.5,166.1,134.3,0.8085,4.957,24.55,keyhole,310.2,20.03,15.89,keyhole,194.2,12.96,11.13,keyhole,130.3,9.075
+3.2,245,960,33.5,116.9,129.4,1.107,3.49,18.51,keyhole,229.2,15.1,11.98,keyhole,141.8,9.774,8.387,keyhole,93.62,6.842

@@ -38,3 +38,9 @@ archive/results/
 data/literature/
 *.pdf
 decks/crystallization/walls_rough/*.msh
+.venv-modal/
+decks/lpbf/in718/k4/grains_k2_column_r2.csv
+# downloaded third-party defect datasets: only the source notes are tracked
+data/lpbf/defects/raw/**
+!data/lpbf/defects/raw/*/
+!data/lpbf/defects/raw/*/SOURCE.md
