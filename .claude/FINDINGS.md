@@ -1376,3 +1376,32 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - Not done: column with flow, K4, K3 on the measured EBSD cube, three seeds for 316L,
   pool for linear solves and `pf_fem_transient`, any multi-GPU timing (one GPU here).
   The author runs the fine decks on another system after the push.
+
+## Part V, 2026-11-26: third stage (surface correction, defects, K4, EBSD cube, four GPUs)
+
+- PINNACLE f4eefa4 (local): ADR 0054 (surface nodes under unbuilt layers, process_state
+  on the flow kernels, unbuilt material in the stress stage), ADR 0055 (defect
+  indicators, keyhole-number source depth), documentation of the chain. Uncommitted:
+  per-device assembly in `pf_fem_explicit._pool_rows`.
+- The device pool is correct on four separate GPUs and gives no useful speed-up
+  (4 x A10G: -9 to -14 % wall time; two cards slower). Ruled out: CPU share, transfer of
+  element arrays, device placement. Not identified: the limit of the split part. Do not
+  promise scaling on the H200 x 8 node; one case per card works.
+- Modal: client in `.venv-modal/`; budget 30 USD, 4.66 metered so far (credits). The
+  image build fails when an uploaded file changes during the build; the image needs
+  jsonschema and PINNACLE's `schemas/`.
+- The calibrated K3 set belongs to its mesh (one element per grain): on the measured
+  EBSD cube at 6 um it is 7.5 % too soft at yield.
+- A resistance factor far below 1 with a slip exponent of 20 makes a thermal-load run
+  diverge (f^-20). K4 uses a floor of 0.60 and a cut-off temperature of 1,273 K.
+- K4 at 20 um is not feasible on the host (57 min for a quarter step).
+- The keyhole number needs the true absorptivity; the fitted source absorptivity
+  (0.7724) puts the NIST tracks far off the published depth law, 0.35 to 0.50 puts them
+  on it.
+- The balling ratio is not informative with this model's pool length.
+- The defect service measures a pool per scan segment; liquid left by earlier tracks and
+  material a neighbouring pool melts late had to be excluded (two corrections).
+- Loaded full pytest runs with OMP_NUM_THREADS=6 failed two network tests that pass
+  alone; do not set a thread limit for the full suite.
+- Not done: stage 3 (cracking indices), recalibration on the measured structure, the
+  flow-column analysis (run in progress), animations of the flow column.

@@ -350,3 +350,36 @@ PINNACLE after the flow stage: 037245e (ADR 0053, crystal-plasticity points on t
 device pool; identical on CPU slots, 2e-13 relative on repeated GPU slots; 16.3 / 17.9 /
 26.1 s for one, two CPU and two GPU slots: no gain on one GPU) and f720f35 (example chain
 `examples/applications/lpbf_process_chain`, four decks: 64, 197, 9, 441 s).
+
+## 15. Third stage (2026-11-25/26): surface correction, defects, K4, EBSD cube, four GPUs
+
+PINNACLE f4eefa4 (ADR 0054, 0055, documentation). Decks, scripts and results of every
+run: `docs/run_ledger.md`.
+
+- **Surface under unbuilt layers (ADR 0054).** Second run of the column
+  (`k2_column_h10_r2.i`): 391 grains, median 37.7 um, time above melting 2.375 ms
+  (before: 378, 36.8 um, 2.39 ms). The correction changes the 10 um result little.
+- **Column with flow.** Check of 1.4 ms: finite, 2.65 m/s, 1.016 s per step; the pool
+  reaches the sides of the 600 um block, so the deck has velocity walls on the cut sides.
+- **Keyhole number.** Material values at the liquidus: rho c_p = 6.3473e6 J/(m3 K),
+  k = 26.8 W/(m K); T_0 = 296.65 K (tracks), 353.15 K (build). The depth law
+  e / r0 = 0.4 (Ke - 1.4) was recomputed on the 87 rows of Supplementary Data 1 of
+  (gan 2021 keyhole): R2 = 0.977. The absorptivity there is measured (0.12 to 0.67); the
+  values 0.50 and 0.35 used for alloy 718 are `assumed`.
+- **Keyhole-number source depth.** Decay length = e / 2, smallest value 10 um, source
+  absorptivity 0.7724 (`derived`, the conduction fit). Depth rms 41.8 % (0.7724 in Ke)
+  and 21.1 % (0.50); fitted depth: 23.4 %.
+- **Lack of fusion.** Hatch 110 / 150 / 190 / 230 um: unmelted share 0 / 0.0001 / 0.106 /
+  0.294; overlap index crosses 1 between 150 and 190 um.
+- **316L, three seeds.** Layer means within 26 MPa.
+- **K3 on the measured structure.** Cube of NIST mds2-2767 (2 um volume, every second
+  voxel, x, y from 400, 424 um of the volume corner, z 200 to 320 um above the plate):
+  yield 638.9 MPa (measured 690.7).
+- **K4.** `assumed`: expansion 13e-6 /K + 5e-9 /K2, resistance factor 1.0 / 0.85 / 0.60
+  at 800 / 923 / 1,073 K and constant above, cut-off 1,273 K, stiffness slope -3.5e-4 /K.
+  A resistance factor of 0.05 with the slip exponent 20 did not converge (factor 1e26 on
+  the slip rate).
+- **Four GPUs (Modal, 4 x A10G).** Identical fields; no useful speed-up (Table 17a, b of
+  the report); 4.66 USD metered, covered by credits.
+- **Datasets** for the defect indicators: `data/lpbf/defects/raw/*/SOURCE.md` (the data
+  files are not tracked).
