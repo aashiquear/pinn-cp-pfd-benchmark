@@ -1405,3 +1405,23 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   alone; do not set a thread limit for the full suite.
 - Not done: stage 3 (cracking indices), recalibration on the measured structure, the
   flow-column analysis (run in progress), animations of the flow column.
+
+## 2026-11-26 (later): device pool, cracking indicators
+
+- **Several GPUs: the limit is the single Python process.** Four separate processes,
+  one per A10G card, each with a quarter of the 588,000-element flow track, run at
+  0.303 s per step each, the same as one quarter alone (0.306 s); the whole mesh on one
+  card takes 1.255 s. The thread pool of ADR 0050 gave about 1.15. Speed and a mesh
+  larger than one card both need domain decomposition (each process owns its part).
+  The author wants both; stages proposed, go-ahead pending.
+- **Cracking indicators (PINNACLE ADR 0056).** Material frozen by the layer reset or
+  still liquid at the end of a run has no freezing record: a cracking case needs a
+  cool-down until `liquid_elements` is zero. In the 600 um block the conduction pool of
+  three tracks stays liquid for 1.7 ms after the laser.
+- **The casting threshold of the pressure-drop criterion (2 kPa) is exceeded
+  everywhere** at an arm spacing of 1 um (MPa by shrinkage alone): relative maps only.
+- **The gamma-Laves eutectic of alloy 718 is near 1185 C**, not 1198 C (that value
+  belongs to INCOLOY 909 in the same paper).
+- **The workstation CPU is too slow for a 100,000-element thermal block** (22 min
+  without finishing; 15 to 18 min on the host GPU beside the flow column).
+

@@ -45,12 +45,15 @@ image = (
 app = modal.App("pinnacle-device-pool-scaling", image=image)
 
 
-def _run(script: str, deck: str, overrides: list[str], out: str, profile: bool = False) -> dict:
+def _run(script: str, deck: str, overrides: list[str], out: str, profile: bool = False,
+         visible: str | None = None) -> dict:
     import os
     import subprocess
     import time
 
     env = dict(os.environ, PYTHONPATH="/work/pinnacle/src")
+    if visible is not None:
+        env["CUDA_VISIBLE_DEVICES"] = visible
     tic = time.time()
     proc = subprocess.run(
         ["python", *(["-m", "cProfile", "-o", f"{out}.prof"] if profile else []),
@@ -134,6 +137,48 @@ def measure_l4(counts: list[int], steps: int, mesh_um: float, mechanics: bool = 
 def measure_h100(counts: list[int], steps: int, mesh_um: float, mechanics: bool = True,
                  profile: bool = False) -> dict:
     return _measure(counts, steps, mesh_um, mechanics, profile)
+
+
+@app.function(gpu="A10G:4", cpu=8.0, memory=32768, timeout=2400)
+def processes(steps: list[int], mesh_um: float) -> dict:
+    """What one process per card could reach: the track with flow as one process on one
+    card (whole mesh), as one process on one card with a quarter of the elements, and as
+    four such processes at the same time, one per card. No exchange between the four:
+    the time of the last is the floor of a split into four processes that each own a
+    quarter of the mesh. Two step counts separate the set-up from the time per step."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    n = [int(round(v / mesh_um)) for v in (700.0, 300.0, 350.0)]
+    dt = 5.2869e-07 * (mesh_um / 10.0) ** 2
+    track = "decks/lpbf/in718/k1/cases/flow_h10/case0.i"
+
+    def one(tag: str, divisions: list[int], count: int, card: str, threads: int) -> dict:
+        row = _run(
+            "lpbf_run.py", track,
+            [f"mesh.divisions={json.dumps(divisions)}", f"executioner.dt={dt}",
+             f"executioner.end_time={dt * count}", "executioner.snapshots_every=0",
+             f"kernels.carried.mesh_size={mesh_um * 1e-6}", f"kernels.momentum.mesh_size={mesh_um * 1e-6}",
+             f"kernels.surface.band_thickness={mesh_um * 1e-6}",
+             f"kernels.marangoni.band_thickness={mesh_um * 1e-6}",
+             f"global.num_threads={threads}"],
+            f"/tmp/{tag}_{count}_{card}", visible=card,
+        )
+        return {k: row.get(k) for k in ("wall_s", "steps", "elements", "returncode", "stderr_tail")}
+
+    quarter = [n[0] // 4, n[1], n[2]]
+    report: dict = {"mesh_um": mesh_um, "divisions": n, "quarter_divisions": quarter}
+    for count in steps:
+        report[f"whole_one_card_{count}"] = one("whole", n, count, "0", 8)
+        report[f"quarter_one_card_alone_{count}"] = one("quarter", quarter, count, "0", 2)
+        with ThreadPoolExecutor(4) as ex:
+            rows = list(ex.map(lambda c: one("together", quarter, count, str(c), 2), range(4)))
+        report[f"four_quarters_together_{count}"] = rows
+    return report
+
+
+@app.local_entrypoint()
+def split(steps: str = "40,120", mesh: float = 5.0) -> None:
+    print(json.dumps(processes.remote([int(v) for v in steps.split(",")], mesh), indent=1))
 
 
 @app.function(gpu="A10G:4", cpu=8.0, memory=32768, timeout=900)

@@ -1070,9 +1070,9 @@ the same run (pool width and depth of each track as the run gives them).
   510 um long on a 500 um track (it does not reach a steady length) and three widths
   long in the hatch series, so the rule flags every run, the build condition included. A length from a conduction pool that holds
   its heat too long (section 6.4) cannot carry this criterion.
-- **Not covered:** gas pores, the pinch-off of pores at a keyhole tip, humping, spatter
-  and cracking. Cracking indices need a solid-fraction curve of the alloy and are the
-  next stage; pore transport and a deforming surface are open.
+- **Not covered:** gas pores, the pinch-off of pores at a keyhole tip, humping and
+  spatter. Solidification-cracking indicators are in section 6.10; pore transport and a
+  deforming surface are open.
 
 **Data for a later benchmark of the indicators** (downloaded, not yet used; sources
 and licences in `data/lpbf/defects/raw/*/SOURCE.md`): the keyhole depths of
@@ -1154,6 +1154,106 @@ elements, 3,447 of 3,600).
 - **What the case shows** is that the chain runs to the end on a layered build: the
   temperature and the consolidation history of the column load a crystal-plasticity body
   whose layers come into being as they are built.
+
+### 6.10 Solidification-cracking indicators
+
+A solidification crack starts in the last liquid films between grains: the solid network
+already carries strain, and liquid can no longer flow in to fill the opening. The
+thermal model resolves no film. It holds the gradient $G$ and the cooling rate
+$\dot T$ at which every element froze and the temperature of every element at every
+step. The service `cracking_indicators` (PINNACLE ADR 0056) turns these, with a curve of
+the solid fraction $f_s(T)$, into three published indicators:
+
+- the **time ratio** $t_V/t_R$ (clyne 1981 cracking): time between $f_s$ 0.90 and 0.99
+  over time between 0.40 and 0.90, per element;
+- the **steepness index**, the largest $|dT/d\sqrt{f_s}|$ up to the end of the mushy zone
+  (kou 2015 cracking), a property of the curve;
+- the **pressure drop over the mushy zone** by shrinkage and by deformation
+  (rappaz 1999 hottearing, their Eq. 12), per element, with the strain rate taken as the
+  thermal contraction rate, expansion times cooling rate.
+
+**Verification.** The pressure-drop integrals reproduce Figure 5 of
+(rappaz 1999 hottearing) for Al-Cu with the parameters of its Table I: peaks of 750 Pa
+(deformation) and 700 Pa (shrinkage) at 1.5 wt % Cu, against about 810 and 730 Pa at
+1.4 wt % read from the figure. The Al-Cu phase-diagram constants are textbook values
+chosen by me (partition coefficient 0.17, liquidus slope 3.0 K per wt %); the paper does
+not list them, so the agreement is to about 10 %.
+
+**Case.** Three tracks at the build parameters (285 W, 960 mm/s, hatch 110 um) on one
+powder layer of 40 um, conduction model at 10 um, followed by a cool-down until all
+material is solid (deck `decks/lpbf/in718/defects/cracking_hatch110_h10.i`; 3,200 steps,
+18 min on the GPU host). Two curves are evaluated on the same run:
+
+- *linear*: $f_s$ linear between the solidus and liquidus of the thermal model
+  (1528 to 1610 K);
+- *Scheil*: the Ni-Nb stand-in of alloy 718 (partition coefficient 0.48, liquidus slope
+  $-10.5$ K per wt %, 5 wt % Nb; ghosh 2018 cellular), with the remaining liquid frozen
+  at the gamma-Laves eutectic near 1185 C (cieslak 1990 comparison). It ends at 1458 K
+  with 7 % of eutectic.
+
+Assumed, with no measurement for this alloy at these rates: arm spacing 1 um, shrinkage
+factor 0.03, expansion $1.6\times10^{-5}$ /K, cavitation depression 2 kPa (the value of
+the paper, from castings). Viscosity 5.3 mPa s as in the flow decks.
+
+![Figure 12](../../figures/lpbf/defects_cracking_hatch110.png)
+
+**Figure 12.** Cracking indicators in the section across the three tracks (region
+between the outer track axes). Left: pressure drop over the mushy zone (logarithmic).
+Middle: time ratio. Right: the two solid-fraction curves, and the distribution of the
+time ratio with the value for a uniform cooling rate (dashed).
+
+**Table 24.** Cracking indicators of the 7,381 elements of the region (all of them froze
+by themselves). Median, with the 5th to 95th percentile in brackets.
+
+| quantity | linear curve | Scheil curve with eutectic |
+|---|---|---|
+| end of the mushy zone | 1530 K, $f_s$ 0.98 | 1458 K, $f_s$ 0.93 |
+| steepness index (K) | 162 | 2,798 |
+| time between $f_s$ 0.40 and 0.90 (us) | 195 | 501 |
+| time between $f_s$ 0.90 and 0.99 (us) | 26 | 117 |
+| time ratio $t_V/t_R$ | 0.138 (0.077 to 0.204) | 0.245 (0.118 to 0.335) |
+| the same for a uniform cooling rate | 0.160 | 0.291 |
+| pressure drop by shrinkage (MPa) | 2.5 | 4.4 |
+| pressure drop by deformation (MPa) | 0.05 | 0.55 |
+| total pressure drop (MPa) | 2.5 (0.31 to 59) | 5.0 (0.61 to 116) |
+| total, by depth below the surface: 0 to 40 / 40 to 80 / 80 to 140 um (MPa) | 13.7 / 2.5 / 0.6 | 26.8 / 4.8 / 1.2 |
+| share of elements above the cavitation depression of 2 kPa | 1.00 | 1.00 |
+
+Gradient and cooling rate at freezing: $2.6\times10^{6}$ K/m ($0.4$ to $11\times10^{6}$)
+and $1.6\times10^{5}$ K/s ($0.9$ to $4.7\times10^{5}$); strain rate 2.5 /s.
+
+- **The curve decides the level, the thermal field the pattern.** The Scheil curve
+  gives a steepness index 17 times that of the linear curve, a time ratio 1.8 times and
+  a pressure drop twice as large. Both curves give the same map: every indicator comes
+  from the same $G$ and $\dot T$.
+- **The pressure drop is largest in the material that freezes last.** It rises from
+  0.6 MPa at the bottom of the pool to 14 MPa in the top 40 um (linear curve), because
+  the gradient falls from $6.7\times10^{6}$ to $0.9\times10^{6}$ K/m and the drop goes
+  with $1/G^2$ for the deformation part and $\dot T/G^2$ for the shrinkage part.
+  Shrinkage is 50 times (linear) and 8 times (Scheil) the deformation part.
+- **The time ratio points the other way**: it is smallest at the top (0.11 against 0.17
+  at the bottom, linear curve), where the cooling slows down late in the passage. The
+  two indicators do not rank the locations alike; they measure different things (time
+  available against feeding resistance).
+- **The cavitation threshold of castings carries no information here.** Every element
+  exceeds 2 kPa by two to four orders of magnitude, by shrinkage alone, so the largest
+  sustainable strain rate of the criterion is negative everywhere. With an arm spacing
+  near 1 um the permeability of the mushy zone is $10^{4}$ times smaller than in the
+  casting of the paper (100 um). The absolute value depends on the square of an assumed
+  spacing; the report is a relative map, not a statement that the material cracks.
+- **The thermal field behind it is the conduction pool of section 6.4**, which holds its
+  heat too long: the three pools merge and the last material freezes 1.7 ms after the
+  laser has left. Gradients and cooling rates of a pool with flow will differ.
+- **Material that did not freeze by itself has no indicator.** A first pass with two
+  layers on this block is void for this purpose: the change of layer sets the block to
+  the plate temperature in one step while the pool of the first layer is still liquid,
+  and the run ended with the second pool liquid. Only a thin shell had a record. The
+  service now skips such a step and drops the passages it cuts short.
+- **No measurement to compare with.** No open table of cracking against process
+  parameters for alloy 718 was found (section 6.8). The indicators are verified against
+  their definitions and one published curve, not validated on this alloy.
+- **Not covered:** the strain rate from the stress stage, crack propagation, liquation
+  and solid-state cracking.
 
 ## 7. 316L single track: process stress with crystal plasticity
 
@@ -1383,6 +1483,39 @@ thread).
   shorten the fine runs. The use of several cards that works today is one case per
   card (seeds, tracks, parameter sets side by side): the fine column decks fit on one
   card of 141 GB.
+
+**One process per card, each with its own part of the mesh (2026-11-26).** To find out
+whether the limit is the hardware or the single Python process, the same case was run
+as separate processes on the same four cards: the whole mesh on one card, a quarter of
+the elements (the block cut along the scan direction) on one card alone, and four such
+quarters at the same time, one process per card (`scripts/modal_multigpu.py::split`).
+The four processes do not exchange anything, so the last row is the floor of a
+domain-decomposed run, before the cost of exchanging the nodes shared by neighbours.
+Two step counts (40 and 120) separate the set-up from the time per step.
+
+**Table 17c.** Separate processes on four A10G cards, 5 um mesh.
+
+| run | elements per process | wall time of 40 / 120 steps (s) | per step (s) |
+|---|---|---|---|
+| whole mesh, one process, one card | 588,000 | 107.3 / 207.7 | 1.255 |
+| a quarter, one process, one card, alone | 147,000 | 27.2 / 51.7 | 0.306 |
+| four quarters at the same time, one process per card (slowest) | 147,000 | 27.8 / 52.0 | 0.303 |
+
+- **Four processes on four cards do not disturb each other**: the time per step of a
+  quarter is the same alone and with three neighbours. All elements advance one step in
+  0.30 s in place of 1.26 s, a factor 4.1, and the set-up shrinks by the same factor.
+  The limit of the pool of Table 17a is therefore the single Python process (its
+  threads and the serial work on the host), not the cards.
+- **Consequence for the design.** A speed-up on several cards and a mesh larger than
+  the memory of one card both need the same change: each process owns a part of the
+  mesh with its ghost nodes on its own card, and neighbours exchange the shared nodal
+  values every step. This is the design of the MPI codes built on Kokkos, where one
+  rank drives one GPU (PINNACLE keeps PyTorch as the portability layer). It is not
+  built; the present pool keeps the element arrays of the whole mesh on the first card
+  and the services of a deck hold the whole mesh on the host.
+- **Cost of this test.** 1.13 US dollars (account summary 4.28 before, 5.41 after),
+  covered by credits. The summary is the figure to go by for the total: 5.41 of the 30
+  dollars allowed.
 
 ### 8.3 Standalone decks
 

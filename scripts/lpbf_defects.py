@@ -6,6 +6,7 @@ usage: scripts/lpbf_defects.py law <gan supplementary data 1 .xlsx> <out.json>
        scripts/lpbf_defects.py figure <gan .xlsx> <tracks.csv> <out.png>
        scripts/lpbf_defects.py compare <out.png> <label>=<k1_cross_sections.csv> ...
        scripts/lpbf_defects.py column <column run dir> <x0> <y0> <x1> <y1> <plate top> [hatch layer width depth]
+       scripts/lpbf_defects.py cracking <run dir> <out.png> <out.csv> <name> [<name> ...]
 
   law      recompute the keyhole number of every row of the published keyhole-depth data
            (gan 2021 keyhole, Supplementary Data 1: power, measured absorptivity, speed,
@@ -22,6 +23,12 @@ usage: scripts/lpbf_defects.py law <gan supplementary data 1 .xlsx> <out.json>
   column   lack of fusion in a build-column run: deposited elements of the scanned patch
            (x0..x1, y0..y1, above the plate top) that never melted, as connected voids;
            with hatch, layer, pool width and depth also the overlap index
+
+  cracking for a run with `cracking_indicators` services that wrote cracking_<name>.json
+           and cracking_<name>.npz: one table row per solid-fraction curve (end of the
+           mushy zone, steepness index, time ratio, pressure drops) and a figure with
+           the curves, the maps of the pressure drop and of the time ratio in the
+           section across the tracks, and the distribution of the time ratio
 
 Material values of alloy 718 are those of the decks (docs/16_lpbf_notebook.md, section
 2): volumetric capacity and liquid conductivity at the liquidus. PINNACLE must be
@@ -233,6 +240,97 @@ def cmd_compare(out: Path, pairs: list[str]) -> None:
     print("wrote", out)
 
 
+def cmd_cracking(run_dir: Path, out: Path, table: Path, names: list[str]) -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LogNorm
+
+    reports = {n: json.loads((run_dir / f"cracking_{n}.json").read_text()) for n in names}
+    maps = {n: np.load(run_dir / f"cracking_{n}.npz") for n in names}
+    rows = []
+    for n in names:
+        r, sf = reports[n], reports[n]["solid_fraction"]
+        rows.append({
+            "curve": n, "elements": r["elements"],
+            "end_temperature_K": round(sf["end_temperature"], 1), "end_fraction": round(sf["end_fraction"], 3),
+            "steepness_index_K": round(r["steepness_index"], 0),
+            "time_ratio_uniform_cooling": round(r["time_ratio_at_constant_cooling_rate"], 3),
+            "time_ratio_median": round(r["time_ratio"]["median"], 3),
+            "time_ratio_p05": round(r["time_ratio"]["p05"], 3), "time_ratio_p95": round(r["time_ratio"]["p95"], 3),
+            "time_vulnerable_median_us": round(1e6 * r["time_vulnerable"]["median"], 2),
+            "time_relief_median_us": round(1e6 * r["time_relief"]["median"], 2),
+            "dp_shrinkage_median_MPa": round(1e-6 * r["pressure_drop_shrinkage"]["median"], 3),
+            "dp_deformation_median_MPa": round(1e-6 * r["pressure_drop_deformation"]["median"], 4),
+            "dp_total_p05_MPa": round(1e-6 * r["pressure_drop"]["p05"], 3),
+            "dp_total_p95_MPa": round(1e-6 * r["pressure_drop"]["p95"], 2),
+            "strain_rate_median_per_s": round(r["strain_rate"]["median"], 2),
+            "max_strain_rate_median_per_s": round(r["max_strain_rate"]["median"], 2),
+            "share_above_cavitation": round(r["share_above_cavitation"], 3),
+        })
+    table.parent.mkdir(parents=True, exist_ok=True)
+    with table.open("w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        writer.writeheader(); writer.writerows(rows)
+    for row in rows:
+        print(json.dumps(row))
+
+    fig, axes = plt.subplots(len(names), 3, figsize=(12.5, 3.0 * len(names)), squeeze=False)
+    centroid = maps[names[0]]["centroid"]
+    size = float(np.min(np.diff(np.unique(np.round(centroid[:, 0], 9)))))
+    plane = np.unique(np.round(centroid[:, 1], 9))
+    y0 = plane[np.argmin(np.abs(plane - 0.5 * (plane[0] + plane[-1])))]
+    pick = np.abs(centroid[:, 1] - y0) < 0.25 * size
+    xs, zs = np.unique(np.round(centroid[pick, 0], 9)), np.unique(np.round(centroid[pick, 2], 9))
+    extent = [1e6 * (xs[0] - size / 2), 1e6 * (xs[-1] + size / 2), 1e6 * (zs[0] - size / 2), 1e6 * (zs[-1] + size / 2)]
+
+    def image(values: np.ndarray) -> np.ndarray:
+        grid = np.full((zs.size, xs.size), np.nan)
+        ix = np.searchsorted(xs, np.round(centroid[pick, 0], 9))
+        iz = np.searchsorted(zs, np.round(centroid[pick, 2], 9))
+        grid[iz, ix] = values[pick]
+        return grid
+
+    drops = [maps[n]["pressure_drop_deformation"] + maps[n]["pressure_drop_shrinkage"] for n in names]
+    finite = np.concatenate([d[np.isfinite(d)] for d in drops]) * 1e-6
+    norm = LogNorm(vmin=float(np.percentile(finite, 1)), vmax=float(np.percentile(finite, 99)))
+    ratios = [maps[n]["time_ratio"] for n in names]
+    top = float(np.nanpercentile(np.concatenate(ratios), 97))
+    colors = ("tab:blue", "tab:red", "tab:green")
+    for i, n in enumerate(names):
+        ax = axes[i, 0]
+        im = ax.imshow(image(drops[i] * 1e-6), origin="lower", extent=extent, norm=norm, cmap="viridis", aspect="equal")
+        fig.colorbar(im, ax=ax, shrink=0.8, label="pressure drop (MPa)")
+        ax.set_title(f"{n}: pressure drop", fontsize=9)
+        ax = axes[i, 1]
+        im = ax.imshow(image(ratios[i]), origin="lower", extent=extent, vmin=0.0, vmax=top, cmap="magma", aspect="equal")
+        fig.colorbar(im, ax=ax, shrink=0.8, label="$t_V / t_R$")
+        ax.set_title(f"{n}: time ratio", fontsize=9)
+        for ax in axes[i, :2]:
+            ax.set_xlabel("x across the tracks (um)"); ax.set_ylabel("z (um)")
+    ax = axes[0, 2]
+    for n, color in zip(names, colors):
+        sf = reports[n]["solid_fraction"]
+        values = (sf["temperature"], sf["fraction"])
+        ax.plot(values[0], values[1], color=color, label=f"{n} (ends at {sf['end_temperature']:.0f} K, $f_s$ {sf['end_fraction']:.2f})")
+    ax.set_xlabel("temperature (K)"); ax.set_ylabel("solid fraction $f_s$"); ax.legend(fontsize=7)
+    ax.set_title("solid-fraction curves", fontsize=9)
+    if len(names) > 1:
+        ax = axes[1, 2]
+        bins = np.linspace(0.0, top, 60)
+        for n, r, color in zip(names, ratios, colors):
+            ax.hist(r[np.isfinite(r)], bins=bins, histtype="step", color=color, label=n)
+            ax.axvline(reports[n]["time_ratio_at_constant_cooling_rate"], color=color, lw=0.7, ls="--")
+        ax.set_xlabel("$t_V / t_R$ (dashed: uniform cooling rate)"); ax.set_ylabel("elements"); ax.legend(fontsize=7)
+        ax.set_title("distribution of the time ratio", fontsize=9)
+        for extra in axes[2:, 2]:
+            extra.axis("off")
+    fig.tight_layout()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=180)
+    print("wrote", out, "section at y =", y0)
+
+
 def main() -> None:
     a = sys.argv[1:]
     if len(a) == 3 and a[0] == "law":
@@ -243,6 +341,8 @@ def main() -> None:
         cmd_figure(Path(a[1]), Path(a[2]), Path(a[3]))
     elif len(a) in (7, 11) and a[0] == "column":
         cmd_column(Path(a[1]), [float(v) for v in a[2:6]], float(a[6]), [float(v) for v in a[7:]])
+    elif len(a) >= 5 and a[0] == "cracking":
+        cmd_cracking(Path(a[1]), Path(a[2]), Path(a[3]), a[4:])
     elif len(a) >= 3 and a[0] == "compare":
         cmd_compare(Path(a[1]), a[2:])
     else:
