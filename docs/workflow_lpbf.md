@@ -52,3 +52,21 @@ recorded in `wall.json`.
   numbers did not show it).
 - Runs on the GPU host use `backend = torch`, `use_gpu = true`, `precision = float64`,
   with `TORCH_BLAS_PREFER_HIPBLASLT=0` and `TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1`.
+
+## Additions of the second stage (2026-11-25)
+
+- **Flow.** A track deck with flow is the conduction deck plus two variables (velocity,
+  pressure) and four kernels; `k1_flow_template.i` is filled by the same script from a
+  study deck that also gives the artificial sound speed, the speed bound for the thermal
+  step and the surface-tension coefficient. Runs go through `scripts/lpbf_run.py`.
+- **Animations.** Every run made through `lpbf_run.py` or `lpbf_column.py` keeps a field
+  series (`snapshots_every` in the deck). `scripts/lpbf_animate.py` turns it into a GIF and
+  a PNG frame stack under `figures/lpbf/animations/`; a report figure of a transient is a
+  frame of that stack.
+- **Tensile case.** `scripts/lpbf_k3_targets.py` derives the target curve from the raw
+  records; `scripts/lpbf_k3.py` runs a cube deck, calibrates (one deck per run of every
+  iteration, written next to the start deck), draws the curves, and cuts a cube of grains
+  out of a column run.
+- **Seeds.** A grain realization is a deck of its own (`*_seed<n>.i`) with its own output
+  directory; three seeds per stochastic case.
+

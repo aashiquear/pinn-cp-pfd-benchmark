@@ -1351,3 +1351,28 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   Still owed (its section 9): melt-pool flow stage and its decks, network routes beyond the K1
   surrogate, K3, K4, fine-mesh runs (K1 5 um, full columns, 316L 4 um), multi-device
   execution outside `pf_fem_explicit`, GPU scaling, seeds, sensitivity of assumed inputs.
+
+## Part V, 2026-11-25 (evening): second stage done (flow, K3 calibration, three seeds, device pool)
+
+- PINNACLE `feat/multi-gpu-and-am-process` at f720f35 (local, not pushed): ADR 0051
+  (networks on the device pool), 0052 (melt-pool flow), 0053 (crystal-plasticity points
+  on the pool), Dirichlet `release_time`, example chain
+  `examples/applications/lpbf_process_chain`.
+- Flow traps: the mushy-zone drag must be nodal and implicit; the heat advection must be
+  the conservative form (the form `C u . grad T` created 68 % spurious energy).
+- 316L: the hardening rate derived first was 16.4 times too low; k1 = 0.065155,
+  y_c = 8.2581e-9 are the corrected values. The walls must be released
+  (`release_time`) before the stress is compared.
+- Nucleation seeds reached above the build surface until f720f35; the 10 um column runs
+  (three seeds) predate it; the standalone column decks set `process_state`.
+- K2 on three seeds: 371 +- 9 grains, median 37.7 +- 0.9 um; texture fractions vary by
+  0.06 to 0.08 with the seed. Not results at 10 um.
+- The 0-D inverse calibration route gave unphysical stresses for the dislocation-density
+  law; the K3 calibration is a finite-element Gauss-Newton in `scripts/lpbf_k3.py`.
+- Waiting on a host run with `until ! pgrep -f <script>` inside `ssh '...'` never ends:
+  the remote shell's own command line matches. Wait on the PID.
+- A broad PINNACLE pytest takes about 1 h and must not overlap source edits; regenerate
+  the syntax pages and goldens first.
+- Not done: column with flow, K4, K3 on the measured EBSD cube, three seeds for 316L,
+  pool for linear solves and `pf_fem_transient`, any multi-GPU timing (one GPU here).
+  The author runs the fine decks on another system after the push.

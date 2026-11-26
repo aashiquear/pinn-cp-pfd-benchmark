@@ -326,3 +326,27 @@ Three seeds with the calibrated set: rms 2.66 / 7.16 / 8.46 MPa; yield 696.5 / 6
 paper's law but a hardening rate lower by S = 1 + 11 q = 16.4. Corrected to k1 = 0.065155,
 y_c = 8.2581 nm; the earlier result is kept in `results/lpbf/ss316l/mechanics_h8_k1_low`
 and the case is rerun.
+
+## 14. Case K2 on three seeds; PINNACLE 037245e and f720f35 (2026-11-25)
+
+Decks `decks/lpbf/in718/k2/k2_column_h10.i` (seed 1), `_seed2.i`, `_seed3.i`; results
+`results/lpbf/in718/k2/column_h10`, `column_h10_seed2`, `column_h10_seed3` (not shipped).
+
+| quantity | seed 1 | seed 2 | seed 3 |
+|---|---|---|---|
+| grains / fragments | 378 / 340 | 375 / 344 | 361 / 383 |
+| not touching the plate | 258 | 249 | 244 |
+| nucleation events | 3,704 | 3,516 | 3,640 |
+| median / mean diameter (um) | 36.76 / 47.16 | 37.67 / 47.78 | 38.55 / 47.90 |
+| consolidated fraction | 0.9125 | 0.9126 | 0.9121 |
+| texture 100 / 110 / 111 | 0.192 / 0.157 / 0.195 | 0.134 / 0.110 / 0.082 | 0.288 / 0.267 / 0.115 |
+| wall (s) | 4,821 | 4,855 | 4,831 |
+
+The thermal summary is identical in the three runs. The three runs predate the
+nucleation correction of PINNACLE f720f35 (`undercooling_nucleation process_state`); the
+standalone column decks use it.
+
+PINNACLE after the flow stage: 037245e (ADR 0053, crystal-plasticity points on the
+device pool; identical on CPU slots, 2e-13 relative on repeated GPU slots; 16.3 / 17.9 /
+26.1 s for one, two CPU and two GPU slots: no gain on one GPU) and f720f35 (example chain
+`examples/applications/lpbf_process_chain`, four decks: 64, 197, 9, 441 s).

@@ -10,7 +10,7 @@ Plan:
 `docs/15_lpbf_process_modeling_plan.md`; notebook with provenance tables:
 `docs/16_lpbf_notebook.md`; reproduction: `docs/reproduce_lpbf.md`; every run:
 `docs/run_ledger.md`. PINNACLE revision: branch `feat/multi-gpu-and-am-process`, commits
-355b8d6 to 1ef059d (local).
+355b8d6 to f720f35 (local).
 
 ## Abstract
 
@@ -39,16 +39,17 @@ of the author's toolkit and calibrated by Gauss-Newton on a 216-grain polycrysta
 reproduce the measured tensile curve within 2.7 MPa rms; three grain realizations give a
 yield stress of 695 $\pm$ 4 MPa against 691 $\pm$ 3 MPa measured. A four-layer build
 column of 129,600 elements runs in 80 min; at its 10 um mesh the median grain diameter
-(37 um) is three times the measured one and its grains are selected toward
-$\langle100\rangle$, so that a cube cut from it is 15 % too soft at yield: grain size,
+(37.7 $\pm$ 0.9 um over three seeds) is three times the measured one, the texture
+fractions change with the seed by as much as they differ from the measurement, and a
+cube cut from the first column is 15 % too soft at yield: grain size,
 texture and the property predicted from them are not results of the coarse check. For
 the 316L track, after the relaxation stage of the published procedure, the stress pattern
 agrees with the published simulation, the compression below the track is 10 to 30 %
 larger and the tension in the track 2 to 5 times larger under substitute thermal and grain
 inputs. The explicit field solves and the training of every network can be split over
-several GPUs (NVIDIA CUDA and AMD ROCm) with results identical to one device; no speed-up
-could be measured on the one-GPU host, and the mechanics and implicit solves are not yet
-on several devices. Decks of the full-resolution cases (up to 23.8 million elements) are
+several GPUs (NVIDIA CUDA and AMD ROCm), as can the point evaluation of the
+crystal-plasticity solves, with results identical to one device; no speed-up could be
+measured on the one-GPU host, and the linear solves stay on the host. Decks of the full-resolution cases (up to 23.8 million elements) are
 shipped and have not been run.
 
 ## 1. Introduction
@@ -585,7 +586,8 @@ at first (1,226 s) before the four layers.
 direction along the build direction (inverse pole figure colors), in two vertical sections
 and one layer plane. Dashed line: top of the plate. White: powder or empty.
 
-**Table 9.** Grain statistics of the built material (above the plate), one realization.
+**Table 9.** Grain statistics of the built material (above the plate), seed 1 of the
+nucleation sites and plate grains (three seeds: Table 9a).
 A grain is a connected region of one order parameter of at least 8 elements.
 
 | quantity | one layer | four layers | measured (3-D EBSD) |
@@ -597,6 +599,24 @@ A grain is a connected region of one order parameter of at least 8 elements.
 | height along the build direction, median (um) | 85 | 40 | |
 | consolidated fraction of the volume above the plate | 0.21 | 0.91 | |
 | build direction within 15 degrees of $\langle100\rangle$, $\langle110\rangle$, $\langle111\rangle$ (volume fractions) | 0.08, 0.30, 0.33 | 0.19, 0.16, 0.20 | 0.10, 0.21, 0.10 (random: 0.10, 0.20, 0.14) |
+
+**Table 9a.** Four layers on three seeds (seed of the plate grains and of the nucleation
+sites; same deck otherwise). Standard deviation of three values (n - 1). The thermal
+history of Table 10 is the same in the three runs, because the grains do not act on the
+temperature.
+
+| quantity | seed 1 | seed 2 | seed 3 | mean $\pm$ sd |
+|---|---|---|---|---|
+| grains (fragments below 8 elements) | 378 (340) | 375 (344) | 361 (383) | 371 $\pm$ 9 |
+| grains that do not touch the plate | 258 | 249 | 244 | 250 $\pm$ 7 |
+| nucleation events | 3,704 | 3,516 | 3,640 | 3,620 $\pm$ 96 |
+| equivalent diameter, median (um) | 36.8 | 37.7 | 38.6 | 37.7 $\pm$ 0.9 |
+| equivalent diameter, mean (um) | 47.2 | 47.8 | 47.9 | 47.6 $\pm$ 0.4 |
+| consolidated fraction above the plate | 0.912 | 0.913 | 0.912 | 0.912 $\pm$ 0.000 |
+| within 15 degrees of $\langle100\rangle$ | 0.19 | 0.13 | 0.29 | 0.20 $\pm$ 0.08 |
+| within 15 degrees of $\langle110\rangle$ | 0.16 | 0.11 | 0.27 | 0.18 $\pm$ 0.08 |
+| within 15 degrees of $\langle111\rangle$ | 0.20 | 0.08 | 0.11 | 0.13 $\pm$ 0.06 |
+| wall time on the GPU host (s) | 4,821 | 4,855 | 4,831 | |
 
 **Table 10.** Thermal history at the build surface against the NIST staring-camera
 thermography of leg L9 (lane 2023 thermographydata; medians over 17 layers of three
@@ -618,8 +638,14 @@ builds, as reduced by the author's toolkit and not re-derived here).
   counted, so nothing below about 25 um can exist here; the measured median is 11.5 um.
   The fine decks of section 8.3 (5 and 2.5 um) are the ones to compare.
 - **Texture is not a result either.** The fractions change from layer one to layer four
-  by more than they differ from the measurement, they are volume fractions over 42 and
-  378 grains of one seed, and the nucleation parameters are assumed.
+  by more than they differ from the measurement, and the nucleation parameters are
+  assumed. Across three seeds (Table 9a) each fraction varies by 0.06 to 0.08, as much as
+  its distance from the measured value: with about 370 grains, a few large grains decide
+  the volume fraction (in seed 3 one $\langle100\rangle$ grain fills a third of the
+  section planes).
+- **What three seeds show.** Grain count, size and consolidated fraction repeat within
+  2.5 %; they are set by the mesh, the boundary width and the thermal history, not by
+  the seed.
 - **Thermal history.** The computed time above melting is 1.9 times the measured median,
   and the computed cooling rate at freezing is a third of the measured solid cooling
   rate. The two cooling rates are not the same quantity (NIST evaluates the solid over a
@@ -994,15 +1020,26 @@ device). On six example decks trained with and without a two-slot pool, three ag
 $10^{-11}$ or better; the other three differ by as much as the same decks differ between
 one and eight threads on one device (round-off amplified by the optimizer).
 
+**Crystal plasticity on the pool.** The crystal-plasticity law is evaluated for all
+quadrature points in one batched call; that call splits its points over the pool, with a
+copy of the material on every device (PINNACLE ADR 0053). All evaluations of a mechanics
+solve pass through it (stress, state update, the local iteration of the implicit slip
+update, the tangent), so the executioners did not change. Checked: a polycrystal cube
+pulled with the implicit and with the explicit state update gives the single-device
+stress, displacement and plastic strain on two and three slots (identical on CPU slots;
+a relative $2\times10^{-13}$ on the host with the GPU named twice and with GPU + CPU;
+16.3 s single, 17.9 s and 26.1 s pooled). The split is not made inside a differentiation
+graph (network training on the law, inverse calibration).
+
 **What the pool covers and what it does not.** It covers every deck that runs on
 `pf_fem_explicit` (the thermal, flow and grain stages of this report and the explicit
-phase-field decks of the framework) and the networks of every network executioner. It
-does not cover the crystal-plasticity solve (its implicit slip update is evaluated in
-NumPy on the host), the implicit block executioner (NumPy assembly, sparse solve on the
-host) or any linear solve. The framework-wide multi-device execution that was asked for
-is therefore done for the explicit field solves and for network training; the mechanics
-and implicit solves are open work, and moving their point evaluation onto device tensors
-comes before a pool can serve them.
+phase-field decks of the framework), the networks of every network executioner, and the
+point evaluation of every crystal-plasticity solve with the batched law. It does not
+cover the linear solves (sparse factorization on the host, the larger part of a mechanics
+step on a fine mesh), the host-side part of the implicit slip update, the implicit block
+executioner `pf_fem_transient`, and the J2 and `kalidindi` materials. **No speed-up has
+been measured for any of the three paths**: the host has one GPU, where a pool costs 5 to
+60 % more than the single device. The scaling is to be measured on the multi-GPU node.
 
 ### 8.3 Standalone decks
 
@@ -1050,6 +1087,12 @@ each has a checked coarse configuration of the same blocks.
   grains is set by the regrowth rate, the site density and the undercooling
   distribution, which are assumed here. Several grains share one order parameter and
   merge when they touch.
+- *Nuclei at the surface.* In the column runs of this report a nucleus that fires at the
+  build surface also marks grain-free nodes within its radius (15 um) above the surface,
+  in powder or empty space; such fragments are remelted when the next layer covers them
+  and remain at the last surface. Found after the runs (by the test of a PINNACLE example);
+  PINNACLE now restricts a seed to consolidated material when the nucleation block names
+  the process state, and the standalone column decks do. The 10 um runs were not repeated.
 - *Mesh.* At 10 um a grain boundary is 40 um wide; the measured median grain is 11.5 um.
   The column result is a statement about mechanisms and cost, not about grain size.
 - *Dwell between layers* is replaced by a reset of the block to the plate temperature.
@@ -1080,10 +1123,10 @@ separate, later study.
 | case K4, process stress of the alloy 718 column | not run; the 316L case shows the capability |
 | thermography comparison (time above melting, cooling rate) | compared with a summary reduced by the author's toolkit (Table 10); the NIST maps were not re-reduced, and the solid cooling rate is not evaluated with NIST's definition |
 | fine-mesh runs (K1 at 5 um beyond one case, the full column, 316L at 4 um) | decks shipped, not run (section 8.3; decision of the author) |
-| multi-device execution for mechanics and the implicit solve | not implemented (section 8.2) |
+| multi-device linear solves, `pf_fem_transient`, J2 and `kalidindi` materials | not implemented (section 8.2) |
 | scaling on several GPUs | not measured (one GPU on the host) |
 | process-parameter study, sensitivity of the assumed inputs | later study (decision of the author) |
-| end-to-end example decks of the chain shipped with PINNACLE | planned once the capabilities are complete |
+| end-to-end example decks of the chain shipped with PINNACLE | shipped: `examples/applications/lpbf_process_chain/` (a track with flow, two layers with grains, cooling and stress; four small decks and a README), not benchmark cases |
 | in PINNACLE: graded `box_mesh`, parity-harness cases for the new decks, batched path of the `kalidindi` material, the 0-D inverse calibration route on a polycrystal | open |
 
 ## References

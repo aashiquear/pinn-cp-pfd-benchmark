@@ -16,6 +16,9 @@
 #   Site density and undercooling are the assumed values of the coarse check: they are
 #   the parameters to calibrate against the measured grain size (median 11.5 um).
 #
+# One difference to the checked 10 um deck: the nucleation block names the process state, so
+# that a nucleus at the build surface does not reach into powder or empty space (the
+# 10 um runs of the report were made before that option existed).
 # Everything else (material tables, kernels, loading, units SI) is as in k2_column_h10.i,
 # whose header explains the blocks. Run:
 #     python3 scripts/lpbf_column.py decks/lpbf/in718/k2/<this deck> run
@@ -107,6 +110,7 @@
     undercooling_spread = 2.0        # assumed
     seed_radius         = 6.0e-6
     clear_above         = 200.0e-6   # the initial grains fill the plate only
+    process_state       = state      # a seed takes consolidated material only (PINNACLE after 037245e)
   []
 []
 
