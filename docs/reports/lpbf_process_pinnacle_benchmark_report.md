@@ -1084,6 +1084,77 @@ conditions of alloy 718 (NIST mds2-3083, columns undocumented). No open table of
 cracking against process parameters was found, and the AM Bench 2022 CT record holds
 gray values only, no pore table.
 
+### 6.9 Case K4: stress left by the process in the build column
+
+The block of case K2 as a crystal-plasticity body, loaded by the temperature history of
+the corrected column run (`k2_column_h10_r2.i`: the run of section 6.4 with the surface
+correction of PINNACLE ADR 0054; 391 grains, median diameter 37.7 um, time above melting
+2.38 ms, against 378, 36.8 um and 2.39 ms before the correction). The grains are those
+of that run. Layers that are not built yet and loose powder carry no stress: the
+consolidated share of the column run tells the stress stage which points are metal at
+which time (`thermal_load consolidated_function`). The crystal-plasticity set is the one
+calibrated in case K3. Stages as in the 316L case: the build with the four sides held,
+cool-down to the plate temperature, relaxation with two sides released.
+
+Mesh 20 x 20 x 9 elements (30 x 30 x 40 um, one element per layer), 262 load steps of
+100 us, 1,344 Newton iterations, 6 cutbacks, 12,538 s on 16 CPU threads.
+
+**Assumed, with no measurement of this report behind it:** thermal expansion
+$13\times10^{-6}$ /K with a slope of $5\times10^{-9}$ /K$^2$; a slip-resistance factor of
+1.0 to 800 K, 0.85 at 923 K and 0.60 from 1,073 K up; no stress above a cut-off of
+1,273 K (the material is treated as molten there); one stiffness factor with a slope
+of $-3.5\times10^{-4}$ /K.
+
+![Figure 11](../../figures/lpbf/k4_column_stress_h30.png)
+
+**Figure 11.** Case K4 after the relaxation. Top: $\sigma_{xx}$ of the elements in a
+vertical section and in one element layer of the build (gray: not consolidated). Bottom
+left: mean stress of each element layer of the consolidated material against the
+height. Bottom right: mean stress of the block over the run (four layers; the jump at
+the end of a layer is the reset of the block to the plate temperature).
+
+**Table 23.** Residual stress of the column after the relaxation (consolidated
+elements, 3,447 of 3,600).
+
+| quantity | value |
+|---|---|
+| layer mean $\sigma_{xx}$ / $\sigma_{yy}$ at the bottom of the plate, z = 20 um (MPa) | $-636$ / $-662$ |
+| height where the layer mean changes sign (um) | about 100 |
+| layer means in the upper plate and the four build layers, z = 140 to 340 um (MPa) | $+132$ to $+178$ / $+110$ to $+168$ |
+| layer mean $\sigma_{zz}$ (MPa) | $-7$ to $+1$ |
+| mean stress of the block before the release, at the plate temperature (MPa) | $+804$ / $+837$ (largest value of the run) |
+| mean stress of the block after the release (MPa) | $+2$ / $+2$ |
+| von Mises stress, mean, 95th percentile, maximum (MPa) | 436, 786, 1,227 |
+| equivalent plastic strain, mean and maximum | 0.014, 0.075 |
+| von Mises stress of the elements that are not consolidated, mean (MPa) | 92 |
+
+- **The pattern is that of the 316L case and of the published process-stress results:**
+  tension of 110 to 180 MPa in the built layers and the plate just below them,
+  compression in the plate further down (up to $-660$ MPa in the lowest element layer),
+  no stress along the build direction. The tension is nearly the same in all four
+  layers.
+- **While the walls are held the block carries about 0.8 GPa.** As in the 316L case
+  this is the reaction of the walls on a block that was heated and cooled as a whole,
+  not a residual stress; it vanishes when two walls are released.
+- **The jumps of the mean stress at the start of each layer are made by the model of
+  the dwell**, not by the process: the block is put back to the plate temperature in
+  one step when a layer ends (section 6.4), and with the walls held this cooling
+  appears as tension at once (620, 700 and 765 MPa after layers one to three), which
+  then relaxes by slip during the dwell to about 455, 535 and 605 MPa.
+- **What limits the result.** (1) One element per layer and 30 um in the plane: the
+  stress inside a layer and across a track is not resolved; the run on 20 um
+  (16,200 elements) needed 57 min for its first quarter step on this host and was
+  stopped. (2) The temperature dependence of the strength is assumed, and the cut-off
+  at 1,273 K was introduced for a numerical reason: with the exponent 20 of the slip law
+  a resistance factor $f$ multiplies the slip rate by $f^{-20}$, and a first version of
+  the deck with $f = 0.05$ at the solidus did not converge in its first step. (3) The
+  parameter set belongs to the mesh it was calibrated on (section 6.6). (4) The block is
+  cut out of the part; the measured residual strains of the build (NIST mds2-2711) are
+  at the scale of the bridge and are not compared. (5) One grain realization.
+- **What the case shows** is that the chain runs to the end on a layered build: the
+  temperature and the consolidation history of the column load a crystal-plasticity body
+  whose layers come into being as they are built.
+
 ## 7. 316L single track: process stress with crystal plasticity
 
 The case of (grilli 2022 elimination) with the substitute inputs of section 3.2, on the
@@ -1392,7 +1463,7 @@ separate, later study.
 | refit of the heat source with flow | not done (section 6.5: the two fit cases move in opposite directions) |
 | network routes (plan stage F) beyond the single-track surrogate of section 6.3: a network for the thermal field itself (PINN, PINN with FE correction), network routes on the grain and mechanics stages | not implemented |
 | case K3 on a cube of the measured 3-D EBSD structure | one cube run (Table 15a): 7.5 % too soft at yield; the calibration itself was not repeated on the measured structure |
-| case K4, process stress of the alloy 718 column | not run; the 316L case shows the capability |
+| case K4, process stress of the alloy 718 column | run on a mesh of one element per layer (section 6.9); the 20 um deck is shipped and was not finished |
 | thermography comparison (time above melting, cooling rate) | compared with a summary reduced by the author's toolkit (Table 10); the NIST maps were not re-reduced, and the solid cooling rate is not evaluated with NIST's definition |
 | fine-mesh runs (K1 at 5 um beyond one case, the full column, 316L at 4 um) | decks shipped, not run (section 8.3; decision of the author) |
 | multi-device linear solves, `pf_fem_transient`, J2 and `kalidindi` materials | not implemented (section 8.2) |
