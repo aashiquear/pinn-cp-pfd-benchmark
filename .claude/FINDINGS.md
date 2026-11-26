@@ -1441,4 +1441,10 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   single run is `(n,)`: never subtract fields of two runs without checking shapes
   (`(n,) - (n,1)` broadcasts to n x n; this froze the host and killed a cloud run).
   Cloud runs go through `scripts/memory_guard.py`, with `retries=0`.
+- **The whole chain runs on a cut mesh (PINNACLE ADR 0057 addendum).** Grains with
+  nucleation, service reports and the stress stage equal the single run. Linear solve
+  of the stress stage: GMRES over the parts from `gpumpi`, about 100 iterations per
+  solve at 4,096 elements; iteration counts grow with mesh and parts (no coarse space).
+- **Nucleation realizations changed once:** the order parameter of a nucleus is drawn
+  with its site. K2 column numbers of the report predate this.
 

@@ -1611,12 +1611,10 @@ of 20 and 60 steps (`scripts/modal_multigpu.py::cut`).
   PyTorch costs about 10 s whatever the number of ranks, so the whole process of 60
   steps gains a factor 2.7. A production run of thousands of steps sees the per-step
   factor.
-- **Scope.** `pf_fem_explicit` with Dirichlet and natural boundaries: heat with
-  melting, melt-pool flow, the process state of a layered build. Not yet: the grain
-  field (its random initial structure and its nucleation are drawn per process),
-  periodic boundaries, services other than the scan path and the process state (they
-  report per part), the stress stage (its sparse solve needs a distributed solver).
-  These are the next stages.
+- **Scope of this measurement.** Heat with melting and melt-pool flow. The grain
+  field, the reports of the services and the stress stage were added afterwards
+  (below); they are verified against the single run on the workstation, not yet
+  measured on several cards.
 - **Not tested**: the MPI transport of `gpumpi` (several nodes) and its CuPy and JAX
   array paths: none is installed on the machines of this study. More than four cards
   and a mesh beyond the memory of one card were not run.
@@ -1628,6 +1626,48 @@ of 20 and 60 steps (`scripts/modal_multigpu.py::cut`).
   to nodes times nodes. The decomposed run now returns the shapes of the single run,
   its tests compare shapes, and the cloud runs are wrapped in
   `scripts/memory_guard.py` with restarts switched off.
+**The whole chain on parts (2026-11-26, later).** Three additions make every stage of
+the chain run on a cut mesh (PINNACLE ADR 0057, addendum).
+
+- **Grain field and nucleation.** The random draws of the nucleation service (site,
+  critical undercooling, order parameter) are made for the nodes of the whole mesh, and
+  a part takes the rows of its nodes; a site fires in the part that owns its node and
+  all parts apply the seed. The random plate grains are placed in the box of the whole
+  mesh. Two layers with grains and nucleation on three parts: difference to the single
+  run $2\times10^{-14}$, the same 35 nucleation events.
+- **Reports and files.** The process state, the defect indicators and the cracking
+  indicators gather their element records on the first process at the end of a run
+  and write the record, the temperature series and the reports of a single run; the
+  pool numbers of every step are those of the whole mesh. Checked file by file on three
+  parts.
+- **Stress stage.** The linear system of a Newton step is no longer factorized as a
+  whole. It is solved by GMRES over the parts, with an exact solve inside each part and
+  the diagonal on the cuts as preconditioner. The solvers are part of `gpumpi` (also
+  conjugate gradients and BiCGStab) and work for any code that can apply its local
+  operator; no PETSc and no MPI is needed. A slip update that gives up at one point
+  makes all parts cut the step back together.
+
+**Table 17e.** The stress stage on parts against the single run (workstation, CPU).
+
+| case | parts | difference to the single run (displacement / stress, relative) | Newton iterations and cut-backs | wall time, single / parts (s) |
+|---|---|---|---|---|
+| stress after the track (240 elements, line search, 4 cut-backs, 12 increments) | 2 | $2\times10^{-10}$ / $6\times10^{-9}$ | the same | 214 / 158 |
+| polycrystal tensile cube (216 elements, implicit slip update, 19 cut-backs, 55 increments) | 3 | $2\times10^{-13}$ / $10^{-12}$ | the same | 134 / 126 |
+| the same cube at 4,096 elements, 2 load steps | 4 processes | $10^{-11}$ / $2\times10^{-11}$ | the same | 72 / 32 |
+
+- The differences are at the tolerance of the linear solve ($10^{-8}$ on the residual).
+- At 4,096 elements a linear solve takes 97 GMRES iterations on average. The single
+  run used 4 threads and the four processes 4 threads each, so the wall times show that
+  the iterative solve is not slower; they are not a scaling measurement.
+- **Iteration counts grow with the mesh and with the number of parts** (elastic block,
+  conjugate gradients to $10^{-10}$: 58 to 103 iterations at 4,131 unknowns and 85 to
+  153 at 28,611, for 2 to 8 parts; 161 and 323 with the plain diagonal). For meshes of
+  millions of unknowns a coarse-space correction will be needed; it is not built.
+- **Not measured:** the grain field and the stress stage on several GPUs.
+- **One change of behaviour:** the order parameter of a nucleus is now drawn with its
+  site, not at firing time. A given seed gives another realization of the nuclei than
+  the runs of section 6.4 (same statistics); those runs were not repeated.
+
 - **Cost.** 10.2 US dollars for this measurement (account summary 5.41 before, 15.63
   after), of which about 6.8 for the failed run and its restart on the dearer A100
   cards; 55 minutes of waiting for A10G and L4 nodes cost nothing. **Total of the
@@ -1709,7 +1749,7 @@ separate, later study.
 |---|---|
 | deforming free surface (keyhole), powder particles | not planned in this part (decision D2) |
 | build column with flow | run (section 6.11): the pool with flow fills the 600 um block, so the result is not representative; a block of about 1.2 mm is needed |
-| decomposed runs for the grain field, the services and the stress stage | not built: heat and flow run on several cards (section 8.2); random initial grains and nucleation per process, per-part reports and the sparse solve remain |
+| decomposed runs for the grain field, the services and the stress stage | built and verified against the single run on the workstation (section 8.2, Table 17e); not yet measured on several GPUs; a coarse space for the linear solve of large stress runs is open |
 | cracking indicators with the strain rate of the stress stage, and a validation set | not done (section 6.10) |
 | refit of the heat source with flow | not done (section 6.5: the two fit cases move in opposite directions) |
 | network routes (plan stage F) beyond the single-track surrogate of section 6.3: a network for the thermal field itself (PINN, PINN with FE correction), network routes on the grain and mechanics stages | not implemented |
