@@ -890,6 +890,44 @@ set, nothing fitted) against the random-texture polycrystal and the measurement.
   runs end to end; its property prediction is only as good as the grain structure, and
   that needs the fine column. One cube of one column realization.
 
+**The same test on the measured grain structure.** A cube of 120 um of the build
+itself: the orientation of every material point is taken from the serial-section 3-D
+EBSD of NIST (schwalbach 2024 sectioningdata; volume in build coordinates at 2 um,
+every second voxel, 24,300 voxels; 200 to 320 um above the plate; deck
+`k3_cube_ebsd_cube1.i`). Mesh 20 x 20 x 20 elements of 6 um, each quadrature point with
+the orientation of the nearest voxel; calibrated set, nothing fitted; 12,411 s on 8 CPU
+threads (407 Newton iterations, 4 cutbacks near yield).
+
+![Figure 7a](../../figures/lpbf/k3_tensile_ebsd_cube.png)
+
+**Figure 7a.** Engineering stress-strain curve of the cube of the measured structure,
+with the two cubes of Figure 7 and the measurement.
+
+**Table 15a.** Tensile response of the cube of the measured 3-D EBSD structure.
+
+| quantity | measured structure (3-D EBSD), 8,000 elements | simulated column, 1,728 elements | random texture, 216 grains in 216 elements | measured |
+|---|---|---|---|---|
+| 0.2 % yield stress (MPa) | 638.9 | 589.9 | 696.5 | 690.7 |
+| stress at 5 %, 10 %, 20 % (MPa) | 740.5, 785.8, 819.6 | 658.4, 694.8, 721.9 | 832.4, 891.1, 941.4 | 833.8, 890.3, 941.6 |
+| rms difference to the measured curve (MPa) | 104.8 | 193.8 | 2.7 | |
+| initial slope (GPa) | 190.0 | 152.7 | 219.6 | |
+| build direction within 15 degrees of $\langle100\rangle$, $\langle110\rangle$, $\langle111\rangle$ | 0.14, 0.10, 0.10 | | random: 0.10, 0.20, 0.14 | whole EBSD volume: 0.10, 0.21, 0.10 |
+
+- **With the measured grains the calibrated set is 7.5 % too soft at yield and 13 %
+  at 20 % strain.** It is closer to the measurement than the cube of the simulated
+  column (15 % and 23 %), as the grain structure is the real one.
+- **The remaining difference points at the calibration, not at the structure.** The
+  set was calibrated on 216 grains in 216 elements, one element per grain. A grain that
+  is one trilinear element cannot deform unevenly, which makes the aggregate stiffer;
+  the calibration absorbed that stiffness into the parameters. On a mesh that gives the
+  grains several elements the same parameters give a softer response. Two more causes
+  are not separated from it: this cube has fewer orientations near $\langle110\rangle$
+  and $\langle111\rangle$ than the whole measured volume (Table 15a, last row), and it
+  is one cube of 120 um.
+- **Consequence.** The parameter set of Table 13 belongs to its mesh. A calibration on
+  the measured structure at this resolution (one run of 3.4 h per function evaluation
+  here) is the consistent next step and was not done.
+
 ### 6.7 Heat-source depth from the keyhole number (reported beside the fitted depth)
 
 The conduction model of section 6.2 has one fitted penetration depth (45 um) for all
@@ -1353,7 +1391,7 @@ separate, later study.
 | build column with flow | not run: about 9 h for four layers at 10 um on the host; the single tracks carry the flow result |
 | refit of the heat source with flow | not done (section 6.5: the two fit cases move in opposite directions) |
 | network routes (plan stage F) beyond the single-track surrogate of section 6.3: a network for the thermal field itself (PINN, PINN with FE correction), network routes on the grain and mechanics stages | not implemented |
-| case K3 on a cube of the measured 3-D EBSD structure | not run (the calibration uses a random texture; the simulated structure is run once) |
+| case K3 on a cube of the measured 3-D EBSD structure | one cube run (Table 15a): 7.5 % too soft at yield; the calibration itself was not repeated on the measured structure |
 | case K4, process stress of the alloy 718 column | not run; the 316L case shows the capability |
 | thermography comparison (time above melting, cooling rate) | compared with a summary reduced by the author's toolkit (Table 10); the NIST maps were not re-reduced, and the solid cooling rate is not evaluated with NIST's definition |
 | fine-mesh runs (K1 at 5 um beyond one case, the full column, 316L at 4 um) | decks shipped, not run (section 8.3; decision of the author) |
