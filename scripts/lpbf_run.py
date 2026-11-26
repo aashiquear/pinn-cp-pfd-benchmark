@@ -14,6 +14,12 @@ Runs the deck in this process (PINNACLE on PYTHONPATH) and writes, into its outp
   wall.json    wall time, steps, mesh size, overrides
 
 `key=value` replaces a deck key by its dotted path, e.g. executioner.end_time=2e-4.
+
+With `global.ranks=N` or `global.rank_devices="cuda:0 cuda:1 ..."` (in the deck or as an
+override) the mesh is cut into parts and every part runs in its own process on its own
+device (PINNACLE ADR 0057, `pinnacle.parallel.run_decomposed`). The files are the same;
+history.csv then holds the services of rank 0 only (one part of the mesh), and wall.json
+lists the ranks with their devices, sizes, exchanges and wall times.
 """
 
 from __future__ import annotations
@@ -56,14 +62,29 @@ def main() -> None:
     target.mkdir(parents=True, exist_ok=True)
     cfg["global"]["output_dir"] = str(target)
     os.chdir(deck.parent)
-    runner = Runner(cfg)
-    runner.build()
-    tic = time.time()
-    result = runner.model.train()["composed"]
-    wall = time.time() - tic
-    problem = runner.model.composed
     names = [str(v) for v in cfg.get("variables", {})]
-    arrays = {"nodes": np.asarray(problem.mesh.nodes, dtype=float)}
+    decomposed = int(cfg["global"].get("ranks", 1)) > 1 or bool(cfg["global"].get("rank_devices"))
+    ranks = None
+    if decomposed:
+        from pinnacle.parallel import run_decomposed
+
+        tic = time.time()
+        out = run_decomposed(cfg)
+        total = time.time() - tic
+        ranks = out["ranks"]
+        wall = max(r["wall_s"] for r in ranks)
+        n_elements = out["n_elements"]
+        result = {"time": out["time"], "history": {"all": out["history"]}, "snapshots": out["snapshots"]}
+        result.update(out["fields"])
+        arrays = {"nodes": np.asarray(out["nodes"], dtype=float)}
+    else:
+        runner = Runner(cfg)
+        runner.build()
+        tic = time.time()
+        result = runner.model.train()["composed"]
+        wall = total = time.time() - tic
+        n_elements = int(runner.model.composed.mesh.n_elements)
+        arrays = {"nodes": np.asarray(runner.model.composed.mesh.nodes, dtype=float)}
     for name in names:
         if name in result:
             arrays[name] = np.asarray(result[name], dtype=np.float32)
@@ -98,7 +119,7 @@ def main() -> None:
         "exit": 0,
         "wall_s": round(wall, 1),
         "steps": len(history),
-        "elements": int(problem.mesh.n_elements),
+        "elements": n_elements,
         "nodes": int(arrays["nodes"].shape[0]),
         "frames": len(frames),
         "time_end": float(result.get("time", 0.0)),
@@ -107,6 +128,10 @@ def main() -> None:
         "use_gpu": bool(cfg["global"].get("use_gpu")),
         "devices": cfg["global"].get("devices"),
     }
+    if ranks is not None:
+        # wall_s: the slowest rank's solve; with the start of the processes and the merge:
+        summary["wall_with_start_and_merge_s"] = round(total, 1)
+        summary["ranks"] = ranks
     (target / "wall.json").write_text(json.dumps(summary, indent=1))
     print(json.dumps(summary, indent=1))
 

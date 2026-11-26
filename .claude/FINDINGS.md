@@ -1424,4 +1424,21 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   belongs to INCOLOY 909 in the same paper).
 - **The workstation CPU is too slow for a 100,000-element thermal block** (22 min
   without finishing; 15 to 18 min on the host GPU beside the flow column).
+- **Do not start further GPU processes on the host beside a long run.** A check with
+  two rank processes on the one Radeon card, beside the flow column and another user's
+  service, filled memory and swap (62 GB + 8 GB): the host stopped answering SSH for
+  about 45 minutes (load average 55) and recovered by itself; the flow column
+  survived. Earlier pairs of runs (flow column + one block) were fine. Multi-process
+  checks go to Modal or wait until the host is free.
+- **Modal capacity.** A container with four A10G cards waited 35 minutes unscheduled
+  (no charge) on 2026-11-26; four L4 cards are the fallback. `modal app logs <id>`
+  shows "waiting to be scheduled".
+- **Column with flow: the 600 um block is too small.** The pool with flow touches the
+  block walls, the whole block is one pool per layer, a few <100> grains take it
+  (share 0.44). Not representative; needs about 1.2 mm (four times the elements).
+- **Decomposed runs (PINNACLE ADR 0057, package `gpumpi`).** Four A100 cards: 3.56x per
+  step, same fields, a quarter of the device memory per card. A scalar field of the
+  single run is `(n,)`: never subtract fields of two runs without checking shapes
+  (`(n,) - (n,1)` broadcasts to n x n; this froze the host and killed a cloud run).
+  Cloud runs go through `scripts/memory_guard.py`, with `retries=0`.
 

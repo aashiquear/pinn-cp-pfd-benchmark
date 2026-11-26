@@ -176,6 +176,102 @@ def processes(steps: list[int], mesh_um: float) -> dict:
     return report
 
 
+@app.function(gpu="L4:4", cpu=8.0, memory=49152, timeout=1500, retries=0)
+def decomposed_l4(steps: list[int], mesh_um: float, rank_counts: list[int], partition: str) -> dict:
+    return decomposed.local(steps, mesh_um, rank_counts, partition)
+
+
+@app.function(gpu="A100-40GB:4", cpu=8.0, memory=49152, timeout=1200, retries=0)
+def decomposed_a100(steps: list[int], mesh_um: float, rank_counts: list[int], partition: str) -> dict:
+    return decomposed.local(steps, mesh_um, rank_counts, partition)
+
+
+@app.function(gpu="T4:4", cpu=8.0, memory=49152, timeout=1500, retries=0)
+def decomposed_t4(steps: list[int], mesh_um: float, rank_counts: list[int], partition: str) -> dict:
+    return decomposed.local(steps, mesh_um, rank_counts, partition)
+
+
+@app.function(gpu="A10G:4", cpu=8.0, memory=49152, timeout=1500, retries=0)
+def decomposed(steps: list[int], mesh_um: float, rank_counts: list[int], partition: str) -> dict:
+    """Decomposed runs (PINNACLE ADR 0057, library gpumpi): the track with flow as one
+    process on one card, and with the mesh cut into parts, one process and one card per
+    part, exchanging the nodal sums at the cuts. Two step counts separate the start of
+    the processes and the set-up from the time per step; the fields of the longer runs
+    are compared with the single run."""
+    import numpy as np
+
+    n = [int(round(v / mesh_um)) for v in (700.0, 300.0, 350.0)]
+    dt = 5.2869e-07 * (mesh_um / 10.0) ** 2
+    track = "decks/lpbf/in718/k1/cases/flow_h10/case0.i"
+
+    def one(tag: str, count: int, extra: list[str]) -> tuple[dict, str]:
+        import os
+        import subprocess
+        import time
+
+        out = f"/tmp/{tag}_{count}"
+        # under the memory guard, with its lines in the log of the container: a run that
+        # eats the memory is stopped and reported in place of a killed container
+        command = [
+            "python", "/work/bench/scripts/memory_guard.py", "6", "600",
+            "python", "/work/bench/scripts/lpbf_run.py", track,
+            f"mesh.divisions={json.dumps(n)}", f"executioner.dt={dt}",
+            f"executioner.end_time={dt * count}", "executioner.snapshots_every=0",
+            f"kernels.carried.mesh_size={mesh_um * 1e-6}", f"kernels.momentum.mesh_size={mesh_um * 1e-6}",
+            f"kernels.surface.band_thickness={mesh_um * 1e-6}",
+            f"kernels.marangoni.band_thickness={mesh_um * 1e-6}", *extra, f"global.output_dir={out}",
+        ]
+        print(f"=== {tag} {count} steps", flush=True)
+        tic = time.time()
+        proc = subprocess.run(command, cwd="/work/bench", env=dict(os.environ, PYTHONPATH="/work/pinnacle/src"))
+        row = {"wall_with_setup_s": round(time.time() - tic, 1), "returncode": proc.returncode}
+        wall_file = Path(out) / "wall.json"
+        if wall_file.exists():
+            row.update(json.loads(wall_file.read_text()))
+        elif Path("/tmp/guard_out.txt").exists():
+            row["stderr_tail"] = Path("/tmp/guard_out.txt").read_text()[-1500:]
+            print(row["stderr_tail"], flush=True)
+        keep = ("wall_s", "wall_with_setup_s", "wall_with_start_and_merge_s", "steps", "elements",
+                "returncode", "stderr_tail", "ranks")
+        return {k: row.get(k) for k in keep if row.get(k) is not None}, out
+
+    report: dict = {"mesh_um": mesh_um, "divisions": n, "partition": partition}
+    reference = None
+    for count in steps:
+        row, out = one("single", count, ["global.num_threads=8"])
+        report[f"single_{count}"] = row
+        if count == max(steps) and (Path(out) / "fields.npz").exists():
+            reference = {k: v for k, v in np.load(Path(out) / "fields.npz").items()}
+        for ranks in rank_counts:
+            devices = json.dumps(" ".join(f"cuda:{i}" for i in range(ranks)))
+            row, out = one(f"ranks{ranks}", count,
+                           [f"global.rank_devices={devices}", f"global.partition={json.dumps(partition)}",
+                            f"global.num_threads={max(1, 8 // ranks)}"])
+            fields = Path(out) / "fields.npz"
+            if reference is not None and count == max(steps) and fields.exists():
+                got = np.load(fields)
+                row["nodes_equal"] = bool(np.array_equal(got["nodes"], reference["nodes"]))
+                row["shapes_equal"] = all(got[k].shape == reference[k].shape for k in reference)
+                n_nodes = reference["nodes"].shape[0]  # same shape before subtracting: no broadcast
+                row["max_abs_difference_to_single"] = {
+                    k: float(np.abs(got[k].astype(float).reshape(n_nodes, -1)
+                                    - reference[k].astype(float).reshape(n_nodes, -1)).max())
+                    for k in ("temperature", "velocity", "pressure")
+                }
+                row["field_maxima"] = {k: float(np.abs(reference[k]).max()) for k in ("temperature", "velocity", "pressure")}
+            report[f"ranks{ranks}_{count}"] = row
+    return report
+
+
+@app.local_entrypoint()
+def cut(steps: str = "40,120", mesh: float = 5.0, ranks: str = "2,4", partition: str = "slabs",
+        gpu: str = "A10G") -> None:
+    function = {"A10G": decomposed, "L4": decomposed_l4, "A100": decomposed_a100,
+                "T4": decomposed_t4}[gpu]
+    print(json.dumps(function.remote([int(v) for v in steps.split(",")], mesh,
+                                       [int(v) for v in ranks.split(",")], partition), indent=1))
+
+
 @app.local_entrypoint()
 def split(steps: str = "40,120", mesh: float = 5.0) -> None:
     print(json.dumps(processes.remote([int(v) for v in steps.split(",")], mesh), indent=1))

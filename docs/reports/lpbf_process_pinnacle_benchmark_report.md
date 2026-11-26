@@ -1255,6 +1255,63 @@ and $1.6\times10^{5}$ K/s ($0.9$ to $4.7\times10^{5}$); strain rate 2.5 /s.
 - **Not covered:** the strain rate from the stress stage, crack propagation, liquation
   and solid-state cracking.
 
+### 6.11 Case K2 with melt-pool flow (reported separately from the conduction column)
+
+The column of section 6.4 (600 x 600 um, 200 um of plate, four layers of 40 um, four
+tracks per layer, 10 um elements, 30 order parameters) with the flow kernels of section
+2.4 added (deck `decks/lpbf/in718/k2/k2_column_flow_h10.i`). The step is five times
+smaller than without flow, with four flow sub-steps. The cut sides and the bottom are
+walls for the velocity. Nothing was refitted.
+
+**Table 25.** Four layers with and without flow, seed 1.
+
+| quantity | conduction (section 6.4, corrected run) | with flow | measured |
+|---|---|---|---|
+| grains in the build | 391 | 450 | |
+| median equivalent diameter (um) | 37.7 | 34.8 | 11.5 |
+| share of the build within 15 deg of <100> / <110> / <111> along the build direction | 0.20 / 0.17 / 0.17 | 0.44 / 0.05 / 0.06 | 0.10 / 0.21 / 0.10 |
+| nucleation events | 3,721 | 5,834 | |
+| deepest melting below the last surface (um) | 250 | 260 | |
+| largest number of liquid elements at one time | 17,006 | 29,865 | |
+| largest pool extent in the layer plane (um) | 540 | 600 (the block) | |
+| time above melting, last surface, median (ms) | 2.38 | 2.37 | 1.28 |
+| cooling rate at freezing, last surface, median (K/s) | 64,000 | 41,000 | 189,000 |
+| gradient at freezing, all molten elements, median (K/m) | $3.5\times10^{6}$ | $1.9\times10^{6}$ | |
+| largest liquid speed in the stored frames (m/s) | | 2.95 | |
+| unmelted deposited elements of the scanned patch | 0 of 30,976 | 0 of 30,976 | |
+| wall time on the GPU host (s) | 5,331 | 47,322 | |
+
+![Figure 13](../../figures/lpbf/k2_grains_column_flow_h10.png)
+
+**Figure 13.** Grains of the column with flow, colored by the crystal direction along
+the build direction. The dashed line is the top of the plate.
+
+- **The flow column is not a better column; the block is too small for it.** With flow
+  the pool spreads until it touches the walls of the block (600 um), holds nearly twice
+  as many liquid elements as the conduction pool, and remelts the plate to 100 um
+  below its top in the middle of the section (Figure 13). The whole block becomes one pool
+  in every layer. Sides that should be surrounded by cold material are closed walls
+  with a weak far-field exchange.
+- **A few large grains with <100> along the build direction take the block** (share
+  0.44 against 0.20 without flow and 0.10 measured). In a pool this large the front
+  moves upward everywhere and the favored direction wins over many layers. This is a
+  consequence of the block-sized pool and does not support a statement about the
+  texture of the build.
+- **Thermal history of the surface: no gain.** The time above melting is unchanged
+  (2.37 ms against 1.28 ms measured), and the cooling rate at freezing is lower than
+  without flow and further from the thermography value.
+- **What the run does show:** the flow kernels, the free build surface under unbuilt
+  layers (PINNACLE ADR 0054), the grain field and the nucleation work together over
+  four layers and 45,200 steps; nothing stays unmelted; the largest liquid speed of a
+  stored frame is 1.1 m/s in the median and 2.95 m/s at most.
+- **Cost**: 13.1 h, nine times the conduction column. A block wide enough to keep the
+  pool away from its sides (about 1.2 mm) has four times the elements: about two days
+  on the host, or the decomposed run of section 8.2 on several cards once the grain
+  field is supported there.
+- **Animations** of both columns, 2-D sections and isometric 3-D view:
+  `figures/lpbf/animations/k2_column_h10_r2_2d.gif`, `_3d.gif` and
+  `k2_column_flow_h10_2d.gif`, `_3d.gif` (227 frames each, every tenth also as PNG).
+
 ## 7. 316L single track: process stress with crystal plasticity
 
 The case of (grilli 2022 elimination) with the substitute inputs of section 3.2, on the
@@ -1479,10 +1536,10 @@ thread).
 - **Cost.** 4.66 US dollars metered for all runs of this measurement (seven runs,
   four cards at 1.10 dollars per card and hour plus CPU and memory), covered by
   account credits; nothing was billed.
-- **What this means for a node with eight GPUs.** As built, the device pool will not
-  shorten the fine runs. The use of several cards that works today is one case per
-  card (seeds, tracks, parameter sets side by side): the fine column decks fit on one
-  card of 141 GB.
+- **What this means for a node with eight GPUs.** The device pool will not shorten the
+  fine runs. One case per card (seeds, tracks, parameter sets side by side) works, and
+  for the thermal and flow stages the decomposed runs described below divide one case
+  over the cards.
 
 **One process per card, each with its own part of the mesh (2026-11-26).** To find out
 whether the limit is the hardware or the single Python process, the same case was run
@@ -1514,8 +1571,67 @@ Two step counts (40 and 120) separate the set-up from the time per step.
   built; the present pool keeps the element arrays of the whole mesh on the first card
   and the services of a deck hold the whole mesh on the host.
 - **Cost of this test.** 1.13 US dollars (account summary 4.28 before, 5.41 after),
-  covered by credits. The summary is the figure to go by for the total: 5.41 of the 30
-  dollars allowed.
+  covered by credits.
+
+**Decomposed runs: the design built and measured (2026-11-26).** PINNACLE now cuts the
+mesh of a deck into parts and runs every part as an ordinary problem in its own process
+on its own card; the processes exchange the nodal sums at the cuts (PINNACLE ADR 0057;
+`[Global] rank_devices = 'cuda:0 cuda:1 ...'`). The exchange layer is a separate
+package in the PINNACLE repository, `gpumpi`, that depends on NumPy only and imports
+nothing from PINNACLE: ranks with one device each, a communicator close to that of
+`mpi4py`, mesh partitioning, and the sum of nodal values across cuts for NumPy,
+PyTorch, CuPy and JAX arrays. Kernels, materials and boundary conditions are
+unchanged; the explicit executioner and the process state call one hook after each
+assembly.
+
+**Table 17d.** The track with flow at 5 um (588,000 elements) on one node with four
+NVIDIA A100 cards (40 GB, 8 CPU cores, float64; A10G and L4 nodes with four cards were
+not available that afternoon). Slabs along the scan direction. Time per step from runs
+of 20 and 60 steps (`scripts/modal_multigpu.py::cut`).
+
+| run | elements per process | per step (s) | factor | device memory per process (GB) | whole process, 60 steps (s) | host memory, all processes (GB) |
+|---|---|---|---|---|---|---|
+| one process, one card | 588,000 | 0.730 | 1 | not recorded | 97 | 7 |
+| 2 ranks, 2 cards | 294,000 | 0.380 | 1.92 | 2.9 | 56 | 11 |
+| 4 ranks, 4 cards | 147,000 | 0.205 | 3.56 | 1.45 | 36 | 17 |
+
+- **Both goals are met for the explicit solver.** Four cards advance the mesh 3.56
+  times faster than one, and each card holds a quarter of the data (1.45 GB against
+  2.9 GB with two ranks): the mesh that fits grows with the number of cards.
+- **The result is the single-card result**: temperature identical, velocity within
+  $1.5\times10^{-16}$ m/s of 0.65 m/s, pressure within $10^{-19}$ Pa (fields as stored,
+  float32). On the workstation, in float64: relative differences of $3\times10^{-16}$
+  to $10^{-14}$ for the conduction track, the track with flow and the heat of a layered
+  build, on two to four parts.
+- **The exchange is small.** A part with two neighbours shares 8,662 of its 155,916
+  nodes; it sends 130 kB per exchange, nine exchanges per step. Of the ideal factor 4
+  (Table 17c: 4.1 without any exchange), 3.56 remain.
+- **The fixed cost shrinks less.** Building the operators takes 46 s for the whole
+  mesh on one card and 13 s per rank on four, but starting the processes and loading
+  PyTorch costs about 10 s whatever the number of ranks, so the whole process of 60
+  steps gains a factor 2.7. A production run of thousands of steps sees the per-step
+  factor.
+- **Scope.** `pf_fem_explicit` with Dirichlet and natural boundaries: heat with
+  melting, melt-pool flow, the process state of a layered build. Not yet: the grain
+  field (its random initial structure and its nucleation are drawn per process),
+  periodic boundaries, services other than the scan path and the process state (they
+  report per part), the stress stage (its sparse solve needs a distributed solver).
+  These are the next stages.
+- **Not tested**: the MPI transport of `gpumpi` (several nodes) and its CuPy and JAX
+  array paths: none is installed on the machines of this study. More than four cards
+  and a mesh beyond the memory of one card were not run.
+- **Two failures on the way, both mine, neither in the solver.** A first cloud run
+  was killed for memory and restarted by the platform, and the GPU host of this study
+  stopped answering for 45 minutes after a check there. The cause was the comparison
+  of the fields, not their computation: the single run stores a scalar field as a flat
+  array, the decomposed run stored it with one column, and their difference broadcast
+  to nodes times nodes. The decomposed run now returns the shapes of the single run,
+  its tests compare shapes, and the cloud runs are wrapped in
+  `scripts/memory_guard.py` with restarts switched off.
+- **Cost.** 10.2 US dollars for this measurement (account summary 5.41 before, 15.63
+  after), of which about 6.8 for the failed run and its restart on the dearer A100
+  cards; 55 minutes of waiting for A10G and L4 nodes cost nothing. **Total of the
+  cloud measurements: 15.63 of the 30 dollars allowed**, covered by credits.
 
 ### 8.3 Standalone decks
 
@@ -1592,7 +1708,9 @@ separate, later study.
 | item | state |
 |---|---|
 | deforming free surface (keyhole), powder particles | not planned in this part (decision D2) |
-| build column with flow | not run: about 9 h for four layers at 10 um on the host; the single tracks carry the flow result |
+| build column with flow | run (section 6.11): the pool with flow fills the 600 um block, so the result is not representative; a block of about 1.2 mm is needed |
+| decomposed runs for the grain field, the services and the stress stage | not built: heat and flow run on several cards (section 8.2); random initial grains and nucleation per process, per-part reports and the sparse solve remain |
+| cracking indicators with the strain rate of the stress stage, and a validation set | not done (section 6.10) |
 | refit of the heat source with flow | not done (section 6.5: the two fit cases move in opposite directions) |
 | network routes (plan stage F) beyond the single-track surrogate of section 6.3: a network for the thermal field itself (PINN, PINN with FE correction), network routes on the grain and mechanics stages | not implemented |
 | case K3 on a cube of the measured 3-D EBSD structure | one cube run (Table 15a): 7.5 % too soft at yield; the calibration itself was not repeated on the measured structure |
