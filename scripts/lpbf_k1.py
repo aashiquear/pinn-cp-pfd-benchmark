@@ -162,6 +162,9 @@ def cmd_decks(deck: Path, cfg: dict, overrides: dict | None = None, tag: str | N
     template = resolve(study["template"], deck).read_text()
     h = float(study["mesh_um"]) * 1e-6
     n = [int(round(d * 1e-6 / h)) for d in DOMAIN_UM]
+    # free surface (k1_free_surface_template.i): a layer of gas above the plate
+    gas = float(study.get("gas_layer_um", 0.0)) * 1e-6
+    n[2] += int(round(gas / h))
     dt = 0.8 * h * h / (6.0 * DIFFUSIVITY * float(study.get("liquid_conductivity_factor", 1.0)))
     # Flow (k1_flow_template.i): the upwind diffusion a_u U h / 2 of the speed bound U joins
     # the diffusivity in the step of the heat equation; the flow takes sub-steps bound by
@@ -202,6 +205,12 @@ def cmd_decks(deck: Path, cfg: dict, overrides: dict | None = None, tag: str | N
             "KEYHOLE_ETA": f"{float(study.get('keyhole_absorptivity', study['absorptivity'])):.5f}",
             "KEYHOLE_SHARE": f"{float(study.get('keyhole_depth_share', 0.5)):g}",
             "SNAPSHOTS": max(1, int(round(float(study.get("frame_interval", 3.0e-5)) / dt))),
+            "ZTOP": f"{DOMAIN_UM[2] * 1e-6 + gas:.4e}",
+            "PHASE_WIDTH": f"{0.7 * h:.4e}",
+            "PHASE_IC_WIDTH": f"{2.8 * h:.4e}",
+            "MOBILITY": f"{float(study.get('phase_mobility', 3.0)):g}",
+            "GAS_DAMPING": f"{float(study.get('gas_damping', 1.0e6)):g}",
+            "SURFACE_TENSION": f"{float(study.get('surface_tension', 1.8)):g}",
         }
         text = template
         for key, value in fields.items():
@@ -250,10 +259,18 @@ def cmd_run(deck: Path, cfg: dict, names: list[str]) -> None:
         print(f"{case['name']}: {wall:.0f} s", flush=True)
 
 
-def cross_section(record: Path, isotherm: float) -> tuple[float, float, float]:
-    """Depth, width (m) of the isotherm of the peak temperature, and the peak temperature."""
+def cross_section(record: Path, isotherm: float, surface: float | None = None) -> tuple[float, float, float]:
+    """Depth, width (m) of the isotherm of the peak temperature, and the peak temperature.
+
+    ``surface``: height of the plate surface when the mesh continues above it (a gas
+    layer of a free-surface run); elements above it are left out, as a section of the
+    plate would.
+    """
     d = np.load(record)
     c, peak = d["centroid"], d["peak_temperature"]
+    if surface is not None:
+        keep = c[:, 2] < surface
+        c, peak = c[keep], peak[keep]
     xs, ys, zs = (np.unique(np.round(c[:, i], 12)) for i in range(3))
     order = np.lexsort((c[:, 0], c[:, 1], c[:, 2]))
     grid = peak[order].reshape(zs.size, ys.size, xs.size)
@@ -286,8 +303,10 @@ def collect(deck: Path, cfg: dict) -> list[dict]:
         record = out_dir / "process_state.npz"
         if not record.is_file():
             continue
-        depth_l, width_l, peak = cross_section(record, LIQUIDUS)
-        depth_s, width_s, _ = cross_section(record, SOLIDUS)
+        gas = float(cfg["study"].get("gas_layer_um", 0.0))
+        plate = DOMAIN_UM[2] * 1e-6 if gas > 0.0 else None
+        depth_l, width_l, peak = cross_section(record, LIQUIDUS, plate)
+        depth_s, width_s, _ = cross_section(record, SOLIDUS, plate)
         wall = json.loads((out_dir / "wall.json").read_text())["wall_s"] if (out_dir / "wall.json").is_file() else float("nan")
         rows.append({
             "case": case["name"], "power_W": case["power_W"], "speed_mm_s": case["speed_mm_s"],

@@ -198,7 +198,37 @@ not depend on which cards, or how many, are named. Start with a short check
 (`executioner.end_time=2e-5 global.output_dir=/tmp/check`) to see the memory per card in
 `wall.json` (`ranks[*].device_peak_bytes`) before the long run.
 
-## 13. Hosts and revisions
+## 13. Validation of the defect indicators, free surface, pores (sections 6.12 to 6.14)
+
+```bash
+# indicators against the published data sets (download as in data/lpbf/defects/raw/*/SOURCE.md)
+PYTHONPATH=<pinnacle>/src python3 scripts/lpbf_defects_validate.py all
+
+# the seven tracks with a free surface: absorptivity of the conduction fit, then refitted
+for study in k1_free_surface_study_h10.i k1_free_surface_study_h10_b.i; do
+  python3 scripts/lpbf_k1.py decks/lpbf/in718/k1/$study decks
+  python3 scripts/lpbf_k1.py decks/lpbf/in718/k1/$study run
+  python3 scripts/lpbf_k1.py decks/lpbf/in718/k1/$study collect
+done
+python3 scripts/lpbf_defects.py compare figures/lpbf/k1_free_surface_compare.png \
+    "conduction, fitted depth=results/lpbf/in718/k1/h10/k1_cross_sections.csv" \
+    "flow, flat surface=results/lpbf/in718/k1/flow_h10/k1_cross_sections.csv" \
+    "free surface, absorptivity 0.77=results/lpbf/in718/k1/free_surface_h10/k1_cross_sections.csv" \
+    "free surface, absorptivity 0.65=results/lpbf/in718/k1/free_surface_fit_h10/k1_cross_sections.csv"
+for c in case0 case1.1 case1.2 case2.1 case2.2 case3.1 case3.2; do
+  python3 scripts/lpbf_defects.py pockets results/lpbf/in718/k1/free_surface_h10/$c 350e-6 \
+      data/lpbf/defects/free_surface_pockets_$c.json
+  python3 scripts/lpbf_animate.py track results/lpbf/in718/k1/free_surface_h10/$c \
+      figures/lpbf/animations/k1_free_surface_h10_$c.gif
+done
+
+# gas pores as tracers
+python3 scripts/lpbf_run.py decks/lpbf/in718/defects/pores_flow_h10.i executioner.snapshots_every=400
+python3 scripts/lpbf_defects.py pores results/lpbf/in718/defects/pores_flow_h10 \
+    figures/lpbf/defects_pores_flow_h10.png 240e-6
+```
+
+## 14. Hosts and revisions
 
 Every run with its deck, script, PINNACLE revision, host, precision and wall time is a
 row of `docs/run_ledger.md` (rows `lpbf-*`).

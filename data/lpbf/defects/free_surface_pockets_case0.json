@@ -1,0 +1,14 @@
+{
+ "pockets": 0,
+ "pocket_volume": 0.0,
+ "pocket_list": [],
+ "run": "case0",
+ "element_um": 9.999999999999972,
+ "remaining_depression_um": 20.0,
+ "largest_rise_um": 10.00000000000008,
+ "metal_volume_change_pct": 0.022637131320091264,
+ "frames": 41,
+ "frames_with_pockets": 0,
+ "transient_pockets": [],
+ "transient_diameter_max_um": 0.0
+}

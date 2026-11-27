@@ -91,4 +91,13 @@ recorded in `wall.json`.
   have been checked (a scalar field is `(n,)`).
 - **Generated decks of the wide column**: `scripts/lpbf_column_wide.py <element size>`;
   the header of each deck states elements, memory per card and steps.
+- **Free surface.** A free-surface track is the flow template plus a gas layer, the
+  unknown `phi` with `phase_advection`, and `phase = phi` on the kernels that know the
+  surface (`k1_free_surface_template.i`; study keys `gas_layer_um`, `surface_tension`,
+  `phase_mobility`, `gas_damping`). Depth and width are read below the plate surface, as
+  in a section of the plate; `scripts/lpbf_defects.py pockets` counts enclosed gas.
+- **Pores.** `pore_tracers` is a `[Utilities]` block listed after the process state;
+  the gas content of the powder is an input that the deck states as assumed.
+- **Validation of indicators.** `scripts/lpbf_defects_validate.py` evaluates the
+  indicator functions of PINNACLE on downloaded tables; only summaries are tracked.
 

@@ -1459,3 +1459,22 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
 - **Grain IC memory:** `polycrystal_coloring` is evaluated in pieces now; before, nodes
   x grains x 3 doubles at once.
 
+## 2026-11-27: free surface, pores, validation of the indicators
+
+- **Free surface (PINNACLE ADR 0058) on the seven NIST tracks:** depth error 13.8 % rms
+  with absorptivity 0.7724 and no penetration depth (conduction 23.4, flat flow 21.0);
+  all tracks 4 to 26 % too deep, width 11 to 16 % too large in the mean. Refit to 0.65
+  on the two fit tracks: still 13.8 % (the keyhole tracks lose depth faster than
+  measured). A linear interpolation suggests about 8 % near 0.70 (not run, in-sample).
+- **Needed for stability at high intensity:** surface weight 3 phi^2 (not 2 phi) and the
+  evaporative loss implicit at the nodes (`surface_heat_loss material = ...`).
+- **Enclosed gas follows the keyhole number** (26 / 1 / 1 frames of 41 for the three
+  highest), but none survives freezing: the profile-keeping term removes regions of a
+  few elements. Absence at the end is not evidence of a pore-free track.
+- **Pore tracers:** 87 % of the released pores are lost at the surface; trapping is by
+  the flow, buoyancy is negligible (0.08 mm/s). Gas content and sizes are assumed.
+- **Validation:** see `data/lpbf/defects/validation_summary.json`. Keyhole number needs
+  LIQUIDUS properties to carry the published threshold. MeltpoolNet has no licence:
+  per-row derived tables are not tracked.
+- **Four jobs on the host GPU:** 18 to 56 min per K1 free-surface track.
+

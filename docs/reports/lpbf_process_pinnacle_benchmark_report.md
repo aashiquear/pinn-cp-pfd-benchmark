@@ -2,9 +2,10 @@
 
 Status 2026-11-26. This report covers the laser powder bed fusion process chain at the
 resolution a single workstation GPU can run: heat transfer, melt-pool flow under a flat
-surface (reported separately from the conduction results), grain structure, tensile
-response with a calibrated crystal-plasticity set, process stress, and indicators of
-process defects. Decks of the full-resolution cases and of a wide build column with flow
+surface (reported separately from the conduction results) and under a free surface,
+grain structure, tensile response with a calibrated crystal-plasticity set, process
+stress, and process defects (indicators, their validation against published data, and
+gas pores as tracers). Decks of the full-resolution cases and of a wide build column with flow
 for a multi-GPU machine are shipped and not run (decision of the author). What is not
 done is listed in section 9. Plan: `docs/15_lpbf_process_modeling_plan.md`; notebook with
 provenance tables: `docs/16_lpbf_notebook.md`; reproduction: `docs/reproduce_lpbf.md`;
@@ -54,8 +55,17 @@ indicators are reported for lack of fusion (unmelted material and the overlap ru
 on where it starts), keyhole mode (all seven tracks; a heat-source depth taken from the
 keyhole number gives 21.1 % rms depth error without a fitted depth) and solidification
 cracking (three published indices; the casting threshold of the pressure-drop criterion
-is exceeded everywhere, so the result is a relative map), none of them validated against
-measured defects. With the mesh cut into parts, one process and one GPU per part, the
+is exceeded everywhere, so the result is a relative map). Against published data the
+keyhole number is supported (it separates deep from shallow measured depressions with an
+area under the ROC curve of 0.99, and its threshold of 6 transfers to mode labels of
+alloy 718 when the properties are taken at the liquidus), the overlap rule finds 96 % of
+the rows labelled lack of fusion and over-calls the rest, and the other indicators
+remain unvalidated. With the surface of the pool free to move under the vapor recoil,
+and no penetration depth of the beam, the depth error over the seven tracks falls from
+21 to 23 % rms to 13.8 %, the deepest track is 15 % too deep where conduction left it
+44 % too shallow, the width becomes 13 to 17 % too large, and gas enclosed below the
+surface appears only in the tracks of highest keyhole number. Gas pores followed as
+tracers in a three-track layer are lost at the surface in seven cases of eight. With the mesh cut into parts, one process and one GPU per part, the
 column with flow and grains advances 3.8 times faster on four cards and the stress stage
 3.7 times, with the fields of the single run (assessment in section 8.2, full account in
 a separate report). Decks of the full-resolution cases (up to 23.8 million elements) and
@@ -383,6 +393,8 @@ to 0057); a process deck names them like any other physics.
 | `beam_heat_source penetration_model = keyhole_number` | kernel option | the decay length of the source from the keyhole number of the scan segment (section 6.7) |
 | `defect_indicators` | utility (service) | lack-of-fusion, keyhole and balling indicators of a run (section 6.8) |
 | `cracking_indicators` | utility (service) | solidification-cracking indicators from the freezing record and a solid-fraction curve (section 6.10) |
+| `phase_advection`, and the key `phase` on the thermal and flow kernels | kernel | a free surface of the melt: phase field moved by the liquid, surface stress, recoil, beam and losses on the moving surface (section 6.13) |
+| `pore_tracers` | utility (service) | gas pores as tracers in the pool; gas pockets enclosed below a free surface (sections 6.13, 6.14) |
 | `scan_path recoat`, `process_state hold_scan_until_solid`, `stop_when_solid` | options | the next layer spread at the end of the layer dwell; the scan held until the material is solid; the run ended when the path is over and all is solid (section 8.3) |
 
 ### 4.2 Discretization and solution
@@ -461,6 +473,9 @@ and reduce their output. Steps and commands are in `docs/reproduce_lpbf.md`.
 | K3 tensile case | `decks/lpbf/in718/k3/k3_cube_n6_seed*.i`, `cal_<i>_*.i`, `k3_cube_ebsd_cube1.i` | `scripts/lpbf_k3_targets.py`; `scripts/lpbf_k3.py run, calibrate, cube, ebsd` | engineering stress-strain curve |
 | K4 column stress | `decks/lpbf/in718/k4/k4_column_stress_h30.i` (and `_h20`) | `scripts/lpbf_mechanics.py cooldown, run`; `scripts/lpbf_figures.py column_stress` | layer means of stress; history |
 | keyhole-number source, defect and cracking indicators | `decks/lpbf/in718/k1/k1_keyhole_study_h10_*.i`; `decks/lpbf/in718/defects/lof_hatch*_h10.i`, `cracking_hatch110_h10.i` | `scripts/lpbf_k1.py`; `scripts/lpbf_run.py`; `scripts/lpbf_defects.py law, tracks, figure, compare, column, cracking` | reports of the two services; tables and figures |
+| K1 with a free surface | `decks/lpbf/in718/k1/k1_free_surface_study_h10.i`, `_b.i` (template `k1_free_surface_template.i`) | `scripts/lpbf_k1.py`; `scripts/lpbf_defects.py compare`, `pockets`; `scripts/lpbf_animate.py track` | depth and width of the melted section, depression depth, enclosed gas per frame |
+| gas pores as tracers | `decks/lpbf/in718/defects/pores_flow_h10.i` | `scripts/lpbf_run.py`; `scripts/lpbf_defects.py pores` | fate, depth and size of the pores, gas porosity |
+| validation of the defect indicators | published data sets (`data/lpbf/defects/raw/*/SOURCE.md`) | `scripts/lpbf_defects_validate.py all` | ROC areas, confusion counts, thresholds |
 
 The order within the chain is: thermal deck (alone for K1; with the grains for K2), then
 the mechanics deck, which reads the temperature series the thermal deck wrote and an
@@ -1109,19 +1124,10 @@ the same run (pool width and depth of each track as the run gives them).
   long in the hatch series, so the rule flags every run, the build condition included. A length from a conduction pool that holds
   its heat too long (section 6.4) cannot carry this criterion.
 - **Not covered:** gas pores, the pinch-off of pores at a keyhole tip, humping and
-  spatter. Solidification-cracking indicators are in section 6.10; pore transport and a
-  deforming surface are open.
+  spatter. Solidification-cracking indicators are in section 6.10, a free surface in
+  section 6.13 and gas pores as tracers in section 6.14.
 
-**Data for a later benchmark of the indicators** (downloaded, not yet used; sources
-and licences in `data/lpbf/defects/raw/*/SOURCE.md`): the keyhole depths of
-(gan 2021 keyhole) used above; a compilation of melt-pool modes with 169 rows for alloy
-718 and 305 for 316L (akbari 2022 meltpoolnet; labels by the compilers, not measured
-porosity); a literature compilation of relative density against process parameters
-(dovgyy 2021 compilation; 233 rows for alloy 718, 312 for 316L, mixed density methods);
-per-pore lists from X-ray CT of three build conditions of alloy 718
-(watring 2023 pspdata; columns undocumented). No open table of
-cracking against process parameters was found, and the AM Bench 2022 CT record holds
-gray values only, no pore table.
+**Validation against published data** is in section 6.12; the free surface and the pores are in sections 6.13 and 6.14. Sources and licences of the data sets: `data/lpbf/defects/raw/*/SOURCE.md`.
 
 ### 6.9 Case K4: stress left by the process in the build column
 
@@ -1362,6 +1368,260 @@ view of the same run is `k2_column_flow_h10_3d.gif`, and the conduction column i
 `k2_column_h10_r2_2d.gif` and `_3d.gif` (227 frames each; every tenth frame as PNG in
 the `_frames` folders).
 
+### 6.12 Validation of the defect indicators against published data
+
+The indicators of section 6.8 were evaluated, as coded in PINNACLE, on four published
+data sets (`scripts/lpbf_defects_validate.py all`; results in
+`data/lpbf/defects/validation_*.json`). None of the sets was made for this purpose, and
+each tests less than its size suggests; what each can and cannot say is stated with it.
+
+**Keyhole number against measured depressions** (gan 2021 keyhole, Supplementary Data 1:
+87 X-ray measurements of the vapor depression on four alloys, absorptivity measured).
+The table has no porosity label, so the porosity boundary of the paper cannot be tested.
+Taking "depression at least one spot diameter deep" as the event:
+
+- the keyhole number separates the two classes with an area under the ROC curve of
+  0.993; the best threshold is 6.27, against the 6 of the paper, with 96.6 % of the rows
+  classified correctly (53 deep, 34 shallow);
+- all 52 rows above $Ke = 6$ are deeper than one spot radius, against 16 of 35 below.
+
+**Keyhole number against melt-pool mode labels** (akbari 2022 meltpoolnet: 840 laser
+rows of five alloys with complete inputs). The labels are assigned by the compilers
+from the shape of the pool; they are not measured porosity. The absorptivity is not in
+the table; within one alloy the ranking does not depend on it.
+
+**Table 25.** Keyhole number as a classifier of the label "keyhole" against
+"desirable", with the properties listed in the compilation (room temperature).
+
+| alloy | rows | keyhole / desirable | area under the ROC curve | accuracy at the best threshold |
+|---|---|---|---|---|
+| alloy 718 | 148 | 81 / 36 | 0.853 | 0.80 |
+| 17-4 PH | 200 | 30 / 77 | 0.971 | 0.93 |
+| 316L | 277 | 69 / 107 | 0.614 | 0.68 |
+| Ti-6Al-4V | 209 | 135 / 43 | 0.418 | 0.71 |
+| five alloys pooled | 584 | | 0.683 | |
+
+![Figure 19](../../figures/lpbf/defects_validation_modes.png)
+
+**Figure 19.** Left: keyhole number of the rows of the compilation at an absorptivity
+of 0.35, by alloy and mode label (dashed: 6, dotted: 1.4). Right: ROC curves of the
+keyhole number for the label "keyhole" against "desirable".
+
+- **For alloy 718 the threshold of the paper transfers, if the properties are taken at
+  the liquidus.** With the properties of this study (section 3) the keyhole number is
+  0.51 times the value from room-temperature properties, and the best threshold falls at
+  6.08 for an absorptivity of 0.35. At $Ke = 6$: 63 keyhole rows flagged and 18 missed,
+  31 desirable rows passed and 5 flagged (accuracy 0.80). With room-temperature
+  properties the same threshold flags nearly every row.
+- **It does not transfer to every alloy.** The ranking is good for 17-4 PH and alloy
+  718, weak for 316L and absent for Ti-6Al-4V in this compilation. A single threshold
+  over the five alloys is right for 58 % of the rows.
+- The normalized-enthalpy threshold could not be tested: the table has no boiling
+  temperature.
+
+**Overlap rule against measured pool sizes** (the same compilation: 331 rows with hatch,
+layer thickness, pool width and depth; 109 of them with a mode label).
+
+![Figure 20](../../figures/lpbf/defects_validation_overlap.png)
+
+**Figure 20.** Overlap index $(H/W)^2 + (L/D)^2$ from measured pool width and depth,
+by mode label, and its ROC curve for the label "lack of fusion".
+
+- **The rule finds lack of fusion and over-calls it.** An index above 1 flags 25 of the
+  26 rows labelled lack of fusion (sensitivity 96 %) and also 56 of the 83 others
+  (specificity 33 %). As a ranking it is good: area under the ROC curve 0.863, best
+  threshold 1.67 (79 % correct); the median index is 12.9 for the lack-of-fusion rows
+  and 1.44 for the others.
+- **The test is partly circular.** The compilers label lack of fusion where the depth is
+  below 1.5 layers, which is the $(L/D)$ term of the index: 19 of the 26 rows meet that
+  rule. The hatch term alone, $(H/W)^2 > 1$, also flags 19 of the 26.
+- **Density.** Only 53 rows carry a relative density, all with an index of at most 1
+  (0.02 to 0.96). The rule calls all of them fully melted; their density is 89.8 to
+  99.94 % (median 97.5 %), lowest where the index is smallest. Those are deep, heavily
+  overlapped pools: porosity of over-melting, which the overlap rule does not address.
+
+**Relative density against keyhole number** (dovgyy 2021 compilation: 257 rows for 316L
+from 21 papers, 144 for alloy 718 from 6; no pool sizes, so the overlap rule cannot be
+formed; absorptivity 0.35 assumed; mixed density methods). For 316L the share of rows
+below 99 % density falls from 0.68 below $Ke = 3$ to 0.10 between 16 and 30: the
+low-energy side shows, and no rise toward high keyhole numbers is visible. Alloy 718
+shows no trend. This neither supports nor refutes a porosity threshold
+(`figures/lpbf/defects_validation_density.png`).
+
+**Pores from X-ray tomography** (watring 2023 pspdata: per-pore lists of three build
+conditions of alloy 718; the columns are undocumented, and the sizes are inferred from
+their internal consistency). The condition with by far the most lack-of-fusion pore
+volume (168 W, 1,475 mm/s) has the lowest keyhole number of the three (7.2 at an
+absorptivity of 0.35, against 10.5 and 12.9), but all three are above the keyhole
+threshold: the keyhole number does not flag lack of fusion. The overlap index could
+not be formed, because the record gives no pool size
+(`figures/lpbf/defects_validation_pores.png`).
+
+**Cracking.** No table with a cracking label or measure was found. The cracking
+indicators of section 6.10 are verified against one published curve and remain
+unvalidated.
+
+**Table 26.** What the validation supports.
+
+| indicator | evidence | verdict |
+|---|---|---|
+| keyhole number, threshold 6 | measured depressions (87 rows); mode labels of alloy 718 and 17-4 PH | supported, with properties at the liquidus; not for 316L and Ti-6Al-4V labels |
+| overlap index, threshold 1 | 109 labelled rows with measured pool sizes | finds lack of fusion (96 %), over-calls it (33 % specificity); labels partly circular |
+| unmelted material of a run | none (needs pool sizes or porosity for the simulated conditions) | not validated |
+| normalized enthalpy | none (no boiling temperature in the tables) | not validated |
+| balling ratio | none | not validated; not informative with this model (section 6.8) |
+| cracking indicators | none | not validated |
+
+### 6.13 Case K1 with a free surface (keyhole depression)
+
+The conduction model and the flow under a flat surface leave the deep tracks 15 to 44 %
+too shallow (sections 6.2 and 6.5), and a penetration depth of the beam fitted to two
+tracks stands in for what is missing: the vapor recoil pushes the surface down and the
+beam goes with it. Here the surface is free to move (PINNACLE ADR 0058). A phase field
+marks the metal against 50 um of gas above the plate and moves with the liquid; the
+beam deposits its flux where a vertical ray meets the surface, the losses and the
+surface stress (capillary pressure and thermocapillary shear) act on the surface, and
+the recoil acts along its normal. The beam has no penetration depth. Not in the model:
+reflections of the beam inside the depression, the dependence of the absorption on the
+angle, the loss of mass by evaporation, the gas flow.
+
+**Verification** (PINNACLE test suite): the beam deposits its power within 2 % on a
+surface tilted by 37 degrees; the surface stress and the recoil integrate to their
+surface values on plane and tilted surfaces; a plane surface carried 200 um by a
+uniform flow arrives within 0.3 elements with its width kept; a liquid disc holds the
+Laplace pressure, 29 % high with 6 elements per radius and 12 % with 12 (first order
+in the width of the surface).
+
+**Cases.** The seven NIST tracks at 10 um, with the flow constants of section 6.5 and a
+surface tension of 1.8 N/m at the liquidus (ASSUMED). Two sets: the absorptivity of the
+conduction fit, 0.7724, unchanged (`k1_free_surface_study_h10.i`); and the absorptivity
+refitted for this model on the two fit tracks, 0.65, at which their mean depth error is
+$-1$ % (`k1_free_surface_study_h10_b.i`). 18 to 56 min per track on the GPU host with
+three or four runs side by side.
+
+**Table 27.** Depth and width of the seven tracks against the measurement, by model
+(error in %; rms over the seven tracks; fit tracks: 0 and 1.2).
+
+| model | fitted on the two fit tracks | depth: rms, mean, range | width: rms, mean, range |
+|---|---|---|---|
+| conduction (section 6.2) | absorptivity, penetration depth | 23.4, $-15.8$, $-44$ to $+9$ | 8.6, $+2.4$, $-8$ to $+19$ |
+| flow, flat surface (6.5) | none (the two above kept) | 21.0, $-11.4$, $-42$ to $+16$ | 6.3, $+2.0$, $-9$ to $+9$ |
+| source depth from the keyhole number (6.7) | none (absorptivity in $Ke$ 0.50 stated) | 21.1, $+14.6$, $-13$ to $+38$ | 10.4, $-8.6$, $-19$ to $+1$ |
+| free surface, absorptivity 0.7724 | none; no penetration depth | 13.8, $+12.1$, $+4$ to $+26$ | 17.1, $+15.6$, $+3$ to $+27$ |
+| free surface, absorptivity 0.65 | absorptivity | 13.8, $-9.6$, $-26$ to $+8$ | 13.2, $+11.2$, $-2$ to $+20$ |
+
+![Figure 21](../../figures/lpbf/k1_free_surface_compare.png)
+
+**Figure 21.** Computed against measured depth and width of the seven tracks for the
+models of Table 27.
+
+**Table 28.** The depression in the free-surface runs (absorptivity 0.7724): depth and
+width of the melted section, the deepest point the surface reached, and gas enclosed
+below the surface in the 41 stored frames.
+
+| track | power (W), speed (mm/s), spot radius (um) | keyhole number at this absorptivity | depth, computed / measured (um) | width, computed / measured (um) | deepest depression (um) | frames with enclosed gas (largest pocket) |
+|---|---|---|---|---|---|---|
+| 0 | 285, 960, 33.5 | 21.5 | 151 / 140 | 152 / 136 | 100 | 0 |
+| 1.1 | 285, 960, 24.5 | 34.4 | 262 / 227 | 122 / 106 | 220 | 26 (47 um) |
+| 1.2 | 285, 960, 41.0 | 15.9 | 129 / 102 | 172 / 142 | 90 | 0 |
+| 2.1 | 285, 1,200, 33.5 | 19.3 | 123 / 110 | 144 / 113 | 80 | 0 |
+| 2.2 | 285, 800, 33.5 | 23.6 | 183 / 177 | 162 / 156 | 120 | 1 (16 um) |
+| 3.1 | 325, 960, 33.5 | 24.6 | 181 / 166 | 157 / 134 | 130 | 1 (16 um) |
+| 3.2 | 245, 960, 33.5 | 18.5 | 129 / 117 | 149 / 129 | 80 | 0 |
+
+![Figure 22](../../figures/lpbf/animations/k1_free_surface_h10_case1.1_frames/frame_012.png)
+
+**Figure 22.** Track 1.1 (the smallest spot) at 0.36 ms. Top: section along the track
+axis; green: the surface; gray: gas; arrows: velocity of the liquid. The depression
+under the beam is 200 um deep, and a gas pocket has been closed off behind it. Bottom:
+the plane just below the plate surface. Animations of the seven tracks:
+`figures/lpbf/animations/k1_free_surface_h10_case*.gif`.
+
+- **The deep tracks are no longer too shallow.** With nothing refitted and no
+  penetration depth, every track is 4 to 26 % too deep, the deepest one (1.1, the
+  smallest spot) by 15 % where conduction left it 44 % short. The spread of the depth
+  errors over the seven tracks falls from 17 points (conduction, flat flow) to 7: the
+  model now carries the dependence of the depth on the spot size, which a flat surface
+  could not (section 6.5).
+- **One refitted parameter does not improve the set.** At 0.65 the two fit tracks are
+  right in the mean, but the depth of the keyhole tracks falls faster than measured
+  (track 1.1 from 262 to 169 um for 16 % less absorbed power), and the rms error stays
+  at 13.8 %. Interpolating linearly between the two sets, an absorptivity near 0.70
+  would give about 8 % rms over the seven tracks; that is an estimate from two points,
+  fitted on all tracks, and was not run.
+- **The width is 11 to 16 % too large in the mean** in both sets, where the flat models
+  were within 2 %. All of the absorbed power now arrives at the surface, and the
+  outward surface flow spreads it; the missing reflections inside the depression would
+  move part of it down.
+- **The depression grows with the keyhole number**: 80 to 100 um for the four tracks
+  below $Ke$ of 22, 120 to 130 um for the two near 24, 220 um at 34. It stays below the
+  depth of the depression law of section 6.7 at this absorptivity (230 to 320 um); the
+  law was established with measured absorptivities, which this record does not give.
+- **Enclosed gas appears with the keyhole number.** Pockets below the surface are found
+  in 26 of 41 frames for track 1.1, once each for the two tracks next in keyhole
+  number, and never for the other four. This is the order the keyhole-porosity
+  criterion predicts. None of the pockets is left in the frozen track.
+- **That none survives is not evidence of a pore-free track.** The term that keeps the
+  profile of the phase field removes gas regions of a few elements, and the model has
+  no gas pressure inside a pocket. Whether a pinched-off bubble is trapped or lost is
+  beyond this model at 10 um.
+- **Conservation and the surface left behind.** The amount of metal changes by less
+  than 0.05 %. Every track ends with a dent of 20 um at the end of the track and a
+  rise of 10 to 20 um, at the resolution of the element.
+- **Numerical notes.** The surface terms carry the weight $3\phi^2$, which keeps them on
+  the metal side, and the evaporative loss is taken implicitly at the nodes; both are
+  needed for the tracks of highest intensity at this step size.
+- **Not validated:** the shape of the depression in time (no X-ray record for these
+  tracks) and the pore count.
+
+### 6.14 Gas pores as tracers in the melt pool
+
+Powder carries gas between and inside its particles. The service `pore_tracers`
+(PINNACLE ADR 0059) follows it as points: when a powder element first melts it releases
+pores, which move with the liquid and rise by buoyancy, are trapped where the liquid
+freezes and are lost when they reach the surface.
+
+**Case.** One powder layer of 40 um on the plate, three tracks of 440 um at the build
+parameters, flow under a flat surface, 10 um elements; the scan is held between tracks
+until the material is solid (deck `decks/lpbf/in718/defects/pores_flow_h10.i`; 8,748
+steps, 92 min on the GPU host beside other runs). The gas released is 1 % of the powder
+volume in pores of 10 um median diameter with a log-normal spread of 0.3. Both numbers
+are ASSUMED: no measurement of the powder lot is available. The result is therefore the
+share that survives, not a porosity.
+
+**Table 29.** Fate of the pores.
+
+| quantity | value |
+|---|---|
+| pores released | 190 |
+| lost at the surface | 166 (87 %) |
+| trapped in the solid | 24 (13 %) |
+| time from release to loss, median | 66 us |
+| depth of the trapped pores below the surface, median / largest | 30 / 102 um |
+| diameter of the trapped pores, median | 10.4 um (released: 10.4 um) |
+| gas porosity of the melted material between the outer track axes | 0.04 % (9 pores) |
+
+![Figure 23](../../figures/lpbf/defects_pores_flow_h10.png)
+
+**Figure 23.** Trapped pores (red, size by diameter) in the melted material (gray), in
+two sections, and the time the lost pores lived.
+
+- **The pool loses most of its gas quickly.** Seven of eight pores reach the surface,
+  half of them within 66 us of their release: the liquid at the surface moves at 1 to
+  3 m/s (section 6.11), and a pore is released within 40 um of it.
+- **Trapping is a matter of the flow, not of buoyancy.** The Stokes rise speed of a
+  10 um pore in this liquid is 0.08 mm/s; in the 1 to 2 ms a pool lives it rises by a
+  fraction of a micrometre. The trapped pores are those the flow carried down, to as
+  deep as 100 um, into material that froze before they came back.
+- **No size effect at these sizes**: the trapped pores are as large as the released
+  ones, as expected when buoyancy does not act.
+- **Limits.** The pores do not act on the flow, do not merge, grow or dissolve. A pore
+  moves with the velocity of the element around it (first order). With the flat surface
+  a pore is lost when it comes within half an element of the surface. In the 600 um
+  block the pool reaches the walls (section 6.11), so the flow is not that of a free
+  track. No pore measurement of a single layer exists to compare with; the tomography
+  record of section 6.12 gives pores of a build, with undocumented columns.
+
 ## 7. 316L single track: process stress with crystal plasticity
 
 The case of (grilli 2022 elimination) with the substitute inputs of section 3.2, on the
@@ -1379,16 +1639,16 @@ normal displacement on the four sides and the bottom; (2) relaxation with the wa
 $x = 200$ um and $y = 160$ um removed. 200 load steps of 45 us, 460 Newton iterations, no
 cutback, no unconverged step, 5,540 s (the host was shared).
 
-![Figure 19](../../figures/lpbf/ss316l_stress_h8.png)
+![Figure 24](../../figures/lpbf/ss316l_stress_h8.png)
 
-**Figure 19.** 316L track, 8 um mesh, after the relaxation stage. Left: $\sigma_{xx}$ and
+**Figure 24.** 316L track, 8 um mesh, after the relaxation stage. Left: $\sigma_{xx}$ and
 von Mises stress in the section across the track at mid-length (line: boundary of the
 melted zone). Top middle: $\sigma_{xx}$ in the top layer of elements. Bottom middle: mean
 of $\sigma_{xx}$ and $\sigma_{yy}$ over every layer of elements against the height (the
 quantity of the paper's Figure 15d). Right: mean stress of the volume and temperature
 range in time; the walls are removed at 8.01 ms.
 
-**Table 25.** Residual stress after relaxation against the published simulation. The
+**Table 30.** Residual stress after relaxation against the published simulation. The
 paper's values are read from its Figure 15 (color scales and curve) by eye.
 
 | quantity | this work | (grilli 2022 elimination) |
@@ -1415,11 +1675,11 @@ paper's values are read from its Figure 15 (color scales and curve) by eye.
   qualitative comparison, as planned.
 - **The relaxation stage is elastic here.** The 22 steps after the release converge in one
   iteration each and change neither the stress nor the plastic strain; its assumed length
-  (0.99 ms) therefore has no influence. The top layer of Figure 19 is more tensile towards
+  (0.99 ms) therefore has no influence. The top layer of Figure 24 is more tensile towards
   $x = 0$, the wall that stays fixed: only one wall of each pair is removed, as in the
   paper.
 - **With all walls held the volume carries about 2 GPa.** At 8.01 ms, before the
-  release, the mean stress is 1,845 MPa ($xx$) and 2,052 MPa ($yy$) (Figure 19, top
+  release, the mean stress is 1,845 MPa ($xx$) and 2,052 MPa ($yy$) (Figure 24, top
   right). This is the reaction of the walls on a volume that was heated and cooled as a
   whole, not a residual stress; the relaxation stage of the paper removes it
   (`release_time` on the boundary condition, section 4.1). The level, against a
@@ -1429,8 +1689,8 @@ paper's values are read from its Figure 15 (color scales and curve) by eye.
 - **Hardening parameters.** The dislocation-density parameters of the deck are derived
   from the paper's law with the relations of equation 18 (section 3.2; $k_1 = 0.0652$).
 
-**Table 26.** The same run on three grain realizations (844 Voronoi grains of 16 um,
-uniform random orientations; seed 1 is Table 25). Standard deviation of three values.
+**Table 31.** The same run on three grain realizations (844 Voronoi grains of 16 um,
+uniform random orientations; seed 1 is Table 30). Standard deviation of three values.
 
 | quantity (MPa) | seed 1 | seed 2 | seed 3 | mean $\pm$ sd |
 |---|---|---|---|---|
@@ -1445,22 +1705,22 @@ uniform random orientations; seed 1 is Table 25). Standard deviation of three va
 | wall time on 8 CPU threads (s) | 5,540 (16 threads, shared) | 6,869 | 6,891 | |
 
 - **The layer means do not depend on the grain realization** beyond 5 % (26 MPa at
-  most); the differences from the published values in Table 25 are 100 to 400 MPa. The
+  most); the differences from the published values in Table 30 are 100 to 400 MPa. The
   grain realization is therefore not what separates this result from the paper's. The
   local extremes move by 100 to 200 MPa with the seed.
 
-![Figure 20](../../figures/lpbf/ss316l_stress_h8_seed2.png)
+![Figure 25](../../figures/lpbf/ss316l_stress_h8_seed2.png)
 
-![Figure 21](../../figures/lpbf/ss316l_stress_h8_seed3.png)
+![Figure 26](../../figures/lpbf/ss316l_stress_h8_seed3.png)
 
-**Figure 20, Figure 21.** The 316L track on grain realizations 2 and 3 (panels as in
-Figure 19).
+**Figure 25, Figure 26.** The 316L track on grain realizations 2 and 3 (panels as in
+Figure 24).
 
 ## 8. Cost, runs on several GPUs and the standalone decks
 
 ### 8.1 Cost of the runs of this report
 
-**Table 27.** Wall times. GPU host: one AMD Radeon 8060S (ROCm 7.2), 16 cores, float64.
+**Table 32.** Wall times. GPU host: one AMD Radeon 8060S (ROCm 7.2), 16 cores, float64.
 Every number is one run.
 
 | run | size | steps | wall time |
@@ -1477,6 +1737,8 @@ Every number is one run.
 | K1 tracks with the keyhole-number source depth | 73,500 elements | 480 | 79 to 90 s per track on the GPU while it was shared |
 | lack-of-fusion hatch series, two layers of three tracks | 100,800 elements | 2,600 | 534 to 578 s each on the GPU while it was shared |
 | cracking indicators, one layer of three tracks with cool-down | 86,400 elements | 3,200 | 1,097 s on the GPU while it was shared |
+| K1 with a free surface, seven tracks, two absorptivities | 84,000 elements | 2,270 | 1,066 to 3,342 s each, three or four runs side by side on the GPU |
+| gas pores as tracers, one layer of three tracks with flow | 86,400 elements | 8,748 | 5,542 s on the GPU while it was shared |
 | K3 cube of the measured 3-D EBSD structure, 20 x 20 x 20 | 8,000 elements | 100 load steps | 12,411 s on 8 CPU threads |
 | K4 column stress, 20 x 20 x 9 | 3,600 elements | 262 load steps | 12,538 s on 16 CPU threads |
 | 316L thermal, 8 um | 7,000 elements | 5,334 | 138 s on the workstation CPU |
@@ -1503,7 +1765,7 @@ chain:
   nucleation to $2\times10^{-14}$, the stress stage to the tolerance of its linear solve
   (tier 2: the cut run against the single run of the same deck).
 
-**Table 28.** Measured on one node with four NVIDIA A100 cards (float64), against one
+**Table 33.** Measured on one node with four NVIDIA A100 cards (float64), against one
 process on one card.
 
 | case | one card | four cards | factor |
@@ -1540,7 +1802,7 @@ revision of the ledger and, for the 316L mechanics, the shipped orientation file
 headers state size, memory and step count. **None of them has been run for this report**;
 each has a checked coarse configuration of the same blocks.
 
-**Table 29.** Standalone decks.
+**Table 34.** Standalone decks.
 
 | deck | mesh | elements | steps | memory (estimate) | checked configuration |
 |---|---|---|---|---|---|
@@ -1567,7 +1829,7 @@ of section 6.11 in a block of 1.2 x 1.2 mm, where the scanned patch keeps 380 um
 every side, with 4,000 plate grains (the grain size of the small block). Decks
 `decks/lpbf/in718/k2/k2_column_flow_wide_h<size>.i`, written by
 `scripts/lpbf_column_wide.py`. Only the 10 um deck has been run, for 60 steps on four
-cards (Table 28) and for 30 steps on the host; the full columns are not run.
+cards (Table 33) and for 30 steps on the host; the full columns are not run.
 
 - **Dwell.** The scan path has a dwell between two tracks and between two layers, and
   both are stepped through. In these decks the next layer is spread when the layer
@@ -1590,7 +1852,7 @@ cards (Table 28) and for 30 steps on the host; the full columns are not run.
 - **Frames.** Every stored frame is reduced on its part to the grain map, the solid
   share, the temperature and the velocity.
 
-**Table 30.** Decks of the wide column. Memory from 36 kB per element (section 8.2);
+**Table 35.** Decks of the wide column. Memory from 36 kB per element (section 8.2);
 time from 3.2 us per element, step and card measured on A100 cards at 129,600 elements
 per card, without holds, assuming the same rate at larger parts (an estimate, not a
 measurement).
@@ -1660,7 +1922,10 @@ separate, later study.
 
 | item | state |
 |---|---|
-| deforming free surface (keyhole), powder particles | not planned in this part (decision D2) |
+| free surface (keyhole depression) | built and run on the seven single tracks (section 6.13); not combined with powder layers, no beam reflections, no evaporated mass |
+| gas pores | tracers released by melting powder (section 6.14); the gas content of the powder is an assumed input |
+| powder particles, spatter | not planned in this part |
+| validation of the defect indicators | keyhole number supported, overlap rule partly, the others not (section 6.12, Table 26) |
 | build column with flow | run on the 600 um block (section 6.11): the pool fills the block, so the result is not representative; the decks of the 1.2 mm block are shipped and not run (section 8.3) |
 | cracking indicators with the strain rate of the stress stage, and a validation set | not done (section 6.10) |
 | refit of the heat source with flow | not done (section 6.5: the two fit cases move in opposite directions) |

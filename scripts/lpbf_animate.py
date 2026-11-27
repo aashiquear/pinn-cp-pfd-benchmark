@@ -63,6 +63,14 @@ def cmd_track(run_dir: str, out: str, liquidus: float = 1610.15, solidus: float 
     has_flow = "snapshot_velocity" in data.files
     if has_flow:
         vel = data["snapshot_velocity"][:, order, :].reshape((-1,) + shape + (3,))
+    # a run with a free surface: the phase field (1 metal, 0 gas); gas is drawn gray, the
+    # surface as a green line, and the plan view is the plane of the plate surface
+    phi = None
+    kt = z.size - 1
+    if "snapshot_phi" in data.files:
+        raw_phi = data["snapshot_phi"]
+        phi = raw_phi.reshape(raw_phi.shape[0], -1)[:, order].reshape((-1,) + shape)
+        kt = int(np.nonzero(phi[0, :, 0, 0] > 0.75)[0].max())  # one row below the surface
     jc = y.size // 2
     um = 1e6
     t_hi = 3200.0
@@ -70,13 +78,20 @@ def cmd_track(run_dir: str, out: str, liquidus: float = 1610.15, solidus: float 
     frame_dir = frame_dir.parent / (frame_dir.name + "_frames")
     frame_dir.mkdir(parents=True, exist_ok=True)
     files = []
-    zlo = max(0, z.size - 22)
+    zlo = max(0, z.size - (34 if phi is not None else 22))
     for k, t in enumerate(times):
         fig, ax = plt.subplots(2, 1, figsize=(8.6, 6.4), gridspec_kw={"height_ratios": [1, 1.25]})
         side = temp[k, zlo:, jc, :]
+        if phi is not None:
+            side = np.where(phi[k, zlo:, jc, :] >= 0.5, side, np.nan)
+            ax[0].set_facecolor("0.75")
+            ax[0].contour(x * um, z[zlo:] * um, phi[k, zlo:, jc, :], levels=[0.5], colors=["lime"], linewidths=1.2)
         im = ax[0].pcolormesh(x * um, z[zlo:] * um, side, cmap="inferno", vmin=300.0, vmax=t_hi, shading="gouraud")
         ax[0].contour(x * um, z[zlo:] * um, side, levels=[solidus, liquidus], colors=["c", "w"], linewidths=0.9)
-        top = temp[k, -1, :, :]
+        top = temp[k, kt, :, :]
+        if phi is not None:
+            top = np.where(phi[k, kt, :, :] >= 0.5, top, np.nan)
+            ax[1].set_facecolor("0.75")
         ax[1].pcolormesh(x * um, y * um, top, cmap="inferno", vmin=300.0, vmax=t_hi, shading="gouraud")
         ax[1].contour(x * um, y * um, top, levels=[solidus, liquidus], colors=["c", "w"], linewidths=0.9)
         title = f"t = {t * 1e6:6.0f} us"
@@ -89,15 +104,19 @@ def cmd_track(run_dir: str, out: str, liquidus: float = 1610.15, solidus: float 
             if mask.any():
                 ax[0].quiver(x[::s] * um, z[zlo:][::s] * um, np.where(mask, u, np.nan)[::s, ::s],
                              np.where(mask, w, np.nan)[::s, ::s], color="w", scale=30.0, width=0.003)
-            ut, vt = vel[k, -1, :, :, 0], vel[k, -1, :, :, 1]
+            ut, vt = vel[k, kt, :, :, 0], vel[k, kt, :, :, 1]
             mask = top >= solidus
             if mask.any():
                 ax[1].quiver(x[::s] * um, y[::s] * um, np.where(mask, ut, np.nan)[::s, ::s],
                              np.where(mask, vt, np.nan)[::s, ::s], color="w", scale=30.0, width=0.003)
-        ax[0].set_title(title + "   (section along the track axis)", fontsize=9)
+        ax[0].set_title(title + "   (section along the track axis"
+                        + ("; green: the surface)" if phi is not None else ")"), fontsize=9)
         ax[0].set_xlabel("x, scan direction ($\\mu$m)"); ax[0].set_ylabel("z ($\\mu$m)")
         ax[0].set_aspect("equal")
-        ax[1].set_title("top surface (white: liquidus, cyan: solidus)", fontsize=9)
+        ax[1].set_title(
+            "plane just below the plate surface (gray: gas; white: liquidus, cyan: solidus)"
+            if phi is not None
+            else "top surface (white: liquidus, cyan: solidus)", fontsize=9)
         ax[1].set_xlabel("x, scan direction ($\\mu$m)"); ax[1].set_ylabel("y ($\\mu$m)")
         ax[1].set_aspect("equal")
         fig.colorbar(im, ax=ax, shrink=0.8, label="temperature (K), color range capped at 3,200 K")

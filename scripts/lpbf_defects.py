@@ -7,6 +7,8 @@ usage: scripts/lpbf_defects.py law <gan supplementary data 1 .xlsx> <out.json>
        scripts/lpbf_defects.py compare <out.png> <label>=<k1_cross_sections.csv> ...
        scripts/lpbf_defects.py column <column run dir> <x0> <y0> <x1> <y1> <plate top> [hatch layer width depth]
        scripts/lpbf_defects.py cracking <run dir> <out.png> <out.csv> <name> [<name> ...]
+       scripts/lpbf_defects.py pockets <run dir> <plate surface height> [<out.json>]
+       scripts/lpbf_defects.py pores <run dir> <out.png> <surface height>
 
   law      recompute the keyhole number of every row of the published keyhole-depth data
            (gan 2021 keyhole, Supplementary Data 1: power, measured absorptivity, speed,
@@ -29,6 +31,16 @@ usage: scripts/lpbf_defects.py law <gan supplementary data 1 .xlsx> <out.json>
            mushy zone, steepness index, time ratio, pressure drops) and a figure with
            the curves, the maps of the pressure drop and of the time ratio in the
            section across the tracks, and the distribution of the time ratio
+
+  pockets  for a free-surface run (fields.npz with the phase field `phi`, and
+           process_state.npz): the gas enclosed below the surface at the end of the run
+           (PINNACLE `gas_pockets`: connected gas elements without a path through the
+           gas to the top), what is left of the depression, and the largest rise of the
+           surface above the plate
+
+  pores    for a run with a `pore_tracers` service (pores.npz, pores.json,
+           process_state.npz): where the trapped pores sit in the melted material (two
+           sections), and how long the lost ones lived
 
 Material values of alloy 718 are those of the decks (docs/16_lpbf_notebook.md, section
 2): volumetric capacity and liquid conductivity at the liquidus. PINNACLE must be
@@ -331,6 +343,93 @@ def cmd_cracking(run_dir: Path, out: Path, table: Path, names: list[str]) -> Non
     print("wrote", out, "section at y =", y0)
 
 
+def cmd_pockets(run_dir: Path, surface: float, out: Path | None) -> dict:
+    from scipy.spatial import cKDTree
+
+    from pinnacle.components.additive.pores import gas_pockets
+
+    fields = np.load(run_dir / "fields.npz")
+    record = np.load(run_dir / "process_state.npz")
+    nodes, phi = fields["nodes"], np.asarray(fields["phi"], dtype=float).ravel()
+    temperature = np.asarray(fields["temperature"], dtype=float).ravel()
+    centroid, volume = record["centroid"], record["volume"]
+    size = float(np.min(np.diff(np.unique(np.round(centroid[:, 2], 12)))))
+    # the phase of an element: the mean over its eight nodes (the nearest to its centre)
+    _, corner = cKDTree(nodes).query(centroid, k=2 ** centroid.shape[1])
+    element_phi = phi[corner].mean(axis=1)
+    element_t = temperature[corner].mean(axis=1)
+    is_gas = element_phi < 0.5
+    top = float(nodes[:, -1].max())
+    report = gas_pockets(centroid, volume, is_gas, size, top, element_t < LIQUIDUS)
+    below = is_gas & (centroid[:, -1] < surface)
+    above = ~is_gas & (centroid[:, -1] > surface)
+    report["run"] = run_dir.name
+    report["element_um"] = 1e6 * size
+    report["remaining_depression_um"] = 1e6 * float(surface - (centroid[below, -1].min() - size / 2)) if below.any() else 0.0
+    report["largest_rise_um"] = 1e6 * float(centroid[above, -1].max() + size / 2 - surface) if above.any() else 0.0
+    report["metal_volume_change_pct"] = 100.0 * float((volume * element_phi).sum() / volume[centroid[:, -1] < surface].sum() - 1.0)
+    # during the run: enclosed gas in every stored frame
+    if "snapshot_phi" in fields.files:
+        frames = fields["snapshot_phi"]
+        frames = frames.reshape(frames.shape[0], -1)
+        times = fields["snapshot_times"]
+        seen = []
+        for k in range(frames.shape[0]):
+            gas_k = frames[k][corner].mean(axis=1) < 0.5
+            found = gas_pockets(centroid, volume, gas_k, size, top)
+            if found["pockets"]:
+                seen.append({"time_us": 1e6 * float(times[k]), "pockets": found["pockets"],
+                             "diameter_max_um": 1e6 * found["pocket_diameter_max"],
+                             "depth_um": [1e6 * (surface - e["center"][-1]) for e in found["pocket_list"]]})
+        report["frames"] = int(frames.shape[0])
+        report["frames_with_pockets"] = len(seen)
+        report["transient_pockets"] = seen
+        report["transient_diameter_max_um"] = max((f["diameter_max_um"] for f in seen), default=0.0)
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(report, indent=1))
+    print(json.dumps({k: v for k, v in report.items() if k not in ("pocket_list", "transient_pockets")}))
+    return report
+
+
+def cmd_pores(run_dir: Path, out: Path, surface: float) -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    table = np.load(run_dir / "pores.npz")
+    report = json.loads((run_dir / "pores.json").read_text())
+    record = np.load(run_dir / "process_state.npz")
+    position, status, diameter = table["position"], table["status"], table["diameter"]
+    trapped, lost = status == 1, status == 2
+    melted = record["melt_count"] > 0
+    centroid = record["centroid"]
+    fig, axes = plt.subplots(1, 3, figsize=(12.5, 3.6))
+    for ax, axis, label in ((axes[0], 0, "x"), (axes[1], 1, "y")):
+        ax.scatter(1e6 * centroid[melted, axis], 1e6 * centroid[melted, 2], s=2, color="0.88", marker="s",
+                   label="melted material")
+        ax.scatter(1e6 * position[trapped, axis], 1e6 * position[trapped, 2], s=1.0e11 * diameter[trapped] ** 2,
+                   color="tab:red", edgecolors="k", linewidths=0.4, label=f"trapped pores ({int(trapped.sum())})")
+        ax.axhline(1e6 * surface, color="k", lw=0.6, ls="--")
+        ax.set_xlabel(f"{label} (um)"); ax.set_ylabel("z (um)")
+        ax.set_ylim(1e6 * surface - 180.0, 1e6 * surface + 10.0)
+    axes[0].legend(fontsize=7, loc="lower left")
+    life = 1e6 * (table["settled_at"] - table["released_at"])[lost]
+    axes[2].hist(life[np.isfinite(life)], bins=np.linspace(0.0, max(400.0, float(np.nanmax(life))), 40), color="tab:blue")
+    axes[2].set_xlabel("time from release to loss at the surface (us)"); axes[2].set_ylabel("pores")
+    axes[2].set_title(f"{int(lost.sum())} of {report['released']} pores lost at the surface", fontsize=9)
+    fig.tight_layout()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, dpi=180)
+    depth = 1e6 * (surface - position[trapped, 2])
+    print(json.dumps({"released": report["released"], "lost": int(lost.sum()), "trapped": int(trapped.sum()),
+                      "trapped_depth_um_median": float(np.median(depth)) if trapped.any() else None,
+                      "trapped_depth_um_max": float(depth.max()) if trapped.any() else None,
+                      "life_lost_us_median": float(np.nanmedian(life)) if lost.any() else None,
+                      "gas_porosity": report.get("gas_porosity")}))
+    print("wrote", out)
+
+
 def main() -> None:
     a = sys.argv[1:]
     if len(a) == 3 and a[0] == "law":
@@ -341,6 +440,10 @@ def main() -> None:
         cmd_figure(Path(a[1]), Path(a[2]), Path(a[3]))
     elif len(a) in (7, 11) and a[0] == "column":
         cmd_column(Path(a[1]), [float(v) for v in a[2:6]], float(a[6]), [float(v) for v in a[7:]])
+    elif len(a) == 4 and a[0] == "pores":
+        cmd_pores(Path(a[1]), Path(a[2]), float(a[3]))
+    elif len(a) in (3, 4) and a[0] == "pockets":
+        cmd_pockets(Path(a[1]), float(a[2]), Path(a[3]) if len(a) == 4 else None)
     elif len(a) >= 5 and a[0] == "cracking":
         cmd_cracking(Path(a[1]), Path(a[2]), Path(a[3]), a[4:])
     elif len(a) >= 3 and a[0] == "compare":
