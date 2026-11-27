@@ -44,3 +44,6 @@ decks/lpbf/in718/k4/grains_k2_column_r2.csv
 data/lpbf/defects/raw/**
 !data/lpbf/defects/raw/*/
 !data/lpbf/defects/raw/*/SOURCE.md
+
+# per-row tables derived from third-party compilations (kept as summaries only)
+data/lpbf/defects/validation_*.csv

@@ -1,0 +1,1109 @@
+{
+ "gan": {
+  "rows": 87,
+  "note": "every row is a measured vapor depression; the workbook has no porosity or stability label",
+  "regimes": {
+   "conduction": {
+    "rows": 0,
+    "depth_over_radius_min_median_max": null
+   },
+   "transition": {
+    "rows": 35,
+    "depth_over_radius_min_median_max": [
+     0.209,
+     0.848,
+     2.094
+    ]
+   },
+   "keyhole": {
+    "rows": 52,
+    "depth_over_radius_min_median_max": [
+     1.985,
+     4.745,
+     12.05
+    ]
+   }
+  },
+  "by_set": {
+   "Al6061, spot size 88 um": {
+    "rows": 9,
+    "Ke_min_max": [
+     5.95,
+     31.39
+    ],
+    "regimes": {
+     "keyhole": 8,
+     "transition": 1
+    }
+   },
+   "SS316, spot size 110 um": {
+    "rows": 7,
+    "Ke_min_max": [
+     4.35,
+     22.64
+    ],
+    "regimes": {
+     "transition": 1,
+     "keyhole": 6
+    }
+   },
+   "Ti6, spot size 140 um": {
+    "rows": 23,
+    "Ke_min_max": [
+     1.55,
+     10.22
+    ],
+    "regimes": {
+     "transition": 20,
+     "keyhole": 3
+    }
+   },
+   "Ti64, spot size 95 um": {
+    "rows": 48,
+    "Ke_min_max": [
+     2.15,
+     23.43
+    ],
+    "regimes": {
+     "transition": 13,
+     "keyhole": 35
+    }
+   }
+  },
+  "rows_deeper_than_one_radius": {
+   "below_Ke_6": 16,
+   "of": 35,
+   "above_Ke_6": 52,
+   "of_above": 52
+  },
+  "depth_over_diameter_at_least_one": {
+   "n_positive": 53,
+   "n_negative": 34,
+   "area": 0.993,
+   "best_threshold": 6.266116289285937,
+   "tpr_at_best": 0.962,
+   "fpr_at_best": 0.029,
+   "accuracy_at_best": 0.966
+  },
+  "Ke_above_16_rows": 14,
+  "Ke_above_30_rows": 1
+ },
+ "modes": {
+  "table": "meltpoolnet_classification.csv",
+  "melting_temperature_K": {
+   "IN718": 1673.0,
+   "Ti-6Al-4V": 1922.0,
+   "SS316L": 1688.0,
+   "SS17-4PH": 1693.0,
+   "SS304L": 1693.0
+  },
+  "skipped": {
+   "power, speed, beam diameter or a property missing": 96,
+   "unit of the melting temperature not established": 285,
+   "not laser (EBM)": 28
+  },
+  "rows_in_table": 1249,
+  "rows_used": 840,
+  "labels_used": {
+   "desirable": 265,
+   "LOF": 156,
+   "keyhole": 319,
+   "balling": 92,
+   "spatter formation": 8
+  },
+  "materials": {
+   "SS316L": {
+    "rows": 277,
+    "labels": {
+     "LOF": 96,
+     "desirable": 107,
+     "keyhole": 69,
+     "balling": 5
+    },
+    "Ke_per_unit_absorptivity_min_median_max": [
+     3.81,
+     36.1,
+     759.46
+    ],
+    "keyhole_against_desirable": {
+     "n_positive": 69,
+     "n_negative": 107,
+     "area": 0.614,
+     "tpr_at_best": 0.536,
+     "fpr_at_best": 0.234,
+     "accuracy_at_best": 0.676,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 21.25,
+      "0.50": 30.35,
+      "0.70": 42.5
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 60.71,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 62,
+       "false_positive": 101,
+       "false_negative": 7,
+       "true_negative": 6,
+       "accuracy": 0.386
+      },
+      "0.50": {
+       "true_positive": 68,
+       "false_positive": 102,
+       "false_negative": 1,
+       "true_negative": 5,
+       "accuracy": 0.415
+      },
+      "0.70": {
+       "true_positive": 68,
+       "false_positive": 106,
+       "false_negative": 1,
+       "true_negative": 1,
+       "accuracy": 0.392
+      }
+     }
+    },
+    "keyhole_against_all_other_modes": {
+     "n_positive": 69,
+     "n_negative": 208,
+     "area": 0.71,
+     "tpr_at_best": 0.696,
+     "fpr_at_best": 0.236,
+     "accuracy_at_best": 0.747,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 16.8,
+      "0.50": 24.0,
+      "0.70": 33.6
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 48.0,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 62,
+       "false_positive": 172,
+       "false_negative": 7,
+       "true_negative": 36,
+       "accuracy": 0.354
+      },
+      "0.50": {
+       "true_positive": 68,
+       "false_positive": 187,
+       "false_negative": 1,
+       "true_negative": 21,
+       "accuracy": 0.321
+      },
+      "0.70": {
+       "true_positive": 68,
+       "false_positive": 197,
+       "false_negative": 1,
+       "true_negative": 11,
+       "accuracy": 0.285
+      }
+     }
+    },
+    "desirable_against_lack_of_fusion": {
+     "n_positive": 107,
+     "n_negative": 96,
+     "area": 0.807,
+     "tpr_at_best": 0.673,
+     "fpr_at_best": 0.167,
+     "accuracy_at_best": 0.749,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 12.41,
+      "0.50": 17.72,
+      "0.70": 24.81
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 35.45
+    },
+    "absorptivity_values_listed_in_table": [
+     0.119,
+     0.125,
+     0.138,
+     0.151,
+     "..."
+    ]
+   },
+   "Ti-6Al-4V": {
+    "rows": 209,
+    "labels": {
+     "keyhole": 135,
+     "desirable": 43,
+     "LOF": 26,
+     "balling": 5
+    },
+    "Ke_per_unit_absorptivity_min_median_max": [
+     11.91,
+     58.92,
+     291.62
+    ],
+    "keyhole_against_desirable": {
+     "n_positive": 135,
+     "n_negative": 43,
+     "area": 0.418,
+     "tpr_at_best": 0.874,
+     "fpr_at_best": 0.791,
+     "accuracy_at_best": 0.713,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 11.69,
+      "0.50": 16.7,
+      "0.70": 23.38
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 33.4,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 135,
+       "false_positive": 43,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.758
+      },
+      "0.50": {
+       "true_positive": 135,
+       "false_positive": 43,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.758
+      },
+      "0.70": {
+       "true_positive": 135,
+       "false_positive": 43,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.758
+      }
+     }
+    },
+    "keyhole_against_all_other_modes": {
+     "n_positive": 135,
+     "n_negative": 74,
+     "area": 0.526,
+     "tpr_at_best": 0.837,
+     "fpr_at_best": 0.662,
+     "accuracy_at_best": 0.66,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 12.87,
+      "0.50": 18.39,
+      "0.70": 25.75
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 36.78,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 135,
+       "false_positive": 72,
+       "false_negative": 0,
+       "true_negative": 2,
+       "accuracy": 0.656
+      },
+      "0.50": {
+       "true_positive": 135,
+       "false_positive": 73,
+       "false_negative": 0,
+       "true_negative": 1,
+       "accuracy": 0.651
+      },
+      "0.70": {
+       "true_positive": 135,
+       "false_positive": 74,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.646
+      }
+     }
+    },
+    "desirable_against_lack_of_fusion": {
+     "n_positive": 43,
+     "n_negative": 26,
+     "area": 0.724,
+     "tpr_at_best": 0.698,
+     "fpr_at_best": 0.269,
+     "accuracy_at_best": 0.71,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 16.76,
+      "0.50": 23.95,
+      "0.70": 33.53
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 47.89
+    },
+    "absorptivity_values_listed_in_table": [
+     0.058,
+     0.127,
+     0.162,
+     0.194,
+     "..."
+    ]
+   },
+   "SS17-4PH": {
+    "rows": 200,
+    "labels": {
+     "keyhole": 30,
+     "LOF": 21,
+     "desirable": 77,
+     "balling": 64,
+     "spatter formation": 8
+    },
+    "Ke_per_unit_absorptivity_min_median_max": [
+     9.54,
+     26.59,
+     150.69
+    ],
+    "keyhole_against_desirable": {
+     "n_positive": 30,
+     "n_negative": 77,
+     "area": 0.971,
+     "tpr_at_best": 0.933,
+     "fpr_at_best": 0.078,
+     "accuracy_at_best": 0.925,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 20.24,
+      "0.50": 28.91,
+      "0.70": 40.47
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 57.82,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 30,
+       "false_positive": 60,
+       "false_negative": 0,
+       "true_negative": 17,
+       "accuracy": 0.439
+      },
+      "0.50": {
+       "true_positive": 30,
+       "false_positive": 74,
+       "false_negative": 0,
+       "true_negative": 3,
+       "accuracy": 0.308
+      },
+      "0.70": {
+       "true_positive": 30,
+       "false_positive": 77,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.28
+      }
+     }
+    },
+    "keyhole_against_all_other_modes": {
+     "n_positive": 30,
+     "n_negative": 162,
+     "area": 0.97,
+     "tpr_at_best": 0.933,
+     "fpr_at_best": 0.074,
+     "accuracy_at_best": 0.927,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 20.24,
+      "0.50": 28.91,
+      "0.70": 40.47
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 57.82,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 30,
+       "false_positive": 121,
+       "false_negative": 0,
+       "true_negative": 41,
+       "accuracy": 0.37
+      },
+      "0.50": {
+       "true_positive": 30,
+       "false_positive": 157,
+       "false_negative": 0,
+       "true_negative": 5,
+       "accuracy": 0.182
+      },
+      "0.70": {
+       "true_positive": 30,
+       "false_positive": 162,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.156
+      }
+     }
+    },
+    "desirable_against_lack_of_fusion": {
+     "n_positive": 77,
+     "n_negative": 21,
+     "area": 0.631,
+     "tpr_at_best": 0.286,
+     "fpr_at_best": 0.0,
+     "accuracy_at_best": 0.439,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 13.85,
+      "0.50": 19.79,
+      "0.70": 27.71
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 39.58
+    },
+    "absorptivity_values_listed_in_table": [
+     0.261,
+     0.273,
+     0.277,
+     0.278,
+     "..."
+    ]
+   },
+   "IN718": {
+    "rows": 148,
+    "labels": {
+     "desirable": 36,
+     "LOF": 13,
+     "keyhole": 81,
+     "balling": 18
+    },
+    "Ke_per_unit_absorptivity_min_median_max": [
+     1.3,
+     33.41,
+     154.5
+    ],
+    "keyhole_against_desirable": {
+     "n_positive": 81,
+     "n_negative": 36,
+     "area": 0.853,
+     "tpr_at_best": 0.778,
+     "fpr_at_best": 0.139,
+     "accuracy_at_best": 0.803,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 11.97,
+      "0.50": 17.1,
+      "0.70": 23.94
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 34.2,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 80,
+       "false_positive": 33,
+       "false_negative": 1,
+       "true_negative": 3,
+       "accuracy": 0.709
+      },
+      "0.50": {
+       "true_positive": 81,
+       "false_positive": 36,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.692
+      },
+      "0.70": {
+       "true_positive": 81,
+       "false_positive": 36,
+       "false_negative": 0,
+       "true_negative": 0,
+       "accuracy": 0.692
+      }
+     }
+    },
+    "keyhole_against_all_other_modes": {
+     "n_positive": 81,
+     "n_negative": 67,
+     "area": 0.881,
+     "tpr_at_best": 0.778,
+     "fpr_at_best": 0.119,
+     "accuracy_at_best": 0.824,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 11.97,
+      "0.50": 17.1,
+      "0.70": 23.94
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 34.2,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 80,
+       "false_positive": 51,
+       "false_negative": 1,
+       "true_negative": 16,
+       "accuracy": 0.649
+      },
+      "0.50": {
+       "true_positive": 81,
+       "false_positive": 61,
+       "false_negative": 0,
+       "true_negative": 6,
+       "accuracy": 0.588
+      },
+      "0.70": {
+       "true_positive": 81,
+       "false_positive": 65,
+       "false_negative": 0,
+       "true_negative": 2,
+       "accuracy": 0.561
+      }
+     }
+    },
+    "desirable_against_lack_of_fusion": {
+     "n_positive": 36,
+     "n_negative": 13,
+     "area": 1.0,
+     "tpr_at_best": 1.0,
+     "fpr_at_best": 0.0,
+     "accuracy_at_best": 1.0,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 5.74,
+      "0.50": 8.2,
+      "0.70": 11.47
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 16.39
+    },
+    "absorptivity_values_listed_in_table": [
+     0.014,
+     0.178,
+     0.376,
+     0.413,
+     "..."
+    ],
+    "with_liquidus_properties_of_this_study": {
+     "Ke_factor_against_the_table_properties": 0.508,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 6.08,
+      "0.50": 8.68,
+      "0.70": 12.15
+     },
+     "keyhole_against_desirable_at_Ke_6": {
+      "0.35": {
+       "true_positive": 63,
+       "false_positive": 5,
+       "false_negative": 18,
+       "true_negative": 31,
+       "accuracy": 0.803
+      },
+      "0.50": {
+       "true_positive": 74,
+       "false_positive": 22,
+       "false_negative": 7,
+       "true_negative": 14,
+       "accuracy": 0.752
+      },
+      "0.70": {
+       "true_positive": 80,
+       "false_positive": 33,
+       "false_negative": 1,
+       "true_negative": 3,
+       "accuracy": 0.709
+      }
+     }
+    }
+   },
+   "SS304L": {
+    "rows": 6,
+    "labels": {
+     "keyhole": 4,
+     "desirable": 2
+    },
+    "Ke_per_unit_absorptivity_min_median_max": [
+     4.89,
+     10.65,
+     23.05
+    ],
+    "keyhole_against_desirable": {
+     "n_positive": 4,
+     "n_negative": 2,
+     "area": 1.0,
+     "tpr_at_best": 1.0,
+     "fpr_at_best": 0.0,
+     "accuracy_at_best": 1.0,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 3.42,
+      "0.50": 4.89,
+      "0.70": 6.84
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 9.78,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 2,
+       "false_positive": 0,
+       "false_negative": 2,
+       "true_negative": 2,
+       "accuracy": 0.667
+      },
+      "0.50": {
+       "true_positive": 2,
+       "false_positive": 0,
+       "false_negative": 2,
+       "true_negative": 2,
+       "accuracy": 0.667
+      },
+      "0.70": {
+       "true_positive": 4,
+       "false_positive": 0,
+       "false_negative": 0,
+       "true_negative": 2,
+       "accuracy": 1.0
+      }
+     }
+    },
+    "keyhole_against_all_other_modes": {
+     "n_positive": 4,
+     "n_negative": 2,
+     "area": 1.0,
+     "tpr_at_best": 1.0,
+     "fpr_at_best": 0.0,
+     "accuracy_at_best": 1.0,
+     "best_threshold_Ke_at_absorptivity": {
+      "0.35": 3.42,
+      "0.50": 4.89,
+      "0.70": 6.84
+     },
+     "best_threshold_Ke_per_unit_absorptivity": 9.78,
+     "at_Ke_6": {
+      "0.35": {
+       "true_positive": 2,
+       "false_positive": 0,
+       "false_negative": 2,
+       "true_negative": 2,
+       "accuracy": 0.667
+      },
+      "0.50": {
+       "true_positive": 2,
+       "false_positive": 0,
+       "false_negative": 2,
+       "true_negative": 2,
+       "accuracy": 0.667
+      },
+      "0.70": {
+       "true_positive": 4,
+       "false_positive": 0,
+       "false_negative": 0,
+       "true_negative": 2,
+       "accuracy": 1.0
+      }
+     }
+    },
+    "desirable_against_lack_of_fusion": {
+     "n_positive": 2,
+     "n_negative": 0
+    },
+    "absorptivity_values_listed_in_table": [
+     0.457,
+     0.493,
+     0.5,
+     0.635,
+     "..."
+    ]
+   }
+  },
+  "pooled": {
+   "0.35": {
+    "keyhole_against_desirable_rows": 584,
+    "keyhole_number": {
+     "area": 0.683,
+     "best_threshold": 14.100599633519074,
+     "accuracy_at_best": 0.668,
+     "at_Ke_6": {
+      "true_positive": 309,
+      "false_positive": 237,
+      "false_negative": 10,
+      "true_negative": 28,
+      "accuracy": 0.577
+     }
+    },
+    "normalized_enthalpy": {
+     "area": 0.685,
+     "best_threshold": 11.710193260851176,
+     "accuracy_at_best": 0.668
+    }
+   },
+   "0.50": {
+    "keyhole_against_desirable_rows": 584,
+    "keyhole_number": {
+     "area": 0.683,
+     "best_threshold": 20.14371376217011,
+     "accuracy_at_best": 0.668,
+     "at_Ke_6": {
+      "true_positive": 316,
+      "false_positive": 255,
+      "false_negative": 3,
+      "true_negative": 10,
+      "accuracy": 0.558
+     }
+    },
+    "normalized_enthalpy": {
+     "area": 0.685,
+     "best_threshold": 16.72884751550168,
+     "accuracy_at_best": 0.668
+    }
+   },
+   "0.70": {
+    "keyhole_against_desirable_rows": 584,
+    "keyhole_number": {
+     "area": 0.683,
+     "best_threshold": 28.20119926703815,
+     "accuracy_at_best": 0.668,
+     "at_Ke_6": {
+      "true_positive": 318,
+      "false_positive": 262,
+      "false_negative": 1,
+      "true_negative": 3,
+      "accuracy": 0.55
+     }
+    },
+    "normalized_enthalpy": {
+     "area": 0.685,
+     "best_threshold": 23.42038652170235,
+     "accuracy_at_best": 0.668
+    }
+   }
+  }
+ },
+ "overlap": {
+  "table": "meltpoolnet_regression.csv",
+  "rows_with_hatch_layer_width_depth": 331,
+  "materials": {
+   "SS316L": 101,
+   "Ti-6Al-4V": 67,
+   "IN625": 60,
+   "Cu10Sn": 35,
+   "IN738LC": 30,
+   "AlSi10Mg": 9,
+   "TiC/Inconel 718": 8,
+   "IN718": 7,
+   "SS304L": 6,
+   "Hastelloy X": 5,
+   "Al-C-Co-Fe-Mn-Ni": 3
+  },
+  "labels": {
+   "LOF": 26,
+   "balling": 3,
+   "desirable": 46,
+   "": 222,
+   "keyhole": 34
+  },
+  "label_test": {
+   "rows": 109,
+   "index_above_1_against_LOF_label": {
+    "true_positive": 25,
+    "false_positive": 56,
+    "false_negative": 1,
+    "true_negative": 27,
+    "accuracy": 0.477
+   },
+   "roc_of_the_index": {
+    "n_positive": 26,
+    "n_negative": 83,
+    "area": 0.863,
+    "best_threshold": 1.6707837053681223,
+    "tpr_at_best": 0.885,
+    "fpr_at_best": 0.241,
+    "accuracy_at_best": 0.789
+   },
+   "LOF_rows_index_min_median_max": [
+    0.78,
+    12.85,
+    2536.0
+   ],
+   "other_rows_index_min_median_max": [
+    0.02,
+    1.44,
+    41.64
+   ],
+   "circularity": {
+    "note": "the compilers' note gives depth over layer below 1.5 as their lack-of-fusion rule; the (L/D) term of the index is the same ratio",
+    "LOF_rows_with_depth_over_layer_below_1.5": 19,
+    "LOF_rows": 26,
+    "other_labelled_rows_with_depth_over_layer_below_1.5": 16,
+    "LOF_rows_flagged_by_the_hatch_term_alone_(H/W)^2_above_1": 19
+   }
+  },
+  "density_test": {
+   "rows": 53,
+   "materials": {
+    "IN625": 15,
+    "Al-C-Co-Fe-Mn-Ni": 3,
+    "Cu10Sn": 35
+   },
+   "index_at_most_1": {
+    "rows": 53,
+    "density_at_least_99": 8,
+    "median_density": 97.5
+   },
+   "index_above_1": {
+    "rows": 0,
+    "density_at_least_99": 0,
+    "median_density": null
+   },
+   "rank_correlation_of_index_and_density": 0.424,
+   "index_min_max": [
+    0.023,
+    0.963
+   ],
+   "density_min_max": [
+    89.8,
+    99.94
+   ]
+  }
+ },
+ "density": {
+  "table": "Process Parameters and Properties LPBF v1.1.xlsx",
+  "rows_in_table": 2187,
+  "pool_width_or_depth_columns": "none: the overlap rule cannot be formed on this table",
+  "materials": {
+   "alloy 718": {
+    "counts": {
+     "rows": 320,
+     "power, speed or beam size missing": 88,
+     "no usable density": 88
+    },
+    "rows_used": 144,
+    "papers": 6,
+    "absorptivity_assumed": 0.35,
+    "bins_of_Ke": [
+     {
+      "Ke_from": 0.0,
+      "Ke_to": 3.0,
+      "rows": 6,
+      "median_density": 98.84,
+      "share_below_99": 0.5
+     },
+     {
+      "Ke_from": 3.0,
+      "Ke_to": 6.0,
+      "rows": 80,
+      "median_density": 98.81,
+      "share_below_99": 0.613
+     },
+     {
+      "Ke_from": 6.0,
+      "Ke_to": 10.0,
+      "rows": 44,
+      "median_density": 98.63,
+      "share_below_99": 0.682
+     },
+     {
+      "Ke_from": 10.0,
+      "Ke_to": 16.0,
+      "rows": 9,
+      "median_density": 98.59,
+      "share_below_99": 1.0
+     },
+     {
+      "Ke_from": 30.0,
+      "Ke_to": null,
+      "rows": 5,
+      "median_density": 99.73,
+      "share_below_99": 0.0
+     }
+    ],
+    "density_at_least_99": {
+     "rows": 53,
+     "Ke_p05_median_p95": [
+      3.0,
+      4.6,
+      30.9
+     ]
+    },
+    "density_below_95": {
+     "rows": 4,
+     "Ke_p05_median_p95": [
+      3.1,
+      5.0,
+      5.9
+     ]
+    }
+   },
+   "316L": {
+    "counts": {
+     "rows": 317,
+     "power, speed or beam size missing": 55,
+     "no usable density": 5
+    },
+    "rows_used": 257,
+    "papers": 21,
+    "absorptivity_assumed": 0.35,
+    "bins_of_Ke": [
+     {
+      "Ke_from": 0.0,
+      "Ke_to": 3.0,
+      "rows": 22,
+      "median_density": 93.99,
+      "share_below_99": 0.682
+     },
+     {
+      "Ke_from": 3.0,
+      "Ke_to": 6.0,
+      "rows": 46,
+      "median_density": 98.98,
+      "share_below_99": 0.5
+     },
+     {
+      "Ke_from": 6.0,
+      "Ke_to": 10.0,
+      "rows": 66,
+      "median_density": 98.82,
+      "share_below_99": 0.621
+     },
+     {
+      "Ke_from": 10.0,
+      "Ke_to": 16.0,
+      "rows": 83,
+      "median_density": 99.21,
+      "share_below_99": 0.361
+     },
+     {
+      "Ke_from": 16.0,
+      "Ke_to": 30.0,
+      "rows": 40,
+      "median_density": 99.4,
+      "share_below_99": 0.1
+     }
+    ],
+    "density_at_least_99": {
+     "rows": 144,
+     "Ke_p05_median_p95": [
+      3.3,
+      12.4,
+      19.6
+     ]
+    },
+    "density_below_95": {
+     "rows": 28,
+     "Ke_p05_median_p95": [
+      1.9,
+      5.8,
+      9.7
+     ]
+    }
+   }
+  }
+ },
+ "pores": {
+  "record": "NIST mds2-3083, Paper2/Micro-CT data/Data",
+  "columns": "no header in the pore files and no description in the record: column 3 equals the diameter of a sphere of the volume in column 2 (units of the reconstruction, pixel 0.998 um per the scan read-me, an inference); column 1 is not interpreted",
+  "parameters": "fill power, speed, layer and spot of the labels P1, P2, P4 in Paper1/Surface Roughness/sr.csv; with a hatch of 0.10 mm they give the energy densities the Paper2 read-me states for P1, P2, P4 (62, 62, 38 J/mm3), which is the evidence that the labels are the same conditions and that the hatch was 0.10 mm (the hatch itself is not in the downloaded files)",
+  "conditions": {
+   "P1": {
+    "power_W": 220.0,
+    "speed_mm_s": 1180.0,
+    "layer_um": 30.0,
+    "spot_um": 50.0,
+    "orientation_in_file_deg": "45",
+    "energy_density_stated_J_mm3": 62.0,
+    "energy_density_with_hatch_100um_J_mm3": 62.1,
+    "absorptivity_0.35": {
+     "Ke": 10.5,
+     "normalized_enthalpy": 8.6,
+     "depression_depth_by_the_law_um": 91.0,
+     "depth_by_the_law_over_layer": 3.0
+    },
+    "absorptivity_0.50": {
+     "Ke": 15.1,
+     "normalized_enthalpy": 12.3,
+     "depression_depth_by_the_law_um": 137.0,
+     "depth_by_the_law_over_layer": 4.6
+    },
+    "absorptivity_0.70": {
+     "Ke": 21.1,
+     "normalized_enthalpy": 17.2,
+     "depression_depth_by_the_law_um": 197.0,
+     "depth_by_the_law_over_layer": 6.6
+    },
+    "LOF_pores": {
+     "count": 57,
+     "column2_sum": 44739.0,
+     "column3_median": 6.3,
+     "column3_p95": 18.3,
+     "column3_max": 27.3,
+     "column3_is_sphere_diameter_of_column2_within": 0.0021
+    },
+    "gas_pores": {
+     "count": 580,
+     "column2_sum": 235370.0,
+     "column3_median": 5.5,
+     "column3_p95": 13.9,
+     "column3_max": 35.7,
+     "column3_is_sphere_diameter_of_column2_within": 0.0022
+    }
+   },
+   "P2": {
+    "power_W": 330.0,
+    "speed_mm_s": 1770.0,
+    "layer_um": 30.0,
+    "spot_um": 50.0,
+    "orientation_in_file_deg": "0",
+    "energy_density_stated_J_mm3": 62.0,
+    "energy_density_with_hatch_100um_J_mm3": 62.1,
+    "absorptivity_0.35": {
+     "Ke": 12.9,
+     "normalized_enthalpy": 10.5,
+     "depression_depth_by_the_law_um": 115.0,
+     "depth_by_the_law_over_layer": 3.8
+    },
+    "absorptivity_0.50": {
+     "Ke": 18.5,
+     "normalized_enthalpy": 15.0,
+     "depression_depth_by_the_law_um": 171.0,
+     "depth_by_the_law_over_layer": 5.7
+    },
+    "absorptivity_0.70": {
+     "Ke": 25.8,
+     "normalized_enthalpy": 21.1,
+     "depression_depth_by_the_law_um": 244.0,
+     "depth_by_the_law_over_layer": 8.1
+    },
+    "LOF_pores": {
+     "count": 120,
+     "column2_sum": 513285.0,
+     "column3_median": 10.8,
+     "column3_p95": 33.1,
+     "column3_max": 48.7,
+     "column3_is_sphere_diameter_of_column2_within": 0.0021
+    },
+    "gas_pores": {
+     "count": 532,
+     "column2_sum": 450748.0,
+     "column3_median": 5.9,
+     "column3_p95": 17.2,
+     "column3_max": 58.1,
+     "column3_is_sphere_diameter_of_column2_within": 0.0021
+    }
+   },
+   "P4": {
+    "power_W": 168.0,
+    "speed_mm_s": 1475.0,
+    "layer_um": 30.0,
+    "spot_um": 50.0,
+    "orientation_in_file_deg": "0",
+    "energy_density_stated_J_mm3": 38.0,
+    "energy_density_with_hatch_100um_J_mm3": 38.0,
+    "absorptivity_0.35": {
+     "Ke": 7.2,
+     "normalized_enthalpy": 5.9,
+     "depression_depth_by_the_law_um": 58.0,
+     "depth_by_the_law_over_layer": 1.9
+    },
+    "absorptivity_0.50": {
+     "Ke": 10.3,
+     "normalized_enthalpy": 8.4,
+     "depression_depth_by_the_law_um": 89.0,
+     "depth_by_the_law_over_layer": 3.0
+    },
+    "absorptivity_0.70": {
+     "Ke": 14.4,
+     "normalized_enthalpy": 11.7,
+     "depression_depth_by_the_law_um": 130.0,
+     "depth_by_the_law_over_layer": 4.3
+    },
+    "LOF_pores": {
+     "count": 196,
+     "column2_sum": 26394018.0,
+     "column3_median": 9.2,
+     "column3_p95": 60.0,
+     "column3_max": 300.7,
+     "column3_is_sphere_diameter_of_column2_within": 0.0021
+    },
+    "gas_pores": {
+     "count": 546,
+     "column2_sum": 1159835.0,
+     "column3_median": 6.4,
+     "column3_p95": 27.0,
+     "column3_max": 58.6,
+     "column3_is_sphere_diameter_of_column2_within": 0.0021
+    }
+   }
+  },
+  "lack_of_fusion_volume_ratio_P4_over_P2": 51.4,
+  "lack_of_fusion_volume_ratio_P4_over_P1": 590.0,
+  "what_the_indicators_can_say": "the keyhole number is lowest for P4, the condition with the lack-of-fusion porosity (6.91 % by volume per the read-me), but it is above the keyhole threshold for all three conditions at every assumed absorptivity: it does not flag lack of fusion. The overlap index needs the pool width and depth, which the record does not give for these conditions; it was not computed from a model pool."
+ },
+ "cracking": {
+  "tables_with_the_word_crack": [
+   "nist_mds2-3083_in718_asbuilt_psp/Paper1/paper1_readme.txt"
+  ],
+  "statement": "no downloaded table carries a cracking label or measure (the word occurs in descriptive read-me text only); the cracking indicators stay verified against the published Al-Cu curve of (rappaz 1999 hottearing) and are not validated"
+ }
+}

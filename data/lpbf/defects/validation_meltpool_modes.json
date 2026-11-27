@@ -1,0 +1,653 @@
+{
+ "table": "meltpoolnet_classification.csv",
+ "melting_temperature_K": {
+  "IN718": 1673.0,
+  "Ti-6Al-4V": 1922.0,
+  "SS316L": 1688.0,
+  "SS17-4PH": 1693.0,
+  "SS304L": 1693.0
+ },
+ "skipped": {
+  "power, speed, beam diameter or a property missing": 96,
+  "unit of the melting temperature not established": 285,
+  "not laser (EBM)": 28
+ },
+ "rows_in_table": 1249,
+ "rows_used": 840,
+ "labels_used": {
+  "desirable": 265,
+  "LOF": 156,
+  "keyhole": 319,
+  "balling": 92,
+  "spatter formation": 8
+ },
+ "materials": {
+  "SS316L": {
+   "rows": 277,
+   "labels": {
+    "LOF": 96,
+    "desirable": 107,
+    "keyhole": 69,
+    "balling": 5
+   },
+   "Ke_per_unit_absorptivity_min_median_max": [
+    3.81,
+    36.1,
+    759.46
+   ],
+   "keyhole_against_desirable": {
+    "n_positive": 69,
+    "n_negative": 107,
+    "area": 0.614,
+    "tpr_at_best": 0.536,
+    "fpr_at_best": 0.234,
+    "accuracy_at_best": 0.676,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 21.25,
+     "0.50": 30.35,
+     "0.70": 42.5
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 60.71,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 62,
+      "false_positive": 101,
+      "false_negative": 7,
+      "true_negative": 6,
+      "accuracy": 0.386
+     },
+     "0.50": {
+      "true_positive": 68,
+      "false_positive": 102,
+      "false_negative": 1,
+      "true_negative": 5,
+      "accuracy": 0.415
+     },
+     "0.70": {
+      "true_positive": 68,
+      "false_positive": 106,
+      "false_negative": 1,
+      "true_negative": 1,
+      "accuracy": 0.392
+     }
+    }
+   },
+   "keyhole_against_all_other_modes": {
+    "n_positive": 69,
+    "n_negative": 208,
+    "area": 0.71,
+    "tpr_at_best": 0.696,
+    "fpr_at_best": 0.236,
+    "accuracy_at_best": 0.747,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 16.8,
+     "0.50": 24.0,
+     "0.70": 33.6
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 48.0,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 62,
+      "false_positive": 172,
+      "false_negative": 7,
+      "true_negative": 36,
+      "accuracy": 0.354
+     },
+     "0.50": {
+      "true_positive": 68,
+      "false_positive": 187,
+      "false_negative": 1,
+      "true_negative": 21,
+      "accuracy": 0.321
+     },
+     "0.70": {
+      "true_positive": 68,
+      "false_positive": 197,
+      "false_negative": 1,
+      "true_negative": 11,
+      "accuracy": 0.285
+     }
+    }
+   },
+   "desirable_against_lack_of_fusion": {
+    "n_positive": 107,
+    "n_negative": 96,
+    "area": 0.807,
+    "tpr_at_best": 0.673,
+    "fpr_at_best": 0.167,
+    "accuracy_at_best": 0.749,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 12.41,
+     "0.50": 17.72,
+     "0.70": 24.81
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 35.45
+   },
+   "absorptivity_values_listed_in_table": [
+    0.119,
+    0.125,
+    0.138,
+    0.151,
+    "..."
+   ]
+  },
+  "Ti-6Al-4V": {
+   "rows": 209,
+   "labels": {
+    "keyhole": 135,
+    "desirable": 43,
+    "LOF": 26,
+    "balling": 5
+   },
+   "Ke_per_unit_absorptivity_min_median_max": [
+    11.91,
+    58.92,
+    291.62
+   ],
+   "keyhole_against_desirable": {
+    "n_positive": 135,
+    "n_negative": 43,
+    "area": 0.418,
+    "tpr_at_best": 0.874,
+    "fpr_at_best": 0.791,
+    "accuracy_at_best": 0.713,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 11.69,
+     "0.50": 16.7,
+     "0.70": 23.38
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 33.4,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 135,
+      "false_positive": 43,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.758
+     },
+     "0.50": {
+      "true_positive": 135,
+      "false_positive": 43,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.758
+     },
+     "0.70": {
+      "true_positive": 135,
+      "false_positive": 43,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.758
+     }
+    }
+   },
+   "keyhole_against_all_other_modes": {
+    "n_positive": 135,
+    "n_negative": 74,
+    "area": 0.526,
+    "tpr_at_best": 0.837,
+    "fpr_at_best": 0.662,
+    "accuracy_at_best": 0.66,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 12.87,
+     "0.50": 18.39,
+     "0.70": 25.75
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 36.78,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 135,
+      "false_positive": 72,
+      "false_negative": 0,
+      "true_negative": 2,
+      "accuracy": 0.656
+     },
+     "0.50": {
+      "true_positive": 135,
+      "false_positive": 73,
+      "false_negative": 0,
+      "true_negative": 1,
+      "accuracy": 0.651
+     },
+     "0.70": {
+      "true_positive": 135,
+      "false_positive": 74,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.646
+     }
+    }
+   },
+   "desirable_against_lack_of_fusion": {
+    "n_positive": 43,
+    "n_negative": 26,
+    "area": 0.724,
+    "tpr_at_best": 0.698,
+    "fpr_at_best": 0.269,
+    "accuracy_at_best": 0.71,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 16.76,
+     "0.50": 23.95,
+     "0.70": 33.53
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 47.89
+   },
+   "absorptivity_values_listed_in_table": [
+    0.058,
+    0.127,
+    0.162,
+    0.194,
+    "..."
+   ]
+  },
+  "SS17-4PH": {
+   "rows": 200,
+   "labels": {
+    "keyhole": 30,
+    "LOF": 21,
+    "desirable": 77,
+    "balling": 64,
+    "spatter formation": 8
+   },
+   "Ke_per_unit_absorptivity_min_median_max": [
+    9.54,
+    26.59,
+    150.69
+   ],
+   "keyhole_against_desirable": {
+    "n_positive": 30,
+    "n_negative": 77,
+    "area": 0.971,
+    "tpr_at_best": 0.933,
+    "fpr_at_best": 0.078,
+    "accuracy_at_best": 0.925,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 20.24,
+     "0.50": 28.91,
+     "0.70": 40.47
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 57.82,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 30,
+      "false_positive": 60,
+      "false_negative": 0,
+      "true_negative": 17,
+      "accuracy": 0.439
+     },
+     "0.50": {
+      "true_positive": 30,
+      "false_positive": 74,
+      "false_negative": 0,
+      "true_negative": 3,
+      "accuracy": 0.308
+     },
+     "0.70": {
+      "true_positive": 30,
+      "false_positive": 77,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.28
+     }
+    }
+   },
+   "keyhole_against_all_other_modes": {
+    "n_positive": 30,
+    "n_negative": 162,
+    "area": 0.97,
+    "tpr_at_best": 0.933,
+    "fpr_at_best": 0.074,
+    "accuracy_at_best": 0.927,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 20.24,
+     "0.50": 28.91,
+     "0.70": 40.47
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 57.82,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 30,
+      "false_positive": 121,
+      "false_negative": 0,
+      "true_negative": 41,
+      "accuracy": 0.37
+     },
+     "0.50": {
+      "true_positive": 30,
+      "false_positive": 157,
+      "false_negative": 0,
+      "true_negative": 5,
+      "accuracy": 0.182
+     },
+     "0.70": {
+      "true_positive": 30,
+      "false_positive": 162,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.156
+     }
+    }
+   },
+   "desirable_against_lack_of_fusion": {
+    "n_positive": 77,
+    "n_negative": 21,
+    "area": 0.631,
+    "tpr_at_best": 0.286,
+    "fpr_at_best": 0.0,
+    "accuracy_at_best": 0.439,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 13.85,
+     "0.50": 19.79,
+     "0.70": 27.71
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 39.58
+   },
+   "absorptivity_values_listed_in_table": [
+    0.261,
+    0.273,
+    0.277,
+    0.278,
+    "..."
+   ]
+  },
+  "IN718": {
+   "rows": 148,
+   "labels": {
+    "desirable": 36,
+    "LOF": 13,
+    "keyhole": 81,
+    "balling": 18
+   },
+   "Ke_per_unit_absorptivity_min_median_max": [
+    1.3,
+    33.41,
+    154.5
+   ],
+   "keyhole_against_desirable": {
+    "n_positive": 81,
+    "n_negative": 36,
+    "area": 0.853,
+    "tpr_at_best": 0.778,
+    "fpr_at_best": 0.139,
+    "accuracy_at_best": 0.803,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 11.97,
+     "0.50": 17.1,
+     "0.70": 23.94
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 34.2,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 80,
+      "false_positive": 33,
+      "false_negative": 1,
+      "true_negative": 3,
+      "accuracy": 0.709
+     },
+     "0.50": {
+      "true_positive": 81,
+      "false_positive": 36,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.692
+     },
+     "0.70": {
+      "true_positive": 81,
+      "false_positive": 36,
+      "false_negative": 0,
+      "true_negative": 0,
+      "accuracy": 0.692
+     }
+    }
+   },
+   "keyhole_against_all_other_modes": {
+    "n_positive": 81,
+    "n_negative": 67,
+    "area": 0.881,
+    "tpr_at_best": 0.778,
+    "fpr_at_best": 0.119,
+    "accuracy_at_best": 0.824,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 11.97,
+     "0.50": 17.1,
+     "0.70": 23.94
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 34.2,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 80,
+      "false_positive": 51,
+      "false_negative": 1,
+      "true_negative": 16,
+      "accuracy": 0.649
+     },
+     "0.50": {
+      "true_positive": 81,
+      "false_positive": 61,
+      "false_negative": 0,
+      "true_negative": 6,
+      "accuracy": 0.588
+     },
+     "0.70": {
+      "true_positive": 81,
+      "false_positive": 65,
+      "false_negative": 0,
+      "true_negative": 2,
+      "accuracy": 0.561
+     }
+    }
+   },
+   "desirable_against_lack_of_fusion": {
+    "n_positive": 36,
+    "n_negative": 13,
+    "area": 1.0,
+    "tpr_at_best": 1.0,
+    "fpr_at_best": 0.0,
+    "accuracy_at_best": 1.0,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 5.74,
+     "0.50": 8.2,
+     "0.70": 11.47
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 16.39
+   },
+   "absorptivity_values_listed_in_table": [
+    0.014,
+    0.178,
+    0.376,
+    0.413,
+    "..."
+   ],
+   "with_liquidus_properties_of_this_study": {
+    "Ke_factor_against_the_table_properties": 0.508,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 6.08,
+     "0.50": 8.68,
+     "0.70": 12.15
+    },
+    "keyhole_against_desirable_at_Ke_6": {
+     "0.35": {
+      "true_positive": 63,
+      "false_positive": 5,
+      "false_negative": 18,
+      "true_negative": 31,
+      "accuracy": 0.803
+     },
+     "0.50": {
+      "true_positive": 74,
+      "false_positive": 22,
+      "false_negative": 7,
+      "true_negative": 14,
+      "accuracy": 0.752
+     },
+     "0.70": {
+      "true_positive": 80,
+      "false_positive": 33,
+      "false_negative": 1,
+      "true_negative": 3,
+      "accuracy": 0.709
+     }
+    }
+   }
+  },
+  "SS304L": {
+   "rows": 6,
+   "labels": {
+    "keyhole": 4,
+    "desirable": 2
+   },
+   "Ke_per_unit_absorptivity_min_median_max": [
+    4.89,
+    10.65,
+    23.05
+   ],
+   "keyhole_against_desirable": {
+    "n_positive": 4,
+    "n_negative": 2,
+    "area": 1.0,
+    "tpr_at_best": 1.0,
+    "fpr_at_best": 0.0,
+    "accuracy_at_best": 1.0,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 3.42,
+     "0.50": 4.89,
+     "0.70": 6.84
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 9.78,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 2,
+      "false_positive": 0,
+      "false_negative": 2,
+      "true_negative": 2,
+      "accuracy": 0.667
+     },
+     "0.50": {
+      "true_positive": 2,
+      "false_positive": 0,
+      "false_negative": 2,
+      "true_negative": 2,
+      "accuracy": 0.667
+     },
+     "0.70": {
+      "true_positive": 4,
+      "false_positive": 0,
+      "false_negative": 0,
+      "true_negative": 2,
+      "accuracy": 1.0
+     }
+    }
+   },
+   "keyhole_against_all_other_modes": {
+    "n_positive": 4,
+    "n_negative": 2,
+    "area": 1.0,
+    "tpr_at_best": 1.0,
+    "fpr_at_best": 0.0,
+    "accuracy_at_best": 1.0,
+    "best_threshold_Ke_at_absorptivity": {
+     "0.35": 3.42,
+     "0.50": 4.89,
+     "0.70": 6.84
+    },
+    "best_threshold_Ke_per_unit_absorptivity": 9.78,
+    "at_Ke_6": {
+     "0.35": {
+      "true_positive": 2,
+      "false_positive": 0,
+      "false_negative": 2,
+      "true_negative": 2,
+      "accuracy": 0.667
+     },
+     "0.50": {
+      "true_positive": 2,
+      "false_positive": 0,
+      "false_negative": 2,
+      "true_negative": 2,
+      "accuracy": 0.667
+     },
+     "0.70": {
+      "true_positive": 4,
+      "false_positive": 0,
+      "false_negative": 0,
+      "true_negative": 2,
+      "accuracy": 1.0
+     }
+    }
+   },
+   "desirable_against_lack_of_fusion": {
+    "n_positive": 2,
+    "n_negative": 0
+   },
+   "absorptivity_values_listed_in_table": [
+    0.457,
+    0.493,
+    0.5,
+    0.635,
+    "..."
+   ]
+  }
+ },
+ "pooled": {
+  "0.35": {
+   "keyhole_against_desirable_rows": 584,
+   "keyhole_number": {
+    "area": 0.683,
+    "best_threshold": 14.100599633519074,
+    "accuracy_at_best": 0.668,
+    "at_Ke_6": {
+     "true_positive": 309,
+     "false_positive": 237,
+     "false_negative": 10,
+     "true_negative": 28,
+     "accuracy": 0.577
+    }
+   },
+   "normalized_enthalpy": {
+    "area": 0.685,
+    "best_threshold": 11.710193260851176,
+    "accuracy_at_best": 0.668
+   }
+  },
+  "0.50": {
+   "keyhole_against_desirable_rows": 584,
+   "keyhole_number": {
+    "area": 0.683,
+    "best_threshold": 20.14371376217011,
+    "accuracy_at_best": 0.668,
+    "at_Ke_6": {
+     "true_positive": 316,
+     "false_positive": 255,
+     "false_negative": 3,
+     "true_negative": 10,
+     "accuracy": 0.558
+    }
+   },
+   "normalized_enthalpy": {
+    "area": 0.685,
+    "best_threshold": 16.72884751550168,
+    "accuracy_at_best": 0.668
+   }
+  },
+  "0.70": {
+   "keyhole_against_desirable_rows": 584,
+   "keyhole_number": {
+    "area": 0.683,
+    "best_threshold": 28.20119926703815,
+    "accuracy_at_best": 0.668,
+    "at_Ke_6": {
+     "true_positive": 318,
+     "false_positive": 262,
+     "false_negative": 1,
+     "true_negative": 3,
+     "accuracy": 0.55
+    }
+   },
+   "normalized_enthalpy": {
+    "area": 0.685,
+    "best_threshold": 23.42038652170235,
+    "accuracy_at_best": 0.668
+   }
+  }
+ }
+}

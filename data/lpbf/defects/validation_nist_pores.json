@@ -1,0 +1,139 @@
+{
+ "record": "NIST mds2-3083, Paper2/Micro-CT data/Data",
+ "columns": "no header in the pore files and no description in the record: column 3 equals the diameter of a sphere of the volume in column 2 (units of the reconstruction, pixel 0.998 um per the scan read-me, an inference); column 1 is not interpreted",
+ "parameters": "fill power, speed, layer and spot of the labels P1, P2, P4 in Paper1/Surface Roughness/sr.csv; with a hatch of 0.10 mm they give the energy densities the Paper2 read-me states for P1, P2, P4 (62, 62, 38 J/mm3), which is the evidence that the labels are the same conditions and that the hatch was 0.10 mm (the hatch itself is not in the downloaded files)",
+ "conditions": {
+  "P1": {
+   "power_W": 220.0,
+   "speed_mm_s": 1180.0,
+   "layer_um": 30.0,
+   "spot_um": 50.0,
+   "orientation_in_file_deg": "45",
+   "energy_density_stated_J_mm3": 62.0,
+   "energy_density_with_hatch_100um_J_mm3": 62.1,
+   "absorptivity_0.35": {
+    "Ke": 10.5,
+    "normalized_enthalpy": 8.6,
+    "depression_depth_by_the_law_um": 91.0,
+    "depth_by_the_law_over_layer": 3.0
+   },
+   "absorptivity_0.50": {
+    "Ke": 15.1,
+    "normalized_enthalpy": 12.3,
+    "depression_depth_by_the_law_um": 137.0,
+    "depth_by_the_law_over_layer": 4.6
+   },
+   "absorptivity_0.70": {
+    "Ke": 21.1,
+    "normalized_enthalpy": 17.2,
+    "depression_depth_by_the_law_um": 197.0,
+    "depth_by_the_law_over_layer": 6.6
+   },
+   "LOF_pores": {
+    "count": 57,
+    "column2_sum": 44739.0,
+    "column3_median": 6.3,
+    "column3_p95": 18.3,
+    "column3_max": 27.3,
+    "column3_is_sphere_diameter_of_column2_within": 0.0021
+   },
+   "gas_pores": {
+    "count": 580,
+    "column2_sum": 235370.0,
+    "column3_median": 5.5,
+    "column3_p95": 13.9,
+    "column3_max": 35.7,
+    "column3_is_sphere_diameter_of_column2_within": 0.0022
+   }
+  },
+  "P2": {
+   "power_W": 330.0,
+   "speed_mm_s": 1770.0,
+   "layer_um": 30.0,
+   "spot_um": 50.0,
+   "orientation_in_file_deg": "0",
+   "energy_density_stated_J_mm3": 62.0,
+   "energy_density_with_hatch_100um_J_mm3": 62.1,
+   "absorptivity_0.35": {
+    "Ke": 12.9,
+    "normalized_enthalpy": 10.5,
+    "depression_depth_by_the_law_um": 115.0,
+    "depth_by_the_law_over_layer": 3.8
+   },
+   "absorptivity_0.50": {
+    "Ke": 18.5,
+    "normalized_enthalpy": 15.0,
+    "depression_depth_by_the_law_um": 171.0,
+    "depth_by_the_law_over_layer": 5.7
+   },
+   "absorptivity_0.70": {
+    "Ke": 25.8,
+    "normalized_enthalpy": 21.1,
+    "depression_depth_by_the_law_um": 244.0,
+    "depth_by_the_law_over_layer": 8.1
+   },
+   "LOF_pores": {
+    "count": 120,
+    "column2_sum": 513285.0,
+    "column3_median": 10.8,
+    "column3_p95": 33.1,
+    "column3_max": 48.7,
+    "column3_is_sphere_diameter_of_column2_within": 0.0021
+   },
+   "gas_pores": {
+    "count": 532,
+    "column2_sum": 450748.0,
+    "column3_median": 5.9,
+    "column3_p95": 17.2,
+    "column3_max": 58.1,
+    "column3_is_sphere_diameter_of_column2_within": 0.0021
+   }
+  },
+  "P4": {
+   "power_W": 168.0,
+   "speed_mm_s": 1475.0,
+   "layer_um": 30.0,
+   "spot_um": 50.0,
+   "orientation_in_file_deg": "0",
+   "energy_density_stated_J_mm3": 38.0,
+   "energy_density_with_hatch_100um_J_mm3": 38.0,
+   "absorptivity_0.35": {
+    "Ke": 7.2,
+    "normalized_enthalpy": 5.9,
+    "depression_depth_by_the_law_um": 58.0,
+    "depth_by_the_law_over_layer": 1.9
+   },
+   "absorptivity_0.50": {
+    "Ke": 10.3,
+    "normalized_enthalpy": 8.4,
+    "depression_depth_by_the_law_um": 89.0,
+    "depth_by_the_law_over_layer": 3.0
+   },
+   "absorptivity_0.70": {
+    "Ke": 14.4,
+    "normalized_enthalpy": 11.7,
+    "depression_depth_by_the_law_um": 130.0,
+    "depth_by_the_law_over_layer": 4.3
+   },
+   "LOF_pores": {
+    "count": 196,
+    "column2_sum": 26394018.0,
+    "column3_median": 9.2,
+    "column3_p95": 60.0,
+    "column3_max": 300.7,
+    "column3_is_sphere_diameter_of_column2_within": 0.0021
+   },
+   "gas_pores": {
+    "count": 546,
+    "column2_sum": 1159835.0,
+    "column3_median": 6.4,
+    "column3_p95": 27.0,
+    "column3_max": 58.6,
+    "column3_is_sphere_diameter_of_column2_within": 0.0021
+   }
+  }
+ },
+ "lack_of_fusion_volume_ratio_P4_over_P2": 51.4,
+ "lack_of_fusion_volume_ratio_P4_over_P1": 590.0,
+ "what_the_indicators_can_say": "the keyhole number is lowest for P4, the condition with the lack-of-fusion porosity (6.91 % by volume per the read-me), but it is above the keyhole threshold for all three conditions at every assumed absorptivity: it does not flag lack of fusion. The overlap index needs the pool width and depth, which the record does not give for these conditions; it was not computed from a model pool."
+}

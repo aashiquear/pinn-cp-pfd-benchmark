@@ -1,0 +1,87 @@
+{
+ "table": "meltpoolnet_regression.csv",
+ "rows_with_hatch_layer_width_depth": 331,
+ "materials": {
+  "SS316L": 101,
+  "Ti-6Al-4V": 67,
+  "IN625": 60,
+  "Cu10Sn": 35,
+  "IN738LC": 30,
+  "AlSi10Mg": 9,
+  "TiC/Inconel 718": 8,
+  "IN718": 7,
+  "SS304L": 6,
+  "Hastelloy X": 5,
+  "Al-C-Co-Fe-Mn-Ni": 3
+ },
+ "labels": {
+  "LOF": 26,
+  "balling": 3,
+  "desirable": 46,
+  "": 222,
+  "keyhole": 34
+ },
+ "label_test": {
+  "rows": 109,
+  "index_above_1_against_LOF_label": {
+   "true_positive": 25,
+   "false_positive": 56,
+   "false_negative": 1,
+   "true_negative": 27,
+   "accuracy": 0.477
+  },
+  "roc_of_the_index": {
+   "n_positive": 26,
+   "n_negative": 83,
+   "area": 0.863,
+   "best_threshold": 1.6707837053681223,
+   "tpr_at_best": 0.885,
+   "fpr_at_best": 0.241,
+   "accuracy_at_best": 0.789
+  },
+  "LOF_rows_index_min_median_max": [
+   0.78,
+   12.85,
+   2536.0
+  ],
+  "other_rows_index_min_median_max": [
+   0.02,
+   1.44,
+   41.64
+  ],
+  "circularity": {
+   "note": "the compilers' note gives depth over layer below 1.5 as their lack-of-fusion rule; the (L/D) term of the index is the same ratio",
+   "LOF_rows_with_depth_over_layer_below_1.5": 19,
+   "LOF_rows": 26,
+   "other_labelled_rows_with_depth_over_layer_below_1.5": 16,
+   "LOF_rows_flagged_by_the_hatch_term_alone_(H/W)^2_above_1": 19
+  }
+ },
+ "density_test": {
+  "rows": 53,
+  "materials": {
+   "IN625": 15,
+   "Al-C-Co-Fe-Mn-Ni": 3,
+   "Cu10Sn": 35
+  },
+  "index_at_most_1": {
+   "rows": 53,
+   "density_at_least_99": 8,
+   "median_density": 97.5
+  },
+  "index_above_1": {
+   "rows": 0,
+   "density_at_least_99": 0,
+   "median_density": null
+  },
+  "rank_correlation_of_index_and_density": 0.424,
+  "index_min_max": [
+   0.023,
+   0.963
+  ],
+  "density_min_max": [
+   89.8,
+   99.94
+  ]
+ }
+}

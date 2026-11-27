@@ -1,0 +1,89 @@
+{
+ "rows": 87,
+ "note": "every row is a measured vapor depression; the workbook has no porosity or stability label",
+ "regimes": {
+  "conduction": {
+   "rows": 0,
+   "depth_over_radius_min_median_max": null
+  },
+  "transition": {
+   "rows": 35,
+   "depth_over_radius_min_median_max": [
+    0.209,
+    0.848,
+    2.094
+   ]
+  },
+  "keyhole": {
+   "rows": 52,
+   "depth_over_radius_min_median_max": [
+    1.985,
+    4.745,
+    12.05
+   ]
+  }
+ },
+ "by_set": {
+  "Al6061, spot size 88 um": {
+   "rows": 9,
+   "Ke_min_max": [
+    5.95,
+    31.39
+   ],
+   "regimes": {
+    "keyhole": 8,
+    "transition": 1
+   }
+  },
+  "SS316, spot size 110 um": {
+   "rows": 7,
+   "Ke_min_max": [
+    4.35,
+    22.64
+   ],
+   "regimes": {
+    "transition": 1,
+    "keyhole": 6
+   }
+  },
+  "Ti6, spot size 140 um": {
+   "rows": 23,
+   "Ke_min_max": [
+    1.55,
+    10.22
+   ],
+   "regimes": {
+    "transition": 20,
+    "keyhole": 3
+   }
+  },
+  "Ti64, spot size 95 um": {
+   "rows": 48,
+   "Ke_min_max": [
+    2.15,
+    23.43
+   ],
+   "regimes": {
+    "transition": 13,
+    "keyhole": 35
+   }
+  }
+ },
+ "rows_deeper_than_one_radius": {
+  "below_Ke_6": 16,
+  "of": 35,
+  "above_Ke_6": 52,
+  "of_above": 52
+ },
+ "depth_over_diameter_at_least_one": {
+  "n_positive": 53,
+  "n_negative": 34,
+  "area": 0.993,
+  "best_threshold": 6.266116289285937,
+  "tpr_at_best": 0.962,
+  "fpr_at_best": 0.029,
+  "accuracy_at_best": 0.966
+ },
+ "Ke_above_16_rows": 14,
+ "Ke_above_30_rows": 1
+}

@@ -1,0 +1,133 @@
+{
+ "table": "Process Parameters and Properties LPBF v1.1.xlsx",
+ "rows_in_table": 2187,
+ "pool_width_or_depth_columns": "none: the overlap rule cannot be formed on this table",
+ "materials": {
+  "alloy 718": {
+   "counts": {
+    "rows": 320,
+    "power, speed or beam size missing": 88,
+    "no usable density": 88
+   },
+   "rows_used": 144,
+   "papers": 6,
+   "absorptivity_assumed": 0.35,
+   "bins_of_Ke": [
+    {
+     "Ke_from": 0.0,
+     "Ke_to": 3.0,
+     "rows": 6,
+     "median_density": 98.84,
+     "share_below_99": 0.5
+    },
+    {
+     "Ke_from": 3.0,
+     "Ke_to": 6.0,
+     "rows": 80,
+     "median_density": 98.81,
+     "share_below_99": 0.613
+    },
+    {
+     "Ke_from": 6.0,
+     "Ke_to": 10.0,
+     "rows": 44,
+     "median_density": 98.63,
+     "share_below_99": 0.682
+    },
+    {
+     "Ke_from": 10.0,
+     "Ke_to": 16.0,
+     "rows": 9,
+     "median_density": 98.59,
+     "share_below_99": 1.0
+    },
+    {
+     "Ke_from": 30.0,
+     "Ke_to": null,
+     "rows": 5,
+     "median_density": 99.73,
+     "share_below_99": 0.0
+    }
+   ],
+   "density_at_least_99": {
+    "rows": 53,
+    "Ke_p05_median_p95": [
+     3.0,
+     4.6,
+     30.9
+    ]
+   },
+   "density_below_95": {
+    "rows": 4,
+    "Ke_p05_median_p95": [
+     3.1,
+     5.0,
+     5.9
+    ]
+   }
+  },
+  "316L": {
+   "counts": {
+    "rows": 317,
+    "power, speed or beam size missing": 55,
+    "no usable density": 5
+   },
+   "rows_used": 257,
+   "papers": 21,
+   "absorptivity_assumed": 0.35,
+   "bins_of_Ke": [
+    {
+     "Ke_from": 0.0,
+     "Ke_to": 3.0,
+     "rows": 22,
+     "median_density": 93.99,
+     "share_below_99": 0.682
+    },
+    {
+     "Ke_from": 3.0,
+     "Ke_to": 6.0,
+     "rows": 46,
+     "median_density": 98.98,
+     "share_below_99": 0.5
+    },
+    {
+     "Ke_from": 6.0,
+     "Ke_to": 10.0,
+     "rows": 66,
+     "median_density": 98.82,
+     "share_below_99": 0.621
+    },
+    {
+     "Ke_from": 10.0,
+     "Ke_to": 16.0,
+     "rows": 83,
+     "median_density": 99.21,
+     "share_below_99": 0.361
+    },
+    {
+     "Ke_from": 16.0,
+     "Ke_to": 30.0,
+     "rows": 40,
+     "median_density": 99.4,
+     "share_below_99": 0.1
+    }
+   ],
+   "density_at_least_99": {
+    "rows": 144,
+    "Ke_p05_median_p95": [
+     3.3,
+     12.4,
+     19.6
+    ]
+   },
+   "density_below_95": {
+    "rows": 28,
+    "Ke_p05_median_p95": [
+     1.9,
+     5.8,
+     9.7
+    ]
+   }
+  }
+ }
+}
