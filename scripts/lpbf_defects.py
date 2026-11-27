@@ -239,7 +239,7 @@ def cmd_compare(out: Path, pairs: list[str]) -> None:
             rms = float(np.sqrt((((sim / meas) - 1.0) ** 2).mean()) * 100.0)
             ax.scatter(meas, sim, s=30, marker=marker, color=color, label=f"{label} (rms {rms:.1f} %)")
     for ax, key in zip(axes, ("depth", "width")):
-        lim = [80.0, 260.0] if key == "depth" else [80.0, 180.0]
+        lim = [80.0, 280.0] if key == "depth" else [80.0, 180.0]
         ax.plot(lim, lim, color="0.3", lw=0.8)
         ax.plot(lim, [0.9 * v for v in lim], color="0.6", lw=0.6, ls="--")
         ax.plot(lim, [1.1 * v for v in lim], color="0.6", lw=0.6, ls="--")

@@ -1542,7 +1542,8 @@ the plane just below the plate surface. Animations of the seven tracks:
   smallest spot) by 15 % where conduction left it 44 % short. The spread of the depth
   errors over the seven tracks falls from 17 points (conduction, flat flow) to 7: the
   model now carries the dependence of the depth on the spot size, which a flat surface
-  could not (section 6.5).
+  could not (section 6.5). In Figure 21 the flat models level off near 130 um whatever
+  the measured depth, and the free-surface depths rise with it.
 - **One refitted parameter does not improve the set.** At 0.65 the two fit tracks are
   right in the mean, but the depth of the keyhole tracks falls faster than measured
   (track 1.1 from 262 to 169 um for 16 % less absorbed power), and the rms error stays
