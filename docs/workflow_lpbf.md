@@ -70,3 +70,25 @@ recorded in `wall.json`.
 - **Seeds.** A grain realization is a deck of its own (`*_seed<n>.i`) with its own output
   directory; three seeds per stochastic case.
 
+## Additions of the third stage (2026-11-26)
+
+- **Defect indicators.** A report is a `[Utilities]` block of a thermal deck, listed
+  after the process state: `defect_indicators` (lack of fusion, keyhole mode, balling)
+  and `cracking_indicators` (one block per solid-fraction curve). `scripts/lpbf_defects.py`
+  turns the reports into the tables and figures. A run that is to carry cracking
+  indicators has to cool until nothing is liquid.
+- **Dwell.** The scan path has a dwell between tracks and between layers. In the decks
+  for the multi-GPU machine the next layer is spread at the end of the layer dwell
+  (`recoat = dwell_end`), the scan is held at the start of every track until the
+  material is solid (`hold_scan_until_solid`), and the run ends when the path is over
+  and all is solid. `scripts/lpbf_column.py <deck> dwell` checks it after a run.
+- **Several GPUs.** `global.rank_devices="cuda:i cuda:j ..."` cuts the mesh of any deck
+  of the chain into one part per card (PINNACLE ADR 0057, library `gpumpi`); the result
+  equals the single run. The cards are named at run time (`scripts/gpu_free.py`), not in
+  the deck. `scripts/lpbf_parts_check.py` compares a single run with its cut run.
+- **Memory.** Every run on a shared or small machine goes through
+  `scripts/memory_guard.py`. Fields of two runs are compared only after their shapes
+  have been checked (a scalar field is `(n,)`).
+- **Generated decks of the wide column**: `scripts/lpbf_column_wide.py <element size>`;
+  the header of each deck states elements, memory per card and steps.
+

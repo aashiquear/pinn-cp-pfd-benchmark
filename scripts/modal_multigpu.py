@@ -263,6 +263,67 @@ def decomposed(steps: list[int], mesh_um: float, rank_counts: list[int], partiti
     return report
 
 
+@app.function(gpu="A100-40GB:4", cpu=8.0, memory=65536, timeout=1800, retries=0)
+def chain_parts(steps: list[int], cube: list[int]) -> dict:
+    """The grain field and the stress stage on parts (PINNACLE ADR 0057, addendum).
+
+    grains  the wide build column with flow and 30 grain fields at 10 um (518,400
+            elements), as one process on one card and cut into four parts on four cards,
+            for each step count of `steps`: time per step, device memory, differences
+    stress  the polycrystal tensile cube (two load steps) at 16^3 elements as one process
+            (direct solve) and on four cards (GMRES over the parts), and at the `cube`
+            sizes on four cards only: wall time, linear iterations, differences
+    Every run goes through scripts/memory_guard.py, with its lines in the log."""
+    import os
+    import subprocess
+    import time
+
+    cards = "cuda:0 cuda:1 cuda:2 cuda:3"
+    env = dict(os.environ, PYTHONPATH="/work/pinnacle/src")
+
+    def check(tag: str, limit: int, arguments: list[str]) -> dict:
+        print(f"=== {tag}", flush=True)
+        tic = time.time()
+        proc = subprocess.run(
+            ["python", "/work/bench/scripts/memory_guard.py", "6", str(limit),
+             "python", "/work/bench/scripts/lpbf_parts_check.py", *arguments],
+            cwd="/work/bench", env=env,
+        )
+        text = Path("/tmp/guard_out.txt").read_text() if Path("/tmp/guard_out.txt").exists() else ""
+        rows = [line for line in text.splitlines() if line.startswith("PARTS-CHECK ")]
+        row = json.loads(rows[-1][len("PARTS-CHECK "):]) if rows else {"output_tail": text[-1500:]}
+        row["returncode"] = proc.returncode
+        row["wall_of_the_check_s"] = round(time.time() - tic, 1)
+        if not rows:
+            print(text[-1500:], flush=True)
+        return row
+
+    report: dict = {"cards": cards}
+    dt = 5.0e-7
+    column = "decks/lpbf/in718/k2/k2_column_flow_wide_h10.i"
+    for count in steps:
+        report[f"grains_{count}"] = check(f"grains {count} steps", 700, [
+            column, cards, f"executioner.end_time={dt * count}", "executioner.snapshots_every=0",
+            "utilities.state.series_interval=1.0", "global.num_threads=2",
+            "utilities.state.record_file=/tmp/state.npz", "utilities.state.series_file=/tmp/series.npz",
+            "utilities.state.state_series_file=/tmp/consolidated.npz", "global.output_dir=/tmp/column",
+        ])
+    pull = ["global.use_gpu=true", "executioner.n_steps=2", "executioner.t_end=4.0",
+            "bcs.pull.values=[4.8e-7]", "global.num_threads=2", "global.output_dir=/tmp/cube"]
+    tensile = "decks/lpbf/in718/k3/k3_cube_n6_seed1.i"
+    report["stress_16"] = check("stress 16^3", 700, [tensile, cards, "mesh.divisions=[16,16,16]", *pull])
+    for n in cube:
+        report[f"stress_{n}_parts_only"] = check(f"stress {n}^3, parts only", 600, [
+            "--no-single", tensile, cards, f"mesh.divisions=[{n},{n},{n}]", *pull])
+    return report
+
+
+@app.local_entrypoint()
+def chain(steps: str = "20,60", cube: str = "24") -> None:
+    out = chain_parts.remote([int(v) for v in steps.split(",")], [int(v) for v in cube.split(",") if v])
+    print("CHAIN-RESULT " + json.dumps(out))
+
+
 @app.local_entrypoint()
 def cut(steps: str = "40,120", mesh: float = 5.0, ranks: str = "2,4", partition: str = "slabs",
         gpu: str = "A10G") -> None:

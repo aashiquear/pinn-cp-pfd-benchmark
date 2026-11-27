@@ -130,7 +130,75 @@ done
 python3 scripts/lpbf_animate.py grains results/lpbf/in718/k2/column_h10 figures/lpbf/animations/k2_column_h10.gif
 ```
 
-## 8. Hosts and revisions
+## 8. Heat-source depth from the keyhole number and defect indicators (sections 6.7, 6.8)
+
+```bash
+python3 scripts/lpbf_k1.py decks/lpbf/in718/k1/k1_keyhole_study_h10_b.i decks      # then run, collect
+python3 scripts/lpbf_defects.py law <gan supplementary data 1 .xlsx> data/lpbf/defects/gan2021_depth_law_check.json
+python3 scripts/lpbf_defects.py tracks <k1 targets.csv> data/lpbf/defects/k1_keyhole_numbers.csv 0.35 0.50 0.7724
+for h in 110 150 190 230; do python3 scripts/lpbf_run.py decks/lpbf/in718/defects/lof_hatch${h}_h10.i; done
+python3 scripts/lpbf_defects.py column results/lpbf/in718/k2/column_h10 80e-6 80e-6 520e-6 520e-6 200e-6
+```
+
+The downloaded data sets and their sources: `data/lpbf/defects/raw/*/SOURCE.md` (the data
+files themselves are not tracked).
+
+## 9. Solidification-cracking indicators (section 6.10)
+
+```bash
+python3 scripts/lpbf_run.py decks/lpbf/in718/defects/cracking_hatch110_h10.i
+python3 scripts/lpbf_defects.py cracking results/lpbf/in718/defects/cracking_hatch110_h10 \
+    figures/lpbf/defects_cracking_hatch110.png data/lpbf/defects/cracking_hatch110_h10.csv linear scheil
+```
+
+## 10. EBSD cube, column stress, 316L seeds, column with flow (sections 6.6, 6.9, 7, 6.11)
+
+```bash
+python3 scripts/lpbf_k3.py decks/lpbf/in718/k3/k3_cube_ebsd_cube1.i run
+python3 scripts/lpbf_mechanics.py decks/lpbf/in718/k4/k4_column_stress_h30.i run     # after cooldown, see the ledger row
+python3 scripts/lpbf_mechanics.py decks/lpbf/ss316l/track_mechanics_h8_seed2.i run   # and _seed3
+python3 scripts/lpbf_column.py decks/lpbf/in718/k2/k2_column_flow_h10.i run          # 13 h on the GPU host; then grains, thermal, figure
+python3 scripts/lpbf_animate.py column results/lpbf/in718/k2/column_flow_h10 figures/lpbf/animations/k2_column_flow_h10 10
+```
+
+The exact argument lists of the stress runs are in their ledger rows (`lpbf-K4-*`,
+`lpbf-K3-ebsd-cube1`, `lpbf-316L-*`).
+
+## 11. Several GPUs: decomposed runs (section 8.2)
+
+A deck runs cut into parts, one process and one GPU per part, when `rank_devices` is
+given (in `[Global]` or as an override). Kept scripts:
+
+```bash
+# a single run against its cut run: times, differences per field, per-rank statistics
+python3 scripts/lpbf_parts_check.py <deck.i> "cuda:0 cuda:1 cuda:2 cuda:3" [key=value ...]
+# any thermal or flow deck on several cards
+python3 scripts/lpbf_run.py <deck.i> global.rank_devices="cuda:0 cuda:1"
+# the measurements of the report on a cloud node (prices and limits: the script header)
+.venv-modal/bin/modal run scripts/modal_multigpu.py::cut --gpu A100 --steps 20,60
+.venv-modal/bin/modal run scripts/modal_multigpu.py::chain
+# run anything under a memory guard (stops the run before memory runs out)
+python3 scripts/memory_guard.py <min available GB> <max seconds> <command ...>
+```
+
+## 12. The wide build column with flow on a multi-GPU machine
+
+```bash
+python3 scripts/lpbf_column_wide.py 10 8 5 4            # writes k2_column_flow_wide_h<size>.i
+python3 scripts/gpu_free.py 60 4                        # cards with 60 GB free, at most four
+python3 scripts/lpbf_column.py decks/lpbf/in718/k2/k2_column_flow_wide_h5.i run \
+    global.rank_devices="cuda:1 cuda:4 cuda:6"          # the cards named by gpu_free.py
+python3 scripts/lpbf_column.py decks/lpbf/in718/k2/k2_column_flow_wide_h5.i dwell   # all 0: every track started on solid
+python3 scripts/lpbf_column.py decks/lpbf/in718/k2/k2_column_flow_wide_h5.i grains  # then thermal, figure
+python3 scripts/lpbf_animate.py column results/lpbf/in718/k2/column_flow_wide_h5 figures/lpbf/animations/k2_column_flow_wide_h5 10
+```
+
+Memory per card and the number of steps are in the header of each deck. The result does
+not depend on which cards, or how many, are named. Start with a short check
+(`executioner.end_time=2e-5 global.output_dir=/tmp/check`) to see the memory per card in
+`wall.json` (`ranks[*].device_peak_bytes`) before the long run.
+
+## 13. Hosts and revisions
 
 Every run with its deck, script, PINNACLE revision, host, precision and wall time is a
 row of `docs/run_ledger.md` (rows `lpbf-*`).

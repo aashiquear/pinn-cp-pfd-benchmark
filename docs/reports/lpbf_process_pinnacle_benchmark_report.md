@@ -1,6 +1,6 @@
 # Laser powder bed fusion process modeling with PINNACLE: heat transfer, grain structure and process stress, benchmarked on NIST AM Bench alloy 718 and on a published 316L case (Part V)
 
-Status 2026-11-25. This report covers the process chain at the coarse resolution a single
+Status 2026-11-26. This report covers the process chain at the coarse resolution a single
 workstation GPU can run (the capability check): heat transfer, melt-pool flow under a flat
 surface (reported separately from the conduction results), grain structure, tensile
 response with a calibrated crystal-plasticity set, and process stress. The decks of the
@@ -10,7 +10,11 @@ Plan:
 `docs/15_lpbf_process_modeling_plan.md`; notebook with provenance tables:
 `docs/16_lpbf_notebook.md`; reproduction: `docs/reproduce_lpbf.md`; every run:
 `docs/run_ledger.md`. PINNACLE revision: branch `feat/multi-gpu-and-am-process`, commits
-355b8d6 to f720f35 (local).
+355b8d6 to the head of the branch. Added on 2026-11-26: the heat-source depth from the
+keyhole number (6.7), defect indicators (6.8), process stress of the column (6.9),
+solidification-cracking indicators (6.10), the column with flow (6.11), runs cut into
+parts on several GPUs with the library `gpumpi` (8.2), and the decks of the wide column
+(8.3).
 
 ## Abstract
 
@@ -47,10 +51,18 @@ the 316L track, after the relaxation stage of the published procedure, the stres
 agrees with the published simulation, the compression below the track is 10 to 30 %
 larger and the tension in the track 2 to 5 times larger under substitute thermal and grain
 inputs. The explicit field solves and the training of every network can be split over
-several GPUs (NVIDIA CUDA and AMD ROCm), as can the point evaluation of the
-crystal-plasticity solves, with results identical to one device; no speed-up could be
-measured on the one-GPU host, and the linear solves stay on the host. Decks of the full-resolution cases (up to 23.8 million elements) are
-shipped and have not been run.
+several GPUs of one process (NVIDIA CUDA and AMD ROCm), as can the point evaluation of the
+crystal-plasticity solves, with results identical to one device but almost no gain in
+time. Cutting the mesh into parts, one process and one GPU per part, does gain: on four
+cards the column with flow and grains advances 3.8 times faster and the stress stage 3.7
+times, with the fields of the single run and a quarter of the device memory per card;
+the exchange layer is a separate library usable by other Python codes. Defect
+indicators are reported for lack of fusion (unmelted material and the overlap rule agree
+on where it starts), keyhole mode (all seven tracks) and solidification cracking (three
+published indices; the casting threshold of the pressure-drop criterion is exceeded
+everywhere, so the result is a relative map), none of them validated against measured
+defects. Decks of the full-resolution cases (up to 23.8 million elements) and of a wide
+build column with flow for a multi-GPU machine are shipped and have not been run.
 
 ## 1. Introduction
 
@@ -1663,15 +1675,49 @@ the chain run on a cut mesh (PINNACLE ADR 0057, addendum).
   conjugate gradients to $10^{-10}$: 58 to 103 iterations at 4,131 unknowns and 85 to
   153 at 28,611, for 2 to 8 parts; 161 and 323 with the plain diagonal). For meshes of
   millions of unknowns a coarse-space correction will be needed; it is not built.
-- **Not measured:** the grain field and the stress stage on several GPUs.
+- Measured on several GPUs: Table 17f.
 - **One change of behaviour:** the order parameter of a nucleus is now drawn with its
   site, not at firing time. A given seed gives another realization of the nuclei than
   the runs of section 6.4 (same statistics); those runs were not repeated.
 
-- **Cost.** 10.2 US dollars for this measurement (account summary 5.41 before, 15.63
+**Table 17f.** The grain field and the stress stage on four NVIDIA A100 cards (cloud
+node, 8 CPU cores, float64; `scripts/modal_multigpu.py::chain`, each run under the
+memory guard). Grains: the wide build column of section 8.3 at 10 um (flow and 30 grain
+fields, 518,400 elements), time per step from runs of 20 and 60 steps. Stress: the
+polycrystal tensile cube, two load steps.
+
+| case | one process, one card | four parts, four cards | factor | largest difference between the two |
+|---|---|---|---|---|
+| column with flow and grains, per step (s) | 1.561 | 0.414 | 3.77 | temperature $8\times10^{-12}$ K, grain fields $2\times10^{-15}$, velocity $2\times10^{-14}$ m/s |
+| the same, set-up and 20 steps (s) | 310 | 82 | 3.8 | |
+| tensile cube, 4,096 elements, two load steps (s) | 83.6 | 22.4 | 3.7 | stress 0.04 Pa of 1.1 GPa |
+| tensile cube, 13,824 elements, two load steps (s) | not run | 105 | | |
+
+- **The whole chain gains nearly the number of cards**, and the fields are those of the
+  single run (float64, compared at full precision this time).
+- **Device memory: 4.67 GB per part of 129,600 elements, 36 kB per element** with flow
+  and 30 grain fields (the same on the AMD host: 4.70 GB for 129,600 elements on one
+  part, 2.37 GB each on two). This is the number the decks of section 8.3 are sized
+  with.
+- **Linear solve of the stress stage:** 130 GMRES iterations per solve at 4,096 elements
+  and 164 at 13,824 (four parts). The growth is the one noted above; it is slow enough
+  for meshes of this size and will need a coarse space well beyond them.
+- **Three faults found by these runs, all fixed and tested:**
+  1. The starting grain structure compared every node with every grain seed at once:
+     38 GB of host memory within 17 s for 518,400 elements and 4,000 grains (the memory
+     guard stopped the run). It now works in bounded pieces (1.5 GB, the same result).
+  2. With several fields advanced together, the order of the exchanges followed the
+     order of a set of names, which differs between processes; a two-process run of
+     the column failed with a shape error. The order is now fixed.
+  3. A first cloud attempt ran the old grain set-up and was stopped by me (about 2 US
+     dollars).
+
+- **Cost.** 10.2 US dollars for the measurement of Table 17d (account summary 5.41 before, 15.63
   after), of which about 6.8 for the failed run and its restart on the dearer A100
-  cards; 55 minutes of waiting for A10G and L4 nodes cost nothing. **Total of the
-  cloud measurements: 15.63 of the 30 dollars allowed**, covered by credits.
+  cards; 55 minutes of waiting for A10G and L4 nodes cost nothing. Table 17f: 4.0
+  dollars (15.63 before, 19.66 after), of which about 2 for the stopped attempt.
+  **Total of the cloud measurements: 19.66 of the 30 dollars allowed**, covered by
+  credits.
 
 ### 8.3 Standalone decks
 
@@ -1701,6 +1747,52 @@ each has a checked coarse configuration of the same blocks.
   is not implemented (section 9).
 - A deck of the full leg cross-section (2.5 mm) is not shipped: at 5 um it is 44 million
   elements for the same height.
+
+**The wide build column with flow, for a machine with several large GPUs.** The column
+of section 6.11 is repeated in a block of 1.2 x 1.2 mm, where the scanned patch keeps
+380 um to every side (decks `decks/lpbf/in718/k2/k2_column_flow_wide_h<size>.i`, written
+by `scripts/lpbf_column_wide.py`; not run except for the 10 um deck in Table 17f and
+short checks). Three things were added for it.
+
+- **Dwell.** The scan path has a dwell between tracks and between layers, and both are
+  stepped through. Two faults of the earlier column decks are removed: the next layer
+  was spread, and the block reset to the plate temperature, at the START of the layer
+  dwell, which froze a pool of 27,000 liquid elements in one step (section 6.11); and a
+  fixed dwell between tracks let liquid accumulate from track to track. Now the layer
+  is spread when the dwell ends (`recoat = dwell_end`), and the scan is held at the
+  start of every track and layer until no element is liquid
+  (`hold_scan_until_solid`); the stated dwells (1 ms and 3 ms) are minimum times. A
+  conduction check on two layers of three tracks with the new layer handling and a
+  fixed 1 ms: the first layer was solid when the second was spread (it froze 1.35 ms
+  after its last track), but the third track of each layer started on 867 and 1,412
+  liquid elements, which is why the hold was added. The same check with the hold: all
+  six tracks started with no liquid element, the scan waited 0.49 ms in total (before
+  the third track of each layer), and the run ended by itself at 11.7 ms, when the path
+  was over and all was solid. This is a conduction run on the small block; the wide
+  column with flow has not been run with it.
+- **Devices at run time.** The cards are named when the run starts
+  (`global.rank_devices="cuda:1 cuda:4 cuda:6"`; `scripts/gpu_free.py` lists the cards
+  with enough free memory); the result does not depend on the choice.
+- **Frames.** Every stored frame is reduced on its part to the grain map, the solid
+  share, the temperature and the velocity.
+
+**Table 18a.** Decks of the wide column. Memory from 36 kB per element (Table 17f); time
+from 3.2 us per element, step and card measured on A100 cards at 129,600 elements per
+card, without holds, assuming the same rate at larger parts (an estimate, not a
+measurement; the cards of the target machine are faster).
+
+| deck | elements | steps | device memory in all (GB) | per card on 2 / 3 / 4 cards (GB) | time on 4 cards at the A100 rate |
+|---|---|---|---|---|---|
+| `..._wide_h10.i` | 518,400 | 74,333 | 18 | 9 / 6 / 5 | 9 h |
+| `..._wide_h8.i` | 1,012,500 | 116,146 | 34 | 17 / 11 / 9 | 26 h |
+| `..._wide_h5.i` | 4,147,200 | 297,333 | 140 | 70 / 47 / 35 | 11 days |
+| `..._wide_h4.i` | 8,100,000 | 464,583 | 274 | 137 / 91 / 69 | 35 days |
+
+- On cards of 141 GB, memory allows 4 um on three or four cards (65 % and 49 % of a
+  card) and 5 um on two. **Time, not memory, sets the mesh**: the step count grows with
+  $1/h^2$ and the work per step with $1/h^3$.
+- Host memory: the frames and the two series are gathered on the first process at the
+  end (about 3 GB at 10 um, 25 GB at 5 um, 50 GB at 4 um).
 
 ## 9. Limits and what remains
 

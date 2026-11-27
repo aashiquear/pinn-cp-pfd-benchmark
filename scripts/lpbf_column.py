@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Part V, cases K2 and after: run a build-column deck (temperature + grains) and keep its fields.
 
-usage: scripts/lpbf_column.py <deck.i> run [key=value ...] | grains | thermal | figure
+usage: scripts/lpbf_column.py <deck.i> run [key=value ...] | grains | thermal | figure | dwell
 
   run     run the PINNACLE deck in this process and write, into the deck's output_dir:
           fields.npz (nodes, final temperature and order parameters, the orientation of
@@ -16,6 +16,15 @@ usage: scripts/lpbf_column.py <deck.i> run [key=value ...] | grains | thermal | 
   thermal time above melting and cooling rate at freezing of the last layer's surface
           elements, beside the thermography medians of the NIST record
   figure  sections of the grain map
+  dwell   from history.csv: how many elements are still liquid when each track and each
+          layer starts (the two dwell times of the scan path are long enough when all
+          entries are 0), and when the last liquid froze
+
+Several GPUs: with global.rank_devices="cuda:0 cuda:2 ..." (in the deck or as an override
+of `run`) the mesh is cut into one part per device and every part runs in its own
+process (PINNACLE ADR 0057). The files are the same. Every stored frame is reduced on
+its rank to the grain map, the solid share, the temperature and the velocity, so the
+order parameters of the frames never reach the host memory of one process.
 
 PINNACLE must be importable (PYTHONPATH). Figures need matplotlib (not on the host).
 """
@@ -58,6 +67,21 @@ def out_dir(cfg: dict, deck: Path) -> Path:
     return q if q.is_absolute() else (deck.parent / q).resolve()
 
 
+def frame_of_column(frame: dict) -> dict:
+    """Snapshot filter: what the animations need of a frame, in small types."""
+    eta = np.asarray(frame["eta"])
+    out = {
+        "step": frame["step"],
+        "time": frame["time"],
+        "grain": eta.argmax(axis=1).astype(np.int16),
+        "solid": (eta**2).sum(axis=1).astype(np.float16),
+        "temperature": np.asarray(frame["temperature"], dtype=np.float32).ravel(),
+    }
+    if "velocity" in frame:
+        out["velocity"] = np.asarray(frame["velocity"], dtype=np.float16)
+    return out
+
+
 def cmd_run(deck: Path, overrides: list[str]) -> None:
     import os
 
@@ -76,16 +100,42 @@ def cmd_run(deck: Path, overrides: list[str]) -> None:
             if key in util and not applied.get(f"utilities.{name}.{key}"):
                 util[key] = str(target / name_)
     os.chdir(deck.parent)
-    runner = Runner(cfg)
-    runner.build()
-    tic = time.time()
-    result = runner.model.train()["composed"]
-    wall = time.time() - tic
-    problem = runner.model.composed
-    nodes = np.asarray(problem.mesh.nodes, dtype=float)
-    history = result["history"]["pf_fem_transient"]
+    ranks = None
+    if int(cfg["global"].get("ranks", 1)) > 1 or cfg["global"].get("rank_devices"):
+        from pinnacle.mesh.builder import use_mesh
+        from pinnacle.mesh.generators import box_mesh
+        from pinnacle.parallel import run_decomposed
+
+        tic = time.time()
+        out = run_decomposed(cfg, snapshot_filter=frame_of_column)
+        ranks = out["ranks"]
+        wall = max(r["wall_s"] for r in ranks)
+        total = time.time() - tic
+        result = {"time": out["time"], "snapshots": out["snapshots"], **out["fields"]}
+        history = out["history"]
+        nodes = np.asarray(out["nodes"], dtype=float)
+        n_elements = int(out["n_elements"])
+        # the orientation of each order parameter is a property of the deck: read it from
+        # the kernel of the same deck built on a mesh of one element
+        small = dict(cfg, **{"global": {k: v for k, v in cfg["global"].items() if k not in ("ranks", "rank_devices", "partition")}})
+        small["global"]["use_gpu"] = False
+        with use_mesh(box_mesh(bounds=((0.0, 1.0), (0.0, 1.0), (0.0, 1.0)), divisions=(1, 1, 1))):
+            probe = Runner(small)
+            probe.build()
+        kernel = next(k for k in probe.model.composed.kernels if hasattr(k, "rotations"))
+    else:
+        runner = Runner(cfg)
+        runner.build()
+        runner.model.composed.executioner.snapshot_filter = frame_of_column
+        tic = time.time()
+        result = runner.model.train()["composed"]
+        wall = total = time.time() - tic
+        problem = runner.model.composed
+        nodes = np.asarray(problem.mesh.nodes, dtype=float)
+        n_elements = int(problem.mesh.n_elements)
+        history = result["history"]["pf_fem_transient"]
+        kernel = next(k for k in problem.kernels if hasattr(k, "rotations"))
     eta = np.asarray(result["eta"], dtype=np.float32)
-    kernel = next(k for k in problem.kernels if hasattr(k, "rotations"))
     frames = result.get("snapshots", [])
     np.savez_compressed(
         target / "fields.npz",
@@ -94,9 +144,9 @@ def cmd_run(deck: Path, overrides: list[str]) -> None:
         eta=eta,
         rotations=kernel.rotations(eta.shape[1]),
         snapshot_times=np.array([f["time"] for f in frames]),
-        snapshot_grain=np.stack([np.asarray(f["eta"]).argmax(axis=1).astype(np.int16) for f in frames])
+        snapshot_grain=np.stack([np.asarray(f["grain"], dtype=np.int16) for f in frames])
         if frames else np.zeros((0, 0), dtype=np.int16),
-        snapshot_solid=np.stack([(np.asarray(f["eta"]) ** 2).sum(axis=1).astype(np.float16) for f in frames])
+        snapshot_solid=np.stack([np.asarray(f["solid"], dtype=np.float16) for f in frames])
         if frames else np.zeros((0, 0), dtype=np.float16),
         snapshot_temperature=np.stack([np.asarray(f["temperature"], dtype=np.float32).ravel() for f in frames])
         if frames else np.zeros((0, 0), dtype=np.float32),
@@ -123,7 +173,7 @@ def cmd_run(deck: Path, overrides: list[str]) -> None:
         "wall_s": round(wall, 1),
         "steps": len(history),
         "s_per_step": round(wall / max(len(history), 1), 4),
-        "elements": int(problem.mesh.n_elements),
+        "elements": n_elements,
         "nodes": int(nodes.shape[0]),
         "order_parameters": int(eta.shape[1]),
         "time_end": float(result["time"]),
@@ -133,6 +183,9 @@ def cmd_run(deck: Path, overrides: list[str]) -> None:
         "backend": str(cfg["global"].get("backend")),
         "use_gpu": bool(cfg["global"].get("use_gpu")),
     }
+    if ranks is not None:
+        summary["wall_with_start_and_merge_s"] = round(total, 1)
+        summary["ranks"] = ranks
     (target / "wall.json").write_text(json.dumps(summary, indent=1))
     print(json.dumps(summary, indent=1))
 
@@ -296,12 +349,51 @@ def cmd_figure(deck: Path, overrides: list[str]) -> None:
     print("wrote", out.relative_to(REPO))
 
 
+def cmd_dwell(deck: Path, overrides: list[str]) -> None:
+    """Liquid elements at the start of every track and layer; the time of the last liquid."""
+    from pinnacle.components.additive.scan_path import ScanPath
+
+    cfg, _ = load(deck, overrides)
+    target = out_dir(cfg, deck)
+    scan_cfg = next(u for u in cfg["utilities"].values() if u.get("kind") == "scan_path")
+    scan = ScanPath({k: v for k, v in scan_cfg.items() if k not in ("kind", "type")})
+    with (target / "history.csv").open() as fh:
+        rows = list(csv.DictReader(fh))
+    t = np.array([float(r["t"]) for r in rows])
+    liquid = np.array([float(r["state.liquid_elements"]) for r in rows])
+    # a run with `hold_scan_until_solid` moved its way-points: replay the holds
+    held = np.array([float(r.get("state.scan_delay") or 0.0) for r in rows])
+    for k in np.nonzero(np.diff(np.concatenate([[0.0], held])) > 0.0)[0]:
+        scan.delay(t[k] * (1.0 - 1e-12), held[k] - (held[k - 1] if k else 0.0))
+    report = {"tracks": [], "recoat": scan.recoat, "scan_delay_ms": round(1e3 * float(held[-1]), 4)}
+    previous_z = None
+    for segment in scan.segments():
+        if segment["on"] <= 0.0 or segment["t0"] > t[-1]:
+            continue
+        # the state at the end of the last step before the beam comes on
+        index = int(np.searchsorted(t, segment["t0"] * (1.0 + 1e-12), side="right") - 1)
+        left = int(liquid[index]) if index >= 0 else 0
+        report["tracks"].append({
+            "start_ms": round(1e3 * segment["t0"], 4),
+            "first_of_layer": bool(previous_z is None or segment["z"] > previous_z + 1e-12),
+            "liquid_elements_at_start": left,
+        })
+        previous_z = segment["z"]
+    wet = np.nonzero(liquid > 0)[0]
+    report["last_liquid_ms"] = round(1e3 * float(t[wet[-1]]), 4) if wet.size else None
+    report["end_ms"] = round(1e3 * float(t[-1]), 4)
+    report["liquid_at_end"] = int(liquid[-1])
+    report["tracks_started_on_liquid"] = int(sum(1 for r in report["tracks"] if r["liquid_elements_at_start"] > 0))
+    (target / "dwell_check.json").write_text(json.dumps(report, indent=1))
+    print(json.dumps(report, indent=1))
+
+
 def main() -> None:
     if len(sys.argv) < 3:
         raise SystemExit(__doc__)
     deck = Path(sys.argv[1]).resolve()
     command, rest = sys.argv[2], sys.argv[3:]
-    {"run": cmd_run, "grains": cmd_grains, "thermal": cmd_thermal, "figure": cmd_figure}.get(command, lambda *_: (_ for _ in ()).throw(SystemExit(__doc__)))(deck, rest)
+    {"run": cmd_run, "grains": cmd_grains, "thermal": cmd_thermal, "figure": cmd_figure, "dwell": cmd_dwell}.get(command, lambda *_: (_ for _ in ()).throw(SystemExit(__doc__)))(deck, rest)
 
 
 if __name__ == "__main__":

@@ -1447,4 +1447,15 @@ Author asked for a full recheck. No campaign run; two checks on existing data.
   solve at 4,096 elements; iteration counts grow with mesh and parts (no coarse space).
 - **Nucleation realizations changed once:** the order parameter of a nucleus is drawn
   with its site. K2 column numbers of the report predate this.
+- **Dwell (author's requirement 2026-11-26): solidification must finish before the next
+  track and the next layer.** `recoat = dwell_end` + `hold_scan_until_solid` +
+  `stop_when_solid` in the wide-column decks. The earlier column decks reset at the
+  start of the layer dwell (27,000 liquid elements frozen in one step) and used a fixed
+  0.2 ms between tracks: their grain results carry that.
+- **Sizing:** 36 kB of device memory per element (flow + 30 grain fields, float64, same
+  on A100 and Radeon); 3.2 us per element, step and card on A100. Time sets the mesh.
+- **The author's machine:** 8 x H200 (141 GB), shared; plan on at most 4 cards, named at
+  run time (`scripts/gpu_free.py`).
+- **Grain IC memory:** `polycrystal_coloring` is evaluated in pieces now; before, nodes
+  x grains x 3 doubles at once.
 
